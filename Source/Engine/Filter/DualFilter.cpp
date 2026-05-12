@@ -80,8 +80,10 @@ void SingleFilter::configureSVF(float cutHz, float res)
         return;
 
     using SVFType = juce::dsp::StateVariableTPTFilterType;
-    // Q capped at 10: still self-oscillates but avoids the +28dB peak of Q=25
-    float Q = juce::jlimit(0.5f, 10.f, 0.5f + res * 9.5f);
+    // Q range 0.5..20: full self-oscillation and screaming resonance available.
+    // Clipping protection comes from inter-stage tanh (LP24/HP24) and the
+    // final output limiter — not from attenuating the input here.
+    float Q = juce::jlimit(0.5f, 20.f, 0.5f + res * 19.5f);
     svf1.setCutoffFrequency(cutHz);
     svf1.setResonance(Q);
     svf2.setCutoffFrequency(cutHz);
@@ -149,14 +151,7 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
     float cutHz = computeCutoff(envValue, lfoValue);
     float res   = params.resonance;
 
-    // 1/Q gain compensation: keeps the resonant peak at roughly unity gain
-    // regardless of Q, preventing the +20dB blow-up at high resonance.
-    float Q = 0.5f + res * 9.5f;  // matches configureSVF mapping
-    float compGain = 1.f / juce::jmax(1.f, Q);
-
-    // Pre-drive saturation, then apply resonance compensation
     float driven = (params.drive > 0.f) ? std::tanh(input * (1.f + params.drive * 4.f)) : input;
-    driven *= compGain;
 
     float out = driven;
 
