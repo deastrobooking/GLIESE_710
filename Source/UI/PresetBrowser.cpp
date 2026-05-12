@@ -1,12 +1,14 @@
 #include "PresetBrowser.h"
+#include "IndustrialTheme.h"
 
 PresetBrowser::PresetBrowser(PresetManager& pm) : presetManager(pm)
 {
+    auto accent = IndustrialTheme::accentMaster();
     nameLabel.setText("GLIESE 710", juce::dontSendNotification);
-    nameLabel.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
-    nameLabel.setFont(juce::Font(juce::FontOptions { 16.f, juce::Font::bold }));
+    IndustrialTheme::styleTitle(nameLabel, accent, 16.f);
     addAndMakeVisible(nameLabel);
 
+    IndustrialTheme::styleButton(prevButton, accent);
     addAndMakeVisible(prevButton);
     prevButton.onClick = [this] {
         if (presetNames.isEmpty()) return;
@@ -14,6 +16,7 @@ PresetBrowser::PresetBrowser(PresetManager& pm) : presetManager(pm)
         selectPreset(currentPresetIndex);
     };
 
+    IndustrialTheme::styleButton(nextButton, accent);
     addAndMakeVisible(nextButton);
     nextButton.onClick = [this] {
         if (presetNames.isEmpty()) return;
@@ -21,7 +24,7 @@ PresetBrowser::PresetBrowser(PresetManager& pm) : presetManager(pm)
         selectPreset(currentPresetIndex);
     };
 
-    presetBox.setJustificationType(juce::Justification::centred);
+    IndustrialTheme::styleCombo(presetBox, accent);
     presetBox.onChange = [this] {
         int idx = presetBox.getSelectedItemIndex();
         if (idx >= 0 && idx < presetNames.size())
@@ -33,6 +36,7 @@ PresetBrowser::PresetBrowser(PresetManager& pm) : presetManager(pm)
     addAndMakeVisible(presetBox);
 
     saveButton.onClick = [this] { saveCurrentPreset(); };
+    IndustrialTheme::styleButton(saveButton, accent);
     addAndMakeVisible(saveButton);
 
     refreshList();
@@ -89,9 +93,8 @@ void PresetBrowser::saveCurrentPreset()
 
 void PresetBrowser::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colour(0xff0d0d0d));
-    g.fillAll();
-    g.setColour(juce::Colour(0xff2a2a2a));
+    IndustrialTheme::paintFaceplate(g, getLocalBounds());
+    g.setColour(IndustrialTheme::accentMaster().withAlpha(0.42f));
     g.drawLine(0.f, (float)getHeight() - 1.f, (float)getWidth(), (float)getHeight() - 1.f, 1.f);
 }
 

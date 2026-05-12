@@ -1,4 +1,5 @@
 #include "ModMatrixPanel.h"
+#include "IndustrialTheme.h"
 
 static const juce::StringArray kSourceNames {
     "None",
@@ -28,9 +29,9 @@ static const juce::StringArray kDestNames {
 
 ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 {
+    auto accent = IndustrialTheme::accentMod();
     titleLabel.setText("MOD MATRIX", juce::dontSendNotification);
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    titleLabel.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
+    IndustrialTheme::styleTitle(titleLabel, accent);
     addAndMakeVisible(titleLabel);
 
     for (int i = 0; i < kNumSlots; ++i)
@@ -40,12 +41,14 @@ ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 
         row.source.addItemList(kSourceNames, 1);
         row.source.setSelectedId(1, juce::dontSendNotification);
+        IndustrialTheme::styleCombo(row.source, accent);
         rowContainer.addAndMakeVisible(row.source);
         row.srcAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
             apvts, pfx + "source", row.source);
 
         row.dest.addItemList(kDestNames, 1);
         row.dest.setSelectedId(1, juce::dontSendNotification);
+        IndustrialTheme::styleCombo(row.dest, accent);
         rowContainer.addAndMakeVisible(row.dest);
         row.dstAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
             apvts, pfx + "dest", row.dest);
@@ -53,12 +56,14 @@ ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
         row.amount.setRange(-1.0, 1.0);
         row.amount.setSliderStyle(juce::Slider::LinearHorizontal);
         row.amount.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, kRowHeight - 4);
+        IndustrialTheme::styleSlider(row.amount, accent);
         rowContainer.addAndMakeVisible(row.amount);
         row.amtAtt = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
             apvts, pfx + "amount", row.amount);
 
         row.bipolar.setButtonText("~");
         row.bipolar.setTooltip("Bipolar");
+        IndustrialTheme::styleButton(row.bipolar, accent);
         rowContainer.addAndMakeVisible(row.bipolar);
         row.bipAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
             apvts, pfx + "bipolar", row.bipolar);
@@ -70,9 +75,7 @@ ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 
     auto makeHeader = [&](juce::Label& l, const juce::String& text) {
         l.setText(text, juce::dontSendNotification);
-        l.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
-        l.setFont(juce::Font(juce::FontOptions { 10.f, juce::Font::bold }));
-        l.setJustificationType(juce::Justification::centredLeft);
+        IndustrialTheme::styleLabel(l, accent, 10.f, juce::Justification::centredLeft);
         addAndMakeVisible(l);
     };
 
@@ -84,10 +87,7 @@ ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 
 void ModMatrixPanel::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colour(0xff141414));
-    g.fillRoundedRectangle(getLocalBounds().toFloat(), 6.f);
-    g.setColour(juce::Colour(0xff2a2a2a));
-    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 6.f, 1.f);
+    IndustrialTheme::paintPanel(g, getLocalBounds(), IndustrialTheme::accentMod(), true);
 }
 
 void ModMatrixPanel::resized()

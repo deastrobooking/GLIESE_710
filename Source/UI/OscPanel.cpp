@@ -2,11 +2,10 @@
 
 OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id,
                    const juce::String& lbl)
-    : apvts(a), oscId(id), label(lbl)
+    : apvts(a), oscId(id), label(lbl), accent(IndustrialTheme::accentForOsc(id))
 {
     titleLabel.setText(lbl, juce::dontSendNotification);
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    titleLabel.setFont(juce::Font(juce::FontOptions { 14.f, juce::Font::bold }));
+    IndustrialTheme::styleTitle(titleLabel, accent, 14.f);
     addAndMakeVisible(titleLabel);
 
     juce::String pfx = "osc_" + oscId + "_";
@@ -29,6 +28,8 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         modeBoxB.addItemList({"Circle","Spiral","Lissajous","Random","Orbit"}, 1);
         modeBoxA.setTooltip("3D Field");
         modeBoxB.setTooltip("3D Path");
+        IndustrialTheme::styleCombo(modeBoxA, accent);
+        IndustrialTheme::styleCombo(modeBoxB, accent);
         addAndMakeVisible(modeBoxA);
         addAndMakeVisible(modeBoxB);
         modeAttA = std::make_unique<CAtt>(apvts, "osc_3d_field", modeBoxA);
@@ -51,6 +52,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     {
         modeBoxA.addItemList({"Sine","Saw","RevSaw","Square","Triangle","Pulse"}, 1);
         modeBoxA.setTooltip("VA Shape");
+        IndustrialTheme::styleCombo(modeBoxA, accent);
         addAndMakeVisible(modeBoxA);
         modeAttA = std::make_unique<CAtt>(apvts, "osc_va_shape", modeBoxA);
         numModeBoxes = 1;
@@ -66,6 +68,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         modeBoxA.addItemList({"Sine","Triangle","Saw","Square","Pulse",
                               "Half Sine","Abs Sine","Sine Cube"}, 1);
         modeBoxA.setTooltip("Wavetable Shape");
+        IndustrialTheme::styleCombo(modeBoxA, accent);
         addAndMakeVisible(modeBoxA);
         modeAttA = std::make_unique<CAtt>(apvts, "osc_wt_table", modeBoxA);
         numModeBoxes = 1;
@@ -77,9 +80,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     // ── Labels ────────────────────────────────────────────────────────────────
     auto makeLabel = [&](juce::Label& l, const juce::String& text) {
         l.setText(text, juce::dontSendNotification);
-        l.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
-        l.setFont(juce::Font(juce::FontOptions { 10.f }));
-        l.setJustificationType(juce::Justification::centred);
+        IndustrialTheme::styleLabel(l, accent, 10.f);
         addAndMakeVisible(l);
     };
 
@@ -119,9 +120,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     for (int i = 0; i < 4; ++i)
     {
         adsrLabels[(size_t)i].setText(adsrNames[i], juce::dontSendNotification);
-        adsrLabels[(size_t)i].setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
-        adsrLabels[(size_t)i].setFont(juce::Font(juce::FontOptions { 10.f, juce::Font::bold }));
-        adsrLabels[(size_t)i].setJustificationType(juce::Justification::centred);
+        IndustrialTheme::styleLabel(adsrLabels[(size_t)i], accent, 10.f);
         addAndMakeVisible(adsrLabels[(size_t)i]);
     }
 }
@@ -131,6 +130,7 @@ void OscPanel::setupSlider(juce::Slider& s, const juce::String& tooltip)
     s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 16);
     s.setTooltip(tooltip);
+    IndustrialTheme::styleSlider(s, accent);
     addAndMakeVisible(s);
 }
 
@@ -139,6 +139,7 @@ void OscPanel::setupADSRSlider(juce::Slider& s, const juce::String& tooltip)
     s.setSliderStyle(juce::Slider::LinearVertical);
     s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 14);
     s.setTooltip(tooltip);
+    IndustrialTheme::styleSlider(s, accent);
     addAndMakeVisible(s);
 }
 
@@ -151,10 +152,7 @@ void OscPanel::setupExtraSlider(juce::Slider& slider, const juce::String& paramI
 
 void OscPanel::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colour(0xff141414));
-    g.fillRoundedRectangle(getLocalBounds().toFloat(), 6.f);
-    g.setColour(juce::Colour(0xff2a2a2a));
-    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 6.f, 1.f);
+    IndustrialTheme::paintPanel(g, getLocalBounds(), accent, oscId == "3d");
 }
 
 void OscPanel::resized()

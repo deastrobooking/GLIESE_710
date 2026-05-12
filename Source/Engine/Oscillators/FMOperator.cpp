@@ -10,6 +10,13 @@ void FMOperator::prepare(double sampleRate)
 void FMOperator::setParams(const Params& p)
 {
     params = p;
+    params.coarse        = juce::jlimit(0, 31, params.coarse);
+    params.level         = juce::jlimit(0.f, 1.f, params.level);
+    params.feedback      = juce::jlimit(0.f, 1.f, params.feedback);
+    params.velocityDepth = juce::jlimit(0.f, 1.f, params.velocityDepth);
+    params.keyScaleDepth = juce::jlimit(-1.f, 1.f, params.keyScaleDepth);
+    params.waveShape     = static_cast<Wave>(juce::jlimit(0, (int)Wave::NumWaves - 1,
+                                                          (int)params.waveShape));
 }
 
 void FMOperator::setNoteFrequency(float noteHz)
@@ -54,6 +61,7 @@ float FMOperator::generateWave(float p) noexcept
         case Wave::Noise:
             return rng.nextFloat() * 2.f - 1.f;
 
+        case Wave::NumWaves:
         case Wave::Sine:
         default:
             return std::sin(p * juce::MathConstants<float>::twoPi);
@@ -75,7 +83,7 @@ float FMOperator::processSample(float modInput)
     float out = generateWave(totalPhase);
 
     phase += phaseInc;
-    if (phase >= 1.f) phase -= 1.f;
+    phase -= std::floor(phase);
 
     prevOut = out;
 

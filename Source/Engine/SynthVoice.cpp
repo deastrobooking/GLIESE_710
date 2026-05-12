@@ -33,7 +33,7 @@ void SynthVoice::reset()
 void SynthVoice::noteOn(int note, float vel)
 {
     midiNote = note;
-    velocity = vel;
+    velocity = juce::jlimit(0.f, 1.f, vel);
     age      = 0;
 
     float hz = midiToHz(note);
@@ -100,10 +100,11 @@ void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
     p3d.drive     = juce::jlimit(0.25f, 4.0f, getF("osc_3d_drive") + modDests.dests[(int)ModDest::Osc3D_Drive]);
     osc3d.setParams(p3d);
 
-    // Apply pitch modulation — master_tune is in cents (±100)
-    float pitchMod   = modDests.dests[(int)ModDest::OscPitch_All];
-    float tuneSemi   = getF("master_tune") / 100.f;  // cents → semitones
-    float totalPitch = pitchMod * 12.f + tuneSemi;
+    // Apply global pitch offsets independently: octave, fine tune, then modulation.
+    float pitchMod      = modDests.dests[(int)ModDest::OscPitch_All];
+    float tuneSemi      = getF("master_tune") / 100.f;  // cents → semitones
+    float octaveSemi    = (float)getI("master_octave") * 12.f;
+    float totalPitch    = pitchMod * 12.f + tuneSemi + octaveSemi;
 
     float hz = midiToHz(midiNote, totalPitch) * std::pow(2.f, getF("osc_3d_octave"));
     osc3d.setFrequency(hz);

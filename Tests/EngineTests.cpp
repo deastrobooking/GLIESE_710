@@ -394,19 +394,55 @@ TEST_CASE("WavetableOsc table index selects base table", "[wavetable]")
 
     std::vector<float> one(WavetableOsc::kTableSize, 1.f);
     std::vector<float> minusOne(WavetableOsc::kTableSize, -1.f);
-    wt.addTable("One", one.data(), (int)one.size());
-    wt.addTable("MinusOne", minusOne.data(), (int)minusOne.size());
+    int oneIndex = wt.addTable("One", one.data(), (int)one.size());
+    int minusOneIndex = wt.addTable("MinusOne", minusOne.data(), (int)minusOne.size());
 
-    wt.setTablePosition(1, 0.f);
+    wt.setTablePosition(oneIndex, 0.f);
     auto [oneL, oneR] = wt.processSample();
     REQUIRE(oneL == Approx(1.f).margin(0.001f));
     REQUIRE(oneR == Approx(1.f).margin(0.001f));
 
     wt.reset();
-    wt.setTablePosition(2, 0.f);
+    wt.setTablePosition(minusOneIndex, 0.f);
     auto [minusL, minusR] = wt.processSample();
     REQUIRE(minusL == Approx(-1.f).margin(0.001f));
     REQUIRE(minusR == Approx(-1.f).margin(0.001f));
+}
+
+TEST_CASE("FMOperator clamps shaping params and wraps high-rate phase", "[fm]")
+{
+    FMOperator op;
+    op.prepare(48000.0);
+    op.setNoteFrequency(440.f);
+
+    ADSREnvelope::Params ep;
+    ep.attackSec = 0.001f;
+    ep.decaySec = 0.001f;
+    ep.sustain = 1.f;
+    ep.releaseSec = 0.001f;
+    op.getEnvelope().setParams(ep);
+
+    FMOperator::Params p;
+    p.coarse = 31;
+    p.level = 2.f;
+    p.feedback = 2.f;
+    p.velocityDepth = 2.f;
+    p.keyScaleDepth = -2.f;
+    p.waveShape = static_cast<FMOperator::Wave>(999);
+    op.setParams(p);
+    op.setVelocity(0.5f);
+    op.setMidiNote(84);
+    op.noteOn();
+
+    float peak = 0.f;
+    for (int i = 0; i < 2048; ++i)
+    {
+        float s = op.processSample(100.f);
+        REQUIRE(std::isfinite(s));
+        peak = std::max(peak, std::abs(s));
+    }
+
+    REQUIRE(peak <= 2.f);
 }
 
 TEST_CASE("FM operators require noteOn and then produce output", "[fm]")

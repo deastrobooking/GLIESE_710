@@ -60,6 +60,7 @@ PRIVATE
     Source/Engine/Arpeggiator/Arpeggiator.cpp
     Source/Presets/PresetManager.cpp
     Source/UI/MainPanel.cpp
+    Source/UI/IndustrialTheme.cpp
     Source/UI/OscPanel.cpp
     Source/UI/FilterPanel.cpp
     Source/UI/ModMatrixPanel.cpp

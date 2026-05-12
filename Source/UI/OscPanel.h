@@ -1,5 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
+#include "IndustrialTheme.h"
 
 // Panel for one oscillator section (3D, FM, WT, or VA)
 class OscPanel : public juce::Component
@@ -15,6 +16,7 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
     juce::String oscId;
     juce::String label;
+    juce::Colour accent;
 
     juce::Label titleLabel;
 

@@ -1,29 +1,35 @@
 #include "ArpPanel.h"
+#include "IndustrialTheme.h"
 
 ArpPanel::ArpPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 {
+    auto accent = IndustrialTheme::accentArp();
     titleLabel.setText("ARPEGGIATOR", juce::dontSendNotification);
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    titleLabel.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
+    IndustrialTheme::styleTitle(titleLabel, accent);
     addAndMakeVisible(titleLabel);
 
     onToggle.setButtonText("ON");
+    IndustrialTheme::styleButton(onToggle, accent);
     addAndMakeVisible(onToggle);
     onAtt = std::make_unique<BAtt>(apvts, "arp_on", onToggle);
 
     patternBox.addItemList({"Up","Down","Up-Down","Down-Up","As Played","Random","Random Latch"}, 1);
+    IndustrialTheme::styleCombo(patternBox, accent);
     addAndMakeVisible(patternBox);
     patternAtt = std::make_unique<CAtt>(apvts, "arp_pattern", patternBox);
 
     rateBox.addItemList({"1/32","1/16","1/8","3/16","1/4","3/8","1/2","3/4","1 Bar"}, 1);
+    IndustrialTheme::styleCombo(rateBox, accent);
     addAndMakeVisible(rateBox);
     rateAtt = std::make_unique<CAtt>(apvts, "arp_rate", rateBox);
 
     syncToggle.setButtonText("Sync");
+    IndustrialTheme::styleButton(syncToggle, accent);
     addAndMakeVisible(syncToggle);
     syncAtt = std::make_unique<BAtt>(apvts, "arp_sync", syncToggle);
 
     latchToggle.setButtonText("Latch");
+    IndustrialTheme::styleButton(latchToggle, accent);
     addAndMakeVisible(latchToggle);
     latchAtt = std::make_unique<BAtt>(apvts, "arp_latch", latchToggle);
 
@@ -31,6 +37,7 @@ ArpPanel::ArpPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
         s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
         s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 48, 16);
         s.setTooltip(tip);
+        IndustrialTheme::styleSlider(s, accent);
         addAndMakeVisible(s);
     };
 
@@ -45,9 +52,7 @@ ArpPanel::ArpPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 
     auto makeLabel = [&](juce::Label& l, const juce::String& text) {
         l.setText(text, juce::dontSendNotification);
-        l.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
-        l.setFont(juce::Font(juce::FontOptions { 10.f }));
-        l.setJustificationType(juce::Justification::centred);
+        IndustrialTheme::styleLabel(l, accent, 10.f);
         addAndMakeVisible(l);
     };
 
@@ -60,10 +65,7 @@ ArpPanel::ArpPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 
 void ArpPanel::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colour(0xff141414));
-    g.fillRoundedRectangle(getLocalBounds().toFloat(), 6.f);
-    g.setColour(juce::Colour(0xff2a2a2a));
-    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 6.f, 1.f);
+    IndustrialTheme::paintPanel(g, getLocalBounds(), IndustrialTheme::accentArp());
 }
 
 void ArpPanel::resized()

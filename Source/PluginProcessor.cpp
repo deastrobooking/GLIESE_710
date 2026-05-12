@@ -41,6 +41,7 @@ static APVTS::ParameterLayout buildLayout()
     // ── Master ────────────────────────────────────────────────────────────────
     addFloat("master_volume",  "Master Volume",  0.0f, 1.0f, 0.8f, 0.5f);
     addFloat("master_tune",    "Master Tune",   -100.0f, 100.0f, 0.0f);
+    addInt  ("master_octave",  "Master Octave", -3, 3, 0);
     addFloat("master_pan",     "Master Pan",    -1.0f, 1.0f, 0.0f);
 
     // Master ADSR

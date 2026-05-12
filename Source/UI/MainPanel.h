@@ -5,12 +5,14 @@
 #include "ModMatrixPanel.h"
 #include "ArpPanel.h"
 #include "LFOPanel.h"
+#include "IndustrialTheme.h"
 #include <array>
 
 class MainPanel : public juce::Component
 {
 public:
     explicit MainPanel(juce::AudioProcessorValueTreeState& apvts);
+    ~MainPanel() override;
     void paint(juce::Graphics&) override;
     void resized() override;
 
@@ -27,10 +29,10 @@ private:
     std::unique_ptr<LFOPanel>        lfoPanel;
 
     // Master controls
-    juce::Slider    masterVolSlider, masterTuneSlider, masterPanSlider;
+    juce::Slider    masterVolSlider, masterTuneSlider, masterOctaveSlider, masterPanSlider;
     juce::Slider    masterA, masterD, masterS, masterR;
     juce::Label     masterLabel;
-    std::array<juce::Label, 7> masterLabels;   // VOL TUNE PAN ATK DEC SUS REL
+    std::array<juce::Label, 8> masterLabels;   // VOL TUNE OCT PAN ATK DEC SUS REL
 
     // FM controls
     juce::ComboBox  fmAlgorithmBox;
@@ -47,7 +49,7 @@ private:
 
     using Att  = juce::AudioProcessorValueTreeState::SliderAttachment;
     using CAtt = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
-    std::unique_ptr<Att> masterVolAtt, masterTuneAtt, masterPanAtt;
+    std::unique_ptr<Att> masterVolAtt, masterTuneAtt, masterOctaveAtt, masterPanAtt;
     std::unique_ptr<Att> masterAAtt, masterDAtt, masterSAtt, masterRAtt;
     std::unique_ptr<CAtt> fmAlgorithmAtt;
     std::unique_ptr<Att> fmLevelAtt, fmOctaveAtt;
@@ -62,11 +64,15 @@ private:
     juce::Component* effectsTab     = nullptr;
 
     juce::TabbedComponent tabs { juce::TabbedButtonBar::TabsAtTop };
+    IndustrialTheme::IndustrialLookAndFeel lookAndFeel;
 
     void buildOscillatorsTab();
     void buildEngineTab();
     void buildEffectsTab();
+    void applyLookAndFeel(juce::Component& component);
+    void clearLookAndFeel(juce::Component& component);
     void setupKnob(juce::Slider& slider, const juce::String& paramId,
                    const juce::String& tooltip, std::unique_ptr<Att>& attachment,
-                   juce::Component& parent);
+                   juce::Component& parent,
+                   juce::Colour accent = IndustrialTheme::accentMaster());
 };

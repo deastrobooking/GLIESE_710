@@ -1,4 +1,5 @@
 #include "PluginEditor.h"
+#include "UI/IndustrialTheme.h"
 
 GLIESE710AudioProcessorEditor::GLIESE710AudioProcessorEditor(GLIESE710AudioProcessor& p)
     : AudioProcessorEditor(&p),
@@ -17,7 +18,7 @@ GLIESE710AudioProcessorEditor::~GLIESE710AudioProcessorEditor() = default;
 
 void GLIESE710AudioProcessorEditor::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(0xff0d0d0d));
+    IndustrialTheme::paintFaceplate(g, getLocalBounds());
 }
 
 void GLIESE710AudioProcessorEditor::resized()

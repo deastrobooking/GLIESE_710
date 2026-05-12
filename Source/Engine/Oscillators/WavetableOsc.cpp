@@ -117,19 +117,19 @@ void WavetableOsc::buildStandardBank()
 
     // 5 — Half-rectified sine: soft, nasal character from even harmonics
     for (int i = 0; i < kTableSize; ++i)
-        buf[i] = std::max(0.f, std::sin(juce::MathConstants<float>::twoPi * (float)i / (float)kTableSize));
+        buf[(size_t)i] = std::max(0.f, std::sin(juce::MathConstants<float>::twoPi * (float)i / (float)kTableSize));
     addTable("Half Sine", buf.data(), kTableSize);
 
     // 6 — Full-rectified sine |sin|: buzzy, reed-like; only even harmonics
     for (int i = 0; i < kTableSize; ++i)
-        buf[i] = std::abs(std::sin(juce::MathConstants<float>::twoPi * (float)i / (float)kTableSize));
+        buf[(size_t)i] = std::abs(std::sin(juce::MathConstants<float>::twoPi * (float)i / (float)kTableSize));
     addTable("Abs Sine", buf.data(), kTableSize);
 
     // 7 — Sine³: sub-heavy, smooth saturation character
     for (int i = 0; i < kTableSize; ++i)
     {
         float s = std::sin(juce::MathConstants<float>::twoPi * (float)i / (float)kTableSize);
-        buf[i] = s * s * s;
+        buf[(size_t)i] = s * s * s;
     }
     addTable("Sine Cube", buf.data(), kTableSize);
 }
@@ -195,10 +195,8 @@ void WavetableOsc::buildMipLevel(const float* src, int srcSize,
 
     fft.perform(filtered.data(), spectrum.data(), true);    // inverse
 
-    // JUCE's FFT does not normalise — divide by N to recover original scale
-    const float norm = 1.f / (float)N;
     for (int i = 0; i < N; ++i)
-        dst[i] = spectrum[(size_t)i].real() * norm;
+        dst[i] = spectrum[(size_t)i].real();
 }
 
 //==============================================================================

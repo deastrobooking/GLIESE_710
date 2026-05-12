@@ -1,7 +1,6 @@
 #include "MainPanel.h"
 
-static juce::Colour kBg    { 0xff0d0d0d };
-static juce::Colour kAccent{ 0xffcc2222 };
+static juce::Colour kBg { 0xff050607 };
 
 MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     : apvts(a)
@@ -9,6 +8,11 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     tabs.setTabBarDepth(28);
     tabs.setOutline(0);
     tabs.setColour(juce::TabbedComponent::backgroundColourId, kBg);
+    tabs.setColour(juce::TabbedComponent::outlineColourId, IndustrialTheme::panelEdge());
+    tabs.setColour(juce::TabbedButtonBar::tabTextColourId, IndustrialTheme::mutedText());
+    tabs.setColour(juce::TabbedButtonBar::frontTextColourId, IndustrialTheme::text());
+    tabs.setColour(juce::TabbedButtonBar::tabOutlineColourId, IndustrialTheme::panelEdge());
+    tabs.setColour(juce::TabbedButtonBar::frontOutlineColourId, IndustrialTheme::accentMaster().withAlpha(0.7f));
     addAndMakeVisible(tabs);
 
     // ── Oscillators tab ───────────────────────────────────────────────────────
@@ -34,11 +38,12 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
         return items;
     }(), 1);
     fmAlgorithmBox.setTooltip("FM Algorithm");
+    IndustrialTheme::styleCombo(fmAlgorithmBox, IndustrialTheme::accentFM());
     engineTab->addAndMakeVisible(fmAlgorithmBox);
     fmAlgorithmAtt = std::make_unique<CAtt>(apvts, "osc_fm_algorithm", fmAlgorithmBox);
 
-    setupKnob(fmLevelSlider, "osc_fm_level", "FM Level", fmLevelAtt, *engineTab);
-    setupKnob(fmOctaveSlider, "osc_fm_octave", "FM Octave", fmOctaveAtt, *engineTab);
+    setupKnob(fmLevelSlider, "osc_fm_level", "FM Level", fmLevelAtt, *engineTab, IndustrialTheme::accentFM());
+    setupKnob(fmOctaveSlider, "osc_fm_octave", "FM Octave", fmOctaveAtt, *engineTab, IndustrialTheme::accentFM());
 
     static const juce::StringArray kOpWaves { "Sine","Triangle","Saw","Square","Pulse","Noise" };
 
@@ -47,22 +52,23 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
         auto pfx = "op" + juce::String(i) + "_";
         setupKnob(fmOpCoarseSliders[(size_t)i], pfx + "coarse",
                   "Operator " + juce::String(i) + " Coarse Ratio",
-                  fmOpCoarseAtts[(size_t)i], *engineTab);
+                  fmOpCoarseAtts[(size_t)i], *engineTab, IndustrialTheme::accentFM());
         setupKnob(fmOpLevelSliders[(size_t)i], pfx + "level",
                   "Operator " + juce::String(i) + " Level",
-                  fmOpLevelAtts[(size_t)i], *engineTab);
+                  fmOpLevelAtts[(size_t)i], *engineTab, IndustrialTheme::accentFM());
 
         fmOpWaveBoxes[(size_t)i].addItemList(kOpWaves, 1);
         fmOpWaveBoxes[(size_t)i].setTooltip("Operator " + juce::String(i) + " Waveform");
+        IndustrialTheme::styleCombo(fmOpWaveBoxes[(size_t)i], IndustrialTheme::accentFM());
         engineTab->addAndMakeVisible(fmOpWaveBoxes[(size_t)i]);
         fmOpWaveAtts[(size_t)i] = std::make_unique<CAtt>(apvts, pfx + "wave", fmOpWaveBoxes[(size_t)i]);
 
         setupKnob(fmOpVelSliders[(size_t)i], pfx + "vel",
                   "Operator " + juce::String(i) + " Velocity Depth",
-                  fmOpVelAtts[(size_t)i], *engineTab);
+                  fmOpVelAtts[(size_t)i], *engineTab, IndustrialTheme::accentFM());
         setupKnob(fmOpKeySliders[(size_t)i], pfx + "key",
                   "Operator " + juce::String(i) + " Key Scale",
-                  fmOpKeyAtts[(size_t)i], *engineTab);
+                  fmOpKeyAtts[(size_t)i], *engineTab, IndustrialTheme::accentFM());
     }
     tabs.addTab("FM ENGINE", kBg, engineTab, true);
 
@@ -83,12 +89,12 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
 
     // ── Master controls ───────────────────────────────────────────────────────
     masterLabel.setText("MASTER", juce::dontSendNotification);
-    masterLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    masterLabel.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
+    IndustrialTheme::styleTitle(masterLabel, IndustrialTheme::accentMaster(), 13.f);
     addAndMakeVisible(masterLabel);
 
     setupKnob(masterVolSlider,  "master_volume", "Master Volume", masterVolAtt, *this);
     setupKnob(masterTuneSlider, "master_tune",   "Master Tune",   masterTuneAtt, *this);
+    setupKnob(masterOctaveSlider, "master_octave", "Master Octave", masterOctaveAtt, *this);
     setupKnob(masterPanSlider,  "master_pan",    "Master Pan",    masterPanAtt, *this);
     setupKnob(masterA,          "master_adsr_a", "Attack",        masterAAtt, *this);
     setupKnob(masterD,          "master_adsr_d", "Decay",         masterDAtt, *this);
@@ -98,42 +104,68 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     // ── Label helpers ─────────────────────────────────────────────────────────
     auto makeSmallLabel = [&](juce::Label& l, const juce::String& text, juce::Component& parent) {
         l.setText(text, juce::dontSendNotification);
-        l.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
-        l.setFont(juce::Font(juce::FontOptions { 10.f }));
-        l.setJustificationType(juce::Justification::centred);
+        IndustrialTheme::styleLabel(l, IndustrialTheme::accentMaster(), 10.f);
         parent.addAndMakeVisible(l);
     };
 
-    const juce::String masterLabelTexts[] = { "VOL","TUNE","PAN","ATK","DEC","SUS","REL" };
-    for (int i = 0; i < 7; ++i)
+    const juce::String masterLabelTexts[] = { "VOL","TUNE","OCT","PAN","ATK","DEC","SUS","REL" };
+    for (int i = 0; i < 8; ++i)
         makeSmallLabel(masterLabels[(size_t)i], masterLabelTexts[i], *this);
 
-    makeSmallLabel(fmAlgoLabel,      "ALGORITHM",    *engineTab);
-    makeSmallLabel(fmLvlLabel,       "FM LEVEL",     *engineTab);
-    makeSmallLabel(fmOctLabel,       "FM OCTAVE",    *engineTab);
-    makeSmallLabel(fmCoarseHdrLabel, "COARSE RATIO", *engineTab);
-    makeSmallLabel(fmLevelHdrLabel,  "OP LEVEL",     *engineTab);
-    makeSmallLabel(fmWaveHdrLabel,   "WAVEFORM",     *engineTab);
-    makeSmallLabel(fmVelHdrLabel,    "VEL DEPTH",    *engineTab);
-    makeSmallLabel(fmKeyHdrLabel,    "KEY SCALE",    *engineTab);
+    auto makeFMLabel = [&](juce::Label& l, const juce::String& text) {
+        l.setText(text, juce::dontSendNotification);
+        IndustrialTheme::styleLabel(l, IndustrialTheme::accentFM(), 10.f);
+        engineTab->addAndMakeVisible(l);
+    };
+
+    makeFMLabel(fmAlgoLabel,      "ALGORITHM");
+    makeFMLabel(fmLvlLabel,       "FM LEVEL");
+    makeFMLabel(fmOctLabel,       "FM OCTAVE");
+    makeFMLabel(fmCoarseHdrLabel, "COARSE RATIO");
+    makeFMLabel(fmLevelHdrLabel,  "OP LEVEL");
+    makeFMLabel(fmWaveHdrLabel,   "WAVEFORM");
+    makeFMLabel(fmVelHdrLabel,    "VEL DEPTH");
+    makeFMLabel(fmKeyHdrLabel,    "KEY SCALE");
     for (int i = 0; i < 10; ++i)
-        makeSmallLabel(fmOpLabels[(size_t)i], juce::String(i), *engineTab);
+        makeFMLabel(fmOpLabels[(size_t)i], juce::String(i));
+
+    applyLookAndFeel(*this);
+}
+
+MainPanel::~MainPanel()
+{
+    clearLookAndFeel(*this);
+}
+
+void MainPanel::applyLookAndFeel(juce::Component& component)
+{
+    component.setLookAndFeel(&lookAndFeel);
+    for (int i = 0; i < component.getNumChildComponents(); ++i)
+        applyLookAndFeel(*component.getChildComponent(i));
+}
+
+void MainPanel::clearLookAndFeel(juce::Component& component)
+{
+    component.setLookAndFeel(nullptr);
+    for (int i = 0; i < component.getNumChildComponents(); ++i)
+        clearLookAndFeel(*component.getChildComponent(i));
 }
 
 void MainPanel::setupKnob(juce::Slider& s, const juce::String& paramId,
                           const juce::String& tip, std::unique_ptr<Att>& att,
-                          juce::Component& parent)
+                          juce::Component& parent, juce::Colour accent)
 {
     s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 16);
     s.setTooltip(tip);
+    IndustrialTheme::styleSlider(s, accent);
     parent.addAndMakeVisible(s);
     att = std::make_unique<Att>(apvts, paramId, s);
 }
 
 void MainPanel::paint(juce::Graphics& g)
 {
-    g.fillAll(kBg);
+    IndustrialTheme::paintFaceplate(g, getLocalBounds());
 }
 
 void MainPanel::resized()
@@ -157,13 +189,14 @@ void MainPanel::resized()
 
     positionMaster(masterLabels[0], masterVolSlider,  70);
     positionMaster(masterLabels[1], masterTuneSlider, 70);
-    positionMaster(masterLabels[2], masterPanSlider,  70);
+    positionMaster(masterLabels[2], masterOctaveSlider, 70);
+    positionMaster(masterLabels[3], masterPanSlider,  70);
     masterLabelRow.removeFromLeft(10);
     masterKnobRow .removeFromLeft(10);
-    positionMaster(masterLabels[3], masterA, 70);
-    positionMaster(masterLabels[4], masterD, 70);
-    positionMaster(masterLabels[5], masterS, 70);
-    positionMaster(masterLabels[6], masterR, 70);
+    positionMaster(masterLabels[4], masterA, 70);
+    positionMaster(masterLabels[5], masterD, 70);
+    positionMaster(masterLabels[6], masterS, 70);
+    positionMaster(masterLabels[7], masterR, 70);
 
     tabs.setBounds(area);
 

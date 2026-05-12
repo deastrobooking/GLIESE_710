@@ -1,14 +1,15 @@
 #include "FilterPanel.h"
+#include "IndustrialTheme.h"
 
 FilterPanel::FilterPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 {
+    auto accent = IndustrialTheme::accentFilter();
     titleLabel.setText("DUAL FILTER", juce::dontSendNotification);
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    titleLabel.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
+    IndustrialTheme::styleTitle(titleLabel, accent);
     addAndMakeVisible(titleLabel);
 
     auto setupCombo = [&](juce::ComboBox& cb) {
-        cb.setJustificationType(juce::Justification::centred);
+        IndustrialTheme::styleCombo(cb, accent);
         addAndMakeVisible(cb);
     };
 
@@ -44,9 +45,7 @@ FilterPanel::FilterPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 
     auto makeLabel = [&](juce::Label& l, const juce::String& text) {
         l.setText(text, juce::dontSendNotification);
-        l.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
-        l.setFont(juce::Font(juce::FontOptions { 10.f }));
-        l.setJustificationType(juce::Justification::centred);
+        IndustrialTheme::styleLabel(l, accent, 10.f);
         addAndMakeVisible(l);
     };
 
@@ -66,16 +65,14 @@ void FilterPanel::addSlider(juce::Slider& s, const juce::String& paramId,
     s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 16);
     s.setTooltip(tip);
+    IndustrialTheme::styleSlider(s, IndustrialTheme::accentFilter());
     addAndMakeVisible(s);
     att = std::make_unique<Att>(apvts, paramId, s);
 }
 
 void FilterPanel::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colour(0xff141414));
-    g.fillRoundedRectangle(getLocalBounds().toFloat(), 6.f);
-    g.setColour(juce::Colour(0xff2a2a2a));
-    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 6.f, 1.f);
+    IndustrialTheme::paintPanel(g, getLocalBounds(), IndustrialTheme::accentFilter(), true);
 }
 
 void FilterPanel::resized()

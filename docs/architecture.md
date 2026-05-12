@@ -140,7 +140,7 @@ The editor is a `GLIESE710AudioProcessorEditor` (default 1200×780, resizable 90
 │  └─────────────────────────────────────────────────┘   │
 │                                                         │
 │  Master strip  (bottom 110 px)                          │
-│    MASTER label │ Vol │ Tune │ Pan │ A │ D │ S │ R      │
+│    MASTER label │ Vol │ Tune │ Oct │ Pan │ A │ D │ S │ R│
 └─────────────────────────────────────────────────────────┘
 ```
 

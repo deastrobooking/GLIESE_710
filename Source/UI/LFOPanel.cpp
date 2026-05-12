@@ -1,20 +1,19 @@
 #include "LFOPanel.h"
+#include "IndustrialTheme.h"
 
 static const juce::StringArray kShapes { "Sine","Triangle","Saw","RevSaw","Square","S&H","Smooth S&H" };
 static const juce::StringArray kSync   { "Free","1/32","1/16","1/8","1/4","1/2","1 Bar","2 Bars","4 Bars" };
 
 LFOPanel::LFOPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 {
+    auto panelAccent = IndustrialTheme::accentLFO(0);
     panelTitle.setText("LFOs", juce::dontSendNotification);
-    panelTitle.setColour(juce::Label::textColourId, juce::Colours::white);
-    panelTitle.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
+    IndustrialTheme::styleTitle(panelTitle, panelAccent);
     addAndMakeVisible(panelTitle);
 
     auto makeLabel = [&](juce::Label& l, const juce::String& text, juce::Component& parent) {
         l.setText(text, juce::dontSendNotification);
-        l.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
-        l.setFont(juce::Font(juce::FontOptions { 10.f }));
-        l.setJustificationType(juce::Justification::centred);
+        IndustrialTheme::styleLabel(l, panelAccent, 10.f);
         parent.addAndMakeVisible(l);
     };
 
@@ -22,34 +21,39 @@ LFOPanel::LFOPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
     {
         auto& lfo = lfos[(size_t)i];
         juce::String p = "lfo" + juce::String(i + 1) + "_";
+        auto accent = IndustrialTheme::accentLFO(i);
 
         lfo.titleLabel.setText("LFO " + juce::String(i + 1), juce::dontSendNotification);
-        lfo.titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-        lfo.titleLabel.setFont(juce::Font(juce::FontOptions { 11.f, juce::Font::bold }));
+        IndustrialTheme::styleTitle(lfo.titleLabel, accent, 11.f);
         lfo.titleLabel.setJustificationType(juce::Justification::centred);
         addAndMakeVisible(lfo.titleLabel);
 
         lfo.shapeBox.addItemList(kShapes, 1);
+        IndustrialTheme::styleCombo(lfo.shapeBox, accent);
         addAndMakeVisible(lfo.shapeBox);
         lfo.shapeAtt = std::make_unique<LFOControls::CAtt>(apvts, p + "shape", lfo.shapeBox);
 
         lfo.syncBox.addItemList(kSync, 1);
+        IndustrialTheme::styleCombo(lfo.syncBox, accent);
         addAndMakeVisible(lfo.syncBox);
         lfo.syncAtt = std::make_unique<LFOControls::CAtt>(apvts, p + "sync", lfo.syncBox);
 
         lfo.rateSlider.setSliderStyle(juce::Slider::LinearVertical);
         lfo.rateSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 44, 14);
         lfo.rateSlider.setTooltip("LFO " + juce::String(i + 1) + " Rate (Hz)");
+        IndustrialTheme::styleSlider(lfo.rateSlider, accent);
         addAndMakeVisible(lfo.rateSlider);
         lfo.rateAtt = std::make_unique<LFOControls::Att>(apvts, p + "rate", lfo.rateSlider);
 
         lfo.amountSlider.setSliderStyle(juce::Slider::LinearVertical);
         lfo.amountSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 44, 14);
         lfo.amountSlider.setTooltip("LFO " + juce::String(i + 1) + " Amount");
+        IndustrialTheme::styleSlider(lfo.amountSlider, accent);
         addAndMakeVisible(lfo.amountSlider);
         lfo.amtAtt = std::make_unique<LFOControls::Att>(apvts, p + "amount", lfo.amountSlider);
 
         lfo.retrigButton.setButtonText("RETRIG");
+        IndustrialTheme::styleButton(lfo.retrigButton, accent);
         addAndMakeVisible(lfo.retrigButton);
         lfo.retrigAtt = std::make_unique<LFOControls::BAtt>(apvts, p + "retrig", lfo.retrigButton);
 
@@ -62,16 +66,14 @@ LFOPanel::LFOPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 
 void LFOPanel::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colour(0xff141414));
-    g.fillRoundedRectangle(getLocalBounds().toFloat(), 6.f);
-    g.setColour(juce::Colour(0xff2a2a2a));
-    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 6.f, 1.f);
+    IndustrialTheme::paintPanel(g, getLocalBounds(), IndustrialTheme::accentLFO(0), true);
 
     // Vertical dividers between LFO columns
     int w = getWidth() - 12;
     for (int i = 1; i < 4; ++i)
     {
         int x = 6 + w * i / 4;
+        g.setColour(IndustrialTheme::accentLFO(i).withAlpha(0.35f));
         g.drawLine((float)x, 6.f, (float)x, (float)(getHeight() - 6), 1.f);
     }
 }
