@@ -1,5 +1,45 @@
 #include "OscPanel.h"
+#include <cmath>
 
+// ── VAWaveDisplay ─────────────────────────────────────────────────────────────
+// Shape indices match VA combo order: Sine=0 Saw=1 RevSaw=2 Square=3 Triangle=4 Pulse=5
+void VAWaveDisplay::paint(juce::Graphics& g)
+{
+    auto b = getLocalBounds().toFloat().reduced(2.f);
+    g.setColour(juce::Colour(0xff0a0c0e));
+    g.fillRoundedRectangle(b, 3.f);
+    g.setColour(accent.withAlpha(0.35f));
+    g.drawRoundedRectangle(b, 3.f, 1.f);
+
+    const int kPts = 128;
+    juce::Path wave;
+    float cx = b.getX(), cy = b.getCentreY(), w = b.getWidth(), h = b.getHeight() * 0.42f;
+
+    for (int i = 0; i <= kPts; ++i)
+    {
+        float t  = (float)i / kPts;
+        float ph = std::fmod(t * 2.f, 1.f);   // two cycles for visual interest
+        float v  = 0.f;
+        switch (shape)
+        {
+            case 0: v = std::sin(ph * juce::MathConstants<float>::twoPi); break;
+            case 1: v = 1.f - 2.f * ph;                                    break;
+            case 2: v = 2.f * ph - 1.f;                                    break;
+            case 3: v = ph < 0.5f ? 1.f : -1.f;                            break;
+            case 4: v = (ph < 0.5f) ? (4.f * ph - 1.f) : (3.f - 4.f * ph); break;
+            case 5: v = ph < 0.25f ? 1.f : -1.f;                           break;
+            default: break;
+        }
+        float x = cx + t * w;
+        float y = cy - v * h;
+        if (i == 0) wave.startNewSubPath(x, y); else wave.lineTo(x, y);
+    }
+
+    g.setColour(accent);
+    g.strokePath(wave, juce::PathStrokeType(1.5f));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id,
                    const juce::String& lbl)
     : apvts(a), oscId(id), label(lbl), accent(IndustrialTheme::accentForOsc(id))
@@ -59,7 +99,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     }
     else if (oscId.startsWith("va"))
     {
-        setupExtraSlider(extra1, pfx + "shape",  "Wave Shape Morph", extraAtt1);
+        setupExtraSlider(extra1, pfx + "shape",  "Wave Shape Morph (0=Sine 1=Saw 2=RevSaw 3=Sqr 4=Tri 5=Pulse)", extraAtt1);
         setupExtraSlider(extra2, pfx + "pw",     "Pulse Width",      extraAtt2);
         setupExtraSlider(extra3, pfx + "detune", "Unison Detune",    extraAtt3);
         setupExtraSlider(extra4, pfx + "unison", "Unison Voices",    extraAtt4);
@@ -67,6 +107,14 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         setupExtraSlider(extra6, pfx + "ring",   "Ring Modulation",  extraAtt6);
         setupExtraSlider(extra7, pfx + "fold",   "Wave Folding",     extraAtt7);
         numExtraSliders = 7;
+
+        waveDisplay = std::make_unique<VAWaveDisplay>(accent);
+        addAndMakeVisible(*waveDisplay);
+        waveDisplay->setShape(juce::roundToInt(extra1.getValue()));
+        extra1.onValueChange = [this] {
+            waveDisplay->setShape(juce::roundToInt(
+                juce::jlimit(extra1.getMinimum(), extra1.getMaximum(), extra1.getValue())));
+        };
     }
     else if (oscId == "wt")
     {
@@ -187,6 +235,13 @@ void OscPanel::resized()
     levelSlider .setBounds(portion(sr0, 0, 2));
     octaveSlider.setBounds(portion(sr0, 1, 2));
     area.removeFromTop(4);
+
+    // ── VA Waveform display ───────────────────────────────────────────────────
+    if (waveDisplay != nullptr)
+    {
+        waveDisplay->setBounds(area.removeFromTop(52));
+        area.removeFromTop(2);
+    }
 
     // ── Mode Combo Boxes ──────────────────────────────────────────────────────
     if (numModeBoxes > 0)

@@ -128,14 +128,19 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     IndustrialTheme::styleTitle(masterLabel, IndustrialTheme::accentMaster(), 13.f);
     addAndMakeVisible(masterLabel);
 
-    setupKnob(masterVolSlider,  "master_volume", "Master Volume", masterVolAtt, *this);
-    setupKnob(masterTuneSlider, "master_tune",   "Master Tune",   masterTuneAtt, *this);
-    setupKnob(masterOctaveSlider, "master_octave", "Master Octave", masterOctaveAtt, *this);
-    setupKnob(masterPanSlider,  "master_pan",    "Master Pan",    masterPanAtt, *this);
-    setupKnob(masterA,          "master_adsr_a", "Attack",        masterAAtt, *this);
-    setupKnob(masterD,          "master_adsr_d", "Decay",         masterDAtt, *this);
-    setupKnob(masterS,          "master_adsr_s", "Sustain",       masterSAtt, *this);
-    setupKnob(masterR,          "master_adsr_r", "Release",       masterRAtt, *this);
+    setupKnob(masterVolSlider,    "master_volume",      "Master Volume",       masterVolAtt,   *this);
+    setupKnob(masterTuneSlider,   "master_tune",        "Master Tune",         masterTuneAtt,  *this);
+    setupKnob(masterOctaveSlider, "master_octave",      "Master Octave",       masterOctaveAtt,*this);
+    setupKnob(masterPanSlider,    "master_pan",         "Master Pan",          masterPanAtt,   *this);
+    setupKnob(masterPortaSlider,  "master_portamento",  "Portamento Time",     masterPortaAtt, *this);
+    setupKnob(masterAgeSlider,    "master_age",         "Age / Bitcrusher",    masterAgeAtt,   *this);
+    setupKnob(masterFeedSlider,   "master_feedback",    "Output Feedback",     masterFeedAtt,  *this);
+    setupKnob(masterPBSlider,     "master_pb_range",    "Pitch Bend Range",    masterPBAtt,    *this);
+    setupKnob(masterMWSlider,     "master_mw_range",    "Mod Wheel Range",     masterMWAtt,    *this);
+    setupKnob(masterA,            "master_adsr_a",      "Attack",              masterAAtt,     *this);
+    setupKnob(masterD,            "master_adsr_d",      "Decay",               masterDAtt,     *this);
+    setupKnob(masterS,            "master_adsr_s",      "Sustain",             masterSAtt,     *this);
+    setupKnob(masterR,            "master_adsr_r",      "Release",             masterRAtt,     *this);
 
     // ── Label helpers ─────────────────────────────────────────────────────────
     auto makeSmallLabel = [&](juce::Label& l, const juce::String& text, juce::Component& parent) {
@@ -144,8 +149,10 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
         parent.addAndMakeVisible(l);
     };
 
-    const juce::String masterLabelTexts[] = { "VOL","TUNE","OCT","PAN","ATK","DEC","SUS","REL" };
-    for (int i = 0; i < 8; ++i)
+    const juce::String masterLabelTexts[] = {
+        "VOL","TUNE","OCT","PAN","PORT","AGE","FEED","PB","MW","ATK","DEC","SUS","REL"
+    };
+    for (int i = 0; i < 13; ++i)
         makeSmallLabel(masterLabels[(size_t)i], masterLabelTexts[i], *this);
 
     auto makeFMLabel = [&](juce::Label& l, const juce::String& text) {
@@ -226,16 +233,23 @@ void MainPanel::resized()
         knob.setBounds(masterKnobRow .removeFromLeft(w));
     };
 
-    positionMaster(masterLabels[0], masterVolSlider,  70);
-    positionMaster(masterLabels[1], masterTuneSlider, 70);
-    positionMaster(masterLabels[2], masterOctaveSlider, 70);
-    positionMaster(masterLabels[3], masterPanSlider,  70);
-    masterLabelRow.removeFromLeft(10);
-    masterKnobRow .removeFromLeft(10);
-    positionMaster(masterLabels[4], masterA, 70);
-    positionMaster(masterLabels[5], masterD, 70);
-    positionMaster(masterLabels[6], masterS, 70);
-    positionMaster(masterLabels[7], masterR, 70);
+    // Sound group: VOL TUNE OCT PAN PORT AGE FEED PB MW
+    positionMaster(masterLabels[0], masterVolSlider,    60);
+    positionMaster(masterLabels[1], masterTuneSlider,   60);
+    positionMaster(masterLabels[2], masterOctaveSlider, 60);
+    positionMaster(masterLabels[3], masterPanSlider,    60);
+    positionMaster(masterLabels[4], masterPortaSlider,  60);
+    positionMaster(masterLabels[5], masterAgeSlider,    60);
+    positionMaster(masterLabels[6], masterFeedSlider,   60);
+    positionMaster(masterLabels[7], masterPBSlider,     60);
+    positionMaster(masterLabels[8], masterMWSlider,     60);
+    masterLabelRow.removeFromLeft(8);
+    masterKnobRow .removeFromLeft(8);
+    // Amplitude ADSR group
+    positionMaster(masterLabels[9],  masterA, 60);
+    positionMaster(masterLabels[10], masterD, 60);
+    positionMaster(masterLabels[11], masterS, 60);
+    positionMaster(masterLabels[12], masterR, 60);
 
     tabs.setBounds(area);
 
@@ -332,7 +346,7 @@ void MainPanel::resized()
     if (effectsTab && filterPanel && modPanel && arpPanel && lfoPanel)
     {
         auto tabArea = effectsTab->getLocalBounds().reduced(6);
-        int filterH = 220;
+        int filterH = 240;
         filterPanel->setBounds(tabArea.removeFromTop(filterH).reduced(3));
         tabArea.removeFromTop(4);
 

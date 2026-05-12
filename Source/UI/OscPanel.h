@@ -2,6 +2,26 @@
 #include <JuceHeader.h>
 #include "IndustrialTheme.h"
 
+// Draws the current VA waveform shape — updated via setShape()
+class VAWaveDisplay : public juce::Component
+{
+public:
+    explicit VAWaveDisplay(juce::Colour accentColour) : accent(accentColour) {}
+
+    void setShape(int shapeIndex)
+    {
+        if (shape == shapeIndex) return;
+        shape = shapeIndex;
+        repaint();
+    }
+
+    void paint(juce::Graphics& g) override;
+
+private:
+    int          shape  = 0;
+    juce::Colour accent;
+};
+
 // Panel for one oscillator section (3D, FM, WT, or VA)
 class OscPanel : public juce::Component
 {
@@ -38,6 +58,9 @@ private:
 
     juce::ComboBox modeBoxA, modeBoxB;
     std::unique_ptr<CAtt> modeAttA, modeAttB;
+
+    // Waveform preview — only created for VA panels
+    std::unique_ptr<VAWaveDisplay> waveDisplay;
 
     juce::Slider extra1, extra2, extra3, extra4, extra5, extra6, extra7, extra8, extra9, extra10;
     std::unique_ptr<Att> extraAtt1, extraAtt2, extraAtt3, extraAtt4, extraAtt5,

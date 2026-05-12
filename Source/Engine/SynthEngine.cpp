@@ -32,6 +32,9 @@ void SynthEngine::reset()
 {
     for (auto& v : voices) v.reset();
     arp.reset();
+    feedbackL = feedbackR = 0.f;
+    ageSampleL = ageSampleR = 0.f;
+    ageCounter = 0;
 }
 
 void SynthEngine::setAPVTS(juce::AudioProcessorValueTreeState* a)
@@ -66,8 +69,61 @@ void SynthEngine::buildParamCache()
     arpParams.latch   = get("arp_latch");
     arpParams.built   = true;
 
+    fxParams.age      = get("master_age");
+    fxParams.feedback = get("master_feedback");
+    fxParams.built    = true;
+
     for (auto& v : voices)
         v.buildParamCache(*apvts);
+}
+
+void SynthEngine::processMasterEffects(juce::AudioBuffer<float>& buffer,
+                                        int startSample, int numSamples)
+{
+    if (numSamples <= 0) return;
+    if (!fxParams.built && apvts)
+        buildParamCache();
+
+    auto* L = buffer.getWritePointer(0, startSample);
+    auto* R = buffer.getWritePointer(1, startSample);
+
+    // ── Age / bitcrusher ──────────────────────────────────────────────────────
+    float age = pF(fxParams.age, 0.f);
+    if (age > 0.f)
+    {
+        int   srDiv  = 1 + (int)(age * 15.f);
+        float quant  = (float)(1 << (int)(16.f - age * 12.f));
+        float iquant = 1.f / quant;
+        for (int s = 0; s < numSamples; ++s)
+        {
+            if (ageCounter <= 0)
+            {
+                ageSampleL = std::round(L[s] * quant) * iquant;
+                ageSampleR = std::round(R[s] * quant) * iquant;
+                ageCounter = srDiv;
+            }
+            --ageCounter;
+            L[s] = ageSampleL;
+            R[s] = ageSampleR;
+        }
+    }
+
+    // ── Feedback loop ─────────────────────────────────────────────────────────
+    float fb = pF(fxParams.feedback, 0.f);
+    if (fb > 0.f)
+    {
+        for (int s = 0; s < numSamples; ++s)
+        {
+            L[s] += fb * feedbackL;
+            R[s] += fb * feedbackR;
+            feedbackL = juce::jlimit(-1.f, 1.f, L[s]);
+            feedbackR = juce::jlimit(-1.f, 1.f, R[s]);
+        }
+    }
+    else
+    {
+        feedbackL = feedbackR = 0.f;
+    }
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -250,10 +306,13 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
 
         arp.processBlock(renderMidi, segmentStart, blockEnd - segmentStart);
         renderTimedMidi(buffer, renderMidi, startSample, numSamples, true);
-        return;
+    }
+    else
+    {
+        renderTimedMidi(buffer, midiMessages, startSample, numSamples, true);
     }
 
-    renderTimedMidi(buffer, midiMessages, startSample, numSamples, true);
+    processMasterEffects(buffer, startSample, numSamples);
 }
 
 void SynthEngine::addWavetable(juce::String name, const float* samples, int numSamples)

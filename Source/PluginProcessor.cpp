@@ -59,6 +59,12 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("master_adsr_s", "Master Sustain",  0.0f,   1.0f,  0.8f);
     addEnvTime("master_adsr_r", "Master Release", 0.3f);
 
+    addFloat("master_portamento", "Portamento Time",  0.0f, 5.0f,  0.0f, 0.4f);
+    addFloat("master_age",        "Age",              0.0f, 1.0f,  0.0f);
+    addFloat("master_feedback",   "Feedback",         0.0f, 0.95f, 0.0f);
+    addFloat("master_pb_range",   "Pitch Bend Range", 0.0f, 24.0f, 2.0f);
+    addFloat("master_mw_range",   "Mod Wheel Range",  0.0f, 1.0f,  0.5f);
+
     // ── 3D Oscillator ─────────────────────────────────────────────────────────
     addInt  ("osc_3d_field",    "3D Field",    0, 9, 0);
     addInt  ("osc_3d_path",     "3D Path",     0, 4, 0);

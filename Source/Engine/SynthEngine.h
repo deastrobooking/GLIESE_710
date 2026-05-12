@@ -39,6 +39,22 @@ private:
     };
     ArpParamCache arpParams;
 
+    struct MasterFxCache
+    {
+        std::atomic<float>* age      = nullptr;
+        std::atomic<float>* feedback = nullptr;
+        bool built = false;
+    };
+    MasterFxCache fxParams;
+
+    // Age (bitcrusher) state
+    float ageSampleL = 0.f, ageSampleR = 0.f;
+    int   ageCounter = 0;
+    // Feedback state (block-delay feedback loop)
+    float feedbackL  = 0.f, feedbackR  = 0.f;
+
+    void processMasterEffects(juce::AudioBuffer<float>& buffer, int startSample, int numSamples);
+
     std::array<SynthVoice, kNumVoices> voices;
     Arpeggiator arp;
     juce::MidiBuffer arpMidi;

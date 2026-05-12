@@ -124,7 +124,11 @@ void SynthVoice::noteOn(int note, float vel)
     velocity = juce::jlimit(0.f, 1.f, vel);
     age      = 0;
 
-    float hz = midiToHz(note);
+    portaTargetHz = midiToHz(note);
+    if (portaHz < 1.f)
+        portaHz = portaTargetHz;  // first note — jump immediately, no glide
+
+    float hz = portaHz;           // syncParams will glide and apply pitch offsets
     osc3d.setFrequency(hz);
     fm.setNoteFrequency(hz);
     wtOsc.setFrequency(hz);
@@ -172,10 +176,13 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         env.r = get(pfx + "adsr_r");
     };
 
-    pc.master.volume = get("master_volume");
-    pc.master.tune   = get("master_tune");
-    pc.master.octave = get("master_octave");
-    pc.master.pan    = get("master_pan");
+    pc.master.volume     = get("master_volume");
+    pc.master.tune       = get("master_tune");
+    pc.master.octave     = get("master_octave");
+    pc.master.pan        = get("master_pan");
+    pc.master.portamento = get("master_portamento");
+    pc.master.pbRange    = get("master_pb_range");
+    pc.master.mwRange    = get("master_mw_range");
     cacheEnv(pc.master.env, "master_");
 
     pc.osc3d.field     = get("osc_3d_field");
@@ -314,13 +321,30 @@ void SynthVoice::syncParams()
     p3d.drive     = juce::jlimit(0.25f, 4.0f, pF(c3d.drive, 1.f) + modDests.dests[(int)ModDest::Osc3D_Drive]);
     osc3d.setParams(p3d);
 
-    // Apply global pitch offsets independently: octave, fine tune, then modulation.
-    float pitchMod      = modDests.dests[(int)ModDest::OscPitch_All];
-    float tuneSemi      = pF(pc.master.tune) / 100.f;  // cents → semitones
-    float octaveSemi    = (float)pI(pc.master.octave) * 12.f;
-    float totalPitch    = pitchMod * 12.f + tuneSemi + octaveSemi;
+    // ── Portamento glide ──────────────────────────────────────────────────
+    float portaTime = pF(pc.master.portamento, 0.f);
+    if (portaTime > 0.f)
+    {
+        float coef = std::exp(-1.f / (portaTime * (float)sampleRate));
+        portaHz = portaTargetHz + coef * (portaHz - portaTargetHz);
+    }
+    else
+    {
+        portaHz = portaTargetHz;
+    }
 
-    float hz = midiToHz(midiNote, totalPitch) * std::pow(2.f, pF(c3d.octave));
+    // ── Global pitch offsets (tune, octave, mod matrix, pitch bend range) ─
+    float pitchMod   = modDests.dests[(int)ModDest::OscPitch_All];
+    float tuneSemi   = pF(pc.master.tune) / 100.f;  // cents → semitones
+    float octaveSemi = (float)pI(pc.master.octave) * 12.f;
+    float pbRangeSemis = pF(pc.master.pbRange, 2.f);
+    float pbEffect   = midiCCs[(int)ModSource::PitchBend] * pbRangeSemis;
+    float totalPitch = pitchMod * 12.f + tuneSemi + octaveSemi + pbEffect;
+
+    // pitchedHz = portamento-glided base freq × pitch-mod multiplier
+    float pitchedHz  = portaHz * std::pow(2.f, totalPitch / 12.f);
+
+    float hz = pitchedHz * std::pow(2.f, pF(c3d.octave));
     osc3d.setFrequency(hz);
 
     envBank.get(ENV_3D).setParams(envParams(c3d.env, 0.01f, 0.2f, 1.f, 0.3f));
@@ -328,7 +352,7 @@ void SynthVoice::syncParams()
     // ── FM Engine ─────────────────────────────────────────────────────────
     const auto& cfm = pc.fm;
     fm.setAlgorithm(pI(cfm.algorithm));
-    hz = midiToHz(midiNote, totalPitch) * std::pow(2.f, pF(cfm.octave));
+    hz = pitchedHz * std::pow(2.f, pF(cfm.octave));
     fm.setNoteFrequency(hz);
     fm.setVelocity(velocity);
     fm.setMidiNote(midiNote);
@@ -363,7 +387,7 @@ void SynthVoice::syncParams()
 
     // ── Wavetable ─────────────────────────────────────────────────────────
     const auto& cwt = pc.wt;
-    float wtHz = midiToHz(midiNote, totalPitch) * std::pow(2.f, pF(cwt.octave));
+    float wtHz = pitchedHz * std::pow(2.f, pF(cwt.octave));
     wtOsc.setFrequency(wtHz);
     wtOsc.setTablePosition(pI(cwt.table), pF(cwt.pos) + modDests.dests[(int)ModDest::WT_Position]);
     envBank.get(ENV_WT).setParams(envParams(cwt.env, 0.01f, 0.2f, 1.f, 0.3f));
@@ -372,7 +396,7 @@ void SynthVoice::syncParams()
     for (int i = 0; i < kNumVAOscs; ++i)
     {
         const auto& cv = pc.va[(size_t)i];
-        float vaHz = midiToHz(midiNote, totalPitch) * std::pow(2.f, pF(cv.octave));
+        float vaHz = pitchedHz * std::pow(2.f, pF(cv.octave));
         vaOscs[(size_t)i].setFrequency(vaHz);
 
         VAOscillator::Params vap;
@@ -448,7 +472,8 @@ void SynthVoice::buildModSources()
 
     modSources.sources[(int)ModSource::Velocity]     = velocity;
     modSources.sources[(int)ModSource::Aftertouch]   = midiCCs[(int)ModSource::Aftertouch];
-    modSources.sources[(int)ModSource::ModWheel]     = midiCCs[(int)ModSource::ModWheel];
+    modSources.sources[(int)ModSource::ModWheel]     = midiCCs[(int)ModSource::ModWheel]
+                                                       * pF(pc.master.mwRange, 0.5f);
     modSources.sources[(int)ModSource::PitchBend]    = midiCCs[(int)ModSource::PitchBend];
     modSources.sources[(int)ModSource::CC74]         = midiCCs[(int)ModSource::CC74];
     modSources.sources[(int)ModSource::ChanPressure] = midiCCs[(int)ModSource::ChanPressure];

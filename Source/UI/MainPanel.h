@@ -30,9 +30,12 @@ private:
 
     // Master controls
     juce::Slider    masterVolSlider, masterTuneSlider, masterOctaveSlider, masterPanSlider;
+    juce::Slider    masterPortaSlider, masterAgeSlider, masterFeedSlider;
+    juce::Slider    masterPBSlider, masterMWSlider;
     juce::Slider    masterA, masterD, masterS, masterR;
     juce::Label     masterLabel;
-    std::array<juce::Label, 8> masterLabels;   // VOL TUNE OCT PAN ATK DEC SUS REL
+    // VOL TUNE OCT PAN PORT AGE FEED PB MW | ATK DEC SUS REL
+    std::array<juce::Label, 13> masterLabels;
 
     // FM controls
     juce::ComboBox  fmAlgorithmBox;
@@ -59,6 +62,8 @@ private:
     juce::Label fmEnableLabel;
 
     std::unique_ptr<Att> masterVolAtt, masterTuneAtt, masterOctaveAtt, masterPanAtt;
+    std::unique_ptr<Att> masterPortaAtt, masterAgeAtt, masterFeedAtt;
+    std::unique_ptr<Att> masterPBAtt, masterMWAtt;
     std::unique_ptr<Att> masterAAtt, masterDAtt, masterSAtt, masterRAtt;
     std::unique_ptr<CAtt> fmAlgorithmAtt;
     std::unique_ptr<Att> fmLevelAtt, fmOctaveAtt;

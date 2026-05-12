@@ -42,6 +42,10 @@ private:
     float  velocity = 1.f;
     int    age      = 0;
 
+    // Portamento state: portaHz glides toward portaTargetHz each block
+    float  portaHz       = 0.f;
+    float  portaTargetHz = 0.f;
+
     // MIDI mod source values set from handleMidi — read in buildModSources()
     float midiCCs[(int)ModSource::NumSources] = {};
 
@@ -72,10 +76,13 @@ private:
             std::atomic<float>* r = nullptr;
         };
         struct MasterPtrs {
-            std::atomic<float>* volume = nullptr;
-            std::atomic<float>* tune   = nullptr;
-            std::atomic<float>* octave = nullptr;
-            std::atomic<float>* pan    = nullptr;
+            std::atomic<float>* volume      = nullptr;
+            std::atomic<float>* tune        = nullptr;
+            std::atomic<float>* octave      = nullptr;
+            std::atomic<float>* pan         = nullptr;
+            std::atomic<float>* portamento  = nullptr;
+            std::atomic<float>* pbRange     = nullptr;
+            std::atomic<float>* mwRange     = nullptr;
             EnvPtrs env;
         };
         struct Osc3DPtrs {
