@@ -62,7 +62,7 @@ open build/GLIESE_710_artefacts/Release/Standalone/GLIESE\ 710.app
 ```bash
 cmake -B build -DGLIESE_BUILD_TESTS=ON
 cmake --build build
-cd build && ctest --output-on-failure
+ctest --test-dir build --output-on-failure
 ```
 
 ---
@@ -73,7 +73,7 @@ cd build && ctest --output-on-failure
 
 | Engine           | Description |
 |------------------|-------------|
-| **3D Function**  | 10 mathematical field types, 5 path types, domain warping, chaos injection, field morphing |
+| **3D Function**  | 10 mathematical field types, 5 path types, domain warping, coordinate folding, field-frequency control, chaos injection, field morphing |
 | **FM (10-op)**   | 10 operators, 40 algorithms (DX7-compatible 0–31 + 8 extended), per-operator ADSR + feedback |
 | **Wavetable**    | 2048-sample tables, 10 mipmap levels, Catmull-Rom interpolation, table morphing |
 | **Virtual Analog** | PolyBLEP saw/square/triangle/pulse, 8-voice unison with stereo spread |
@@ -105,6 +105,17 @@ RandomWalk    damped Brownian motion (chaos-scaled)
 PhysicsOrbit  elliptical orbit with eccentricity
 ```
 
+Key 3D oscillator controls:
+
+```
+Field Freq   harmonic-density multiplier inside the scalar field
+Z Ratio      z-axis path-rate multiplier for stable/evolving motion
+Warp         bends coordinates before field evaluation
+Fold         mirrors coordinates back into the central field region
+Drive        soft-saturation amount after field evaluation
+Morph        crossfades to the next field
+```
+
 ### Dual Filter
 
 12 modes per filter slot, two slots in series or parallel:
@@ -123,7 +134,7 @@ AM+  AM- (ring modulation variants)
 
 **25 sources** including LFO1–4, all 7 envelopes, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, 8 macro knobs.
 
-**46 destinations** including all oscillator parameters, FM operator levels and ratios, both filter cutoffs/resonances/drives, LFO rates and amounts, master volume/pan, arp gate/rate.
+**50 destinations** including 3D oscillator math controls, FM operator levels and ratios, both filter cutoffs/resonances/drives, LFO rates and amounts, master volume/pan, arp gate/rate.
 
 ### Arpeggiator
 
@@ -172,7 +183,7 @@ GLIESE_710/
 ## Roadmap
 
 - [ ] FFT-based mipmap generation (WavetableOsc)
-- [ ] 2× oversampling for 3D oscillator (`juce::dsp::Oversampling`)
+- [ ] 2×/4× quality modes for nonlinear 3D oscillator patches (`juce::dsp::Oversampling`)
 - [ ] FM algorithm graph visualization
 - [ ] 3D field visualizer panel (OpenGL)
 - [ ] User wavetable import (drag-and-drop `.wav`)

@@ -144,6 +144,27 @@ TEST_CASE("Osc3D outputs bounded signal", "[osc3d]")
             }
         }
     }
+
+    SECTION("math shaping controls remain bounded")
+    {
+        Osc3D::Params p;
+        p.fieldFreq = 12.f;
+        p.zRatio    = 3.5f;
+        p.foldAmt   = 1.f;
+        p.drive     = 4.f;
+        p.warpAmt   = 1.5f;
+        p.chaos     = 0.75f;
+        osc.setParams(p);
+        osc.reset();
+
+        for (int i = 0; i < 4800; ++i)
+        {
+            float s = osc.processSample();
+            REQUIRE(std::isfinite(s));
+            REQUIRE(s >= -1.01f);
+            REQUIRE(s <=  1.01f);
+        }
+    }
 }
 
 //──────────────────────────────────────────────────────────────────────────────

@@ -37,7 +37,7 @@ public:
     void processBlock(int numSamples);
 
     // Get current value of LFO i (call after processBlock)
-    float getValue(int i) const { return values[i]; }
+    float getValue(int i) const { return values[(size_t) juce::jlimit(0, kNumLFOs - 1, i)]; }
 
 private:
     double sr  = 48000.0;

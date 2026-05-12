@@ -17,6 +17,7 @@ phase     += frequency / sampleRate
 
 - **Coarse ratio**: integer 0–31 (0 = 0.5×, 1 = 1×, 2 = 2×, ...)
 - **Fine**: ±1 semitone continuous offset
+- **Ratio offset**: additive modulation amount applied before fine tune, currently exposed for operators 0–4 in the modulation matrix
 - **Feedback**: operator feeds its own previous output back into its phase (`feedback × π` radians)
 - **Fixed freq mode**: operator uses a fixed Hz rather than tracking the note — useful for noise-like tones or additive constant partials
 
@@ -74,16 +75,22 @@ Op0 ⟷ Op1 → OUTPUT (both are carriers and modulate each other)
 
 ## Processing Order
 
-FM algorithms can contain feedback loops (cross-FM, self-feedback). A strict topological sort is not always possible. The engine uses a **two-pass approach**:
+FM algorithms can contain feedback loops (cross-FM, self-feedback), so a strict topological sort is not always possible. The engine processes each operator once per output sample, walking from high operator indices down to low indices:
 
 ```
-Pass 1: Seed all operators with modInput = 0
-        → get approximate output values in opOut[]
-Pass 2: Compute modInputs from pass-1 outputs
-        → final operator outputs
+opOut = lastOutputs
+
+for op = 9 down to 0:
+    modInput = sum(opOut[modulator] × π)
+    opOut[op] = operators[op].processSample(modInput)
+
+lastOutputs = opOut
+output = average(carrier outputs)
 ```
 
-This one-iteration approach is standard for real-time FM and matches Yamaha DX7 behavior. For cross-FM pairs, one sample of latency is inherent and musically expected.
+This lets simple downward chains use same-sample modulation while feedback and cross-FM paths naturally use the previous sample's `lastOutputs`. Each operator phase is advanced exactly once per audio sample, which keeps pitch and envelopes stable.
+
+Operator envelopes are triggered by `FMAlgorithm::noteOn()` and released by `FMAlgorithm::noteOff()` from the voice, so FM notes now follow the same lifecycle as the other oscillator engines.
 
 ## Per-Operator Envelopes
 
@@ -107,6 +114,8 @@ Operator envelope parameters: `op{N}_adsr_{a,d,s,r}` where N is 0–9.
 | `op{N}_feedback` | 0.0–1.0 | Self-feedback depth |
 | `op{N}_fixed` | bool | Fixed frequency mode |
 | `op{N}_adsr_{a,d,s,r}` | — | Operator envelope |
+
+The modulation matrix can target `FM_Op0_Ratio` through `FM_Op4_Ratio`. These destinations add to the operator ratio before fine tuning, which is useful for controlled ratio bends and evolving inharmonic tones.
 
 ## Adding a Custom Algorithm
 

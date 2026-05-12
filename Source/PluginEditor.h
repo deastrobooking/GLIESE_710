@@ -14,8 +14,6 @@ public:
     void resized() override;
 
 private:
-    GLIESE710AudioProcessor& processor;
-
     MainPanel    mainPanel;
     PresetBrowser presetBrowser;
 

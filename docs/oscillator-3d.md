@@ -13,10 +13,11 @@ The 3D oscillator instead moves a point through a 3D mathematical field and read
 ```
 (x, y, z) = Path(phase, params)
 (x, y, z) = Warp(x, y, z, warpAmount)
-sample     = tanh( Field(x, y, z) )
+(x, y, z) = Fold(x, y, z, foldAmount)
+sample     = tanh( Field(x, y, z, fieldFrequency) * drive )
 ```
 
-The **path** determines how the point moves — its speed equals the oscillator pitch. The **field** determines the timbre at each position. **Warping** distorts the coordinate space before sampling, adding texture and movement.
+The **path** determines how the point moves; its phase speed equals the oscillator pitch. The **field** determines the timbre at each position. **Field frequency** changes harmonic density without changing note pitch. **Warping** bends the coordinate space, **folding** mirrors it back into a bounded region, and **drive** controls the final soft saturation.
 
 ## DSP Pipeline (per sample)
 
@@ -26,8 +27,9 @@ t      = phase × 2π
 
 p      = computePath(t)       // → Vec3
 p      = warpCoordinates(p)   // domain distortion
+p      = foldCoordinates(p)   // optional coordinate reflection
 s      = blend(p)             // field A + morph × (field B - field A)
-output = tanh(s)              // soft clip to ±1
+output = tanh(s × drive)      // soft clip to ±1
 ```
 
 ## Field Types
@@ -36,19 +38,19 @@ All fields are evaluated at the warped coordinate `(x, y, z)`.
 
 ### SinSumXYZ
 ```
-sin(4x) + cos(3y) + sin(5z)
+sin(4xF) + cos(3yF) + sin(5zF)
 ```
-Rich harmonic content. Smooth and musical. Good starting point.
+Rich harmonic content. Smooth and musical. Good starting point. `F` is `osc_3d_field_freq`, a brightness/harmonic-density multiplier.
 
 ### SinProduct
 ```
-sin(x·y·2) + cos(3z)
+sin(x·y·2F) + cos(3zF)
 ```
 Cross-modulation between axes creates FM-like sidebands.
 
 ### SphericalRipple
 ```
-sin(6r) / r     where r = √(x²+y²+z²)
+sin(6rF) / r     where r = sqrt(x*x + y*y + z*z)
 ```
 Concentric shells of sound. Strong fundamental at low radius, overtones decay with distance. Creates metallic, bell-like tones.
 
@@ -56,14 +58,14 @@ Concentric shells of sound. Strong fundamental at low radius, overtones decay wi
 ```
 dist = √(x²+y²) - 0.7
 d    = √(dist² + z²) - 0.3
-sin(d × 4π)
+sin(d × 4πF)
 ```
 The oscillator scans the surface of a torus. Produces two strong harmonics with ring-modulation-like interaction.
 
 ### VortexField
 ```
 v = (y-z, z-x, x-y)   ← curl-like operator
-sin(vx×2) + cos(vy×3)
+sin(vx×2F) + cos(vy×3F)
 ```
 Chaotic but structured. Sounds like FM with slow beating.
 
@@ -103,26 +105,26 @@ Chebyshev polynomials of the 4th, 5th, and 6th order. Creates predictable harmon
 
 ### Circle
 ```
-x = radius × cos(t)
-y = radius × sin(t)
-z = depth × sin(t/2)
+x = radius * cos(t)
+y = radius * sin(t)
+z = depth * sin(t * 0.5 * zRatio)
 ```
 The baseline. Produces a stable orbit. Timbre is determined purely by which region of the field is traversed.
 
 ### Spiral
 ```
-r = 0.5 + 0.5 × sin(t/4)
-x = r × radius × cos(t)
-y = r × radius × sin(t)
-z = depth × fract(t/2π)
+r = 0.5 + 0.5 * sin(t/4)
+x = r * radius * cos(t)
+y = r * radius * sin(t)
+z = depth * (fract(t * zRatio / 2π) - 0.5)
 ```
 The orbit expands and contracts. As `r` changes, the oscillator scans a ring of the field rather than a fixed circle.
 
 ### Lissajous
 ```
-x = radius × cos(3t + π/2)
-y = radius × sin(2t)
-z = depth × sin(5t)
+x = radius * cos(3t + π/2)
+y = radius * sin(2t)
+z = depth * sin(5t * zRatio)
 ```
 3:2:5 ratio Lissajous figure. Creates a complex closed curve that self-intersects, producing beating and subharmonics.
 
@@ -137,10 +139,10 @@ Brownian motion constrained near the origin. The `chaos` parameter controls velo
 
 ### PhysicsOrbit
 ```
-r = radius × (1 - ecc × cos(t))   where ecc = 0.3 × chaos
-x = r × cos(t)
-y = r × sin(t)
-z = depth × sin(2t)
+r = radius * (1 - ecc * cos(t))   where ecc = 0.3 * chaos
+x = r * cos(t)
+y = r * sin(t)
+z = depth * sin(2t * zRatio)
 ```
 Elliptical orbit. Higher `chaos` increases eccentricity — the point swings closer and further from the field center each cycle, causing amplitude modulation-like effects.
 
@@ -156,6 +158,10 @@ Elliptical orbit. Higher `chaos` increases eccentricity — the point swings clo
 | `osc_3d_rotation` | 0.0–1.0 | Rotates the orbit in XY plane (normalized 0–360°) |
 | `osc_3d_chaos` | 0.0–1.0 | Noise injected into path coordinates |
 | `osc_3d_morph` | 0.0–1.0 | Crossfades to the next field type |
+| `osc_3d_field_freq` | 0.25–16.0 | Harmonic-density multiplier inside field formulas |
+| `osc_3d_z_ratio` | 0.25–4.0 | Multiplies the z-axis path rate while preserving note pitch |
+| `osc_3d_fold` | 0.0–1.0 | Blends warped coordinates toward mirrored/folded coordinates |
+| `osc_3d_drive` | 0.25–4.0 | Multiplies raw field output before `tanh` |
 | `osc_3d_level` | 0.0–1.0 | Output level |
 | `osc_3d_octave` | −3–+3 | Octave transpose |
 | `osc_3d_adsr_{a,d,s,r}` | — | Per-oscillator amplitude envelope |
@@ -172,6 +178,33 @@ p.z += warpAmt × sin(p.x × 4.0 + p.y × 0.8)
 
 This is the same technique used in procedural graphics to make marble, clouds, and terrain. In audio, it folds the field into itself — low warp adds subtle texture, high warp creates dense overtones and instability.
 
+## Coordinate Folding
+
+After warping, `osc_3d_fold` can mirror each coordinate back into the `[-1, 1]` region:
+
+```cpp
+folded = foldCoordinate(p)
+p = mix(p, folded, foldAmount)
+```
+
+At low values this adds wavefolder-like edge and motion. At high values it creates mirrored regions in the 3D field, especially audible when `radius`, `depth`, or `field_freq` push the scan path outside the central region.
+
+## Field Frequency Vs Pitch
+
+Pitch comes from phase speed:
+
+```cpp
+phase += frequency / sampleRate;
+```
+
+`osc_3d_field_freq` does not change phase speed. It multiplies the field's internal terms:
+
+```cpp
+sin(x * 4 * fieldFreq) + cos(y * 3 * fieldFreq) + sin(z * 5 * fieldFreq)
+```
+
+Use it like a brightness or harmonic-density control. High values are intentionally more aggressive and should eventually pair with oscillator oversampling.
+
 ## Morph
 
 `morphT` (0–1) linearly crossfades between the current field and the next one in the enum sequence:
@@ -185,9 +218,9 @@ output = fieldA_value + morphT × (fieldB_value - fieldA_value)
 
 Automating `morph` allows smooth timbral evolution between any two adjacent fields.
 
-## Anti-aliasing (Phase 6)
+## Anti-Aliasing
 
-The 3D oscillator is inherently non-bandlimited — the field functions can produce arbitrarily high harmonics. Phase 6 will add 2× oversampling via `juce::dsp::Oversampling` after the tanh stage. This halves the aliasing floor at the cost of 2× CPU per voice.
+The 3D oscillator is inherently non-bandlimited. High `field_freq`, coordinate folding, heavy drive, noise fields, and fast warp can all generate high harmonics. Oversampling remains planned for a quality mode; until then, patches should keep extreme settings lower for cleaner pitched sounds.
 
 ## Extending the Field Library
 

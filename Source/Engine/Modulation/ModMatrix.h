@@ -1,6 +1,7 @@
 #pragma once
 #include "ModSource.h"
 #include "ModDest.h"
+#include <algorithm>
 #include <array>
 
 struct ModSlot
@@ -23,7 +24,7 @@ public:
     static constexpr int kNumSlots = 32;
 
     void setSlot(int index, const ModSlot& slot);
-    const ModSlot& getSlot(int index) const { return slots[index]; }
+    const ModSlot& getSlot(int index) const { return slots[(size_t) std::clamp(index, 0, kNumSlots - 1)]; }
 
     // Accumulate all mod destinations from source values
     void process(const ModValues& sourceValues, ModValues& destValues) const;

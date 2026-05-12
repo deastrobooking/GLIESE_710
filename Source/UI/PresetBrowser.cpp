@@ -4,7 +4,7 @@ PresetBrowser::PresetBrowser(PresetManager& pm) : presetManager(pm)
 {
     nameLabel.setText("GLIESE 710", juce::dontSendNotification);
     nameLabel.setColour(juce::Label::textColourId, juce::Colour(0xff88aaff));
-    nameLabel.setFont(juce::Font(16.f, juce::Font::bold));
+    nameLabel.setFont(juce::Font(juce::FontOptions { 16.f, juce::Font::bold }));
     addAndMakeVisible(nameLabel);
 
     addAndMakeVisible(prevButton);

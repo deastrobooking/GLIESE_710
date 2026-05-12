@@ -2,7 +2,7 @@
 
 ## Architecture
 
-Two independent filter slots (**A** and **B**) with selectable routing:
+Two independent filter slots (**A** and **B**) with selectable routing. Each slot keeps separate left/right DSP state, so stereo input is filtered without cross-feeding channel history.
 
 ```
 Input

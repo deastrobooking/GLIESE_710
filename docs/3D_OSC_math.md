@@ -1456,4 +1456,175 @@ F = scalar field
 shape = normalization/saturation/folding
 ```
 
+---
 
+# 31. How GLIESE 710 Implements This
+
+The current implementation lives in:
+
+```text
+Source/Engine/Oscillators/Osc3D.h
+Source/Engine/Oscillators/Osc3D.cpp
+Source/Engine/SynthVoice.cpp
+Source/UI/OscPanel.cpp
+```
+
+The per-sample signal path is now:
+
+```cpp
+Vec3 p = computePath(phase * twoPi);
+p = warpCoordinates(p);
+p = foldCoordinates(p);
+float raw = blend(p);
+float sample = tanh(raw * drive);
+```
+
+So the math guide maps to the synth like this:
+
+```text
+pitch              = phase increment set by MIDI note + octave + pitch modulation
+path               = osc_3d_path
+field              = osc_3d_field
+radius             = osc_3d_radius
+z depth            = osc_3d_depth
+field frequency    = osc_3d_field_freq
+z movement ratio   = osc_3d_z_ratio
+coordinate warp    = osc_3d_warp
+coordinate fold    = osc_3d_fold
+output shaping     = osc_3d_drive
+field blend        = osc_3d_morph
+```
+
+The important pitch-stability decision is that `osc_3d_field_freq` does not advance phase. It only multiplies terms inside the scalar field:
+
+```cpp
+sin(x * 4 * fieldFreq)
+cos(y * 3 * fieldFreq)
+sin(z * 5 * fieldFreq)
+```
+
+That means a 440 Hz note stays a 440 Hz note while the field becomes denser, brighter, or more metallic.
+
+## Implemented Field Examples
+
+GLIESE currently exposes ten scalar fields:
+
+```text
+SinSumXYZ       sin(4xF) + cos(3yF) + sin(5zF)
+SinProduct      sin(x*y*2F) + cos(3zF)
+SphericalRipple sin(6rF) / r
+Torus           sin(torusDistance * 4πF)
+VortexField     sin((y-z)2F) + cos((z-x)3F)
+TurbulenceNoise trig-hash value noise
+LorenzAttractor sin(distanceFromLorenzCenter * 0.5F)
+MagneticDipole  dipole magnitude scaled by sqrt(F)
+FoldedSpace     repeated abs fold, then sine/cosine field
+ChebyshevMorph  T4(x) + T5(y) + T6(z)
+```
+
+`F` is `osc_3d_field_freq`. For pitched patches, values around `0.5` to `4.0` tend to stay controlled. Higher values are useful for sharp digital tones and should eventually be paired with oversampling.
+
+## Implemented Path Examples
+
+The active paths are:
+
+```text
+Circle        x = r cos(t), y = r sin(t), z = d sin(0.5t * zRatio)
+Spiral        radius breathes while z scans a wrapped ramp
+Lissajous     x:y:z ratios of 3:2:(5 * zRatio)
+RandomWalk    damped noise motion, bounded by radius/depth
+PhysicsOrbit  elliptical orbit with chaos-controlled eccentricity
+```
+
+`osc_3d_z_ratio` changes how quickly the z-axis evolves relative to the main phase. Integer-ish values are best for stable repeating waveforms; fractional values create longer evolving cycles.
+
+## Coordinate Folding In The Synth
+
+The coordinate fold is not the same as clipping the final signal. It mirrors space before the field is sampled:
+
+```cpp
+folded = foldCoordinate(p);
+p = mix(p, folded, osc_3d_fold);
+```
+
+This makes the oscillator revisit mirrored regions of the same field. It is especially audible with larger `radius`, larger `depth`, high `fieldFreq`, or the `FoldedSpace` field.
+
+## Patch Examples
+
+Stable bell:
+
+```text
+osc_3d_field      = SphericalRipple
+osc_3d_path       = Circle
+osc_3d_radius     = 1.2
+osc_3d_depth      = 0.7
+osc_3d_field_freq = 2.5
+osc_3d_z_ratio    = 1.0
+osc_3d_fold       = 0.0
+osc_3d_drive      = 1.2
+```
+
+Digital folded lead:
+
+```text
+osc_3d_field      = SinProduct
+osc_3d_path       = Lissajous
+osc_3d_radius     = 1.0
+osc_3d_depth      = 1.0
+osc_3d_field_freq = 4.0
+osc_3d_z_ratio    = 2.0
+osc_3d_warp       = 0.35
+osc_3d_fold       = 0.45
+osc_3d_drive      = 2.0
+```
+
+Organic drift texture:
+
+```text
+osc_3d_field      = TurbulenceNoise
+osc_3d_path       = RandomWalk
+osc_3d_radius     = 1.5
+osc_3d_depth      = 1.2
+osc_3d_field_freq = 1.5
+osc_3d_chaos      = 0.30
+osc_3d_warp       = 0.50
+osc_3d_fold       = 0.10
+osc_3d_drive      = 1.0
+```
+
+Chebyshev harmonic scan:
+
+```text
+osc_3d_field      = ChebyshevMorph
+osc_3d_path       = Circle
+osc_3d_radius     = 0.8
+osc_3d_depth      = 0.8
+osc_3d_field_freq = 1.0
+osc_3d_morph      = 0.25
+osc_3d_z_ratio    = 1.0
+osc_3d_drive      = 1.4
+```
+
+## Modulation Examples
+
+The modulation matrix can now target the new math controls directly:
+
+```text
+LFO2       → Osc3D_FieldFreq  amount +0.50  bipolar on
+Aftertouch → Osc3D_Fold       amount +0.35  bipolar off
+Aftertouch → Osc3D_Drive      amount +0.60  bipolar off
+Macro1     → Osc3D_ZRatio     amount +0.75  bipolar off
+```
+
+Good musical uses:
+
+```text
+slow LFO on FieldFreq   = evolving brightness without pitch bend
+velocity on Drive       = harder strikes become more saturated
+aftertouch on Fold      = pressure adds digital edge
+macro on ZRatio         = moves between stable and evolving 3D cycles
+```
+
+## Deferred Ideas
+
+The guide discusses vector-field motion, attractor paths, harmonic locking, and oversampling. The current synth implements the stable core first: scalar fields, repeatable paths, z ratio, field frequency, coordinate warp/fold, morph, and drive. Full attractor-driven motion and quality-mode oversampling remain future improvements because they have a larger impact on pitch stability and CPU cost.

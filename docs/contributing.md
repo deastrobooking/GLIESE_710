@@ -82,7 +82,8 @@ Parameter IDs are immutable after shipping — changing an ID breaks saved prese
 
 Add tests to [Tests/EngineTests.cpp](../Tests/EngineTests.cpp). Run with `ctest` or directly:
 ```bash
-./build/Tests/GLIESE_Tests
+ctest --test-dir build --output-on-failure
+./build/GLIESE_Tests_artefacts/GLIESE_Tests
 ```
 
 ## Debugging Tips

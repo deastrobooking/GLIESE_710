@@ -3,23 +3,17 @@
 
 static bool sourceIsNaturallyBipolar(ModSource source)
 {
-    switch (source)
-    {
-        case ModSource::LFO1:
-        case ModSource::LFO2:
-        case ModSource::LFO3:
-        case ModSource::LFO4:
-        case ModSource::PitchBend:
-            return true;
-        default:
-            return false;
-    }
+    return source == ModSource::LFO1
+        || source == ModSource::LFO2
+        || source == ModSource::LFO3
+        || source == ModSource::LFO4
+        || source == ModSource::PitchBend;
 }
 
 void ModMatrix::setSlot(int index, const ModSlot& slot)
 {
     jassert(index >= 0 && index < kNumSlots);
-    slots[index] = slot;
+    slots[(size_t) juce::jlimit(0, kNumSlots - 1, index)] = slot;
 }
 
 void ModMatrix::clear()

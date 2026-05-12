@@ -68,7 +68,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     // ── Master controls ───────────────────────────────────────────────────────
     masterLabel.setText("MASTER", juce::dontSendNotification);
     masterLabel.setColour(juce::Label::textColourId, juce::Colours::lightcyan);
-    masterLabel.setFont(juce::Font(13.f, juce::Font::bold));
+    masterLabel.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
     addAndMakeVisible(masterLabel);
 
     setupKnob(masterVolSlider,  "master_volume", "Master Volume", masterVolAtt, *this);

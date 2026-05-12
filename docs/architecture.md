@@ -6,7 +6,7 @@
 MIDI Input
     │
     ▼
-Arpeggiator (optional)
+Sample-accurate MIDI / Arpeggiator scheduler
     │
     ▼
 SynthEngine  (voice pool — 16 voices, oldest-note stealing)
@@ -16,7 +16,7 @@ SynthEngine  (voice pool — 16 voices, oldest-note stealing)
     │       ├── [LFO Engine]  (4 LFOs — processed once per block)
     │       ├── [Mod Matrix]  (32 slots: source → dest accumulation)
     │       │
-    │       ├── Osc3D          → env3D  ─╮
+    │       ├── Osc3D          → env3D  ─╮  field freq / z ratio / warp / fold / drive
     │       ├── FMAlgorithm    → envFM  ─┤  additive mix
     │       ├── WavetableOsc   → envWT  ─┤
     │       ├── VAOscillator   → envVA  ─╯
@@ -53,7 +53,7 @@ UI repaints             No allocation
                         No system calls
 ```
 
-**Rule:** nothing in `processBlock()` or any method called from it may allocate memory, lock a mutex, or call a system API. All buffers are pre-allocated in `prepareToPlay`.
+**Rule:** nothing in `processBlock()` or any method called from it may allocate memory, lock a mutex, or call a system API. The arpeggiator reserves its note vectors during prepare, and MIDI rendering uses member buffers rather than per-block heap allocation.
 
 ## Parameter System
 
@@ -64,26 +64,40 @@ All controls are registered as `juce::AudioProcessorParameter` children of `Audi
 - Free undo/redo
 - One-call preset serialization via `copyState()` → `ValueTree` → XML
 
-Parameters are read once per block at the top of `SynthVoice::renderBlock` and applied to sub-engines. See [docs/modulation-matrix.md](modulation-matrix.md) for how mod matrix offsets are layered on top of base parameter values.
+Parameters are read once per active voice block at the top of `SynthVoice::renderBlock` and applied to sub-engines. See [docs/modulation-matrix.md](modulation-matrix.md) for how mod matrix offsets are layered on top of base parameter values.
+
+## MIDI Timing
+
+`SynthEngine::renderNextBlock()` renders voice audio in segments split at MIDI event sample positions. This keeps note-on/note-off timing sample-accurate within the host block.
+
+When the arpeggiator is enabled, incoming note events update the arpeggiator at their original sample positions. Generated arp events are merged into a member MIDI buffer, then the same segmented renderer plays the resulting events.
+
+Host BPM is read by `GLIESE710AudioProcessor::processBlock()` and passed into the synth engine. The engine forwards it to the arpeggiator and each voice's LFO engine for sync-rate calculations.
 
 ## Voice Lifecycle
 
 ```
 noteOn(note, vel)
   → findFreeVoice() or stealVoice() (oldest age)
-  → voice.noteOn(note, vel)
+      → voice.noteOn(note, vel)
       → set frequency on all oscillators
       → envBank.noteOn()  ← triggers all 7 envelopes
+      → fm.noteOn()       ← triggers per-operator envelopes
+      → dualFilter.noteOn()
 
 noteOff(note)
   → voice.noteOff()
       → envBank.noteOff()  ← starts release on all envelopes
+      → fm.noteOff()
+      → dualFilter.noteOff()
 
 Voice::isActive()
   → true while envBank.anyActive()
   → returns false when master ADSR reaches Idle
   → voice is then available for reuse
 ```
+
+Every envelope in `EnvelopeBank` is advanced each rendered sample, even if the corresponding oscillator level is zero. This prevents silent oscillators or filter envelopes from holding a voice active forever.
 
 ## Adding a New Module
 

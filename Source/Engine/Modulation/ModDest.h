@@ -16,5 +16,6 @@ enum class ModDest : int
     LFO1_Amount, LFO2_Amount, LFO3_Amount, LFO4_Amount,
     Master_Volume, Master_Pan,
     Arp_Gate, Arp_Rate,
+    Osc3D_FieldFreq, Osc3D_ZRatio, Osc3D_Fold, Osc3D_Drive,
     NumDests
 };

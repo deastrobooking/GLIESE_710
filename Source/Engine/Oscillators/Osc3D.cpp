@@ -35,24 +35,26 @@ Vec3 Osc3D::computePath(float t)
     Vec3 p{};
     float r = params.radius;
     float d = params.depth;
+    float zRatio = juce::jlimit(0.25f, 4.0f, params.zRatio);
 
     switch (params.path)
     {
         case PathType::Circle:
-            p = { r * std::cos(t), r * std::sin(t), d * std::sin(t * 0.5f) };
+            p = { r * std::cos(t), r * std::sin(t), d * std::sin(t * 0.5f * zRatio) };
             break;
 
         case PathType::Spiral:
         {
             float ramp = 0.5f + 0.5f * std::sin(t * 0.25f);
-            p = { r * ramp * std::cos(t), r * ramp * std::sin(t), d * (t / kTau - std::floor(t / kTau) - 0.5f) };
+            float zPhase = t * zRatio / kTau;
+            p = { r * ramp * std::cos(t), r * ramp * std::sin(t), d * (zPhase - std::floor(zPhase) - 0.5f) };
             break;
         }
 
         case PathType::Lissajous:
             p = { r * std::cos(3.f * t + kPi * 0.5f),
                   r * std::sin(2.f * t),
-                  d * std::sin(5.f * t) };
+                  d * std::sin(5.f * zRatio * t) };
             break;
 
         case PathType::RandomWalk:
@@ -71,7 +73,8 @@ Vec3 Osc3D::computePath(float t)
             // Soft limit to keep in [-r, r]
             rwPos.x = std::tanh(rwPos.x / r) * r;
             rwPos.y = std::tanh(rwPos.y / r) * r;
-            rwPos.z = std::tanh(rwPos.z / d) * d;
+            float zLimit = juce::jmax(0.001f, d);
+            rwPos.z = std::tanh(rwPos.z / zLimit) * zLimit;
             p = rwPos;
             break;
         }
@@ -84,10 +87,11 @@ Vec3 Osc3D::computePath(float t)
             float rOrbit = r * (1.f - ecc * std::cos(t));
             p = { rOrbit * std::cos(angle),
                   rOrbit * std::sin(angle),
-                  d * std::sin(angle * 2.f) };
+                  d * std::sin(angle * 2.f * zRatio) };
             break;
         }
 
+        case PathType::NumPaths:
         default: break;
     }
 
@@ -117,21 +121,46 @@ Vec3 Osc3D::warpCoordinates(Vec3 p) const
     return p;
 }
 
+float Osc3D::foldCoordinate(float v)
+{
+    v = std::fmod(v + 1.f, 4.f);
+    if (v < 0.f)
+        v += 4.f;
+
+    return v <= 2.f ? v - 1.f : 3.f - v;
+}
+
+Vec3 Osc3D::foldCoordinates(Vec3 p) const
+{
+    float amt = juce::jlimit(0.f, 1.f, params.foldAmt);
+    if (amt <= 0.f)
+        return p;
+
+    Vec3 folded { foldCoordinate(p.x), foldCoordinate(p.y), foldCoordinate(p.z) };
+    return {
+        p.x + (folded.x - p.x) * amt,
+        p.y + (folded.y - p.y) * amt,
+        p.z + (folded.z - p.z) * amt
+    };
+}
+
 //──────────────────────────────────────────────────────────────────────────────
 float Osc3D::evaluateField(Vec3 p, FieldType ft) const
 {
+    float f = juce::jlimit(0.25f, 16.f, params.fieldFreq);
+
     switch (ft)
     {
         case FieldType::SinSumXYZ:
-            return std::sin(p.x * 4.f) + std::cos(p.y * 3.f) + std::sin(p.z * 5.f);
+            return std::sin(p.x * 4.f * f) + std::cos(p.y * 3.f * f) + std::sin(p.z * 5.f * f);
 
         case FieldType::SinProduct:
-            return std::sin(p.x * p.y * 2.f) + std::cos(p.z * 3.f);
+            return std::sin(p.x * p.y * 2.f * f) + std::cos(p.z * 3.f * f);
 
         case FieldType::SphericalRipple:
         {
             float r = std::sqrt(p.x*p.x + p.y*p.y + p.z*p.z) + 1e-6f;
-            return std::sin(r * 6.f) / r;
+            return std::sin(r * 6.f * f) / r;
         }
 
         case FieldType::Torus:
@@ -140,22 +169,22 @@ float Osc3D::evaluateField(Vec3 p, FieldType ft) const
             float dist = std::sqrt(p.x*p.x + p.y*p.y);
             float dx = dist - a;
             float d  = std::sqrt(dx*dx + p.z*p.z) - b;
-            return std::sin(d * kTau * 2.f);
+            return std::sin(d * kTau * 2.f * f);
         }
 
         case FieldType::VortexField:
         {
             // Cross-product vortex: (y-z, z-x, x-y) → dot with normalised input
             Vec3 v { p.y - p.z, p.z - p.x, p.x - p.y };
-            return std::sin(v.x * 2.f) + std::cos(v.y * 3.f);
+            return std::sin(v.x * 2.f * f) + std::cos(v.y * 3.f * f);
         }
 
         case FieldType::TurbulenceNoise:
         {
             // Value noise approximation via trig
-            float n  = std::sin(p.x * 12.9f + p.y * 4.1f) * 43758.5453f;
+            float n  = std::sin((p.x * 12.9f + p.y * 4.1f) * f) * 43758.5453f;
             n -= std::floor(n);
-            float n2 = std::sin(p.y * 7.8f + p.z * 9.3f) * 43758.5453f;
+            float n2 = std::sin((p.y * 7.8f + p.z * 9.3f) * f) * 43758.5453f;
             n2 -= std::floor(n2);
             return (n + n2 - 1.f) * 0.7f;
         }
@@ -164,7 +193,7 @@ float Osc3D::evaluateField(Vec3 p, FieldType ft) const
         {
             // Return normalised distance from strange attractor centroid
             float dist = std::sqrt((p.x-0.f)*(p.x-0.f) + (p.y-0.f)*(p.y-0.f) + (p.z-27.f)*(p.z-27.f));
-            return std::sin(dist * 0.5f);
+            return std::sin(dist * 0.5f * f);
         }
 
         case FieldType::MagneticDipole:
@@ -172,7 +201,7 @@ float Osc3D::evaluateField(Vec3 p, FieldType ft) const
             float r2 = p.x*p.x + p.y*p.y + p.z*p.z + 0.1f;
             float r  = std::sqrt(r2);
             float cosTheta = p.z / r;
-            return (3.f * cosTheta * cosTheta - 1.f) / (r2 * r);
+            return ((3.f * cosTheta * cosTheta - 1.f) / (r2 * r)) * std::sqrt(f);
         }
 
         case FieldType::FoldedSpace:
@@ -184,7 +213,7 @@ float Osc3D::evaluateField(Vec3 p, FieldType ft) const
                 py = std::abs(py) - 0.7f;
                 pz = std::abs(pz) - 0.7f;
             }
-            return std::sin(px * 5.f) + std::cos(py * 5.f) + std::sin(pz * 5.f);
+            return std::sin(px * 5.f * f) + std::cos(py * 5.f * f) + std::sin(pz * 5.f * f);
         }
 
         case FieldType::ChebyshevMorph:
@@ -193,12 +222,16 @@ float Osc3D::evaluateField(Vec3 p, FieldType ft) const
             float xc = juce::jlimit(-1.f, 1.f, p.x);
             float yc = juce::jlimit(-1.f, 1.f, p.y);
             float zc = juce::jlimit(-1.f, 1.f, p.z);
-            float T4x = 8.f*xc*xc*xc*xc - 8.f*xc*xc + 1.f;
-            float T5y = 16.f*yc*yc*yc*yc*yc - 20.f*yc*yc*yc + 5.f*yc;
-            float T6z = 32.f*zc*zc*zc*zc*zc*zc - 48.f*zc*zc*zc*zc + 18.f*zc*zc - 1.f;
+            float x = juce::jlimit(-1.f, 1.f, xc * f);
+            float y = juce::jlimit(-1.f, 1.f, yc * f);
+            float z = juce::jlimit(-1.f, 1.f, zc * f);
+            float T4x = 8.f*x*x*x*x - 8.f*x*x + 1.f;
+            float T5y = 16.f*y*y*y*y*y - 20.f*y*y*y + 5.f*y;
+            float T6z = 32.f*z*z*z*z*z*z - 48.f*z*z*z*z + 18.f*z*z - 1.f;
             return (T4x + T5y + T6z) * 0.333f;
         }
 
+        case FieldType::NumFields:
         default: return 0.f;
     }
 }
@@ -232,10 +265,11 @@ float Osc3D::processSample()
 
     Vec3 p = computePath(t);
     p      = warpCoordinates(p);
+    p      = foldCoordinates(p);
     float s = blend(p);
 
     phase += phaseInc;
     if (phase >= 1.f) phase -= 1.f;
 
-    return std::tanh(s);   // soft clip to ±1
+    return std::tanh(s * juce::jlimit(0.25f, 4.f, params.drive));   // soft clip to ±1
 }

@@ -30,7 +30,13 @@ cmake -B build -G Xcode
 cmake --build build --config Release
 ```
 
-The `COPY_PLUGIN_AFTER_BUILD TRUE` flag in CMakeLists copies built plugins to:
+By default, builds stay inside the project `build/` directory. To also copy plugins into the system plugin folders, configure with:
+
+```bash
+cmake -B build -G Xcode -DGLIESE_COPY_PLUGIN_AFTER_BUILD=ON
+```
+
+When enabled, JUCE copies built plugins to:
 - `/Library/Audio/Plug-Ins/VST3/GLIESE 710.vst3`
 - `/Library/Audio/Plug-Ins/Components/GLIESE 710.component`
 
@@ -69,7 +75,7 @@ cp -r build/GLIESE_710_artefacts/Release/LV2/GLIESE\ 710.lv2 ~/.lv2/
 
 Validate with:
 ```bash
-lv2lint http://gliese-studios.com/gliese710
+lv2lint urn:com:gliesestudios:gliese710
 ```
 
 ## Running Tests
@@ -77,14 +83,14 @@ lv2lint http://gliese-studios.com/gliese710
 ```bash
 cmake -B build -DGLIESE_BUILD_TESTS=ON
 cmake --build build --target GLIESE_Tests
-cd build && ctest --output-on-failure -R EngineTests
+ctest --test-dir build --output-on-failure
 ```
 
 Individual test filtering:
 ```bash
-./build/Tests/GLIESE_Tests "[envelope]"
-./build/Tests/GLIESE_Tests "[filter]"
-./build/Tests/GLIESE_Tests "[osc3d]"
+./build/GLIESE_Tests_artefacts/GLIESE_Tests "[envelope]"
+./build/GLIESE_Tests_artefacts/GLIESE_Tests "[filter]"
+./build/GLIESE_Tests_artefacts/GLIESE_Tests "[osc3d]"
 ```
 
 ## GitHub Actions CI (Planned — Phase 6)
@@ -101,7 +107,7 @@ steps:
   - name: Build
     run: cmake --build build --config Release --parallel
   - name: Test
-    run: cd build && ctest -C Release --output-on-failure
+    run: ctest --test-dir build -C Release --output-on-failure
   - name: Validate AU
     run: auval -v aumu GLSE G710
   - uses: actions/upload-artifact@v4
@@ -120,7 +126,7 @@ steps:
   - name: Build
     run: cmake --build build --config Release --parallel
   - name: Test
-    run: cd build && ctest -C Release --output-on-failure
+    run: ctest --test-dir build -C Release --output-on-failure
   - uses: actions/upload-artifact@v4
     with:
       name: GLIESE710-Windows
@@ -139,7 +145,7 @@ steps:
   - name: Build
     run: cmake --build build --parallel
   - name: Test
-    run: cd build && ctest --output-on-failure
+    run: ctest --test-dir build --output-on-failure
 ```
 
 ## CPM Cache
@@ -158,6 +164,7 @@ CPM downloads JUCE once and caches it in `~/.cache/CPM`. On CI, cache the CPM di
 | CMake flag | Default | Effect |
 |---|---|---|
 | `GLIESE_BUILD_TESTS` | OFF | Build Catch2 test executable |
+| `GLIESE_COPY_PLUGIN_AFTER_BUILD` | OFF | Copy AU/VST3/LV2 artefacts into system plugin folders after build |
 | `CMAKE_BUILD_TYPE` | — | Release / Debug / RelWithDebInfo |
 | `JUCE_WEB_BROWSER` | 0 (off) | Prevents linking WebKit on macOS |
 | `JUCE_USE_CURL` | 0 (off) | Prevents linking libcurl |

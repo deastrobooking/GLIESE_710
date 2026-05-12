@@ -1,6 +1,9 @@
 #include "LFOEngine.h"
 
-constexpr float LFOEngine::kSyncBeats[LFOEngine::kNumSyncRates];
+static size_t lfoIndex(int i)
+{
+    return static_cast<size_t>(juce::jlimit(0, LFOEngine::kNumLFOs - 1, i));
+}
 
 void LFOEngine::prepare(double sampleRate)
 {
@@ -16,12 +19,12 @@ void LFOEngine::setHostBPM(double beatsPerMinute)
 void LFOEngine::setParams(int i, const LFOParams& p)
 {
     jassert(i >= 0 && i < kNumLFOs);
-    params[i] = p;
+    params[lfoIndex(i)] = p;
 }
 
 void LFOEngine::noteOn()
 {
-    for (int i = 0; i < kNumLFOs; ++i)
+    for (size_t i = 0; i < params.size(); ++i)
         if (params[i].retrig)
             phases[i] = params[i].phase;
 }
@@ -36,17 +39,19 @@ void LFOEngine::reset()
 
 float LFOEngine::whiteSample(int i)
 {
-    seeds[i] = seeds[i] * 1664525u + 1013904223u;
-    return ((float)(seeds[i] >> 16) / 32767.5f) - 1.f;
+    auto idx = lfoIndex(i);
+    seeds[idx] = seeds[idx] * 1664525u + 1013904223u;
+    return ((float)(seeds[idx] >> 16) / 32767.5f) - 1.f;
 }
 
 float LFOEngine::lfoRateHz(int i) const
 {
-    const auto& p = params[i];
+    const auto& p = params[lfoIndex(i)];
     if (p.syncIdx == 0 || bpm <= 0.0)
         return juce::jlimit(0.01f, 100.f, p.rate);
 
-    float beats  = kSyncBeats[juce::jlimit(0, kNumSyncRates - 1, p.syncIdx)];
+    auto syncIdx = static_cast<size_t>(juce::jlimit(0, kNumSyncRates - 1, p.syncIdx));
+    float beats  = kSyncBeats[syncIdx];
     float hz     = (float)(bpm / 60.0) / beats;
     return juce::jlimit(0.01f, 200.f, hz);
 }
@@ -54,7 +59,8 @@ float LFOEngine::lfoRateHz(int i) const
 float LFOEngine::generateShape(int i, float ph)
 {
     // ph is 0..1
-    auto& p = params[i];
+    auto idx = lfoIndex(i);
+    auto& p = params[idx];
     switch (p.shape)
     {
         case Shape::Sine:
@@ -75,15 +81,15 @@ float LFOEngine::generateShape(int i, float ph)
         case Shape::SampleHold:
         {
             // Generate new value on phase wrap (handled in processBlock)
-            return shPrev[i];
+            return shPrev[idx];
         }
 
         case Shape::SmoothSH:
         {
-            float target = shPrev[i];
+            float target = shPrev[idx];
             float smooth = 0.01f;   // lag coefficient
-            values[i] = values[i] + smooth * (target - values[i]);
-            return values[i];
+            values[idx] = values[idx] + smooth * (target - values[idx]);
+            return values[idx];
         }
 
         default:
@@ -95,29 +101,29 @@ void LFOEngine::processBlock(int numSamples)
 {
     for (int i = 0; i < kNumLFOs; ++i)
     {
+        auto idx = lfoIndex(i);
         float hz       = lfoRateHz(i);
         float phaseInc = hz / (float)sr;
-        float ph       = phases[i] + params[i].phase;
+        float ph       = phases[idx] + params[idx].phase;
         if (ph >= 1.f) ph -= 1.f;
 
         // Accumulate last sample of block
         for (int s = 0; s < numSamples; ++s)
         {
-            float prevPh = ph;
             ph += phaseInc;
 
             if (ph >= 1.f)
             {
                 ph -= 1.f;
                 // Phase wrap: new S&H value
-                if (params[i].shape == Shape::SampleHold || params[i].shape == Shape::SmoothSH)
-                    shPrev[i] = whiteSample(i);
+                if (params[idx].shape == Shape::SampleHold || params[idx].shape == Shape::SmoothSH)
+                    shPrev[idx] = whiteSample(i);
             }
         }
 
-        phases[i] = ph - params[i].phase;
-        if (phases[i] < 0.f) phases[i] += 1.f;
+        phases[idx] = ph - params[idx].phase;
+        if (phases[idx] < 0.f) phases[idx] += 1.f;
 
-        values[i] = generateShape(i, ph) * params[i].amount;
+        values[idx] = generateShape(i, ph) * params[idx].amount;
     }
 }

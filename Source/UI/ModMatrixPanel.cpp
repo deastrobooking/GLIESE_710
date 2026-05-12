@@ -22,19 +22,20 @@ static const juce::StringArray kDestNames {
     "LFO1 Rate","LFO2 Rate","LFO3 Rate","LFO4 Rate",
     "LFO1 Amt","LFO2 Amt","LFO3 Amt","LFO4 Amt",
     "Master Vol","Master Pan",
-    "Arp Gate","Arp Rate"
+    "Arp Gate","Arp Rate",
+    "3D FieldFreq","3D Z Ratio","3D Fold","3D Drive"
 };
 
 ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 {
     titleLabel.setText("MOD MATRIX", juce::dontSendNotification);
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::lightcyan);
-    titleLabel.setFont(juce::Font(13.f, juce::Font::bold));
+    titleLabel.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
     addAndMakeVisible(titleLabel);
 
     for (int i = 0; i < kNumSlots; ++i)
     {
-        auto& row = rows[i];
+        auto& row = rows[(size_t) i];
         juce::String pfx = "mod" + juce::String(i) + "_";
 
         row.source.addItemList(kSourceNames, 1);
@@ -88,7 +89,7 @@ void ModMatrixPanel::resized()
     int w = area.getWidth();
     for (int i = 0; i < kNumSlots; ++i)
     {
-        auto& row = rows[i];
+        auto& row = rows[(size_t) i];
         juce::Rectangle<int> r(0, i * kRowHeight, w, kRowHeight - 2);
         int x = 0;
         row.source.setBounds(r.withWidth(120).withX(x)); x += 122;

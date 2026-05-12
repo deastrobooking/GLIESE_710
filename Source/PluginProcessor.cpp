@@ -58,6 +58,10 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("osc_3d_rotation", "3D Rotation", 0.0f, 1.0f, 0.0f);
     addFloat("osc_3d_chaos",    "3D Chaos",    0.0f, 1.0f, 0.0f);
     addFloat("osc_3d_morph",    "3D Morph",    0.0f, 1.0f, 0.0f);
+    addFloat("osc_3d_field_freq", "3D Field Freq", 0.25f, 16.0f, 1.0f, 0.4f);
+    addFloat("osc_3d_z_ratio",    "3D Z Ratio",    0.25f, 4.0f,  1.0f, 0.7f);
+    addFloat("osc_3d_fold",       "3D Fold",       0.0f,  1.0f,  0.0f);
+    addFloat("osc_3d_drive",      "3D Drive",      0.25f, 4.0f,  1.0f, 0.5f);
     addFloat("osc_3d_level",    "3D Level",    0.0f, 1.0f, 0.8f);
     addFloat("osc_3d_octave",   "3D Octave",   -3.0f, 3.0f, 0.0f);
     addFloat("osc_3d_adsr_a",   "3D Env Attack",  0.001f, 10.0f, 0.01f, 0.4f);
@@ -174,7 +178,8 @@ static APVTS::ParameterLayout buildLayout()
         "LFO1_Rate","LFO2_Rate","LFO3_Rate","LFO4_Rate",
         "LFO1_Amount","LFO2_Amount","LFO3_Amount","LFO4_Amount",
         "Master_Volume","Master_Pan",
-        "Arp_Gate","Arp_Rate"
+        "Arp_Gate","Arp_Rate",
+        "Osc3D_FieldFreq","Osc3D_ZRatio","Osc3D_Fold","Osc3D_Drive"
     };
 
     for (int i = 0; i < 32; ++i)

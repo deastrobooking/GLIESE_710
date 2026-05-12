@@ -31,7 +31,7 @@ Multiple slots can share the same destination — their contributions accumulate
 | 17 | ChanPressure | 0 to +1 | MIDI channel pressure |
 | 18–25 | Macro1–Macro8 | 0 to +1 | Panel macro knobs |
 
-## Destinations (46)
+## Destinations (50)
 
 | ID | Destination | Base range | Modulation effect |
 |---|---|---|---|
@@ -59,6 +59,10 @@ Multiple slots can share the same destination — their contributions accumulate
 | 44 | Master_Pan | −1 to +1 | Stereo pan |
 | 45 | Arp_Gate | 0–1.0 | Gate length |
 | 46 | Arp_Rate | — | Arp step rate |
+| 47 | Osc3D_FieldFreq | 0.25–16.0 | Adds to field-frequency multiplier |
+| 48 | Osc3D_ZRatio | 0.25–4.0 | Adds to z-axis motion ratio |
+| 49 | Osc3D_Fold | 0–1.0 | Adds to coordinate fold amount |
+| 50 | Osc3D_Drive | 0.25–4.0 | Adds to output shaper drive |
 
 ## Bipolar vs Unipolar
 
@@ -69,7 +73,7 @@ Each slot has a **bipolar** toggle:
 | Bipolar (default) | `0.8 × 2 - 1 = 0.6` (center at 0) |
 | Unipolar | `0.8` (center at 0.5) |
 
-Use **unipolar** for sources like velocity, envelopes, or macros where 0 means "none" and 1 means "full." Use **bipolar** for LFOs and pitch bend where the source naturally swings positive and negative.
+Use **unipolar** for sources like velocity, envelopes, or macros where 0 means "none" and 1 means "full." LFOs and pitch bend are already naturally bipolar, so the matrix leaves those source values unchanged even when the bipolar toggle is enabled.
 
 ## Processing Order
 
@@ -124,6 +128,19 @@ Slot 4: source=Macro1, dest=Osc3D_Chaos, amount=+1.0, bipolar=OFF
 Slot 5: source=Macro1, dest=FilterA_Resonance, amount=+0.6, bipolar=OFF
 ```
 One macro knob sweeps both chaos and resonance simultaneously.
+
+### LFO → 3D field frequency
+```
+Slot 6: source=LFO2, dest=Osc3D_FieldFreq, amount=+0.5, bipolar=ON
+```
+LFO2 gently shifts harmonic density without changing played pitch.
+
+### Aftertouch → 3D fold and drive
+```
+Slot 7: source=Aftertouch, dest=Osc3D_Fold,  amount=+0.4, bipolar=OFF
+Slot 8: source=Aftertouch, dest=Osc3D_Drive, amount=+0.8, bipolar=OFF
+```
+Pressing harder pushes the scan path into more mirrored, saturated field regions.
 
 ## Adding a New Destination
 

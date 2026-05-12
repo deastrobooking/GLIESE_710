@@ -41,6 +41,10 @@ public:
         float     rotation  = 0.0f;  // field rotation angle
         float     chaos     = 0.0f;  // noise injected into path
         float     morphT    = 0.0f;  // 0..1 blend to next FieldType
+        float     fieldFreq = 1.0f;  // harmonic density multiplier
+        float     zRatio    = 1.0f;  // z-axis motion ratio multiplier
+        float     foldAmt   = 0.0f;  // 0..1 coordinate fold blend
+        float     drive     = 1.0f;  // output shaper drive
     };
 
     void prepare(double sampleRate);
@@ -69,11 +73,12 @@ private:
 
     Vec3   computePath(float t);
     Vec3   warpCoordinates(Vec3 p) const;
+    Vec3   foldCoordinates(Vec3 p) const;
     float  evaluateField(Vec3 p, FieldType ft) const;
     float  blend(Vec3 p) const;
 
-    float  valueNoise3D(Vec3 p);
     float  whiteSample();
 
+    static float foldCoordinate(float v);
     static Vec3 rotateXY(Vec3 p, float angle);
 };

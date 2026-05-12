@@ -172,10 +172,10 @@ float FMAlgorithm::processSample()
         for (int j = 0; j < kNumOperators; ++j)
         {
             if (mods & (1 << j))
-                modInput += opOut[j] * juce::MathConstants<float>::pi;
+                modInput += opOut[(size_t) j] * juce::MathConstants<float>::pi;
         }
 
-        opOut[i] = ops[i].processSample(modInput);
+        opOut[(size_t) i] = ops[(size_t) i].processSample(modInput);
     }
 
     lastOutputs = opOut;
@@ -187,7 +187,7 @@ float FMAlgorithm::processSample()
     {
         if (alg.carriers & (1 << i))
         {
-            sum += opOut[i];
+            sum += opOut[(size_t) i];
             ++numCarriers;
         }
     }

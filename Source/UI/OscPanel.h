@@ -32,8 +32,9 @@ private:
     juce::ComboBox modeBoxA, modeBoxB;
     std::unique_ptr<CAtt> modeAttA, modeAttB;
 
-    juce::Slider extra1, extra2, extra3, extra4, extra5, extra6;
-    std::unique_ptr<Att> extraAtt1, extraAtt2, extraAtt3, extraAtt4, extraAtt5, extraAtt6;
+    juce::Slider extra1, extra2, extra3, extra4, extra5, extra6, extra7, extra8, extra9, extra10;
+    std::unique_ptr<Att> extraAtt1, extraAtt2, extraAtt3, extraAtt4, extraAtt5,
+                         extraAtt6, extraAtt7, extraAtt8, extraAtt9, extraAtt10;
     int numExtraSliders = 0;
     int numModeBoxes = 0;
 

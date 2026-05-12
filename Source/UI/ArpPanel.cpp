@@ -4,7 +4,7 @@ ArpPanel::ArpPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 {
     titleLabel.setText("ARPEGGIATOR", juce::dontSendNotification);
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::lightcyan);
-    titleLabel.setFont(juce::Font(13.f, juce::Font::bold));
+    titleLabel.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
     addAndMakeVisible(titleLabel);
 
     onToggle.setButtonText("ON");

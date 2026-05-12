@@ -4,7 +4,7 @@ FilterPanel::FilterPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 {
     titleLabel.setText("DUAL FILTER", juce::dontSendNotification);
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::lightcyan);
-    titleLabel.setFont(juce::Font(13.f, juce::Font::bold));
+    titleLabel.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
     addAndMakeVisible(titleLabel);
 
     auto setupCombo = [&](juce::ComboBox& cb) {

@@ -94,6 +94,10 @@ void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
     p3d.rotation = getF("osc_3d_rotation");
     p3d.chaos    = juce::jlimit(0.f, 1.f, getF("osc_3d_chaos") + modDests.dests[(int)ModDest::Osc3D_Chaos]);
     p3d.morphT   = juce::jlimit(0.f, 1.f, getF("osc_3d_morph") + modDests.dests[(int)ModDest::Osc3D_Morph]);
+    p3d.fieldFreq = juce::jlimit(0.25f, 16.0f, getF("osc_3d_field_freq") + modDests.dests[(int)ModDest::Osc3D_FieldFreq]);
+    p3d.zRatio    = juce::jlimit(0.25f, 4.0f, getF("osc_3d_z_ratio") + modDests.dests[(int)ModDest::Osc3D_ZRatio]);
+    p3d.foldAmt   = juce::jlimit(0.f, 1.f, getF("osc_3d_fold") + modDests.dests[(int)ModDest::Osc3D_Fold]);
+    p3d.drive     = juce::jlimit(0.25f, 4.0f, getF("osc_3d_drive") + modDests.dests[(int)ModDest::Osc3D_Drive]);
     osc3d.setParams(p3d);
 
     // Apply pitch modulation — master_tune is in cents (±100)

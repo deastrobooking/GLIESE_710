@@ -6,7 +6,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
 {
     titleLabel.setText(lbl, juce::dontSendNotification);
     titleLabel.setColour(juce::Label::textColourId, juce::Colours::lightcyan);
-    titleLabel.setFont(juce::Font(14.f, juce::Font::bold));
+    titleLabel.setFont(juce::Font(juce::FontOptions { 14.f, juce::Font::bold }));
     addAndMakeVisible(titleLabel);
 
     juce::String pfx = "osc_" + oscId + "_";
@@ -45,7 +45,11 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         setupExtraSlider(extra4, "osc_3d_rotation", "3D Rotation", extraAtt4);
         setupExtraSlider(extra5, "osc_3d_chaos", "3D Chaos", extraAtt5);
         setupExtraSlider(extra6, "osc_3d_morph", "3D Morph", extraAtt6);
-        numExtraSliders = 6;
+        setupExtraSlider(extra7, "osc_3d_field_freq", "Field Frequency", extraAtt7);
+        setupExtraSlider(extra8, "osc_3d_z_ratio", "Z Ratio", extraAtt8);
+        setupExtraSlider(extra9, "osc_3d_fold", "Coordinate Fold", extraAtt9);
+        setupExtraSlider(extra10, "osc_3d_drive", "Field Drive", extraAtt10);
+        numExtraSliders = 10;
     }
     else if (oscId == "va")
     {
@@ -137,11 +141,23 @@ void OscPanel::resized()
         {
             area.removeFromTop(2);
             auto secondRow = area.removeFromTop(70);
-            int secondCount = numExtraSliders - 3;
+            int secondCount = juce::jmin(3, numExtraSliders - 3);
             int secondW = secondRow.getWidth() / secondCount;
             if (numExtraSliders >= 4) extra4.setBounds(secondRow.removeFromLeft(secondW));
             if (numExtraSliders >= 5) extra5.setBounds(secondRow.removeFromLeft(secondW));
             if (numExtraSliders >= 6) extra6.setBounds(secondRow);
+        }
+
+        if (numExtraSliders > 6)
+        {
+            area.removeFromTop(2);
+            auto thirdRow = area.removeFromTop(70);
+            int thirdCount = numExtraSliders - 6;
+            int thirdW = thirdRow.getWidth() / thirdCount;
+            if (numExtraSliders >= 7) extra7.setBounds(thirdRow.removeFromLeft(thirdW));
+            if (numExtraSliders >= 8) extra8.setBounds(thirdRow.removeFromLeft(thirdW));
+            if (numExtraSliders >= 9) extra9.setBounds(thirdRow.removeFromLeft(thirdW));
+            if (numExtraSliders >= 10) extra10.setBounds(thirdRow);
         }
         area.removeFromTop(4);
     }

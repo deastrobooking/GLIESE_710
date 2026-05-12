@@ -2,7 +2,6 @@
 
 GLIESE710AudioProcessorEditor::GLIESE710AudioProcessorEditor(GLIESE710AudioProcessor& p)
     : AudioProcessorEditor(&p),
-      processor(p),
       mainPanel(p.apvts),
       presetBrowser(p.presetManager)
 {
