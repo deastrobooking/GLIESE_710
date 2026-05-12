@@ -58,10 +58,12 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     filterPanel = std::make_unique<FilterPanel>(apvts);
     modPanel    = std::make_unique<ModMatrixPanel>(apvts);
     arpPanel    = std::make_unique<ArpPanel>(apvts);
+    lfoPanel    = std::make_unique<LFOPanel>(apvts);
 
     effectsTab->addAndMakeVisible(*filterPanel);
     effectsTab->addAndMakeVisible(*modPanel);
     effectsTab->addAndMakeVisible(*arpPanel);
+    effectsTab->addAndMakeVisible(*lfoPanel);
 
     tabs.addTab("FILTER / MOD / ARP", kBg, effectsTab, true);
 
@@ -194,15 +196,19 @@ void MainPanel::resized()
             fmOpLevelSliders[(size_t)i].setBounds(levelRow.removeFromLeft(opW).reduced(2));
     }
 
-    // Layout filter/mod/arp tab content
-    if (effectsTab && filterPanel && modPanel && arpPanel)
+    // Layout filter/mod/arp/lfo tab content
+    if (effectsTab && filterPanel && modPanel && arpPanel && lfoPanel)
     {
         auto tabArea = effectsTab->getLocalBounds().reduced(6);
-        int filterH = 244;
+        int filterH = 220;
         filterPanel->setBounds(tabArea.removeFromTop(filterH).reduced(3));
         tabArea.removeFromTop(4);
-        int arpW = 260;
+
+        // Bottom row: mod matrix left, LFO centre-right, arp far-right
+        int arpW = 240;
+        int lfoW = 280;
         arpPanel->setBounds(tabArea.removeFromRight(arpW).reduced(3));
+        lfoPanel->setBounds(tabArea.removeFromRight(lfoW).reduced(3));
         modPanel->setBounds(tabArea.reduced(3));
     }
 }

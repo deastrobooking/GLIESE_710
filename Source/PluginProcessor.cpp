@@ -93,7 +93,8 @@ static APVTS::ParameterLayout buildLayout()
     }
 
     // ── Wavetable Oscillator ──────────────────────────────────────────────────
-    addInt  ("osc_wt_table",  "WT Table",    0, 63, 0);
+    addChoice("osc_wt_table", "WT Table",
+              {"Sine","Triangle","Saw","Square","Pulse","Half Sine","Abs Sine","Sine Cube"}, 0);
     addFloat("osc_wt_pos",    "WT Position", 0.0f, 1.0f, 0.0f);
     addFloat("osc_wt_level",  "WT Level",    0.0f, 1.0f, 0.0f);
     addFloat("osc_wt_octave", "WT Octave",  -3.0f, 3.0f, 0.0f);

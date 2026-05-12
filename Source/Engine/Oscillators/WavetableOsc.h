@@ -24,6 +24,13 @@ public:
     int addTable(juce::String name, const float* samples, int numSamples);
     int addSineTable();
 
+    // Populate the oscillator with the built-in waveform bank (called automatically by prepare)
+    void buildStandardBank();
+
+    int getNumTables() const { return (int)tables.size(); }
+    juce::String getTableName(int idx) const;
+
+
     // Returns stereo pair
     std::pair<float, float> processSample();
     void reset();

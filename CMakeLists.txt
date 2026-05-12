@@ -64,6 +64,7 @@ PRIVATE
     Source/UI/FilterPanel.cpp
     Source/UI/ModMatrixPanel.cpp
     Source/UI/ArpPanel.cpp
+    Source/UI/LFOPanel.cpp
     Source/UI/PresetBrowser.cpp
 )
 

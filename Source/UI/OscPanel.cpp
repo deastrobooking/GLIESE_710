@@ -63,9 +63,15 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     }
     else if (oscId == "wt")
     {
-        setupExtraSlider(extra1, "osc_wt_table", "Wavetable Index",    extraAtt1);
-        setupExtraSlider(extra2, "osc_wt_pos",   "Wavetable Position", extraAtt2);
-        numExtraSliders = 2;
+        modeBoxA.addItemList({"Sine","Triangle","Saw","Square","Pulse",
+                              "Half Sine","Abs Sine","Sine Cube"}, 1);
+        modeBoxA.setTooltip("Wavetable Shape");
+        addAndMakeVisible(modeBoxA);
+        modeAttA = std::make_unique<CAtt>(apvts, "osc_wt_table", modeBoxA);
+        numModeBoxes = 1;
+
+        setupExtraSlider(extra1, "osc_wt_pos", "Wavetable Position", extraAtt1);
+        numExtraSliders = 1;
     }
 
     // ── Labels ────────────────────────────────────────────────────────────────
@@ -105,8 +111,8 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     }
     else if (oscId == "wt")
     {
-        makeLabel(extraLabels[0], "TABLE");
-        makeLabel(extraLabels[1], "POS");
+        makeLabel(modeALabel, "SHAPE");
+        makeLabel(extraLabels[0], "POS");
     }
 
     adsrLabel.setText("A  D  S  R", juce::dontSendNotification);

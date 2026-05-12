@@ -4,6 +4,7 @@
 #include "FilterPanel.h"
 #include "ModMatrixPanel.h"
 #include "ArpPanel.h"
+#include "LFOPanel.h"
 #include <array>
 
 class MainPanel : public juce::Component
@@ -23,6 +24,7 @@ private:
     std::unique_ptr<FilterPanel>     filterPanel;
     std::unique_ptr<ModMatrixPanel>  modPanel;
     std::unique_ptr<ArpPanel>        arpPanel;
+    std::unique_ptr<LFOPanel>        lfoPanel;
 
     // Master controls
     juce::Slider    masterVolSlider, masterTuneSlider, masterPanSlider;
