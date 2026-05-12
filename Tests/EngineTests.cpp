@@ -249,6 +249,30 @@ TEST_CASE("VAOscillator stereo output bounds", "[vaosc]")
             REQUIRE(R <=  4.f);
         }
     }
+
+    SECTION("shape morph, ring modulation and wavefolding stay finite")
+    {
+        VAOscillator::Params p;
+        p.shapeMorph  = 2.5f;
+        p.pulseWidth  = 0.35f;
+        p.ringMod     = 0.75f;
+        p.wavefold    = 0.8f;
+        p.unisonCount = 4;
+        p.spread      = 0.75f;
+        va.setParams(p);
+        va.reset();
+
+        for (int i = 0; i < 4800; ++i)
+        {
+            auto [L, R] = va.processSample();
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            REQUIRE(L >= -4.f);
+            REQUIRE(L <=  4.f);
+            REQUIRE(R >= -4.f);
+            REQUIRE(R <=  4.f);
+        }
+    }
 }
 
 //──────────────────────────────────────────────────────────────────────────────

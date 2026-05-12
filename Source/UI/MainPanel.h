@@ -21,8 +21,8 @@ private:
 
     // Oscillator sub-panels
     std::unique_ptr<OscPanel>        osc3dPanel;
-    std::unique_ptr<OscPanel>        oscVAPanel;
     std::unique_ptr<OscPanel>        oscWTPanel;
+    std::array<std::unique_ptr<OscPanel>, 4> vaPanels;
     std::unique_ptr<FilterPanel>     filterPanel;
     std::unique_ptr<ModMatrixPanel>  modPanel;
     std::unique_ptr<ArpPanel>        arpPanel;
@@ -74,6 +74,7 @@ private:
     juce::Component* effectsTab     = nullptr;
 
     juce::TabbedComponent tabs { juce::TabbedButtonBar::TabsAtTop };
+    juce::TabbedComponent vaTabs { juce::TabbedButtonBar::TabsAtTop };
     IndustrialTheme::IndustrialLookAndFeel lookAndFeel;
 
     void buildOscillatorsTab();

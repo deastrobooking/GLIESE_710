@@ -13,6 +13,7 @@ class SynthVoice
 {
 public:
     static constexpr int kVoiceId = -1;
+    static constexpr int kNumVAOscs = 4;
 
     void prepare(double sampleRate);
     void reset();
@@ -34,6 +35,7 @@ public:
     float getModDestination(ModDest dest) const { return modDests.dests[(int)dest]; }
 
     WavetableOsc& getWavetableOsc() { return wtOsc; }
+    void buildParamCache(juce::AudioProcessorValueTreeState& apvts);
 
 private:
     int    midiNote = -1;
@@ -48,7 +50,7 @@ private:
     Osc3D       osc3d;
     FMAlgorithm fm;
     WavetableOsc wtOsc;
-    VAOscillator vaOsc;
+    std::array<VAOscillator, kNumVAOscs> vaOscs;
 
     EnvelopeBank envBank;
     LFOEngine    lfo;
@@ -59,9 +61,78 @@ private:
 
     // ── Parameter pointer cache ───────────────────────────────────────────────
     // Caching std::atomic<float>* from APVTS eliminates string construction and
-    // hash-map lookups on the audio thread. Built once on the first renderBlock.
+    // hash-map lookups on the audio thread. Built during engine setup, with a
+    // render-time fallback only for unusual host lifecycle ordering.
     struct ParamCache
     {
+        struct EnvPtrs {
+            std::atomic<float>* a = nullptr;
+            std::atomic<float>* d = nullptr;
+            std::atomic<float>* s = nullptr;
+            std::atomic<float>* r = nullptr;
+        };
+        struct MasterPtrs {
+            std::atomic<float>* volume = nullptr;
+            std::atomic<float>* tune   = nullptr;
+            std::atomic<float>* octave = nullptr;
+            std::atomic<float>* pan    = nullptr;
+            EnvPtrs env;
+        };
+        struct Osc3DPtrs {
+            std::atomic<float>* field     = nullptr;
+            std::atomic<float>* path      = nullptr;
+            std::atomic<float>* radius    = nullptr;
+            std::atomic<float>* depth     = nullptr;
+            std::atomic<float>* warp      = nullptr;
+            std::atomic<float>* rotation  = nullptr;
+            std::atomic<float>* chaos     = nullptr;
+            std::atomic<float>* morph     = nullptr;
+            std::atomic<float>* fieldFreq = nullptr;
+            std::atomic<float>* zRatio    = nullptr;
+            std::atomic<float>* fold      = nullptr;
+            std::atomic<float>* drive     = nullptr;
+            std::atomic<float>* on        = nullptr;
+            std::atomic<float>* level     = nullptr;
+            std::atomic<float>* octave    = nullptr;
+            EnvPtrs env;
+        };
+        struct FMPtrs {
+            std::atomic<float>* on        = nullptr;
+            std::atomic<float>* algorithm = nullptr;
+            std::atomic<float>* level     = nullptr;
+            std::atomic<float>* octave    = nullptr;
+            EnvPtrs env;
+        };
+        struct WTPtrs {
+            std::atomic<float>* on     = nullptr;
+            std::atomic<float>* table  = nullptr;
+            std::atomic<float>* pos    = nullptr;
+            std::atomic<float>* level  = nullptr;
+            std::atomic<float>* octave = nullptr;
+            EnvPtrs env;
+        };
+        struct VAPtrs {
+            std::atomic<float>* on      = nullptr;
+            std::atomic<float>* shape   = nullptr;
+            std::atomic<float>* pw      = nullptr;
+            std::atomic<float>* detune  = nullptr;
+            std::atomic<float>* unison  = nullptr;
+            std::atomic<float>* spread  = nullptr;
+            std::atomic<float>* ring    = nullptr;
+            std::atomic<float>* fold    = nullptr;
+            std::atomic<float>* level   = nullptr;
+            std::atomic<float>* octave  = nullptr;
+            EnvPtrs env;
+        };
+        struct FilterPtrs {
+            std::atomic<float>* type      = nullptr;
+            std::atomic<float>* cutoff    = nullptr;
+            std::atomic<float>* resonance = nullptr;
+            std::atomic<float>* drive     = nullptr;
+            std::atomic<float>* envAmt    = nullptr;
+            std::atomic<float>* lfoAmt    = nullptr;
+            EnvPtrs env;
+        };
         struct OpPtrs {
             std::atomic<float>* coarse   = nullptr;
             std::atomic<float>* fine     = nullptr;
@@ -95,21 +166,22 @@ private:
         std::array<LFOPtrs,       4> lfos;
         std::array<ModSlotPtrs,  32> mods;
         std::array<std::atomic<float>*, 8> macros {};
-
-        // Engine enable flags
-        std::atomic<float>* en3D = nullptr;
-        std::atomic<float>* enFM = nullptr;
-        std::atomic<float>* enWT = nullptr;
-        std::atomic<float>* enVA = nullptr;
+        MasterPtrs master;
+        Osc3DPtrs osc3d;
+        FMPtrs fm;
+        WTPtrs wt;
+        std::array<VAPtrs, kNumVAOscs> va;
+        FilterPtrs filterA;
+        FilterPtrs filterB;
+        std::atomic<float>* filterRouting = nullptr;
 
         bool built = false;
     };
     ParamCache pc;
 
     // Read all APVTS params and configure sub-engines
-    void syncParams(juce::AudioProcessorValueTreeState& apvts);
+    void syncParams();
     void buildModSources();
-    void buildParamCache(juce::AudioProcessorValueTreeState& apvts);
 
     static float midiToHz(int note, float pitchBendSemitones = 0.f);
 };

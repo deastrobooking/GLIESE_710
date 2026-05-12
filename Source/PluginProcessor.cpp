@@ -121,20 +121,30 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("osc_wt_adsr_s", "WT Env Sustain", 0.0f,   1.0f,  1.0f);
     addEnvTime("osc_wt_adsr_r", "WT Env Release", 0.3f);
 
-    // ── Virtual Analog Oscillator ─────────────────────────────────────────────
-    addBool  ("osc_va_on",    "VA Enable",   true);
-    addChoice("osc_va_shape", "VA Shape",
-              {"Sine", "Saw", "RevSaw", "Square", "Triangle", "Pulse"}, 1);
-    addFloat("osc_va_pw",     "VA Pulse Width", 0.05f, 0.95f, 0.5f);
-    addFloat("osc_va_detune", "VA Detune",       0.0f, 1.0f, 0.0f);
-    addInt  ("osc_va_unison", "VA Unison",       1, 8, 1);
-    addFloat("osc_va_spread", "VA Spread",       0.0f, 1.0f, 0.5f);
-    addFloat("osc_va_level",  "VA Level",        0.0f, 1.0f, 0.0f);
-    addFloat("osc_va_octave", "VA Octave",      -3.0f, 3.0f, 0.0f);
-    addEnvTime("osc_va_adsr_a", "VA Env Attack",  0.01f);
-    addEnvTime("osc_va_adsr_d", "VA Env Decay",   0.2f);
-    addFloat("osc_va_adsr_s", "VA Env Sustain", 0.0f,   1.0f,  1.0f);
-    addEnvTime("osc_va_adsr_r", "VA Env Release", 0.3f);
+    // ── Virtual Analog Oscillators ────────────────────────────────────────────
+    auto addVAOsc = [&](int index, const juce::String& prefix, bool enabledByDefault)
+    {
+        juce::String label = "VA" + juce::String(index);
+        addBool (prefix + "on",      label + " Enable", enabledByDefault);
+        addFloat(prefix + "shape",   label + " Shape Morph", 0.0f, 5.0f, 1.0f);
+        addFloat(prefix + "pw",      label + " Pulse Width", 0.05f, 0.95f, 0.5f);
+        addFloat(prefix + "detune",  label + " Detune",      0.0f, 1.0f, 0.0f);
+        addInt  (prefix + "unison",  label + " Unison",      1, 8, 1);
+        addFloat(prefix + "spread",  label + " Spread",      0.0f, 1.0f, 0.5f);
+        addFloat(prefix + "ring",    label + " Ring Mod",    0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "fold",    label + " Wave Fold",   0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "level",   label + " Level",       0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "octave",  label + " Octave",     -3.0f, 3.0f, 0.0f);
+        addEnvTime(prefix + "adsr_a", label + " Env Attack",  0.01f);
+        addEnvTime(prefix + "adsr_d", label + " Env Decay",   0.2f);
+        addFloat(prefix + "adsr_s",  label + " Env Sustain", 0.0f, 1.0f, 1.0f);
+        addEnvTime(prefix + "adsr_r", label + " Env Release", 0.3f);
+    };
+
+    addVAOsc(1, "osc_va_",  true);
+    addVAOsc(2, "osc_va2_", false);
+    addVAOsc(3, "osc_va3_", false);
+    addVAOsc(4, "osc_va4_", false);
 
     // ── Dual Filter ───────────────────────────────────────────────────────────
     juce::StringArray filterModes {
@@ -199,7 +209,11 @@ static APVTS::ParameterLayout buildLayout()
         "LFO1_Amount","LFO2_Amount","LFO3_Amount","LFO4_Amount",
         "Master_Volume","Master_Pan",
         "Arp_Gate","Arp_Rate",
-        "Osc3D_FieldFreq","Osc3D_ZRatio","Osc3D_Fold","Osc3D_Drive"
+        "Osc3D_FieldFreq","Osc3D_ZRatio","Osc3D_Fold","Osc3D_Drive",
+        "VA_Shape","VA_Ring","VA_Fold",
+        "VA2_Shape","VA2_PW","VA2_Detune","VA2_Spread","VA2_Level","VA2_Ring","VA2_Fold",
+        "VA3_Shape","VA3_PW","VA3_Detune","VA3_Spread","VA3_Level","VA3_Ring","VA3_Fold",
+        "VA4_Shape","VA4_PW","VA4_Detune","VA4_Spread","VA4_Level","VA4_Ring","VA4_Fold"
     };
 
     for (int i = 0; i < 32; ++i)

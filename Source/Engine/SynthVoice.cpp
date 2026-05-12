@@ -1,5 +1,91 @@
 #include "SynthVoice.h"
 
+namespace
+{
+float pF(std::atomic<float>* p, float def = 0.f) noexcept
+{
+    return p ? p->load(std::memory_order_relaxed) : def;
+}
+
+int pI(std::atomic<float>* p, int def = 0) noexcept
+{
+    return p ? (int)p->load(std::memory_order_relaxed) : def;
+}
+
+bool pB(std::atomic<float>* p, bool def = true) noexcept
+{
+    return p ? p->load(std::memory_order_relaxed) > 0.5f : def;
+}
+
+juce::String vaPrefix(int index)
+{
+    return index == 0 ? juce::String("osc_va_")
+                      : juce::String("osc_va") + juce::String(index + 1) + "_";
+}
+
+EnvIndex vaEnvIndex(int index)
+{
+    static constexpr EnvIndex envs[] = { ENV_VA, ENV_VA2, ENV_VA3, ENV_VA4 };
+    return envs[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+}
+
+ModDest vaShapeDest(int index)
+{
+    static constexpr ModDest dests[] = {
+        ModDest::VA_Shape, ModDest::VA2_Shape, ModDest::VA3_Shape, ModDest::VA4_Shape
+    };
+    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+}
+
+ModDest vaPwDest(int index)
+{
+    static constexpr ModDest dests[] = {
+        ModDest::VA_PW, ModDest::VA2_PW, ModDest::VA3_PW, ModDest::VA4_PW
+    };
+    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+}
+
+ModDest vaDetuneDest(int index)
+{
+    static constexpr ModDest dests[] = {
+        ModDest::VA_Detune, ModDest::VA2_Detune, ModDest::VA3_Detune, ModDest::VA4_Detune
+    };
+    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+}
+
+ModDest vaSpreadDest(int index)
+{
+    static constexpr ModDest dests[] = {
+        ModDest::VA_Spread, ModDest::VA2_Spread, ModDest::VA3_Spread, ModDest::VA4_Spread
+    };
+    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+}
+
+ModDest vaLevelDest(int index)
+{
+    static constexpr ModDest dests[] = {
+        ModDest::VA_Level, ModDest::VA2_Level, ModDest::VA3_Level, ModDest::VA4_Level
+    };
+    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+}
+
+ModDest vaRingDest(int index)
+{
+    static constexpr ModDest dests[] = {
+        ModDest::VA_Ring, ModDest::VA2_Ring, ModDest::VA3_Ring, ModDest::VA4_Ring
+    };
+    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+}
+
+ModDest vaFoldDest(int index)
+{
+    static constexpr ModDest dests[] = {
+        ModDest::VA_Fold, ModDest::VA2_Fold, ModDest::VA3_Fold, ModDest::VA4_Fold
+    };
+    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+}
+}
+
 float SynthVoice::midiToHz(int note, float pitchBendSemitones)
 {
     return 440.f * std::pow(2.f, ((float)(note - 69) + pitchBendSemitones) / 12.f);
@@ -11,7 +97,8 @@ void SynthVoice::prepare(double sr)
     osc3d.prepare(sr);
     fm.prepare(sr);
     wtOsc.prepare(sr);
-    vaOsc.prepare(sr);
+    for (auto& va : vaOscs)
+        va.prepare(sr);
     envBank.prepare(sr);
     lfo.prepare(sr);
     dualFilter.prepare(sr);
@@ -24,7 +111,8 @@ void SynthVoice::reset()
     osc3d.reset();
     fm.reset();
     wtOsc.reset();
-    vaOsc.reset();
+    for (auto& va : vaOscs)
+        va.reset();
     envBank.reset();
     lfo.reset();
     dualFilter.reset();
@@ -40,7 +128,8 @@ void SynthVoice::noteOn(int note, float vel)
     osc3d.setFrequency(hz);
     fm.setNoteFrequency(hz);
     wtOsc.setFrequency(hz);
-    vaOsc.setFrequency(hz);
+    for (auto& va : vaOscs)
+        va.setFrequency(hz);
 
     envBank.noteOn();
     fm.noteOn();
@@ -76,6 +165,78 @@ bool SynthVoice::isActive() const
 void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
 {
     auto get = [&](const juce::String& id) { return apvts.getRawParameterValue(id); };
+    auto cacheEnv = [&](ParamCache::EnvPtrs& env, const juce::String& pfx) {
+        env.a = get(pfx + "adsr_a");
+        env.d = get(pfx + "adsr_d");
+        env.s = get(pfx + "adsr_s");
+        env.r = get(pfx + "adsr_r");
+    };
+
+    pc.master.volume = get("master_volume");
+    pc.master.tune   = get("master_tune");
+    pc.master.octave = get("master_octave");
+    pc.master.pan    = get("master_pan");
+    cacheEnv(pc.master.env, "master_");
+
+    pc.osc3d.field     = get("osc_3d_field");
+    pc.osc3d.path      = get("osc_3d_path");
+    pc.osc3d.radius    = get("osc_3d_radius");
+    pc.osc3d.depth     = get("osc_3d_depth");
+    pc.osc3d.warp      = get("osc_3d_warp");
+    pc.osc3d.rotation  = get("osc_3d_rotation");
+    pc.osc3d.chaos     = get("osc_3d_chaos");
+    pc.osc3d.morph     = get("osc_3d_morph");
+    pc.osc3d.fieldFreq = get("osc_3d_field_freq");
+    pc.osc3d.zRatio    = get("osc_3d_z_ratio");
+    pc.osc3d.fold      = get("osc_3d_fold");
+    pc.osc3d.drive     = get("osc_3d_drive");
+    pc.osc3d.on        = get("osc_3d_on");
+    pc.osc3d.level     = get("osc_3d_level");
+    pc.osc3d.octave    = get("osc_3d_octave");
+    cacheEnv(pc.osc3d.env, "osc_3d_");
+
+    pc.fm.on        = get("osc_fm_on");
+    pc.fm.algorithm = get("osc_fm_algorithm");
+    pc.fm.level     = get("osc_fm_level");
+    pc.fm.octave    = get("osc_fm_octave");
+    cacheEnv(pc.fm.env, "osc_fm_");
+
+    pc.wt.on     = get("osc_wt_on");
+    pc.wt.table  = get("osc_wt_table");
+    pc.wt.pos    = get("osc_wt_pos");
+    pc.wt.level  = get("osc_wt_level");
+    pc.wt.octave = get("osc_wt_octave");
+    cacheEnv(pc.wt.env, "osc_wt_");
+
+    for (int i = 0; i < kNumVAOscs; ++i)
+    {
+        juce::String pfx = vaPrefix(i);
+        auto& v = pc.va[(size_t)i];
+        v.on     = get(pfx + "on");
+        v.shape  = get(pfx + "shape");
+        v.pw     = get(pfx + "pw");
+        v.detune = get(pfx + "detune");
+        v.unison = get(pfx + "unison");
+        v.spread = get(pfx + "spread");
+        v.ring   = get(pfx + "ring");
+        v.fold   = get(pfx + "fold");
+        v.level  = get(pfx + "level");
+        v.octave = get(pfx + "octave");
+        cacheEnv(v.env, pfx);
+    }
+
+    auto cacheFilter = [&](ParamCache::FilterPtrs& f, const juce::String& pfx) {
+        f.type      = get(pfx + "type");
+        f.cutoff    = get(pfx + "cutoff");
+        f.resonance = get(pfx + "resonance");
+        f.drive     = get(pfx + "drive");
+        f.envAmt    = get(pfx + "env_amt");
+        f.lfoAmt    = get(pfx + "lfo_amt");
+        cacheEnv(f.env, pfx);
+    };
+    cacheFilter(pc.filterA, "filter_a_");
+    cacheFilter(pc.filterB, "filter_b_");
+    pc.filterRouting = get("filter_routing");
 
     for (int i = 0; i < 10; ++i)
     {
@@ -120,81 +281,63 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
     for (int i = 0; i < 8; ++i)
         pc.macros[(size_t)i] = get("macro" + juce::String(i + 1));
 
-    pc.en3D = get("osc_3d_on");
-    pc.enFM = get("osc_fm_on");
-    pc.enWT = get("osc_wt_on");
-    pc.enVA = get("osc_va_on");
-
     pc.built = true;
 }
 
 //──────────────────────────────────────────────────────────────────────────────
-void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
+void SynthVoice::syncParams()
 {
-    auto getF = [&](const juce::String& id) -> float {
-        auto* p = apvts.getRawParameterValue(id);
-        return p ? p->load() : 0.f;
-    };
-    auto getI = [&](const juce::String& id) -> int {
-        auto* p = apvts.getRawParameterValue(id);
-        return p ? (int)p->load() : 0;
+    auto envParams = [](const ParamCache::EnvPtrs& e, float a, float d, float s, float r) {
+        ADSREnvelope::Params ep;
+        ep.attackSec  = pF(e.a, a);
+        ep.decaySec   = pF(e.d, d);
+        ep.sustain    = pF(e.s, s);
+        ep.releaseSec = pF(e.r, r);
+        return ep;
     };
 
     // ── 3D Oscillator ─────────────────────────────────────────────────────
+    const auto& c3d = pc.osc3d;
     Osc3D::Params p3d;
-    p3d.field    = static_cast<Osc3D::FieldType>(getI("osc_3d_field"));
-    p3d.path     = static_cast<Osc3D::PathType>(getI("osc_3d_path"));
-    p3d.radius   = juce::jlimit(0.1f, 4.0f, getF("osc_3d_radius") + modDests.dests[(int)ModDest::Osc3D_Radius]);
-    p3d.depth    = juce::jlimit(0.0f, 4.0f, getF("osc_3d_depth") + modDests.dests[(int)ModDest::Osc3D_Depth]);
-    p3d.warpAmt  = juce::jlimit(0.0f, 2.0f, getF("osc_3d_warp") + modDests.dests[(int)ModDest::Osc3D_Warp]);
-    p3d.rotation = getF("osc_3d_rotation");
-    p3d.chaos    = juce::jlimit(0.f, 1.f, getF("osc_3d_chaos") + modDests.dests[(int)ModDest::Osc3D_Chaos]);
-    p3d.morphT   = juce::jlimit(0.f, 1.f, getF("osc_3d_morph") + modDests.dests[(int)ModDest::Osc3D_Morph]);
-    p3d.fieldFreq = juce::jlimit(0.25f, 16.0f, getF("osc_3d_field_freq") + modDests.dests[(int)ModDest::Osc3D_FieldFreq]);
-    p3d.zRatio    = juce::jlimit(0.25f, 4.0f, getF("osc_3d_z_ratio") + modDests.dests[(int)ModDest::Osc3D_ZRatio]);
-    p3d.foldAmt   = juce::jlimit(0.f, 1.f, getF("osc_3d_fold") + modDests.dests[(int)ModDest::Osc3D_Fold]);
-    p3d.drive     = juce::jlimit(0.25f, 4.0f, getF("osc_3d_drive") + modDests.dests[(int)ModDest::Osc3D_Drive]);
+    p3d.field    = static_cast<Osc3D::FieldType>(pI(c3d.field));
+    p3d.path     = static_cast<Osc3D::PathType>(pI(c3d.path));
+    p3d.radius   = juce::jlimit(0.1f, 4.0f, pF(c3d.radius, 1.f) + modDests.dests[(int)ModDest::Osc3D_Radius]);
+    p3d.depth    = juce::jlimit(0.0f, 4.0f, pF(c3d.depth, 1.f) + modDests.dests[(int)ModDest::Osc3D_Depth]);
+    p3d.warpAmt  = juce::jlimit(0.0f, 2.0f, pF(c3d.warp, 0.25f) + modDests.dests[(int)ModDest::Osc3D_Warp]);
+    p3d.rotation = pF(c3d.rotation);
+    p3d.chaos    = juce::jlimit(0.f, 1.f, pF(c3d.chaos) + modDests.dests[(int)ModDest::Osc3D_Chaos]);
+    p3d.morphT   = juce::jlimit(0.f, 1.f, pF(c3d.morph) + modDests.dests[(int)ModDest::Osc3D_Morph]);
+    p3d.fieldFreq = juce::jlimit(0.25f, 16.0f, pF(c3d.fieldFreq, 1.f) + modDests.dests[(int)ModDest::Osc3D_FieldFreq]);
+    p3d.zRatio    = juce::jlimit(0.25f, 4.0f, pF(c3d.zRatio, 1.f) + modDests.dests[(int)ModDest::Osc3D_ZRatio]);
+    p3d.foldAmt   = juce::jlimit(0.f, 1.f, pF(c3d.fold) + modDests.dests[(int)ModDest::Osc3D_Fold]);
+    p3d.drive     = juce::jlimit(0.25f, 4.0f, pF(c3d.drive, 1.f) + modDests.dests[(int)ModDest::Osc3D_Drive]);
     osc3d.setParams(p3d);
 
     // Apply global pitch offsets independently: octave, fine tune, then modulation.
     float pitchMod      = modDests.dests[(int)ModDest::OscPitch_All];
-    float tuneSemi      = getF("master_tune") / 100.f;  // cents → semitones
-    float octaveSemi    = (float)getI("master_octave") * 12.f;
+    float tuneSemi      = pF(pc.master.tune) / 100.f;  // cents → semitones
+    float octaveSemi    = (float)pI(pc.master.octave) * 12.f;
     float totalPitch    = pitchMod * 12.f + tuneSemi + octaveSemi;
 
-    float hz = midiToHz(midiNote, totalPitch) * std::pow(2.f, getF("osc_3d_octave"));
+    float hz = midiToHz(midiNote, totalPitch) * std::pow(2.f, pF(c3d.octave));
     osc3d.setFrequency(hz);
 
-    // Per-oscillator ADSR
-    {
-        ADSREnvelope::Params ep;
-        ep.attackSec  = getF("osc_3d_adsr_a");
-        ep.decaySec   = getF("osc_3d_adsr_d");
-        ep.sustain    = getF("osc_3d_adsr_s");
-        ep.releaseSec = getF("osc_3d_adsr_r");
-        envBank.get(ENV_3D).setParams(ep);
-    }
+    envBank.get(ENV_3D).setParams(envParams(c3d.env, 0.01f, 0.2f, 1.f, 0.3f));
 
     // ── FM Engine ─────────────────────────────────────────────────────────
-    fm.setAlgorithm(getI("osc_fm_algorithm"));
-    hz = midiToHz(midiNote, totalPitch) * std::pow(2.f, getF("osc_fm_octave"));
+    const auto& cfm = pc.fm;
+    fm.setAlgorithm(pI(cfm.algorithm));
+    hz = midiToHz(midiNote, totalPitch) * std::pow(2.f, pF(cfm.octave));
     fm.setNoteFrequency(hz);
     fm.setVelocity(velocity);
     fm.setMidiNote(midiNote);
 
-    ADSREnvelope::Params fmLayerEnv;
-    fmLayerEnv.attackSec  = getF("osc_fm_adsr_a");
-    fmLayerEnv.decaySec   = getF("osc_fm_adsr_d");
-    fmLayerEnv.sustain    = getF("osc_fm_adsr_s");
-    fmLayerEnv.releaseSec = getF("osc_fm_adsr_r");
+    ADSREnvelope::Params fmLayerEnv = envParams(cfm.env, 0.01f, 0.2f, 1.f, 0.3f);
     envBank.get(ENV_FM).setParams(fmLayerEnv);
 
     for (int i = 0; i < 10; ++i)
     {
         const auto& opc = pc.ops[(size_t)i];
-        auto pF = [](std::atomic<float>* p, float def = 0.f) { return p ? p->load() : def; };
-        auto pI = [](std::atomic<float>* p, int   def = 0  ) { return p ? (int)p->load() : def; };
-
         FMOperator::Params op;
         float ratioMod    = i < 5 ? modDests.dests[(int)ModDest::FM_Op0_Ratio + i] : 0.f;
         op.coarse         = pI(opc.coarse, 1);
@@ -218,91 +361,68 @@ void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
     }
 
     // ── Wavetable ─────────────────────────────────────────────────────────
-    float wtHz = midiToHz(midiNote, totalPitch) * std::pow(2.f, getF("osc_wt_octave"));
+    const auto& cwt = pc.wt;
+    float wtHz = midiToHz(midiNote, totalPitch) * std::pow(2.f, pF(cwt.octave));
     wtOsc.setFrequency(wtHz);
-    wtOsc.setTablePosition(getI("osc_wt_table"), getF("osc_wt_pos") + modDests.dests[(int)ModDest::WT_Position]);
+    wtOsc.setTablePosition(pI(cwt.table), pF(cwt.pos) + modDests.dests[(int)ModDest::WT_Position]);
+    envBank.get(ENV_WT).setParams(envParams(cwt.env, 0.01f, 0.2f, 1.f, 0.3f));
 
+    // ── VA Oscillators ────────────────────────────────────────────────────
+    for (int i = 0; i < kNumVAOscs; ++i)
     {
-        ADSREnvelope::Params ep;
-        ep.attackSec  = getF("osc_wt_adsr_a");
-        ep.decaySec   = getF("osc_wt_adsr_d");
-        ep.sustain    = getF("osc_wt_adsr_s");
-        ep.releaseSec = getF("osc_wt_adsr_r");
-        envBank.get(ENV_WT).setParams(ep);
-    }
+        const auto& cv = pc.va[(size_t)i];
+        float vaHz = midiToHz(midiNote, totalPitch) * std::pow(2.f, pF(cv.octave));
+        vaOscs[(size_t)i].setFrequency(vaHz);
 
-    // ── VA Oscillator ─────────────────────────────────────────────────────
-    float vaHz = midiToHz(midiNote, totalPitch) * std::pow(2.f, getF("osc_va_octave"));
-    vaOsc.setFrequency(vaHz);
-    VAOscillator::Params vap;
-    vap.shape      = static_cast<VAOscillator::Shape>(getI("osc_va_shape"));
-    vap.pulseWidth = juce::jlimit(0.05f, 0.95f, getF("osc_va_pw") + modDests.dests[(int)ModDest::VA_PW]);
-    vap.detune     = getF("osc_va_detune") + modDests.dests[(int)ModDest::VA_Detune];
-    vap.unisonCount = getI("osc_va_unison");
-    vap.spread     = getF("osc_va_spread") + modDests.dests[(int)ModDest::VA_Spread];
-    vaOsc.setParams(vap);
+        VAOscillator::Params vap;
+        vap.shapeMorph  = juce::jlimit(0.f, 5.f,
+                                        pF(cv.shape, 1.f) + modDests.dests[(int)vaShapeDest(i)] * 5.f);
+        vap.pulseWidth  = juce::jlimit(0.05f, 0.95f, pF(cv.pw, 0.5f) + modDests.dests[(int)vaPwDest(i)]);
+        vap.detune      = pF(cv.detune) + modDests.dests[(int)vaDetuneDest(i)];
+        vap.unisonCount = pI(cv.unison, 1);
+        vap.spread      = pF(cv.spread, 0.5f) + modDests.dests[(int)vaSpreadDest(i)];
+        vap.ringMod     = juce::jlimit(0.f, 1.f, pF(cv.ring) + modDests.dests[(int)vaRingDest(i)]);
+        vap.wavefold    = juce::jlimit(0.f, 1.f, pF(cv.fold) + modDests.dests[(int)vaFoldDest(i)]);
+        vaOscs[(size_t)i].setParams(vap);
 
-    {
-        ADSREnvelope::Params ep;
-        ep.attackSec  = getF("osc_va_adsr_a");
-        ep.decaySec   = getF("osc_va_adsr_d");
-        ep.sustain    = getF("osc_va_adsr_s");
-        ep.releaseSec = getF("osc_va_adsr_r");
-        envBank.get(ENV_VA).setParams(ep);
+        envBank.get(vaEnvIndex(i)).setParams(envParams(cv.env, 0.01f, 0.2f, 1.f, 0.3f));
     }
 
     // ── Filters ───────────────────────────────────────────────────────────
+    const auto& cfa = pc.filterA;
     SingleFilter::Params fpA;
-    fpA.mode      = static_cast<FilterMode>(getI("filter_a_type"));
+    fpA.mode      = static_cast<FilterMode>(pI(cfa.type));
     fpA.cutoff    = juce::jlimit(20.f, (float)(sampleRate * 0.49),
-                                 getF("filter_a_cutoff") * std::pow(2.f, modDests.dests[(int)ModDest::FilterA_Cutoff] * 4.f));
-    fpA.resonance = juce::jlimit(0.f, 1.f, getF("filter_a_resonance") + modDests.dests[(int)ModDest::FilterA_Resonance]);
-    fpA.drive     = juce::jlimit(0.f, 1.f, getF("filter_a_drive") + modDests.dests[(int)ModDest::FilterA_Drive]);
-    fpA.envAmount = getF("filter_a_env_amt");
-    fpA.lfoAmount = getF("filter_a_lfo_amt");
+                                 pF(cfa.cutoff, 20000.f) * std::pow(2.f, modDests.dests[(int)ModDest::FilterA_Cutoff] * 4.f));
+    fpA.resonance = juce::jlimit(0.f, 1.f, pF(cfa.resonance) + modDests.dests[(int)ModDest::FilterA_Resonance]);
+    fpA.drive     = juce::jlimit(0.f, 1.f, pF(cfa.drive) + modDests.dests[(int)ModDest::FilterA_Drive]);
+    fpA.envAmount = pF(cfa.envAmt);
+    fpA.lfoAmount = pF(cfa.lfoAmt);
 
-    {
-        ADSREnvelope::Params ep;
-        ep.attackSec  = getF("filter_a_adsr_a");
-        ep.decaySec   = getF("filter_a_adsr_d");
-        ep.sustain    = getF("filter_a_adsr_s");
-        ep.releaseSec = getF("filter_a_adsr_r");
-        dualFilter.getEnvA().setParams(ep);
-        envBank.get(ENV_FILTER_A).setParams(ep);
-    }
+    auto envA = envParams(cfa.env, 0.05f, 0.3f, 0.f, 0.2f);
+    dualFilter.getEnvA().setParams(envA);
+    envBank.get(ENV_FILTER_A).setParams(envA);
 
+    const auto& cfb = pc.filterB;
     SingleFilter::Params fpB;
-    fpB.mode      = static_cast<FilterMode>(getI("filter_b_type"));
+    fpB.mode      = static_cast<FilterMode>(pI(cfb.type));
     fpB.cutoff    = juce::jlimit(20.f, (float)(sampleRate * 0.49),
-                                 getF("filter_b_cutoff") * std::pow(2.f, modDests.dests[(int)ModDest::FilterB_Cutoff] * 4.f));
-    fpB.resonance = juce::jlimit(0.f, 1.f, getF("filter_b_resonance") + modDests.dests[(int)ModDest::FilterB_Resonance]);
-    fpB.drive     = juce::jlimit(0.f, 1.f, getF("filter_b_drive") + modDests.dests[(int)ModDest::FilterB_Drive]);
-    fpB.envAmount = getF("filter_b_env_amt");
-    fpB.lfoAmount = getF("filter_b_lfo_amt");
+                                 pF(cfb.cutoff, 20000.f) * std::pow(2.f, modDests.dests[(int)ModDest::FilterB_Cutoff] * 4.f));
+    fpB.resonance = juce::jlimit(0.f, 1.f, pF(cfb.resonance) + modDests.dests[(int)ModDest::FilterB_Resonance]);
+    fpB.drive     = juce::jlimit(0.f, 1.f, pF(cfb.drive) + modDests.dests[(int)ModDest::FilterB_Drive]);
+    fpB.envAmount = pF(cfb.envAmt);
+    fpB.lfoAmount = pF(cfb.lfoAmt);
 
-    {
-        ADSREnvelope::Params ep;
-        ep.attackSec  = getF("filter_b_adsr_a");
-        ep.decaySec   = getF("filter_b_adsr_d");
-        ep.sustain    = getF("filter_b_adsr_s");
-        ep.releaseSec = getF("filter_b_adsr_r");
-        dualFilter.getEnvB().setParams(ep);
-        envBank.get(ENV_FILTER_B).setParams(ep);
-    }
+    auto envB = envParams(cfb.env, 0.05f, 0.3f, 0.f, 0.2f);
+    dualFilter.getEnvB().setParams(envB);
+    envBank.get(ENV_FILTER_B).setParams(envB);
 
     dualFilter.setFilterA(fpA);
     dualFilter.setFilterB(fpB);
-    dualFilter.setRouting(static_cast<FilterRouting>(getI("filter_routing")));
+    dualFilter.setRouting(static_cast<FilterRouting>(pI(pc.filterRouting)));
 
     // ── Master ADSR ───────────────────────────────────────────────────────
-    {
-        ADSREnvelope::Params ep;
-        ep.attackSec  = getF("master_adsr_a");
-        ep.decaySec   = getF("master_adsr_d");
-        ep.sustain    = getF("master_adsr_s");
-        ep.releaseSec = getF("master_adsr_r");
-        envBank.get(ENV_MASTER).setParams(ep);
-    }
+    envBank.get(ENV_MASTER).setParams(envParams(pc.master.env, 0.01f, 0.2f, 0.8f, 0.3f));
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -319,7 +439,9 @@ void SynthVoice::buildModSources()
     modSources.sources[(int)ModSource::Env_3D]      = envBank.get(ENV_3D).getCurrentValue();
     modSources.sources[(int)ModSource::Env_FM]      = envBank.get(ENV_FM).getCurrentValue();
     modSources.sources[(int)ModSource::Env_WT]      = envBank.get(ENV_WT).getCurrentValue();
-    modSources.sources[(int)ModSource::Env_VA]      = envBank.get(ENV_VA).getCurrentValue();
+    modSources.sources[(int)ModSource::Env_VA]      = juce::jmax(
+        juce::jmax(envBank.get(ENV_VA).getCurrentValue(),  envBank.get(ENV_VA2).getCurrentValue()),
+        juce::jmax(envBank.get(ENV_VA3).getCurrentValue(), envBank.get(ENV_VA4).getCurrentValue()));
     modSources.sources[(int)ModSource::Env_FilterA] = envBank.get(ENV_FILTER_A).getCurrentValue();
     modSources.sources[(int)ModSource::Env_FilterB] = envBank.get(ENV_FILTER_B).getCurrentValue();
 
@@ -341,18 +463,10 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
     // Build param pointer cache once on first block (avoids per-block string alloc).
     if (!pc.built) buildParamCache(apvts);
 
-    auto getF = [&](const juce::String& id) -> float {
-        auto* p = apvts.getRawParameterValue(id);
-        return p ? p->load() : 0.f;
-    };
-
     // Update LFO params using cached pointers — no string construction
     for (int i = 0; i < LFOEngine::kNumLFOs; ++i)
     {
         const auto& lc = pc.lfos[(size_t)i];
-        auto pF = [](std::atomic<float>* p, float def = 0.f) { return p ? p->load() : def; };
-        auto pI = [](std::atomic<float>* p, int   def = 0  ) { return p ? (int)p->load() : def; };
-
         LFOEngine::LFOParams lp;
         lp.shape   = static_cast<LFOEngine::Shape>(pI(lc.shape));
         lp.rate    = juce::jlimit(0.01f, 100.f,
@@ -371,40 +485,46 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
     {
         const auto& mc = pc.mods[(size_t)i];
         ModSlot slot;
-        slot.source  = static_cast<ModSource>(mc.source  ? (int)mc.source->load()  : 0);
-        slot.dest    = static_cast<ModDest>  (mc.dest    ? (int)mc.dest->load()    : 0);
-        slot.amount  = mc.amount  ? mc.amount->load()  : 0.f;
-        slot.bipolar = mc.bipolar ? mc.bipolar->load() > 0.5f : true;
+        slot.source  = static_cast<ModSource>(pI(mc.source));
+        slot.dest    = static_cast<ModDest>  (pI(mc.dest));
+        slot.amount  = pF(mc.amount);
+        slot.bipolar = pB(mc.bipolar);
         modMatrix.setSlot(i, slot);
     }
 
     // Macros — cached pointers
     for (int i = 0; i < 8; ++i)
         modSources.sources[(int)ModSource::Macro1 + i] =
-            pc.macros[(size_t)i] ? pc.macros[(size_t)i]->load() : 0.f;
+            pF(pc.macros[(size_t)i]);
 
     buildModSources();
     modMatrix.process(modSources, modDests);
 
-    syncParams(apvts);
+    syncParams();
 
-    float osc3dLevel = juce::jlimit(0.f, 1.f, getF("osc_3d_level") + modDests.dests[(int)ModDest::Osc3D_Level]);
-    float fmLevel    = juce::jlimit(0.f, 1.f, getF("osc_fm_level"));
-    float wtLevel    = juce::jlimit(0.f, 1.f, getF("osc_wt_level") + modDests.dests[(int)ModDest::WT_Level]);
-    float vaLevel    = juce::jlimit(0.f, 1.f, getF("osc_va_level") + modDests.dests[(int)ModDest::VA_Level]);
+    float osc3dLevel = juce::jlimit(0.f, 1.f, pF(pc.osc3d.level, 0.8f) + modDests.dests[(int)ModDest::Osc3D_Level]);
+    float fmLevel    = juce::jlimit(0.f, 1.f, pF(pc.fm.level));
+    float wtLevel    = juce::jlimit(0.f, 1.f, pF(pc.wt.level) + modDests.dests[(int)ModDest::WT_Level]);
+    std::array<float, kNumVAOscs> vaLevels {};
+    for (int i = 0; i < kNumVAOscs; ++i)
+    {
+        vaLevels[(size_t)i] = juce::jlimit(0.f, 1.f,
+            pF(pc.va[(size_t)i].level) + modDests.dests[(int)vaLevelDest(i)]);
+    }
 
-    float masterVol  = getF("master_volume");
-    float masterPan  = juce::jlimit(-1.f, 1.f, getF("master_pan") + modDests.dests[(int)ModDest::Master_Pan]);
+    float masterVol  = pF(pc.master.volume, 0.8f);
+    float masterPan  = juce::jlimit(-1.f, 1.f, pF(pc.master.pan) + modDests.dests[(int)ModDest::Master_Pan]);
     masterVol = juce::jlimit(0.f, 1.f, masterVol + modDests.dests[(int)ModDest::Master_Volume]);
 
     float lfoA = lfo.getValue(0);
     float lfoB = lfo.getValue(1);
 
-    auto loadBool = [](std::atomic<float>* p) { return p == nullptr || p->load() > 0.5f; };
-    const bool use3D = loadBool(pc.en3D) && osc3dLevel > kSilent;
-    const bool useFM = loadBool(pc.enFM) && fmLevel    > kSilent;
-    const bool useWT = loadBool(pc.enWT) && wtLevel    > kSilent;
-    const bool useVA = loadBool(pc.enVA) && vaLevel    > kSilent;
+    const bool use3D = pB(pc.osc3d.on) && osc3dLevel > kSilent;
+    const bool useFM = pB(pc.fm.on) && fmLevel    > kSilent;
+    const bool useWT = pB(pc.wt.on) && wtLevel    > kSilent;
+    std::array<bool, kNumVAOscs> useVA {};
+    for (int i = 0; i < kNumVAOscs; ++i)
+        useVA[(size_t)i] = pB(pc.va[(size_t)i].on) && vaLevels[(size_t)i] > kSilent;
     const float panGainL = masterVol * std::sqrt(0.5f - 0.5f * masterPan);
     const float panGainR = masterVol * std::sqrt(0.5f + 0.5f * masterPan);
 
@@ -427,7 +547,8 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             envBank.processAndGet(ENV_3D);
             envBank.processAndGet(ENV_FM);
             envBank.processAndGet(ENV_WT);
-            envBank.processAndGet(ENV_VA);
+            for (int i = 0; i < kNumVAOscs; ++i)
+                envBank.processAndGet(vaEnvIndex(i));
             envBank.processAndGet(ENV_FILTER_A);
             envBank.processAndGet(ENV_FILTER_B);
             fm.advanceEnvelopes();
@@ -442,7 +563,9 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
         float env3D = envBank.processAndGet(ENV_3D);
         float envFM = envBank.processAndGet(ENV_FM);
         float envWT = envBank.processAndGet(ENV_WT);
-        float envVA = envBank.processAndGet(ENV_VA);
+        float envVA[kNumVAOscs];
+        for (int i = 0; i < kNumVAOscs; ++i)
+            envVA[i] = envBank.processAndGet(vaEnvIndex(i));
         envBank.processAndGet(ENV_FILTER_A);
         envBank.processAndGet(ENV_FILTER_B);
 
@@ -470,11 +593,14 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             sigR += wtR * envWT * wtLevel;
         }
 
-        if (useVA && envVA > kSilent)
+        for (int i = 0; i < kNumVAOscs; ++i)
         {
-            auto [vaL, vaR] = vaOsc.processSample();
-            sigL += vaL * envVA * vaLevel;
-            sigR += vaR * envVA * vaLevel;
+            if (useVA[(size_t)i] && envVA[i] > kSilent)
+            {
+                auto [vaL, vaR] = vaOscs[(size_t)i].processSample();
+                sigL += vaL * envVA[i] * vaLevels[(size_t)i];
+                sigR += vaR * envVA[i] * vaLevels[(size_t)i];
+            }
         }
 
         // Dual filter

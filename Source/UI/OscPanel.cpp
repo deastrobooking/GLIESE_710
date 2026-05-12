@@ -57,20 +57,16 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         setupExtraSlider(extra10, "osc_3d_drive",     "Field Drive",      extraAtt10);
         numExtraSliders = 10;
     }
-    else if (oscId == "va")
+    else if (oscId.startsWith("va"))
     {
-        modeBoxA.addItemList({"Sine","Saw","RevSaw","Square","Triangle","Pulse"}, 1);
-        modeBoxA.setTooltip("VA Shape");
-        IndustrialTheme::styleCombo(modeBoxA, accent);
-        addAndMakeVisible(modeBoxA);
-        modeAttA = std::make_unique<CAtt>(apvts, "osc_va_shape", modeBoxA);
-        numModeBoxes = 1;
-
-        setupExtraSlider(extra1, "osc_va_pw",     "Pulse Width",    extraAtt1);
-        setupExtraSlider(extra2, "osc_va_detune", "Unison Detune",  extraAtt2);
-        setupExtraSlider(extra3, "osc_va_unison", "Unison Voices",  extraAtt3);
-        setupExtraSlider(extra4, "osc_va_spread", "Stereo Spread",  extraAtt4);
-        numExtraSliders = 4;
+        setupExtraSlider(extra1, pfx + "shape",  "Wave Shape Morph", extraAtt1);
+        setupExtraSlider(extra2, pfx + "pw",     "Pulse Width",      extraAtt2);
+        setupExtraSlider(extra3, pfx + "detune", "Unison Detune",    extraAtt3);
+        setupExtraSlider(extra4, pfx + "unison", "Unison Voices",    extraAtt4);
+        setupExtraSlider(extra5, pfx + "spread", "Stereo Spread",    extraAtt5);
+        setupExtraSlider(extra6, pfx + "ring",   "Ring Modulation",  extraAtt6);
+        setupExtraSlider(extra7, pfx + "fold",   "Wave Folding",     extraAtt7);
+        numExtraSliders = 7;
     }
     else if (oscId == "wt")
     {
@@ -111,13 +107,15 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         makeLabel(extraLabels[8], "FOLD");
         makeLabel(extraLabels[9], "DRIVE");
     }
-    else if (oscId == "va")
+    else if (oscId.startsWith("va"))
     {
-        makeLabel(modeALabel, "SHAPE");
-        makeLabel(extraLabels[0], "PW");
-        makeLabel(extraLabels[1], "DETUNE");
-        makeLabel(extraLabels[2], "UNISON");
-        makeLabel(extraLabels[3], "SPREAD");
+        makeLabel(extraLabels[0], "SHAPE");
+        makeLabel(extraLabels[1], "PW");
+        makeLabel(extraLabels[2], "DETUNE");
+        makeLabel(extraLabels[3], "UNISON");
+        makeLabel(extraLabels[4], "SPREAD");
+        makeLabel(extraLabels[5], "RING");
+        makeLabel(extraLabels[6], "FOLD");
     }
     else if (oscId == "wt")
     {

@@ -17,6 +17,12 @@ void VAOscillator::setParams(const Params& p)
 {
     params = p;
     params.unisonCount = juce::jlimit(1, kMaxUnison, params.unisonCount);
+    params.shapeMorph = params.shapeMorph < 0.f
+        ? (float)static_cast<int>(params.shape)
+        : juce::jlimit(0.f, (float)((int)Shape::NumShapes - 1), params.shapeMorph);
+    params.pulseWidth = juce::jlimit(0.05f, 0.95f, params.pulseWidth);
+    params.ringMod = juce::jlimit(0.f, 1.f, params.ringMod);
+    params.wavefold = juce::jlimit(0.f, 1.f, params.wavefold);
     rebuildVoiceState();
 }
 
@@ -63,16 +69,16 @@ float VAOscillator::polyBlep(float phase, float phaseInc)
     return 0.f;
 }
 
-float VAOscillator::generateSaw(float& phase, float phaseInc) const
+float VAOscillator::generateSaw(float phase, float phaseInc) const
 {
     float v = 2.f * phase - 1.f;
     v -= polyBlep(phase, phaseInc);
     return v;
 }
 
-float VAOscillator::generateSquare(float& phase, float phaseInc) const
+float VAOscillator::generateSquare(float phase, float phaseInc) const
 {
-    float pw = juce::jlimit(0.05f, 0.95f, params.pulseWidth);
+    float pw = params.pulseWidth;
     float v  = phase < pw ? 1.f : -1.f;
     v += polyBlep(phase, phaseInc);
 
@@ -88,6 +94,49 @@ float VAOscillator::generateTriangle(float phase) const
     return 2.f * std::abs(2.f * phase - 1.f) - 1.f;
 }
 
+float VAOscillator::generateShape(int shapeIndex, float phase, float phaseInc) const
+{
+    switch ((Shape)juce::jlimit(0, (int)Shape::NumShapes - 1, shapeIndex))
+    {
+        case Shape::Sine:
+            return std::sin(phase * juce::MathConstants<float>::twoPi);
+        case Shape::Saw:
+            return generateSaw(phase, phaseInc);
+        case Shape::RevSaw:
+            return -generateSaw(phase, phaseInc);
+        case Shape::Square:
+            return generateSquare(phase, phaseInc);
+        case Shape::Triangle:
+            return generateTriangle(phase);
+        case Shape::Pulse:
+            return generateSquare(phase, phaseInc);
+        case Shape::NumShapes:
+        default:
+            return 0.f;
+    }
+}
+
+float VAOscillator::generateMorphedShape(float phase, float phaseInc) const
+{
+    float shapePos = juce::jlimit(0.f, (float)((int)Shape::NumShapes - 1), params.shapeMorph);
+    int lower = (int)std::floor(shapePos);
+    int upper = juce::jmin(lower + 1, (int)Shape::NumShapes - 1);
+    float mix = shapePos - (float)lower;
+
+    float a = generateShape(lower, phase, phaseInc);
+    float b = generateShape(upper, phase, phaseInc);
+    return a + (b - a) * mix;
+}
+
+float VAOscillator::foldSignal(float x) noexcept
+{
+    x = std::fmod(x + 1.f, 4.f);
+    if (x < 0.f)
+        x += 4.f;
+
+    return x <= 2.f ? x - 1.f : 3.f - x;
+}
+
 std::pair<float, float> VAOscillator::processSample()
 {
     float L = 0.f, R = 0.f;
@@ -96,26 +145,18 @@ std::pair<float, float> VAOscillator::processSample()
     for (int i = 0; i < n; ++i)
     {
         float phaseInc = phaseIncs[i];
+        float sample = generateMorphedShape(phases[i], phaseInc);
 
-        float sample = 0.f;
-        switch (params.shape)
+        if (params.ringMod > 0.f)
         {
-            case Shape::Sine:
-                sample = std::sin(phases[i] * juce::MathConstants<float>::twoPi);
-                break;
-            case Shape::Saw:
-                sample = generateSaw(phases[i], phaseInc);
-                break;
-            case Shape::RevSaw:
-                sample = -generateSaw(phases[i], phaseInc);
-                break;
-            case Shape::Square:
-            case Shape::Pulse:
-                sample = generateSquare(phases[i], phaseInc);
-                break;
-            case Shape::Triangle:
-                sample = generateTriangle(phases[i]);
-                break;
+            float ring = std::sin(phases[i] * juce::MathConstants<float>::twoPi * 2.f);
+            sample = sample + (sample * ring - sample) * params.ringMod;
+        }
+
+        if (params.wavefold > 0.f)
+        {
+            float folded = foldSignal(sample * (1.f + params.wavefold * 8.f));
+            sample = sample + (folded - sample) * params.wavefold;
         }
 
         phases[i] += phaseInc;

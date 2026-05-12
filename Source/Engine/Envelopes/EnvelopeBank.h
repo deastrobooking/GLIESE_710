@@ -9,6 +9,9 @@ enum EnvIndex
     ENV_FM,
     ENV_WT,
     ENV_VA,
+    ENV_VA2,
+    ENV_VA3,
+    ENV_VA4,
     ENV_FILTER_A,
     ENV_FILTER_B,
     ENV_COUNT

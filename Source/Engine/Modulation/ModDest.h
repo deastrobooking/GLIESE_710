@@ -17,5 +17,9 @@ enum class ModDest : int
     Master_Volume, Master_Pan,
     Arp_Gate, Arp_Rate,
     Osc3D_FieldFreq, Osc3D_ZRatio, Osc3D_Fold, Osc3D_Drive,
+    VA_Shape, VA_Ring, VA_Fold,
+    VA2_Shape, VA2_PW, VA2_Detune, VA2_Spread, VA2_Level, VA2_Ring, VA2_Fold,
+    VA3_Shape, VA3_PW, VA3_Detune, VA3_Spread, VA3_Level, VA3_Ring, VA3_Fold,
+    VA4_Shape, VA4_PW, VA4_Detune, VA4_Spread, VA4_Level, VA4_Ring, VA4_Fold,
     NumDests
 };

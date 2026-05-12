@@ -1,11 +1,31 @@
 #include "SynthEngine.h"
 #include <cmath>
 
+namespace
+{
+float pF(std::atomic<float>* p, float def = 0.f) noexcept
+{
+    return p ? p->load(std::memory_order_relaxed) : def;
+}
+
+int pI(std::atomic<float>* p, int def = 0) noexcept
+{
+    return p ? (int)p->load(std::memory_order_relaxed) : def;
+}
+
+bool pB(std::atomic<float>* p, bool def = false) noexcept
+{
+    return p ? p->load(std::memory_order_relaxed) > 0.5f : def;
+}
+}
+
 void SynthEngine::prepare(const juce::dsp::ProcessSpec& spec)
 {
     sampleRate = spec.sampleRate;
     for (auto& v : voices) v.prepare(sampleRate);
     arp.prepare(sampleRate);
+    arpMidi.ensureSize(4096);
+    renderMidi.ensureSize(4096);
 }
 
 void SynthEngine::reset()
@@ -17,6 +37,7 @@ void SynthEngine::reset()
 void SynthEngine::setAPVTS(juce::AudioProcessorValueTreeState* a)
 {
     apvts = a;
+    buildParamCache();
 }
 
 void SynthEngine::setHostBPM(double bpm)
@@ -24,6 +45,29 @@ void SynthEngine::setHostBPM(double bpm)
     arp.setHostBPM(bpm);
     for (auto& v : voices)
         v.setHostBPM(bpm);
+}
+
+void SynthEngine::buildParamCache()
+{
+    if (apvts == nullptr)
+    {
+        arpParams = {};
+        return;
+    }
+
+    auto get = [&](const char* id) { return apvts->getRawParameterValue(id); };
+    arpParams.on      = get("arp_on");
+    arpParams.pattern = get("arp_pattern");
+    arpParams.rate    = get("arp_rate");
+    arpParams.sync    = get("arp_sync");
+    arpParams.octaves = get("arp_octaves");
+    arpParams.gate    = get("arp_gate");
+    arpParams.swing   = get("arp_swing");
+    arpParams.latch   = get("arp_latch");
+    arpParams.built   = true;
+
+    for (auto& v : voices)
+        v.buildParamCache(*apvts);
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -144,26 +188,18 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
                                    int numSamples)
 {
     if (!apvts) return;
+    if (!arpParams.built)
+        buildParamCache();
 
-    bool arpOn = apvts->getRawParameterValue("arp_on")->load() > 0.5f;
+    bool arpOn = pB(arpParams.on);
 
     if (arpOn)
     {
-        // Sync arp params
-        auto getF = [&](const juce::String& id) {
-            auto* p = apvts->getRawParameterValue(id);
-            return p ? p->load() : 0.f;
-        };
-        auto getI = [&](const juce::String& id) {
-            auto* p = apvts->getRawParameterValue(id);
-            return p ? (int)p->load() : 0;
-        };
-
         Arpeggiator::Params ap;
-        ap.pattern  = static_cast<Arpeggiator::Pattern>(getI("arp_pattern"));
-        ap.rateIdx  = getI("arp_rate");
-        ap.sync     = getI("arp_sync") != 0;
-        ap.octaves  = getI("arp_octaves");
+        ap.pattern  = static_cast<Arpeggiator::Pattern>(pI(arpParams.pattern));
+        ap.rateIdx  = pI(arpParams.rate, 3);
+        ap.sync     = pB(arpParams.sync, true);
+        ap.octaves  = pI(arpParams.octaves, 1);
         float arpGateMod = 0.f;
         float arpRateMod = 0.f;
         int numModVoices = 0;
@@ -183,9 +219,9 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
             arpRateMod /= (float)numModVoices;
         }
 
-        ap.gate     = juce::jlimit(0.01f, 1.0f, getF("arp_gate") + arpGateMod);
-        ap.swing    = getF("arp_swing");
-        ap.latch    = getI("arp_latch") != 0;
+        ap.gate     = juce::jlimit(0.01f, 1.0f, pF(arpParams.gate, 0.8f) + arpGateMod);
+        ap.swing    = pF(arpParams.swing);
+        ap.latch    = pB(arpParams.latch);
         ap.rateIdx  = juce::jlimit(0, Arpeggiator::kNumRates - 1,
                                    ap.rateIdx + (int)std::round(arpRateMod));
         arp.setParams(ap);

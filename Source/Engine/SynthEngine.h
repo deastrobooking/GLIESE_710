@@ -25,6 +25,20 @@ private:
     juce::AudioProcessorValueTreeState* apvts = nullptr;
     double sampleRate = 48000.0;
 
+    struct ArpParamCache
+    {
+        std::atomic<float>* on      = nullptr;
+        std::atomic<float>* pattern = nullptr;
+        std::atomic<float>* rate    = nullptr;
+        std::atomic<float>* sync    = nullptr;
+        std::atomic<float>* octaves = nullptr;
+        std::atomic<float>* gate    = nullptr;
+        std::atomic<float>* swing   = nullptr;
+        std::atomic<float>* latch   = nullptr;
+        bool built = false;
+    };
+    ArpParamCache arpParams;
+
     std::array<SynthVoice, kNumVoices> voices;
     Arpeggiator arp;
     juce::MidiBuffer arpMidi;
@@ -40,4 +54,5 @@ private:
 
     SynthVoice* findFreeVoice() const;
     SynthVoice* stealVoice() const;
+    void buildParamCache();
 };

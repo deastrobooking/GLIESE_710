@@ -19,11 +19,29 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     oscillatorsTab = new juce::Component();
 
     osc3dPanel = std::make_unique<OscPanel>(apvts, "3d", "3D OSCILLATOR");
-    oscVAPanel = std::make_unique<OscPanel>(apvts, "va", "VIRTUAL ANALOG");
     oscWTPanel = std::make_unique<OscPanel>(apvts, "wt", "WAVETABLE");
 
+    vaTabs.setTabBarDepth(24);
+    vaTabs.setOutline(0);
+    vaTabs.setColour(juce::TabbedComponent::backgroundColourId, kBg);
+    vaTabs.setColour(juce::TabbedComponent::outlineColourId, IndustrialTheme::panelEdge());
+    vaTabs.setColour(juce::TabbedButtonBar::tabTextColourId, IndustrialTheme::mutedText());
+    vaTabs.setColour(juce::TabbedButtonBar::frontTextColourId, IndustrialTheme::text());
+    vaTabs.setColour(juce::TabbedButtonBar::tabOutlineColourId, IndustrialTheme::panelEdge());
+
+    static const juce::StringArray vaIds { "va", "va2", "va3", "va4" };
+    for (int i = 0; i < 4; ++i)
+    {
+        vaPanels[(size_t)i] = std::make_unique<OscPanel>(
+            apvts, vaIds[i], "VIRTUAL ANALOG " + juce::String(i + 1));
+        vaTabs.addTab("VA " + juce::String(i + 1),
+                      IndustrialTheme::accentForOsc(vaIds[i]).withAlpha(0.18f),
+                      vaPanels[(size_t)i].get(),
+                      false);
+    }
+
     oscillatorsTab->addAndMakeVisible(*osc3dPanel);
-    oscillatorsTab->addAndMakeVisible(*oscVAPanel);
+    oscillatorsTab->addAndMakeVisible(vaTabs);
     oscillatorsTab->addAndMakeVisible(*oscWTPanel);
 
     tabs.addTab("OSCILLATORS", kBg, oscillatorsTab, true);
@@ -222,12 +240,12 @@ void MainPanel::resized()
     tabs.setBounds(area);
 
     // Layout oscillators tab content
-    if (oscillatorsTab && osc3dPanel && oscVAPanel && oscWTPanel)
+    if (oscillatorsTab && osc3dPanel && oscWTPanel)
     {
         auto tabArea = oscillatorsTab->getLocalBounds().reduced(6);
         int w3 = tabArea.getWidth() / 3;
         osc3dPanel->setBounds(tabArea.removeFromLeft(w3).reduced(3));
-        oscVAPanel->setBounds(tabArea.removeFromLeft(w3).reduced(3));
+        vaTabs.setBounds(tabArea.removeFromLeft(w3).reduced(3));
         oscWTPanel->setBounds(tabArea.reduced(3));
     }
 
