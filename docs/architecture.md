@@ -1,0 +1,97 @@
+# Architecture Overview
+
+## Signal Flow
+
+```
+MIDI Input
+    │
+    ▼
+Arpeggiator (optional)
+    │
+    ▼
+SynthEngine  (voice pool — 16 voices, oldest-note stealing)
+    │
+    ├── SynthVoice × 16
+    │       │
+    │       ├── [LFO Engine]  (4 LFOs — processed once per block)
+    │       ├── [Mod Matrix]  (32 slots: source → dest accumulation)
+    │       │
+    │       ├── Osc3D          → env3D  ─╮
+    │       ├── FMAlgorithm    → envFM  ─┤  additive mix
+    │       ├── WavetableOsc   → envWT  ─┤
+    │       ├── VAOscillator   → envVA  ─╯
+    │       │
+    │       ├── DualFilter (Filter A → Filter B  or  parallel)
+    │       │       └── per-filter ADSR envelopes
+    │       │
+    │       └── Master ADSR × volume × pan
+    │
+    ▼
+Stereo Output Buffer (accumulated across all active voices)
+```
+
+## Module Ownership
+
+| Class | Owns | Lives in |
+|---|---|---|
+| `GLIESE710AudioProcessor` | `SynthEngine`, `PresetManager`, `APVTS` | PluginProcessor |
+| `SynthEngine` | `SynthVoice[16]`, `Arpeggiator` | Engine/ |
+| `SynthVoice` | `Osc3D`, `FMAlgorithm`, `WavetableOsc`, `VAOscillator`, `EnvelopeBank`, `LFOEngine`, `DualFilter`, `ModMatrix` | Engine/ |
+| `FMAlgorithm` | `FMOperator[10]` | Engine/Oscillators/ |
+| `DualFilter` | `SingleFilter × 2`, `ADSREnvelope × 2` | Engine/Filter/ |
+| `EnvelopeBank` | `ADSREnvelope[7]` | Engine/Envelopes/ |
+
+## Thread Model
+
+```
+Message Thread          Audio Thread
+─────────────           ─────────────
+APVTS writes            APVTS reads (atomic)
+Preset load/save        processBlock()
+UI repaints             No allocation
+                        No locks
+                        No system calls
+```
+
+**Rule:** nothing in `processBlock()` or any method called from it may allocate memory, lock a mutex, or call a system API. All buffers are pre-allocated in `prepareToPlay`.
+
+## Parameter System
+
+All controls are registered as `juce::AudioProcessorParameter` children of `AudioProcessorValueTreeState` (APVTS). This gives:
+
+- Thread-safe reads from the audio thread via `getRawParameterValue()` → `std::atomic<float>*`
+- Automatic DAW automation
+- Free undo/redo
+- One-call preset serialization via `copyState()` → `ValueTree` → XML
+
+Parameters are read once per block at the top of `SynthVoice::renderBlock` and applied to sub-engines. See [docs/modulation-matrix.md](modulation-matrix.md) for how mod matrix offsets are layered on top of base parameter values.
+
+## Voice Lifecycle
+
+```
+noteOn(note, vel)
+  → findFreeVoice() or stealVoice() (oldest age)
+  → voice.noteOn(note, vel)
+      → set frequency on all oscillators
+      → envBank.noteOn()  ← triggers all 7 envelopes
+
+noteOff(note)
+  → voice.noteOff()
+      → envBank.noteOff()  ← starts release on all envelopes
+
+Voice::isActive()
+  → true while envBank.anyActive()
+  → returns false when master ADSR reaches Idle
+  → voice is then available for reuse
+```
+
+## Adding a New Module
+
+1. Create `Source/Engine/YourModule/YourModule.{h,cpp}`
+2. Add `void prepare(double sampleRate)` and `void reset()`
+3. Add it as a member of `SynthVoice`
+4. Call `prepare()` in `SynthVoice::prepare()`
+5. Call `reset()` in `SynthVoice::reset()`
+6. Register any new parameters in `PluginProcessor::createParameterLayout()`
+7. Read params and call your module in `SynthVoice::syncParams()`
+8. Add the `.cpp` to `target_sources` in `CMakeLists.txt`
