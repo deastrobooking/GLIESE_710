@@ -2,9 +2,15 @@
 #include "../Source/Engine/Envelopes/ADSREnvelope.h"
 #include "../Source/Engine/Oscillators/Osc3D.h"
 #include "../Source/Engine/Oscillators/VAOscillator.h"
+#include "../Source/Engine/Oscillators/WavetableOsc.h"
+#include "../Source/Engine/Oscillators/FMOperator.h"
+#include "../Source/Engine/Oscillators/FMAlgorithm.h"
 #include "../Source/Engine/Filter/DualFilter.h"
 #include "../Source/Engine/Modulation/ModMatrix.h"
 #include "../Source/Engine/LFO/LFOEngine.h"
+#include <vector>
+
+using Catch::Approx;
 
 //──────────────────────────────────────────────────────────────────────────────
 TEST_CASE("ADSREnvelope basic lifecycle", "[envelope]")
@@ -237,18 +243,37 @@ TEST_CASE("ModMatrix bipolar conversion", "[modmatrix]")
     mm.clear();
 
     ModSlot slot;
-    slot.source  = ModSource::LFO1;
+    slot.source  = ModSource::Velocity;
     slot.dest    = ModDest::FilterA_Cutoff;
     slot.amount  = 0.5f;
     slot.bipolar = true;   // converts 0..1 → -1..1
     mm.setSlot(0, slot);
 
     ModValues src{}, dst{};
-    src.sources[(int)ModSource::LFO1] = 0.8f;
+    src.sources[(int)ModSource::Velocity] = 0.8f;
     mm.process(src, dst);
 
     // Bipolar: srcVal = 0.8*2-1 = 0.6, dest = 0.6 * 0.5 = 0.3
     REQUIRE(dst.dests[(int)ModDest::FilterA_Cutoff] == Approx(0.3f));
+}
+
+TEST_CASE("ModMatrix leaves naturally bipolar sources unchanged", "[modmatrix]")
+{
+    ModMatrix mm;
+    mm.clear();
+
+    ModSlot slot;
+    slot.source  = ModSource::LFO1;
+    slot.dest    = ModDest::FilterA_Cutoff;
+    slot.amount  = 0.5f;
+    slot.bipolar = true;
+    mm.setSlot(0, slot);
+
+    ModValues src{}, dst{};
+    src.sources[(int)ModSource::LFO1] = 0.8f;
+    mm.process(src, dst);
+
+    REQUIRE(dst.dests[(int)ModDest::FilterA_Cutoff] == Approx(0.4f));
 }
 
 TEST_CASE("ModMatrix None slot is skipped", "[modmatrix]")
@@ -316,4 +341,96 @@ TEST_CASE("DualFilter output is finite", "[filter]")
             REQUIRE(std::isfinite(R));
         }
     }
+}
+
+TEST_CASE("DualFilter keeps stereo channel state independent", "[filter]")
+{
+    DualFilter df;
+    df.prepare(48000.0);
+
+    SingleFilter::Params p;
+    p.mode   = FilterMode::LP12;
+    p.cutoff = 1000.f;
+    df.setFilterA(p);
+    df.setRouting(FilterRouting::AOnly);
+    df.noteOn();
+
+    for (int i = 0; i < 64; ++i)
+    {
+        float leftIn = i == 0 ? 1.f : 0.f;
+        auto [L, R] = df.processSample(leftIn, 0.f, 0.f, 0.f);
+        (void)L;
+        REQUIRE(R == Approx(0.f).margin(1.0e-6f));
+    }
+}
+
+//──────────────────────────────────────────────────────────────────────────────
+TEST_CASE("WavetableOsc table index selects base table", "[wavetable]")
+{
+    WavetableOsc wt;
+    wt.prepare(48000.0);
+    wt.setFrequency(440.f);
+
+    std::vector<float> one(WavetableOsc::kTableSize, 1.f);
+    std::vector<float> minusOne(WavetableOsc::kTableSize, -1.f);
+    wt.addTable("One", one.data(), (int)one.size());
+    wt.addTable("MinusOne", minusOne.data(), (int)minusOne.size());
+
+    wt.setTablePosition(1, 0.f);
+    auto [oneL, oneR] = wt.processSample();
+    REQUIRE(oneL == Approx(1.f).margin(0.001f));
+    REQUIRE(oneR == Approx(1.f).margin(0.001f));
+
+    wt.reset();
+    wt.setTablePosition(2, 0.f);
+    auto [minusL, minusR] = wt.processSample();
+    REQUIRE(minusL == Approx(-1.f).margin(0.001f));
+    REQUIRE(minusR == Approx(-1.f).margin(0.001f));
+}
+
+TEST_CASE("FM operators require noteOn and then produce output", "[fm]")
+{
+    FMOperator op;
+    op.prepare(48000.0);
+    op.setNoteFrequency(440.f);
+
+    FMOperator::Params p;
+    p.level = 1.f;
+    op.setParams(p);
+
+    float idleMax = 0.f;
+    for (int i = 0; i < 128; ++i)
+        idleMax = std::max(idleMax, std::abs(op.processSample(0.f)));
+    REQUIRE(idleMax == Approx(0.f));
+
+    op.noteOn();
+    float activeMax = 0.f;
+    for (int i = 0; i < 512; ++i)
+        activeMax = std::max(activeMax, std::abs(op.processSample(0.f)));
+
+    REQUIRE(activeMax > 0.01f);
+}
+
+TEST_CASE("FMAlgorithm processes operators once per sample", "[fm]")
+{
+    FMAlgorithm fm;
+    fm.prepare(48000.0);
+    fm.setNoteFrequency(440.f);
+    fm.setAlgorithm(39);
+
+    for (int i = 0; i < FMAlgorithm::kNumOperators; ++i)
+    {
+        FMOperator::Params p;
+        p.level = i == 0 ? 1.f : 0.f;
+        fm.getOperator(i).setParams(p);
+    }
+
+    fm.noteOn();
+
+    float maxAbs = 0.f;
+    for (int i = 0; i < 512; ++i)
+        maxAbs = std::max(maxAbs, std::abs(fm.processSample()));
+
+    REQUIRE(maxAbs > 0.001f);
+    REQUIRE(maxAbs <= 1.f);
 }

@@ -9,41 +9,85 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     titleLabel.setFont(juce::Font(14.f, juce::Font::bold));
     addAndMakeVisible(titleLabel);
 
-    auto setupSlider = [&](juce::Slider& s, const juce::String& tooltip) {
-        s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-        s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 16);
-        s.setTooltip(tooltip);
-        addAndMakeVisible(s);
-    };
-
     juce::String pfx = "osc_" + oscId + "_";
 
     setupSlider(levelSlider, "Oscillator Level");
-    levelAtt  = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, pfx + "level", levelSlider);
+    levelAtt = std::make_unique<Att>(apvts, pfx + "level", levelSlider);
 
     setupSlider(octaveSlider, "Octave Transpose");
-    octaveAtt = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, pfx + "octave", octaveSlider);
+    octaveAtt = std::make_unique<Att>(apvts, pfx + "octave", octaveSlider);
 
     setupSlider(adsrA, "Attack");
-    attA = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, pfx + "adsr_a", adsrA);
+    attA = std::make_unique<Att>(apvts, pfx + "adsr_a", adsrA);
     setupSlider(adsrD, "Decay");
-    attD = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, pfx + "adsr_d", adsrD);
+    attD = std::make_unique<Att>(apvts, pfx + "adsr_d", adsrD);
     setupSlider(adsrS, "Sustain");
-    attS = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, pfx + "adsr_s", adsrS);
+    attS = std::make_unique<Att>(apvts, pfx + "adsr_s", adsrS);
     setupSlider(adsrR, "Release");
-    attR = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvts, pfx + "adsr_r", adsrR);
+    attR = std::make_unique<Att>(apvts, pfx + "adsr_r", adsrR);
+
+    if (oscId == "3d")
+    {
+        modeBoxA.addItemList({"SinSum", "SinProduct", "Ripple", "Torus", "Vortex", "Noise",
+                              "Lorenz", "Dipole", "Folded", "Chebyshev"}, 1);
+        modeBoxB.addItemList({"Circle", "Spiral", "Lissajous", "Random", "Orbit"}, 1);
+        modeBoxA.setTooltip("3D Field");
+        modeBoxB.setTooltip("3D Path");
+        addAndMakeVisible(modeBoxA);
+        addAndMakeVisible(modeBoxB);
+        modeAttA = std::make_unique<CAtt>(apvts, "osc_3d_field", modeBoxA);
+        modeAttB = std::make_unique<CAtt>(apvts, "osc_3d_path", modeBoxB);
+        numModeBoxes = 2;
+
+        setupExtraSlider(extra1, "osc_3d_radius", "3D Radius", extraAtt1);
+        setupExtraSlider(extra2, "osc_3d_depth", "3D Depth", extraAtt2);
+        setupExtraSlider(extra3, "osc_3d_warp", "3D Warp", extraAtt3);
+        setupExtraSlider(extra4, "osc_3d_rotation", "3D Rotation", extraAtt4);
+        setupExtraSlider(extra5, "osc_3d_chaos", "3D Chaos", extraAtt5);
+        setupExtraSlider(extra6, "osc_3d_morph", "3D Morph", extraAtt6);
+        numExtraSliders = 6;
+    }
+    else if (oscId == "va")
+    {
+        modeBoxA.addItemList({"Sine", "Saw", "RevSaw", "Square", "Triangle", "Pulse"}, 1);
+        modeBoxA.setTooltip("VA Shape");
+        addAndMakeVisible(modeBoxA);
+        modeAttA = std::make_unique<CAtt>(apvts, "osc_va_shape", modeBoxA);
+        numModeBoxes = 1;
+
+        setupExtraSlider(extra1, "osc_va_pw", "Pulse Width", extraAtt1);
+        setupExtraSlider(extra2, "osc_va_detune", "Unison Detune", extraAtt2);
+        setupExtraSlider(extra3, "osc_va_unison", "Unison Voices", extraAtt3);
+        setupExtraSlider(extra4, "osc_va_spread", "Stereo Spread", extraAtt4);
+        numExtraSliders = 4;
+    }
+    else if (oscId == "wt")
+    {
+        setupExtraSlider(extra1, "osc_wt_table", "Wavetable Index", extraAtt1);
+        setupExtraSlider(extra2, "osc_wt_pos", "Wavetable Position", extraAtt2);
+        numExtraSliders = 2;
+    }
 
     adsrLabel.setText("A  D  S  R", juce::dontSendNotification);
     adsrLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     adsrLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(adsrLabel);
     addAndMakeVisible(levelLabel);
+}
+
+void OscPanel::setupSlider(juce::Slider& s, const juce::String& tooltip)
+{
+    s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+    s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 16);
+    s.setTooltip(tooltip);
+    addAndMakeVisible(s);
+}
+
+void OscPanel::setupExtraSlider(juce::Slider& slider, const juce::String& paramId,
+                                const juce::String& tooltip, std::unique_ptr<Att>& attachment)
+{
+    setupSlider(slider, tooltip);
+    attachment = std::make_unique<Att>(apvts, paramId, slider);
 }
 
 void OscPanel::paint(juce::Graphics& g)
@@ -65,6 +109,43 @@ void OscPanel::resized()
     octaveSlider.setBounds(topRow);
 
     area.removeFromTop(4);
+
+    if (numModeBoxes > 0)
+    {
+        auto modeRow = area.removeFromTop(24);
+        if (numModeBoxes == 1)
+            modeBoxA.setBounds(modeRow);
+        else
+        {
+            int modeW = modeRow.getWidth() / 2;
+            modeBoxA.setBounds(modeRow.removeFromLeft(modeW).reduced(1, 0));
+            modeBoxB.setBounds(modeRow.reduced(1, 0));
+        }
+        area.removeFromTop(4);
+    }
+
+    if (numExtraSliders > 0)
+    {
+        auto firstRow = area.removeFromTop(70);
+        int firstCount = juce::jmin(3, numExtraSliders);
+        int firstW = firstRow.getWidth() / firstCount;
+        if (numExtraSliders >= 1) extra1.setBounds(firstRow.removeFromLeft(firstW));
+        if (numExtraSliders >= 2) extra2.setBounds(firstRow.removeFromLeft(firstW));
+        if (numExtraSliders >= 3) extra3.setBounds(firstRow);
+
+        if (numExtraSliders > 3)
+        {
+            area.removeFromTop(2);
+            auto secondRow = area.removeFromTop(70);
+            int secondCount = numExtraSliders - 3;
+            int secondW = secondRow.getWidth() / secondCount;
+            if (numExtraSliders >= 4) extra4.setBounds(secondRow.removeFromLeft(secondW));
+            if (numExtraSliders >= 5) extra5.setBounds(secondRow.removeFromLeft(secondW));
+            if (numExtraSliders >= 6) extra6.setBounds(secondRow);
+        }
+        area.removeFromTop(4);
+    }
+
     adsrLabel.setBounds(area.removeFromTop(16));
 
     auto adsrRow = area.removeFromTop(80);

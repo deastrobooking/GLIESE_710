@@ -34,6 +34,7 @@ public:
 
 private:
     std::array<FMOperator, kNumOperators> ops;
+    std::array<float, kNumOperators> lastOutputs {};
     int algorithmIndex = 0;
 
     static AlgorithmDef buildAlgorithms();

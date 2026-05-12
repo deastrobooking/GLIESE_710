@@ -1,13 +1,11 @@
 #include "SynthEngine.h"
+#include <cmath>
 
 void SynthEngine::prepare(const juce::dsp::ProcessSpec& spec)
 {
     sampleRate = spec.sampleRate;
     for (auto& v : voices) v.prepare(sampleRate);
     arp.prepare(sampleRate);
-
-    // Seed the wavetable oscillator in each voice with a sine table
-    for (auto& v : voices) v.getWavetableOsc().addSineTable();
 }
 
 void SynthEngine::reset()
@@ -19,6 +17,13 @@ void SynthEngine::reset()
 void SynthEngine::setAPVTS(juce::AudioProcessorValueTreeState* a)
 {
     apvts = a;
+}
+
+void SynthEngine::setHostBPM(double bpm)
+{
+    arp.setHostBPM(bpm);
+    for (auto& v : voices)
+        v.setHostBPM(bpm);
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -65,59 +70,71 @@ void SynthEngine::allNotesOff()
 }
 
 //──────────────────────────────────────────────────────────────────────────────
-void SynthEngine::handleMidi(const juce::MidiBuffer& midi, int startSample, int endSample)
+void SynthEngine::handleMidiMessage(const juce::MidiMessage& msg, bool triggerNotes)
 {
-    bool arpOn = false;
-    if (apvts)
+    if (triggerNotes && msg.isNoteOn())
+        noteOn(msg.getNoteNumber(), msg.getFloatVelocity());
+    else if (triggerNotes && msg.isNoteOff())
+        noteOff(msg.getNoteNumber());
+    else if (msg.isAllNotesOff())
+        allNotesOff();
+    else if (msg.isAftertouch() || msg.isChannelPressure())
     {
-        auto* p = apvts->getRawParameterValue("arp_on");
-        arpOn = p && p->load() > 0.5f;
+        float pressure = msg.isChannelPressure()
+                             ? msg.getChannelPressureValue() / 127.f
+                             : msg.getAfterTouchValue() / 127.f;
+        for (auto& v : voices)
+        {
+            v.setMidiCC(ModSource::Aftertouch, pressure);
+            v.setMidiCC(ModSource::ChanPressure, pressure);
+        }
     }
+    else if (msg.isController())
+    {
+        float norm = msg.getControllerValue() / 127.f;
+        if (msg.getControllerNumber() == 1)
+            for (auto& v : voices)
+                v.setMidiCC(ModSource::ModWheel, norm);
+        else if (msg.getControllerNumber() == 74)
+            for (auto& v : voices)
+                v.setMidiCC(ModSource::CC74, norm);
+    }
+    else if (msg.isPitchWheel())
+    {
+        float pb = (msg.getPitchWheelValue() - 8192) / 8192.f;
+        for (auto& v : voices)
+            v.setMidiCC(ModSource::PitchBend, pb);
+    }
+}
+
+void SynthEngine::renderVoices(juce::AudioBuffer<float>& buffer, int startSample, int numSamples)
+{
+    if (numSamples <= 0 || apvts == nullptr)
+        return;
+
+    for (auto& v : voices)
+        if (v.isActive())
+            v.renderBlock(buffer, startSample, numSamples, *apvts);
+}
+
+void SynthEngine::renderTimedMidi(juce::AudioBuffer<float>& buffer,
+                                  const juce::MidiBuffer& midi,
+                                  int startSample,
+                                  int numSamples,
+                                  bool triggerNotes)
+{
+    const int blockEnd = startSample + numSamples;
+    int renderedUntil = startSample;
 
     for (const auto meta : midi)
     {
-        if (meta.samplePosition < startSample || meta.samplePosition >= endSample)
-            continue;
-
-        auto msg = meta.getMessage();
-
-        if (arpOn)
-        {
-            arp.handleMidi(msg);
-            continue;
-        }
-
-        if (msg.isNoteOn())
-            noteOn(msg.getNoteNumber(), msg.getFloatVelocity());
-        else if (msg.isNoteOff())
-            noteOff(msg.getNoteNumber());
-        else if (msg.isAllNotesOff())
-            allNotesOff();
-        else if (msg.isAftertouch() || msg.isChannelPressure())
-        {
-            float pressure = msg.isChannelPressure()
-                                 ? msg.getChannelPressureValue() / 127.f
-                                 : msg.getAfterTouchValue() / 127.f;
-            for (auto& v : voices)
-                v.setMidiCC(ModSource::Aftertouch, pressure);
-        }
-        else if (msg.isController())
-        {
-            float norm = msg.getControllerValue() / 127.f;
-            if (msg.getControllerNumber() == 1)
-                for (auto& v : voices)
-                    v.setMidiCC(ModSource::ModWheel, norm);
-            else if (msg.getControllerNumber() == 74)
-                for (auto& v : voices)
-                    v.setMidiCC(ModSource::CC74, norm);
-        }
-        else if (msg.isPitchWheel())
-        {
-            float pb = (msg.getPitchWheelValue() - 8192) / 8192.f;
-            for (auto& v : voices)
-                v.setMidiCC(ModSource::PitchBend, pb);
-        }
+        const int eventSample = juce::jlimit(startSample, blockEnd, meta.samplePosition);
+        renderVoices(buffer, renderedUntil, eventSample - renderedUntil);
+        handleMidiMessage(meta.getMessage(), triggerNotes);
+        renderedUntil = eventSample;
     }
+
+    renderVoices(buffer, renderedUntil, blockEnd - renderedUntil);
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -147,40 +164,60 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
         ap.rateIdx  = getI("arp_rate");
         ap.sync     = getI("arp_sync") != 0;
         ap.octaves  = getI("arp_octaves");
-        ap.gate     = getF("arp_gate");
+        float arpGateMod = 0.f;
+        float arpRateMod = 0.f;
+        int numModVoices = 0;
+        for (auto& v : voices)
+        {
+            if (!v.isActive())
+                continue;
+
+            arpGateMod += v.getModDestination(ModDest::Arp_Gate);
+            arpRateMod += v.getModDestination(ModDest::Arp_Rate);
+            ++numModVoices;
+        }
+
+        if (numModVoices > 0)
+        {
+            arpGateMod /= (float)numModVoices;
+            arpRateMod /= (float)numModVoices;
+        }
+
+        ap.gate     = juce::jlimit(0.01f, 1.0f, getF("arp_gate") + arpGateMod);
         ap.swing    = getF("arp_swing");
         ap.latch    = getI("arp_latch") != 0;
+        ap.rateIdx  = juce::jlimit(0, Arpeggiator::kNumRates - 1,
+                                   ap.rateIdx + (int)std::round(arpRateMod));
         arp.setParams(ap);
 
-        // Get host BPM
-        if (auto* ph = juce::AudioProcessor::getPlayHead())
+        renderMidi.clear();
+        int segmentStart = startSample;
+        const int blockEnd = startSample + numSamples;
+
+        for (const auto meta : midiMessages)
         {
-            if (auto pos = ph->getPosition())
-                if (auto bpm = pos->getBpm())
-                    arp.setHostBPM(*bpm);
+            const int eventSample = juce::jlimit(startSample, blockEnd, meta.samplePosition);
+            arp.processBlock(renderMidi, segmentStart, eventSample - segmentStart);
+
+            const auto msg = meta.getMessage();
+            if (msg.isNoteOn() || msg.isNoteOff())
+                arp.handleMidi(msg);
+            else
+            {
+                if (msg.isAllNotesOff())
+                    arp.reset();
+                renderMidi.addEvent(msg, eventSample);
+            }
+
+            segmentStart = eventSample;
         }
 
-        // Generate arp MIDI events into member buffer (avoids audio-thread allocation)
-        arpMidi.clear();
-        arp.processBlock(arpMidi, startSample, numSamples);
-
-        // Play arp notes
-        for (const auto meta : arpMidi)
-        {
-            auto msg = meta.getMessage();
-            if (msg.isNoteOn())
-                noteOn(msg.getNoteNumber(), msg.getFloatVelocity());
-            else if (msg.isNoteOff())
-                noteOff(msg.getNoteNumber());
-        }
+        arp.processBlock(renderMidi, segmentStart, blockEnd - segmentStart);
+        renderTimedMidi(buffer, renderMidi, startSample, numSamples, true);
+        return;
     }
 
-    handleMidi(midiMessages, startSample, startSample + numSamples);
-
-    // Render all active voices
-    for (auto& v : voices)
-        if (v.isActive())
-            v.renderBlock(buffer, startSample, numSamples, *apvts);
+    renderTimedMidi(buffer, midiMessages, startSample, numSamples, true);
 }
 
 void SynthEngine::addWavetable(juce::String name, const float* samples, int numSamples)

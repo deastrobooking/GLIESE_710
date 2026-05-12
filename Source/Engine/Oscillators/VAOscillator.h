@@ -40,7 +40,7 @@ private:
     static float polyBlep(float phase, float phaseInc);
     float generateSaw(float& phase, float phaseInc) const;
     float generateSquare(float& phase, float phaseInc) const;
-    float generateTriangle(float& phase, float phaseInc);
+    float generateTriangle(float phase) const;
 
     // Per-unison voice triangle integrator state
     float triIntegrator[kMaxUnison] = {};

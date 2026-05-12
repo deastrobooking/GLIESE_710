@@ -1,4 +1,20 @@
 #include "ModMatrix.h"
+#include <JuceHeader.h>
+
+static bool sourceIsNaturallyBipolar(ModSource source)
+{
+    switch (source)
+    {
+        case ModSource::LFO1:
+        case ModSource::LFO2:
+        case ModSource::LFO3:
+        case ModSource::LFO4:
+        case ModSource::PitchBend:
+            return true;
+        default:
+            return false;
+    }
+}
 
 void ModMatrix::setSlot(int index, const ModSlot& slot)
 {
@@ -25,8 +41,8 @@ void ModMatrix::process(const ModValues& srcVals, ModValues& dstVals) const
 
         float srcVal = srcVals.sources[(int)slot.source];
 
-        // Convert unipolar sources to -1..1 if bipolar mode
-        if (slot.bipolar && srcVal >= 0.f)
+        // Convert unipolar sources to -1..1 if bipolar mode.
+        if (slot.bipolar && !sourceIsNaturallyBipolar(slot.source))
             srcVal = srcVal * 2.f - 1.f;
 
         dstVals.dests[(int)slot.dest] += srcVal * slot.amount;

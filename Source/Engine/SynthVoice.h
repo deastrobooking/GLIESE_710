@@ -30,6 +30,8 @@ public:
 
     // Route MIDI CC/AT/PB into mod sources (called from message-to-audio bridge)
     void setMidiCC(ModSource src, float value);
+    void setHostBPM(double bpm);
+    float getModDestination(ModDest dest) const { return modDests.dests[(int)dest]; }
 
     WavetableOsc& getWavetableOsc() { return wtOsc; }
 

@@ -66,22 +66,22 @@ void SingleFilter::configureSVF(float cutHz, float res)
     switch (params.mode)
     {
         case FilterMode::LP12: case FilterMode::LP24:
-            svf1.setType(SVFType::lowPass);
-            svf2.setType(SVFType::lowPass);
+            svf1.setType(SVFType::lowpass);
+            svf2.setType(SVFType::lowpass);
             break;
         case FilterMode::HP12: case FilterMode::HP24:
-            svf1.setType(SVFType::highPass);
-            svf2.setType(SVFType::highPass);
+            svf1.setType(SVFType::highpass);
+            svf2.setType(SVFType::highpass);
             break;
         case FilterMode::Bandpass:
-            svf1.setType(SVFType::bandPass);
+            svf1.setType(SVFType::bandpass);
             break;
         case FilterMode::Notch:
-            svf1.setType(SVFType::lowPass);
-            svf2.setType(SVFType::highPass);
+            svf1.setType(SVFType::lowpass);
+            svf2.setType(SVFType::highpass);
             break;
         default:
-            svf1.setType(SVFType::lowPass);
+            svf1.setType(SVFType::lowpass);
             break;
     }
 }
@@ -143,8 +143,8 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
             // Notch = LP + HP
             configureSVF(cutHz, res);
             using T = juce::dsp::StateVariableTPTFilterType;
-            svf1.setType(T::lowPass);
-            svf2.setType(T::highPass);
+            svf1.setType(T::lowpass);
+            svf2.setType(T::highpass);
             float lp = svf1.processSample(0, driven);
             float hp = svf2.processSample(0, driven);
             out = (lp + hp) * 0.5f;
@@ -194,21 +194,30 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
 void DualFilter::prepare(double sampleRate)
 {
     sr = sampleRate;
-    filterA.prepare(sampleRate);
-    filterB.prepare(sampleRate);
+    for (auto& filter : filterA) filter.prepare(sampleRate);
+    for (auto& filter : filterB) filter.prepare(sampleRate);
     envA.prepare(sampleRate);
     envB.prepare(sampleRate);
 }
 
-void DualFilter::setFilterA(const SingleFilter::Params& p) { filterA.setParams(p); }
-void DualFilter::setFilterB(const SingleFilter::Params& p) { filterB.setParams(p); }
+void DualFilter::setFilterA(const SingleFilter::Params& p)
+{
+    for (auto& filter : filterA) filter.setParams(p);
+}
+
+void DualFilter::setFilterB(const SingleFilter::Params& p)
+{
+    for (auto& filter : filterB) filter.setParams(p);
+}
+
 void DualFilter::setRouting(FilterRouting r)               { routing = r; }
 
 void DualFilter::noteOn()  { envA.noteOn();  envB.noteOn(); }
 void DualFilter::noteOff() { envA.noteOff(); envB.noteOff(); }
 void DualFilter::reset()
 {
-    filterA.reset(); filterB.reset();
+    for (auto& filter : filterA) filter.reset();
+    for (auto& filter : filterB) filter.reset();
     envA.reset();    envB.reset();
 }
 
@@ -224,29 +233,29 @@ std::pair<float, float> DualFilter::processSample(float inL, float inR,
     {
         case FilterRouting::Series:
         {
-            float midL = filterA.processSample(inL, evA, lfoA, amMod);
-            float midR = filterA.processSample(inR, evA, lfoA, amMod);
-            outL = filterB.processSample(midL, evB, lfoB, amMod);
-            outR = filterB.processSample(midR, evB, lfoB, amMod);
+            float midL = filterA[0].processSample(inL, evA, lfoA, amMod);
+            float midR = filterA[1].processSample(inR, evA, lfoA, amMod);
+            outL = filterB[0].processSample(midL, evB, lfoB, amMod);
+            outR = filterB[1].processSample(midR, evB, lfoB, amMod);
             break;
         }
         case FilterRouting::Parallel:
         {
-            float aL = filterA.processSample(inL, evA, lfoA, amMod);
-            float aR = filterA.processSample(inR, evA, lfoA, amMod);
-            float bL = filterB.processSample(inL, evB, lfoB, amMod);
-            float bR = filterB.processSample(inR, evB, lfoB, amMod);
+            float aL = filterA[0].processSample(inL, evA, lfoA, amMod);
+            float aR = filterA[1].processSample(inR, evA, lfoA, amMod);
+            float bL = filterB[0].processSample(inL, evB, lfoB, amMod);
+            float bR = filterB[1].processSample(inR, evB, lfoB, amMod);
             outL = (aL + bL) * 0.5f;
             outR = (aR + bR) * 0.5f;
             break;
         }
         case FilterRouting::AOnly:
-            outL = filterA.processSample(inL, evA, lfoA, amMod);
-            outR = filterA.processSample(inR, evA, lfoA, amMod);
+            outL = filterA[0].processSample(inL, evA, lfoA, amMod);
+            outR = filterA[1].processSample(inR, evA, lfoA, amMod);
             break;
         case FilterRouting::BOnly:
-            outL = filterB.processSample(inL, evB, lfoB, amMod);
-            outR = filterB.processSample(inR, evB, lfoB, amMod);
+            outL = filterB[0].processSample(inL, evB, lfoB, amMod);
+            outR = filterB[1].processSample(inR, evB, lfoB, amMod);
             break;
         default:
             outL = inL; outR = inR;

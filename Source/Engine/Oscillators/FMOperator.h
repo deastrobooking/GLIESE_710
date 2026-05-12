@@ -9,6 +9,7 @@ public:
     {
         int   coarse   = 1;       // frequency ratio integer part (0 = 0.5)
         float fine     = 0.f;     // ±1 semitone range
+        float ratioOffset = 0.f;  // additive ratio modulation
         float level    = 1.f;     // output level / modulation depth 0..1
         float feedback = 0.f;     // self-feedback 0..1
         bool  fixedFreq = false;  // if true, uses fixedHz instead of ratio*noteFreq

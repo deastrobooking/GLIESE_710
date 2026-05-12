@@ -12,13 +12,22 @@ FilterPanel::FilterPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
         addAndMakeVisible(cb);
     };
 
+    const juce::StringArray filterModes {
+        "LP12","LP24","HP12","HP24","Bandpass","Notch",
+        "Peak","LoShelf","HiShelf","Comb","AM+","AM-"
+    };
+    const juce::StringArray routings { "Series","Parallel","A Only","B Only" };
+
     setupCombo(filterAType);
+    filterAType.addItemList(filterModes, 1);
     typeAAtt = std::make_unique<CAtt>(apvts, "filter_a_type", filterAType);
 
     setupCombo(filterBType);
+    filterBType.addItemList(filterModes, 1);
     typeBAtt = std::make_unique<CAtt>(apvts, "filter_b_type", filterBType);
 
     setupCombo(filterRouting);
+    filterRouting.addItemList(routings, 1);
     routingAtt = std::make_unique<CAtt>(apvts, "filter_routing", filterRouting);
 
     addSlider(cutoffA,     "filter_a_cutoff",    "Filter A Cutoff",    cutAAtt);

@@ -32,8 +32,6 @@ ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
     titleLabel.setFont(juce::Font(13.f, juce::Font::bold));
     addAndMakeVisible(titleLabel);
 
-    rowContainer.addAndMakeVisible(viewport);
-
     for (int i = 0; i < kNumSlots; ++i)
     {
         auto& row = rows[i];

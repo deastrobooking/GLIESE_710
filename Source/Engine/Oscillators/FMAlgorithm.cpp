@@ -143,6 +143,7 @@ void FMAlgorithm::setNoteFrequency(float hz)
 
 void FMAlgorithm::noteOn()
 {
+    lastOutputs.fill(0.f);
     for (auto& op : ops) op.noteOn();
 }
 
@@ -154,34 +155,30 @@ void FMAlgorithm::noteOff()
 void FMAlgorithm::reset()
 {
     for (auto& op : ops) op.reset();
+    lastOutputs.fill(0.f);
 }
 
 float FMAlgorithm::processSample()
 {
     const auto& alg = kAlgorithms[algorithmIndex];
-    float opOut[kNumOperators] = {};
+    auto opOut = lastOutputs;
 
-    // Topological sort: process operators in dependency order.
-    // We process op 9 down to 0 (highest index first as modulators tend
-    // to be at higher indices in our encoding, but this is algorithm-dependent).
-    // For generality, iterate twice to propagate cross-FM correctly.
-    for (int iter = 0; iter < 2; ++iter)
+    // Process high-index modulators first. Feedback/cross-FM paths use the
+    // previous sample's output, avoiding double-advancing operator phases.
+    for (int i = kNumOperators - 1; i >= 0; --i)
     {
-        for (int i = kNumOperators - 1; i >= 0; --i)
+        float modInput = 0.f;
+        uint16_t mods = alg.opModulators[i];
+        for (int j = 0; j < kNumOperators; ++j)
         {
-            float modInput = 0.f;
-            uint16_t mods = alg.opModulators[i];
-            for (int j = 0; j < kNumOperators; ++j)
-            {
-                if (mods & (1 << j))
-                    modInput += opOut[j] * juce::MathConstants<float>::pi;
-            }
-            if (iter == 1) // second pass: compute final outputs
-                opOut[i] = ops[i].processSample(modInput);
-            else
-                opOut[i] = ops[i].processSample(0.f); // seed pass
+            if (mods & (1 << j))
+                modInput += opOut[j] * juce::MathConstants<float>::pi;
         }
+
+        opOut[i] = ops[i].processSample(modInput);
     }
+
+    lastOutputs = opOut;
 
     // Sum carriers
     float sum = 0.f;

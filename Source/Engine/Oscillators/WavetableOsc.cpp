@@ -22,7 +22,9 @@ void WavetableOsc::setTablePosition(int tableIndex, float position)
     int numTables = (int)tables.size();
     if (numTables == 0) return;
 
-    float scaledPos = position * (float)(numTables - 1);
+    int baseTable = juce::jlimit(0, numTables - 1, tableIndex);
+    float scaledPos = (float)baseTable + juce::jlimit(0.f, 1.f, position);
+    scaledPos = juce::jlimit(0.f, (float)(numTables - 1), scaledPos);
     tableA = juce::jlimit(0, numTables - 1, (int)scaledPos);
     tableB = juce::jlimit(0, numTables - 1, tableA + 1);
     morphT = scaledPos - (float)tableA;

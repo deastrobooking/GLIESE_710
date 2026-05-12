@@ -7,6 +7,8 @@ constexpr float Arpeggiator::kRateBeats[];
 void Arpeggiator::prepare(double sampleRate)
 {
     sr = sampleRate;
+    heldNotes.reserve(128);
+    latchedNotes.reserve(128);
     reset();
 }
 
@@ -98,6 +100,12 @@ int Arpeggiator::nextNote()
 
         case Pattern::UpDown:
         {
+            if (totalSteps <= 1)
+            {
+                noteIdx = 0;
+                oct = 0;
+                break;
+            }
             int pos = arpIndex % (2 * totalSteps - 2);
             if (pos >= totalSteps) pos = 2 * totalSteps - 2 - pos;
             noteIdx = pos % (int)notes.size();
@@ -108,6 +116,12 @@ int Arpeggiator::nextNote()
 
         case Pattern::DownUp:
         {
+            if (totalSteps <= 1)
+            {
+                noteIdx = 0;
+                oct = 0;
+                break;
+            }
             int pos = arpIndex % (2 * totalSteps - 2);
             if (pos >= totalSteps) pos = 2 * totalSteps - 2 - pos;
             pos = totalSteps - 1 - pos;
@@ -177,7 +191,7 @@ void Arpeggiator::processBlock(juce::MidiBuffer& outputMidi, int startSample, in
 
         // Note-off when gate expires
         if (noteIsOn && prevPhase < (double)params.gate && stepPhase >= (double)params.gate)
-            sendNoteOff(outputMidi, s);
+            sendNoteOff(outputMidi, startSample + s);
 
         // Step advance
         if (stepPhase >= 1.0)
@@ -186,10 +200,10 @@ void Arpeggiator::processBlock(juce::MidiBuffer& outputMidi, int startSample, in
             swingToggle ^= 1;
             currentStepSamples = stepSamples * (1.0 + (swingToggle == 0 ? params.swing : -params.swing) * 0.5);
 
-            sendNoteOff(outputMidi, s);
+            sendNoteOff(outputMidi, startSample + s);
             int note = nextNote();
             if (note >= 0 && note <= 127)
-                sendNoteOn(outputMidi, s, note);
+                sendNoteOn(outputMidi, startSample + s, note);
         }
     }
 }

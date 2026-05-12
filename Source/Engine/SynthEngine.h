@@ -12,6 +12,7 @@ public:
     void prepare(const juce::dsp::ProcessSpec& spec);
     void reset();
     void setAPVTS(juce::AudioProcessorValueTreeState* apvts);
+    void setHostBPM(double bpm);
 
     void renderNextBlock(juce::AudioBuffer<float>& buffer,
                          juce::MidiBuffer& midiMessages,
@@ -27,8 +28,12 @@ private:
     std::array<SynthVoice, kNumVoices> voices;
     Arpeggiator arp;
     juce::MidiBuffer arpMidi;
+    juce::MidiBuffer renderMidi;
 
-    void handleMidi(const juce::MidiBuffer& midi, int startSample, int endSample);
+    void handleMidiMessage(const juce::MidiMessage& msg, bool triggerNotes);
+    void renderVoices(juce::AudioBuffer<float>& buffer, int startSample, int numSamples);
+    void renderTimedMidi(juce::AudioBuffer<float>& buffer, const juce::MidiBuffer& midi,
+                         int startSample, int numSamples, bool triggerNotes);
     void noteOn(int note, float velocity);
     void noteOff(int note);
     void allNotesOff();

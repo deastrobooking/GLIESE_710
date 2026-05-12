@@ -18,13 +18,28 @@ private:
 
     juce::Label titleLabel;
 
+    using Att = juce::AudioProcessorValueTreeState::SliderAttachment;
+    using CAtt = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
+
     // Level + octave shared by all osc types
     juce::Slider levelSlider, octaveSlider;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> levelAtt, octaveAtt;
+    std::unique_ptr<Att> levelAtt, octaveAtt;
 
     // ADSR sliders
     juce::Slider adsrA, adsrD, adsrS, adsrR;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attA, attD, attS, attR;
+    std::unique_ptr<Att> attA, attD, attS, attR;
+
+    juce::ComboBox modeBoxA, modeBoxB;
+    std::unique_ptr<CAtt> modeAttA, modeAttB;
+
+    juce::Slider extra1, extra2, extra3, extra4, extra5, extra6;
+    std::unique_ptr<Att> extraAtt1, extraAtt2, extraAtt3, extraAtt4, extraAtt5, extraAtt6;
+    int numExtraSliders = 0;
+    int numModeBoxes = 0;
 
     juce::Label levelLabel, adsrLabel;
+
+    void setupSlider(juce::Slider& slider, const juce::String& tooltip);
+    void setupExtraSlider(juce::Slider& slider, const juce::String& paramId,
+                          const juce::String& tooltip, std::unique_ptr<Att>& attachment);
 };

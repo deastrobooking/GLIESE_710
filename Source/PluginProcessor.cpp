@@ -239,6 +239,12 @@ void GLIESE710AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 {
     juce::ScopedNoDenormals noDenormals;
     buffer.clear();
+
+    if (auto* playHead = getPlayHead())
+        if (auto position = playHead->getPosition())
+            if (auto bpm = position->getBpm())
+                synthEngine.setHostBPM(*bpm);
+
     synthEngine.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 }
 

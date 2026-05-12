@@ -2,6 +2,7 @@
 #include <JuceHeader.h>
 #include "FilterTypes.h"
 #include "../Envelopes/ADSREnvelope.h"
+#include <array>
 
 class SingleFilter
 {
@@ -73,7 +74,7 @@ public:
 
 private:
     double        sr = 48000.0;
-    SingleFilter  filterA, filterB;
+    std::array<SingleFilter, 2> filterA, filterB;
     FilterRouting routing = FilterRouting::Series;
     ADSREnvelope  envA, envB;
 };

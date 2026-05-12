@@ -26,7 +26,30 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
 
     // ── FM Engine tab ─────────────────────────────────────────────────────────
     engineTab = new juce::Component();
-    // FM operator controls are added in buildEngineTab
+    fmAlgorithmBox.addItemList([]
+    {
+        juce::StringArray items;
+        for (int i = 0; i < 40; ++i)
+            items.add("Algorithm " + juce::String(i));
+        return items;
+    }(), 1);
+    fmAlgorithmBox.setTooltip("FM Algorithm");
+    engineTab->addAndMakeVisible(fmAlgorithmBox);
+    fmAlgorithmAtt = std::make_unique<CAtt>(apvts, "osc_fm_algorithm", fmAlgorithmBox);
+
+    setupKnob(fmLevelSlider, "osc_fm_level", "FM Level", fmLevelAtt, *engineTab);
+    setupKnob(fmOctaveSlider, "osc_fm_octave", "FM Octave", fmOctaveAtt, *engineTab);
+
+    for (int i = 0; i < 10; ++i)
+    {
+        auto pfx = "op" + juce::String(i) + "_";
+        setupKnob(fmOpCoarseSliders[(size_t)i], pfx + "coarse",
+                  "Operator " + juce::String(i) + " Coarse Ratio",
+                  fmOpCoarseAtts[(size_t)i], *engineTab);
+        setupKnob(fmOpLevelSliders[(size_t)i], pfx + "level",
+                  "Operator " + juce::String(i) + " Level",
+                  fmOpLevelAtts[(size_t)i], *engineTab);
+    }
     addTab("FM ENGINE", kBg, engineTab, true);
 
     // ── Filter + Mod + Arp tab ────────────────────────────────────────────────
@@ -48,22 +71,24 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     masterLabel.setFont(juce::Font(13.f, juce::Font::bold));
     addAndMakeVisible(masterLabel);
 
-    auto setupKnob = [&](juce::Slider& s, const juce::String& paramId,
-                         const juce::String& tip, std::unique_ptr<Att>& att) {
-        s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-        s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 16);
-        s.setTooltip(tip);
-        addAndMakeVisible(s);
-        att = std::make_unique<Att>(apvts, paramId, s);
-    };
+    setupKnob(masterVolSlider,  "master_volume", "Master Volume", masterVolAtt, *this);
+    setupKnob(masterTuneSlider, "master_tune",   "Master Tune",   masterTuneAtt, *this);
+    setupKnob(masterPanSlider,  "master_pan",    "Master Pan",    masterPanAtt, *this);
+    setupKnob(masterA,          "master_adsr_a", "Attack",        masterAAtt, *this);
+    setupKnob(masterD,          "master_adsr_d", "Decay",         masterDAtt, *this);
+    setupKnob(masterS,          "master_adsr_s", "Sustain",       masterSAtt, *this);
+    setupKnob(masterR,          "master_adsr_r", "Release",       masterRAtt, *this);
+}
 
-    setupKnob(masterVolSlider,  "master_volume", "Master Volume", masterVolAtt);
-    setupKnob(masterTuneSlider, "master_tune",   "Master Tune",   masterTuneAtt);
-    setupKnob(masterPanSlider,  "master_pan",    "Master Pan",    masterPanAtt);
-    setupKnob(masterA,          "master_adsr_a", "Attack",        masterAAtt);
-    setupKnob(masterD,          "master_adsr_d", "Decay",         masterDAtt);
-    setupKnob(masterS,          "master_adsr_s", "Sustain",       masterSAtt);
-    setupKnob(masterR,          "master_adsr_r", "Release",       masterRAtt);
+void MainPanel::setupKnob(juce::Slider& s, const juce::String& paramId,
+                          const juce::String& tip, std::unique_ptr<Att>& att,
+                          juce::Component& parent)
+{
+    s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+    s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 52, 16);
+    s.setTooltip(tip);
+    parent.addAndMakeVisible(s);
+    att = std::make_unique<Att>(apvts, paramId, s);
 }
 
 void MainPanel::paint(juce::Graphics& g)
@@ -101,6 +126,26 @@ void MainPanel::resized()
         osc3dPanel->setBounds(tabArea.removeFromLeft(w3).reduced(3));
         oscVAPanel->setBounds(tabArea.removeFromLeft(w3).reduced(3));
         oscWTPanel->setBounds(tabArea.reduced(3));
+    }
+
+    // Layout effects tab content
+    if (engineTab)
+    {
+        auto tabArea = engineTab->getLocalBounds().reduced(8);
+        auto topRow = tabArea.removeFromTop(84);
+        fmAlgorithmBox.setBounds(topRow.removeFromLeft(180).withHeight(24));
+        fmLevelSlider.setBounds(topRow.removeFromLeft(80));
+        fmOctaveSlider.setBounds(topRow.removeFromLeft(80));
+
+        tabArea.removeFromTop(8);
+        const int opW = juce::jmax(70, tabArea.getWidth() / 10);
+        auto coarseRow = tabArea.removeFromTop(86);
+        for (int i = 0; i < 10; ++i)
+            fmOpCoarseSliders[(size_t)i].setBounds(coarseRow.removeFromLeft(opW).reduced(2));
+
+        auto levelRow = tabArea.removeFromTop(86);
+        for (int i = 0; i < 10; ++i)
+            fmOpLevelSliders[(size_t)i].setBounds(levelRow.removeFromLeft(opW).reduced(2));
     }
 
     // Layout effects tab content

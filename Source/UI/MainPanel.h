@@ -4,6 +4,7 @@
 #include "FilterPanel.h"
 #include "ModMatrixPanel.h"
 #include "ArpPanel.h"
+#include <array>
 
 class MainPanel : public juce::TabbedComponent
 {
@@ -28,9 +29,20 @@ private:
     juce::Slider    masterA, masterD, masterS, masterR;
     juce::Label     masterLabel;
 
+    // FM controls
+    juce::ComboBox  fmAlgorithmBox;
+    juce::Slider    fmLevelSlider, fmOctaveSlider;
+    std::array<juce::Slider, 10> fmOpCoarseSliders;
+    std::array<juce::Slider, 10> fmOpLevelSliders;
+
     using Att = juce::AudioProcessorValueTreeState::SliderAttachment;
+    using CAtt = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
     std::unique_ptr<Att> masterVolAtt, masterTuneAtt, masterPanAtt;
     std::unique_ptr<Att> masterAAtt, masterDAtt, masterSAtt, masterRAtt;
+    std::unique_ptr<CAtt> fmAlgorithmAtt;
+    std::unique_ptr<Att> fmLevelAtt, fmOctaveAtt;
+    std::array<std::unique_ptr<Att>, 10> fmOpCoarseAtts;
+    std::array<std::unique_ptr<Att>, 10> fmOpLevelAtts;
 
     juce::Component* oscillatorsTab;
     juce::Component* engineTab;
@@ -39,4 +51,7 @@ private:
     void buildOscillatorsTab();
     void buildEngineTab();
     void buildEffectsTab();
+    void setupKnob(juce::Slider& slider, const juce::String& paramId,
+                   const juce::String& tooltip, std::unique_ptr<Att>& attachment,
+                   juce::Component& parent);
 };

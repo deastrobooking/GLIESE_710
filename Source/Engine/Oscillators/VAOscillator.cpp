@@ -21,7 +21,7 @@ void VAOscillator::setParams(const Params& p)
 
 void VAOscillator::setFrequency(float hz)
 {
-    freq = hz;
+    freq = juce::jlimit(20.f, (float)(sr * 0.49), hz);
 }
 
 void VAOscillator::rebuildPanWeights()
@@ -74,14 +74,9 @@ float VAOscillator::generateSquare(float& phase, float phaseInc) const
     return v;
 }
 
-float VAOscillator::generateTriangle(float& phase, float phaseInc)
+float VAOscillator::generateTriangle(float phase) const
 {
-    // Naive square -> integrate -> triangle (BLAMP)
-    float square = generateSquare(phase, phaseInc);
-    // Simple leaky integrator approximation
-    float tri = phaseInc * square + (1.f - phaseInc) * 0.f; // placeholder
-    // Production: use per-voice integrator
-    return square; // TODO: replace with proper BLAMP triangle
+    return 2.f * std::abs(2.f * phase - 1.f) - 1.f;
 }
 
 std::pair<float, float> VAOscillator::processSample()
@@ -114,7 +109,7 @@ std::pair<float, float> VAOscillator::processSample()
                 sample = generateSquare(phases[i], phaseInc);
                 break;
             case Shape::Triangle:
-                sample = generateTriangle(phases[i], phaseInc);
+                sample = generateTriangle(phases[i]);
                 break;
         }
 

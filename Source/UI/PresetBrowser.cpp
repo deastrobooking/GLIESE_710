@@ -63,16 +63,28 @@ void PresetBrowser::selectPreset(int index)
 
 void PresetBrowser::saveCurrentPreset()
 {
-    juce::AlertWindow::showInputBoxAsync(
-        "Save Preset", "Enter preset name:", presetManager.getCurrentPresetName(),
-        nullptr,
-        [this](const juce::String& name) {
-            if (name.isNotEmpty())
+    auto* window = new juce::AlertWindow("Save Preset", "Enter preset name:",
+                                         juce::AlertWindow::NoIcon, this);
+    window->addTextEditor("presetName", presetManager.getCurrentPresetName(), "Name");
+    window->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    window->enterModalState(
+        true,
+        juce::ModalCallbackFunction::create([this, window](int result) {
+            if (result == 1)
             {
-                presetManager.savePreset(name);
-                refreshList();
+                auto name = window->getTextEditorContents("presetName").trim();
+                if (name.isNotEmpty())
+                {
+                    presetManager.savePreset(name);
+                    refreshList();
+                }
             }
-        });
+
+            delete window;
+        }),
+        false);
 }
 
 void PresetBrowser::paint(juce::Graphics& g)

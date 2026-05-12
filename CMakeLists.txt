@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+option(GLIESE_COPY_PLUGIN_AFTER_BUILD "Copy built plugin artefacts into system plugin folders" OFF)
+
 include(cmake/CPM.cmake)
 
 CPMAddPackage(
@@ -18,21 +20,25 @@ juce_add_plugin(GLIESE_710
     VERSION                     ${PROJECT_VERSION}
     COMPANY_NAME                "GLIESE Studios"
     COMPANY_WEBSITE             ""
+    BUNDLE_ID                   "com.gliesestudios.GLIESE710"
     PLUGIN_MANUFACTURER_CODE    GLSE
     PLUGIN_CODE                 G710
+    LV2URI                      "urn:com:gliesestudios:gliese710"
     FORMATS                     AU VST3 LV2 Standalone
     IS_SYNTH                    TRUE
     NEEDS_MIDI_INPUT            TRUE
     NEEDS_MIDI_OUTPUT           FALSE
     IS_MIDI_EFFECT              FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
-    COPY_PLUGIN_AFTER_BUILD     TRUE
+    COPY_PLUGIN_AFTER_BUILD     ${GLIESE_COPY_PLUGIN_AFTER_BUILD}
     VST3_COPY_DIR               "/Library/Audio/Plug-Ins/VST3"
     AU_COPY_DIR                 "/Library/Audio/Plug-Ins/Components"
     PRODUCT_NAME                "GLIESE 710"
     DESCRIPTION                 "3D Function Oscillator Synthesizer"
     VST3_CATEGORIES             "Instrument|Synth"
 )
+
+juce_generate_juce_header(GLIESE_710)
 
 # ── Sources ───────────────────────────────────────────────────────────────────
 target_sources(GLIESE_710
@@ -88,13 +94,18 @@ PUBLIC
 option(GLIESE_BUILD_TESTS "Build unit tests" OFF)
 if(GLIESE_BUILD_TESTS)
     CPMAddPackage("gh:catchorg/Catch2@3.6.0")
+    list(APPEND CMAKE_MODULE_PATH "${Catch2_SOURCE_DIR}/extras")
 
     juce_add_console_app(GLIESE_Tests PRODUCT_NAME "GLIESE Tests")
+    juce_generate_juce_header(GLIESE_Tests)
 
     target_sources(GLIESE_Tests PRIVATE
         Tests/EngineTests.cpp
         Source/Engine/Envelopes/ADSREnvelope.cpp
         Source/Engine/Oscillators/Osc3D.cpp
+        Source/Engine/Oscillators/FMOperator.cpp
+        Source/Engine/Oscillators/FMAlgorithm.cpp
+        Source/Engine/Oscillators/WavetableOsc.cpp
         Source/Engine/Filter/DualFilter.cpp
         Source/Engine/Modulation/ModMatrix.cpp
         Source/Engine/LFO/LFOEngine.cpp
