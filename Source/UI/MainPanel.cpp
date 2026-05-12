@@ -44,6 +44,10 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
 
     setupKnob(fmLevelSlider, "osc_fm_level", "FM Level", fmLevelAtt, *engineTab, IndustrialTheme::accentFM());
     setupKnob(fmOctaveSlider, "osc_fm_octave", "FM Octave", fmOctaveAtt, *engineTab, IndustrialTheme::accentFM());
+    setupKnob(fmA, "osc_fm_adsr_a", "FM Attack",  fmAAtt, *engineTab, IndustrialTheme::accentFM());
+    setupKnob(fmD, "osc_fm_adsr_d", "FM Decay",   fmDAtt, *engineTab, IndustrialTheme::accentFM());
+    setupKnob(fmS, "osc_fm_adsr_s", "FM Sustain", fmSAtt, *engineTab, IndustrialTheme::accentFM());
+    setupKnob(fmR, "osc_fm_adsr_r", "FM Release", fmRAtt, *engineTab, IndustrialTheme::accentFM());
 
     static const juce::StringArray kOpWaves { "Sine","Triangle","Saw","Square","Pulse","Noise" };
 
@@ -121,6 +125,9 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     makeFMLabel(fmAlgoLabel,      "ALGORITHM");
     makeFMLabel(fmLvlLabel,       "FM LEVEL");
     makeFMLabel(fmOctLabel,       "FM OCTAVE");
+    const juce::String fmAdsrNames[] = { "ATK", "DEC", "SUS", "REL" };
+    for (int i = 0; i < 4; ++i)
+        makeFMLabel(fmAdsrLabels[(size_t)i], fmAdsrNames[i]);
     makeFMLabel(fmCoarseHdrLabel, "COARSE RATIO");
     makeFMLabel(fmLevelHdrLabel,  "OP LEVEL");
     makeFMLabel(fmWaveHdrLabel,   "WAVEFORM");
@@ -221,11 +228,19 @@ void MainPanel::resized()
         fmAlgoLabel.setBounds(topLabelRow.removeFromLeft(180));
         fmLvlLabel .setBounds(topLabelRow.removeFromLeft(80));
         fmOctLabel .setBounds(topLabelRow.removeFromLeft(80));
+        topLabelRow.removeFromLeft(8);
+        for (auto& label : fmAdsrLabels)
+            label.setBounds(topLabelRow.removeFromLeft(64));
 
         auto topRow = tabArea.removeFromTop(84);
         fmAlgorithmBox.setBounds(topRow.removeFromLeft(180).withHeight(24));
         fmLevelSlider .setBounds(topRow.removeFromLeft(80));
         fmOctaveSlider.setBounds(topRow.removeFromLeft(80));
+        topRow.removeFromLeft(8);
+        fmA.setBounds(topRow.removeFromLeft(64));
+        fmD.setBounds(topRow.removeFromLeft(64));
+        fmS.setBounds(topRow.removeFromLeft(64));
+        fmR.setBounds(topRow.removeFromLeft(64));
 
         tabArea.removeFromTop(6);
 

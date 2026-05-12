@@ -1,4 +1,5 @@
 #include "FMAlgorithm.h"
+#include <bit>
 
 // ─── Algorithm table ──────────────────────────────────────────────────────────
 // Encoding: opModulators[i] = bitmask of operators that feed INTO op i
@@ -179,10 +180,11 @@ float FMAlgorithm::processSample()
     {
         float modInput = 0.f;
         uint16_t mods = alg.opModulators[i];
-        for (int j = 0; j < kNumOperators; ++j)
+        while (mods != 0)
         {
-            if (mods & (1 << j))
-                modInput += opOut[(size_t) j] * juce::MathConstants<float>::pi;
+            int j = std::countr_zero((unsigned)mods);
+            modInput += opOut[(size_t)j] * juce::MathConstants<float>::pi;
+            mods = (uint16_t)(mods & (mods - 1));
         }
 
         opOut[(size_t) i] = ops[(size_t) i].processSample(modInput);
@@ -193,13 +195,19 @@ float FMAlgorithm::processSample()
     // Sum carriers
     float sum = 0.f;
     int   numCarriers = 0;
-    for (int i = 0; i < kNumOperators; ++i)
+    uint16_t carriers = alg.carriers;
+    while (carriers != 0)
     {
-        if (alg.carriers & (1 << i))
-        {
-            sum += opOut[(size_t) i];
-            ++numCarriers;
-        }
+        int i = std::countr_zero((unsigned)carriers);
+        sum += opOut[(size_t)i];
+        ++numCarriers;
+        carriers = (uint16_t)(carriers & (carriers - 1));
     }
     return (numCarriers > 0) ? sum / (float)numCarriers : 0.f;
+}
+
+void FMAlgorithm::advanceEnvelopes()
+{
+    for (auto& op : ops)
+        op.advanceEnvelope();
 }

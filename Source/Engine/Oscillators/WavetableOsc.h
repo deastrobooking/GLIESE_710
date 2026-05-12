@@ -39,8 +39,10 @@ private:
     double sr     = 48000.0;
     float  freq   = 440.f;
     float  phase  = 0.f;
+    float  phaseInc = 440.f / 48000.f;
     int    tableA = 0;
     int    tableB = 1;
+    int    mipLevel = 0;
     float  morphT = 0.f;   // 0 = table A, 1 = table B
 
     std::vector<Table> tables;

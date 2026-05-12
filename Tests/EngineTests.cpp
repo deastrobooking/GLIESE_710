@@ -64,6 +64,60 @@ TEST_CASE("ADSREnvelope basic lifecycle", "[envelope]")
         REQUIRE(!env.isActive());
     }
 
+    SECTION("long release stays active past the previous 10 second ceiling")
+    {
+        env.prepare(1000.0);
+        ADSREnvelope::Params p;
+        p.attackSec  = 0.001f;
+        p.decaySec   = 0.001f;
+        p.sustain    = 1.0f;
+        p.releaseSec = 60.0f;
+        env.setParams(p);
+        env.noteOn();
+        for (int i = 0; i < 10; ++i) env.processSample();
+
+        env.noteOff();
+        float v = 0.f;
+        for (int i = 0; i < 10000; ++i) v = env.processSample();
+
+        REQUIRE(env.isActive());
+        REQUIRE(v > 0.15f);
+    }
+
+    SECTION("stacked long layer and master releases keep a pad tail audible")
+    {
+        ADSREnvelope layer;
+        ADSREnvelope master;
+        layer.prepare(1000.0);
+        master.prepare(1000.0);
+
+        ADSREnvelope::Params p;
+        p.attackSec  = 0.001f;
+        p.decaySec   = 0.001f;
+        p.sustain    = 1.0f;
+        p.releaseSec = 60.0f;
+        layer.setParams(p);
+        master.setParams(p);
+
+        layer.noteOn();
+        master.noteOn();
+        for (int i = 0; i < 10; ++i)
+        {
+            layer.processSample();
+            master.processSample();
+        }
+
+        layer.noteOff();
+        master.noteOff();
+        float amp = 0.f;
+        for (int i = 0; i < 10000; ++i)
+            amp = layer.processSample() * master.processSample();
+
+        REQUIRE(layer.isActive());
+        REQUIRE(master.isActive());
+        REQUIRE(amp > 0.03f);
+    }
+
     SECTION("zero sustain decays to silence")
     {
         ADSREnvelope::Params p;

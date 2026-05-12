@@ -4,6 +4,7 @@ void FMOperator::prepare(double sampleRate)
 {
     sr = sampleRate;
     env.prepare(sampleRate);
+    updateDerived();
     reset();
 }
 
@@ -17,11 +18,23 @@ void FMOperator::setParams(const Params& p)
     params.keyScaleDepth = juce::jlimit(-1.f, 1.f, params.keyScaleDepth);
     params.waveShape     = static_cast<Wave>(juce::jlimit(0, (int)Wave::NumWaves - 1,
                                                           (int)params.waveShape));
+    updateDerived();
 }
 
 void FMOperator::setNoteFrequency(float noteHz)
 {
     noteFreq = noteHz;
+    updateDerived();
+}
+
+void FMOperator::updateDerived()
+{
+    phaseInc = getFrequency() / (float)sr;
+
+    float velMult = 1.f - params.velocityDepth * (1.f - velocity);
+    float octavesFromC4 = (float)(midiNote - 60) / 12.f;
+    float keyMult = juce::jlimit(0.f, 2.f, 1.f - params.keyScaleDepth * octavesFromC4);
+    outputGain = params.level * velMult * keyMult;
 }
 
 void FMOperator::reset()
@@ -71,8 +84,6 @@ float FMOperator::generateWave(float p) noexcept
 float FMOperator::processSample(float modInput)
 {
     float envGain = env.processSample();
-    float hz      = getFrequency();
-    float phaseInc = hz / (float)sr;
 
     float fbAmt = params.feedback * juce::MathConstants<float>::pi;
     float totalPhase = phase + (modInput + fbAmt * prevOut) / juce::MathConstants<float>::twoPi;
@@ -87,12 +98,5 @@ float FMOperator::processSample(float modInput)
 
     prevOut = out;
 
-    // Velocity scaling: depth=0 means level is velocity-independent
-    float velMult = 1.f - params.velocityDepth * (1.f - velocity);
-
-    // Key scaling: depth > 0 means level decreases away from C4, < 0 means increases
-    float octavesFromC4 = (float)(midiNote - 60) / 12.f;
-    float keyMult = juce::jlimit(0.f, 2.f, 1.f - params.keyScaleDepth * octavesFromC4);
-
-    return out * params.level * envGain * velMult * keyMult;
+    return out * envGain * outputGain;
 }

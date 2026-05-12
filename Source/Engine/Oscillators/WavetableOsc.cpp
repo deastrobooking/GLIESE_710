@@ -46,6 +46,7 @@ void WavetableOsc::prepare(double sampleRate)
 {
     sr = sampleRate;
     if (tables.empty()) buildStandardBank();
+    setFrequency(freq);
     reset();
 }
 
@@ -57,6 +58,8 @@ void WavetableOsc::reset()
 void WavetableOsc::setFrequency(float hz)
 {
     freq = juce::jlimit(20.f, (float)(sr * 0.49), hz);
+    phaseInc = freq / (float)sr;
+    mipLevel = selectMipLevel(freq);
 }
 
 void WavetableOsc::setTablePosition(int tableIndex, float position)
@@ -234,12 +237,10 @@ std::pair<float, float> WavetableOsc::processSample()
 {
     if (tables.empty()) return { 0.f, 0.f };
 
-    float phaseInc = freq / (float)sr;
     float pos      = phase * (float)kTableSize;
-    int   mip      = selectMipLevel(freq);
 
-    float sA = cubicInterp(tables[(size_t)tableA].data[mip], pos);
-    float sB = (tableB != tableA) ? cubicInterp(tables[(size_t)tableB].data[mip], pos) : sA;
+    float sA = cubicInterp(tables[(size_t)tableA].data[mipLevel], pos);
+    float sB = (tableB != tableA) ? cubicInterp(tables[(size_t)tableB].data[mipLevel], pos) : sA;
     float s  = sA + morphT * (sB - sA);
 
     phase += phaseInc;

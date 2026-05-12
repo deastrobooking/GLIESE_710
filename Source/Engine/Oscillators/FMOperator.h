@@ -25,10 +25,11 @@ public:
     void prepare(double sampleRate);
     void setParams(const Params& p);
     void setNoteFrequency(float noteHz);
-    void setVelocity(float v)  { velocity  = juce::jlimit(0.f, 1.f, v); }
-    void setMidiNote(int note) { midiNote  = note; }
+    void setVelocity(float v)  { velocity = juce::jlimit(0.f, 1.f, v); updateDerived(); }
+    void setMidiNote(int note) { midiNote = note; updateDerived(); }
 
     float processSample(float modInput);
+    void advanceEnvelope() { env.processSample(); }
 
     void noteOn()  { env.noteOn(); }
     void noteOff() { env.noteOff(); }
@@ -45,6 +46,8 @@ private:
     float  prevOut  = 0.f;
     float  noteFreq = 440.f;
     float  velocity = 1.f;
+    float  phaseInc = 440.f / 48000.f;
+    float  outputGain = 1.f;
     int    midiNote = 60;
     Params params;
     ADSREnvelope env;
@@ -53,4 +56,5 @@ private:
 
     float getFrequency() const;
     float generateWave(float normalizedPhase) noexcept;
+    void updateDerived();
 };

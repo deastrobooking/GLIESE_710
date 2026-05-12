@@ -58,6 +58,14 @@ private:
     double sr    = 48000.0;
     float  freq  = 440.f;
     float  phase = 0.f;
+    float  phaseInc = 440.f / 48000.f;
+    float  rotationCos = 1.f;
+    float  rotationSin = 0.f;
+    float  cachedWarpAmt = 0.25f;
+    float  cachedZRatio = 1.f;
+    float  cachedFoldAmt = 0.f;
+    float  cachedFieldFreq = 1.f;
+    float  cachedDrive = 1.f;
 
     Params params;
 
@@ -78,7 +86,7 @@ private:
     float  blend(Vec3 p) const;
 
     float  whiteSample();
+    void   updateDerived();
 
     static float foldCoordinate(float v);
-    static Vec3 rotateXY(Vec3 p, float angle);
 };

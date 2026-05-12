@@ -37,12 +37,14 @@ private:
     // FM controls
     juce::ComboBox  fmAlgorithmBox;
     juce::Slider    fmLevelSlider, fmOctaveSlider;
+    juce::Slider    fmA, fmD, fmS, fmR;
     std::array<juce::Slider,   10> fmOpCoarseSliders;
     std::array<juce::Slider,   10> fmOpLevelSliders;
     std::array<juce::ComboBox, 10> fmOpWaveBoxes;
     std::array<juce::Slider,   10> fmOpVelSliders;
     std::array<juce::Slider,   10> fmOpKeySliders;
     juce::Label     fmAlgoLabel, fmLvlLabel, fmOctLabel;
+    std::array<juce::Label, 4> fmAdsrLabels;
     juce::Label     fmCoarseHdrLabel, fmLevelHdrLabel, fmWaveHdrLabel;
     juce::Label     fmVelHdrLabel, fmKeyHdrLabel;
     std::array<juce::Label, 10> fmOpLabels;    // "0"–"9" operator index
@@ -53,6 +55,7 @@ private:
     std::unique_ptr<Att> masterAAtt, masterDAtt, masterSAtt, masterRAtt;
     std::unique_ptr<CAtt> fmAlgorithmAtt;
     std::unique_ptr<Att> fmLevelAtt, fmOctaveAtt;
+    std::unique_ptr<Att> fmAAtt, fmDAtt, fmSAtt, fmRAtt;
     std::array<std::unique_ptr<Att>,  10> fmOpCoarseAtts;
     std::array<std::unique_ptr<Att>,  10> fmOpLevelAtts;
     std::array<std::unique_ptr<CAtt>, 10> fmOpWaveAtts;

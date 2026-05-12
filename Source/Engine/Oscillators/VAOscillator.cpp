@@ -3,6 +3,7 @@
 void VAOscillator::prepare(double sampleRate)
 {
     sr = sampleRate;
+    rebuildVoiceState();
     reset();
 }
 
@@ -16,15 +17,16 @@ void VAOscillator::setParams(const Params& p)
 {
     params = p;
     params.unisonCount = juce::jlimit(1, kMaxUnison, params.unisonCount);
-    rebuildPanWeights();
+    rebuildVoiceState();
 }
 
 void VAOscillator::setFrequency(float hz)
 {
     freq = juce::jlimit(20.f, (float)(sr * 0.49), hz);
+    rebuildVoiceState();
 }
 
-void VAOscillator::rebuildPanWeights()
+void VAOscillator::rebuildVoiceState()
 {
     int n = params.unisonCount;
     for (int i = 0; i < n; ++i)
@@ -36,7 +38,14 @@ void VAOscillator::rebuildPanWeights()
         float angle = (pan + 1.f) * 0.25f * juce::MathConstants<float>::pi;
         panWeights[i][0] = std::cos(angle);
         panWeights[i][1] = std::sin(angle);
+
+        float detuneSemitones = (n == 1) ? 0.f
+            : ((float)i / (float)(n - 1) * 2.f - 1.f) * params.detune * 0.5f;
+        float voiceFreq = freq * std::pow(2.f, detuneSemitones / 12.f);
+        phaseIncs[i] = (float)(voiceFreq / sr);
     }
+
+    outputScale = (n > 1) ? 1.f / std::sqrt((float)n) : 1.f;
 }
 
 float VAOscillator::polyBlep(float phase, float phaseInc)
@@ -86,11 +95,7 @@ std::pair<float, float> VAOscillator::processSample()
 
     for (int i = 0; i < n; ++i)
     {
-        // Each unison voice gets a detuned frequency
-        float detuneSemitones = (n == 1) ? 0.f
-            : ((float)i / (float)(n - 1) * 2.f - 1.f) * params.detune * 0.5f;
-        float voiceFreq    = freq * std::pow(2.f, detuneSemitones / 12.f);
-        float phaseInc     = (float)(voiceFreq / sr);
+        float phaseInc = phaseIncs[i];
 
         float sample = 0.f;
         switch (params.shape)
@@ -120,6 +125,5 @@ std::pair<float, float> VAOscillator::processSample()
         R += sample * panWeights[i][1];
     }
 
-    float scale = (n > 1) ? 1.f / std::sqrt((float)n) : 1.f;
-    return { L * scale, R * scale };
+    return { L * outputScale, R * outputScale };
 }

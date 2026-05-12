@@ -4,6 +4,10 @@
 using APVTS = juce::AudioProcessorValueTreeState;
 using RAP   = juce::RangedAudioParameter;
 
+static constexpr float kEnvTimeMin  = 0.001f;
+static constexpr float kEnvTimeMax  = 60.0f;
+static constexpr float kEnvTimeSkew = 0.25f;
+
 //==============================================================================
 static APVTS::ParameterLayout buildLayout()
 {
@@ -38,6 +42,11 @@ static APVTS::ParameterLayout buildLayout()
             juce::ParameterID{id, 1}, name, choices, def));
     };
 
+    auto addEnvTime = [&](const juce::String& id, const juce::String& name, float def)
+    {
+        addFloat(id, name, kEnvTimeMin, kEnvTimeMax, def, kEnvTimeSkew);
+    };
+
     // ── Master ────────────────────────────────────────────────────────────────
     addFloat("master_volume",  "Master Volume",  0.0f, 1.0f, 0.8f, 0.5f);
     addFloat("master_tune",    "Master Tune",   -100.0f, 100.0f, 0.0f);
@@ -45,10 +54,10 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("master_pan",     "Master Pan",    -1.0f, 1.0f, 0.0f);
 
     // Master ADSR
-    addFloat("master_adsr_a", "Master Attack",   0.001f, 10.0f, 0.01f, 0.4f);
-    addFloat("master_adsr_d", "Master Decay",    0.001f, 10.0f, 0.2f,  0.4f);
+    addEnvTime("master_adsr_a", "Master Attack",  0.01f);
+    addEnvTime("master_adsr_d", "Master Decay",   0.2f);
     addFloat("master_adsr_s", "Master Sustain",  0.0f,   1.0f,  0.8f);
-    addFloat("master_adsr_r", "Master Release",  0.001f, 10.0f, 0.3f,  0.4f);
+    addEnvTime("master_adsr_r", "Master Release", 0.3f);
 
     // ── 3D Oscillator ─────────────────────────────────────────────────────────
     addInt  ("osc_3d_field",    "3D Field",    0, 9, 0);
@@ -65,19 +74,19 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("osc_3d_drive",      "3D Drive",      0.25f, 4.0f,  1.0f, 0.5f);
     addFloat("osc_3d_level",    "3D Level",    0.0f, 1.0f, 0.8f);
     addFloat("osc_3d_octave",   "3D Octave",   -3.0f, 3.0f, 0.0f);
-    addFloat("osc_3d_adsr_a",   "3D Env Attack",  0.001f, 10.0f, 0.01f, 0.4f);
-    addFloat("osc_3d_adsr_d",   "3D Env Decay",   0.001f, 10.0f, 0.2f,  0.4f);
+    addEnvTime("osc_3d_adsr_a",   "3D Env Attack",  0.01f);
+    addEnvTime("osc_3d_adsr_d",   "3D Env Decay",   0.2f);
     addFloat("osc_3d_adsr_s",   "3D Env Sustain", 0.0f,   1.0f,  1.0f);
-    addFloat("osc_3d_adsr_r",   "3D Env Release", 0.001f, 10.0f, 0.3f,  0.4f);
+    addEnvTime("osc_3d_adsr_r",   "3D Env Release", 0.3f);
 
     // ── FM Engine ─────────────────────────────────────────────────────────────
     addInt  ("osc_fm_algorithm", "FM Algorithm", 0, 39, 0);
     addFloat("osc_fm_level",     "FM Level",     0.0f, 1.0f, 0.0f);
     addFloat("osc_fm_octave",    "FM Octave",   -3.0f, 3.0f, 0.0f);
-    addFloat("osc_fm_adsr_a",    "FM Env Attack",  0.001f, 10.0f, 0.01f, 0.4f);
-    addFloat("osc_fm_adsr_d",    "FM Env Decay",   0.001f, 10.0f, 0.2f,  0.4f);
+    addEnvTime("osc_fm_adsr_a",    "FM Env Attack",  0.01f);
+    addEnvTime("osc_fm_adsr_d",    "FM Env Decay",   0.2f);
     addFloat("osc_fm_adsr_s",    "FM Env Sustain", 0.0f,   1.0f,  1.0f);
-    addFloat("osc_fm_adsr_r",    "FM Env Release", 0.001f, 10.0f, 0.3f,  0.4f);
+    addEnvTime("osc_fm_adsr_r",    "FM Env Release", 0.3f);
 
     juce::StringArray opWaveforms { "Sine","Triangle","Saw","Square","Pulse","Noise" };
 
@@ -92,10 +101,10 @@ static APVTS::ParameterLayout buildLayout()
         addChoice(prefix + "wave",     "Op" + juce::String(i) + " Wave",     opWaveforms, 0);
         addFloat (prefix + "vel",      "Op" + juce::String(i) + " Vel Depth",   0.0f, 1.0f, 0.0f);
         addFloat (prefix + "key",      "Op" + juce::String(i) + " Key Scale",  -1.0f, 1.0f, 0.0f);
-        addFloat (prefix + "adsr_a",   "Op" + juce::String(i) + " Attack",  0.001f, 10.0f, 0.01f, 0.4f);
-        addFloat (prefix + "adsr_d",   "Op" + juce::String(i) + " Decay",   0.001f, 10.0f, 0.5f,  0.4f);
+        addEnvTime(prefix + "adsr_a",   "Op" + juce::String(i) + " Attack",  0.01f);
+        addEnvTime(prefix + "adsr_d",   "Op" + juce::String(i) + " Decay",   0.5f);
         addFloat (prefix + "adsr_s",   "Op" + juce::String(i) + " Sustain", 0.0f,   1.0f,  0.8f);
-        addFloat (prefix + "adsr_r",   "Op" + juce::String(i) + " Release", 0.001f, 10.0f, 0.3f,  0.4f);
+        addEnvTime(prefix + "adsr_r",   "Op" + juce::String(i) + " Release", 0.3f);
     }
 
     // ── Wavetable Oscillator ──────────────────────────────────────────────────
@@ -104,10 +113,10 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("osc_wt_pos",    "WT Position", 0.0f, 1.0f, 0.0f);
     addFloat("osc_wt_level",  "WT Level",    0.0f, 1.0f, 0.0f);
     addFloat("osc_wt_octave", "WT Octave",  -3.0f, 3.0f, 0.0f);
-    addFloat("osc_wt_adsr_a", "WT Env Attack",  0.001f, 10.0f, 0.01f, 0.4f);
-    addFloat("osc_wt_adsr_d", "WT Env Decay",   0.001f, 10.0f, 0.2f,  0.4f);
+    addEnvTime("osc_wt_adsr_a", "WT Env Attack",  0.01f);
+    addEnvTime("osc_wt_adsr_d", "WT Env Decay",   0.2f);
     addFloat("osc_wt_adsr_s", "WT Env Sustain", 0.0f,   1.0f,  1.0f);
-    addFloat("osc_wt_adsr_r", "WT Env Release", 0.001f, 10.0f, 0.3f,  0.4f);
+    addEnvTime("osc_wt_adsr_r", "WT Env Release", 0.3f);
 
     // ── Virtual Analog Oscillator ─────────────────────────────────────────────
     addChoice("osc_va_shape", "VA Shape",
@@ -118,10 +127,10 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("osc_va_spread", "VA Spread",       0.0f, 1.0f, 0.5f);
     addFloat("osc_va_level",  "VA Level",        0.0f, 1.0f, 0.0f);
     addFloat("osc_va_octave", "VA Octave",      -3.0f, 3.0f, 0.0f);
-    addFloat("osc_va_adsr_a", "VA Env Attack",  0.001f, 10.0f, 0.01f, 0.4f);
-    addFloat("osc_va_adsr_d", "VA Env Decay",   0.001f, 10.0f, 0.2f,  0.4f);
+    addEnvTime("osc_va_adsr_a", "VA Env Attack",  0.01f);
+    addEnvTime("osc_va_adsr_d", "VA Env Decay",   0.2f);
     addFloat("osc_va_adsr_s", "VA Env Sustain", 0.0f,   1.0f,  1.0f);
-    addFloat("osc_va_adsr_r", "VA Env Release", 0.001f, 10.0f, 0.3f,  0.4f);
+    addEnvTime("osc_va_adsr_r", "VA Env Release", 0.3f);
 
     // ── Dual Filter ───────────────────────────────────────────────────────────
     juce::StringArray filterModes {
@@ -140,10 +149,10 @@ static APVTS::ParameterLayout buildLayout()
         addFloat (s + "drive",     "Filter " + juce::String(slot).toUpperCase() + " Drive",     0.0f, 1.0f, 0.0f);
         addFloat (s + "env_amt",   "Filter " + juce::String(slot).toUpperCase() + " Env Amt",  -1.0f, 1.0f, 0.0f);
         addFloat (s + "lfo_amt",   "Filter " + juce::String(slot).toUpperCase() + " LFO Amt",  -1.0f, 1.0f, 0.0f);
-        addFloat (s + "adsr_a",    "Filter " + juce::String(slot).toUpperCase() + " Env A",  0.001f, 10.0f, 0.05f, 0.4f);
-        addFloat (s + "adsr_d",    "Filter " + juce::String(slot).toUpperCase() + " Env D",  0.001f, 10.0f, 0.3f,  0.4f);
+        addEnvTime(s + "adsr_a",    "Filter " + juce::String(slot).toUpperCase() + " Env A", 0.05f);
+        addEnvTime(s + "adsr_d",    "Filter " + juce::String(slot).toUpperCase() + " Env D", 0.3f);
         addFloat (s + "adsr_s",    "Filter " + juce::String(slot).toUpperCase() + " Env S",  0.0f,   1.0f,  0.0f);
-        addFloat (s + "adsr_r",    "Filter " + juce::String(slot).toUpperCase() + " Env R",  0.001f, 10.0f, 0.2f,  0.4f);
+        addEnvTime(s + "adsr_r",    "Filter " + juce::String(slot).toUpperCase() + " Env R", 0.2f);
     }
     addChoice("filter_routing", "Filter Routing", filterRouting, 0);
 

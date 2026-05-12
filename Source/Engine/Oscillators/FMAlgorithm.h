@@ -31,6 +31,7 @@ public:
 
     // Process one sample and return carrier sum (normalised)
     float processSample();
+    void advanceEnvelopes();
 
     static const AlgorithmDef& getAlgorithmDef(int index);
 

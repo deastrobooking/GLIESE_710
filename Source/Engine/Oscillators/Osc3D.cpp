@@ -8,6 +8,7 @@ static constexpr float kTau = juce::MathConstants<float>::twoPi;
 void Osc3D::prepare(double sampleRate)
 {
     sr = sampleRate;
+    updateDerived();
     reset();
 }
 
@@ -19,14 +20,30 @@ void Osc3D::reset()
     lorenz = {1.f, 1.f, 1.f};
 }
 
-void Osc3D::setParams(const Params& p) { params = p; }
-void Osc3D::setFrequency(float hz)     { freq = juce::jlimit(20.f, (float)(sr * 0.49), hz); }
+void Osc3D::setParams(const Params& p)
+{
+    params = p;
+    updateDerived();
+}
+
+void Osc3D::setFrequency(float hz)
+{
+    freq = juce::jlimit(20.f, (float)(sr * 0.49), hz);
+    updateDerived();
+}
 
 //==============================================================================
-Vec3 Osc3D::rotateXY(Vec3 p, float angle)
+void Osc3D::updateDerived()
 {
-    float c = std::cos(angle), s = std::sin(angle);
-    return { c * p.x - s * p.y, s * p.x + c * p.y, p.z };
+    phaseInc = freq / (float)sr;
+    float rotation = params.rotation * kTau;
+    rotationCos = std::cos(rotation);
+    rotationSin = std::sin(rotation);
+    cachedWarpAmt = params.warpAmt;
+    cachedZRatio = juce::jlimit(0.25f, 4.0f, params.zRatio);
+    cachedFoldAmt = juce::jlimit(0.f, 1.f, params.foldAmt);
+    cachedFieldFreq = juce::jlimit(0.25f, 16.f, params.fieldFreq);
+    cachedDrive = juce::jlimit(0.25f, 4.f, params.drive);
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -35,7 +52,7 @@ Vec3 Osc3D::computePath(float t)
     Vec3 p{};
     float r = params.radius;
     float d = params.depth;
-    float zRatio = juce::jlimit(0.25f, 4.0f, params.zRatio);
+    float zRatio = cachedZRatio;
 
     switch (params.path)
     {
@@ -96,7 +113,9 @@ Vec3 Osc3D::computePath(float t)
     }
 
     // Apply global rotation in XY plane
-    p = rotateXY(p, params.rotation * kTau);
+    p = { rotationCos * p.x - rotationSin * p.y,
+          rotationSin * p.x + rotationCos * p.y,
+          p.z };
 
     // Inject chaos noise into coordinates
     if (params.chaos > 0.f)
@@ -113,7 +132,7 @@ Vec3 Osc3D::computePath(float t)
 //──────────────────────────────────────────────────────────────────────────────
 Vec3 Osc3D::warpCoordinates(Vec3 p) const
 {
-    float w = params.warpAmt;
+    float w = cachedWarpAmt;
     if (w <= 0.f) return p;
     p.x += w * std::sin(p.y * 3.0f + p.z * 1.5f);
     p.y += w * std::cos(p.z * 2.0f + p.x * 1.2f);
@@ -132,7 +151,7 @@ float Osc3D::foldCoordinate(float v)
 
 Vec3 Osc3D::foldCoordinates(Vec3 p) const
 {
-    float amt = juce::jlimit(0.f, 1.f, params.foldAmt);
+    float amt = cachedFoldAmt;
     if (amt <= 0.f)
         return p;
 
@@ -147,7 +166,7 @@ Vec3 Osc3D::foldCoordinates(Vec3 p) const
 //──────────────────────────────────────────────────────────────────────────────
 float Osc3D::evaluateField(Vec3 p, FieldType ft) const
 {
-    float f = juce::jlimit(0.25f, 16.f, params.fieldFreq);
+    float f = cachedFieldFreq;
 
     switch (ft)
     {
@@ -260,7 +279,6 @@ float Osc3D::whiteSample()
 //──────────────────────────────────────────────────────────────────────────────
 float Osc3D::processSample()
 {
-    float phaseInc = freq / (float)sr;
     float t = phase * kTau;
 
     Vec3 p = computePath(t);
@@ -271,5 +289,5 @@ float Osc3D::processSample()
     phase += phaseInc;
     if (phase >= 1.f) phase -= 1.f;
 
-    return std::tanh(s * juce::jlimit(0.25f, 4.f, params.drive));   // soft clip to ±1
+    return std::tanh(s * cachedDrive);   // soft clip to ±1
 }

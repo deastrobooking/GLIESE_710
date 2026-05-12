@@ -41,11 +41,17 @@ private:
     std::array<float, kMaxCombDelaySamples> combBuffer{};
     int  combWritePos = 0;
     float combFeedback = 0.7f;
+    float lastConfiguredCutoff = -1.f;
+    float lastConfiguredRes = -1.f;
+    float lastConfiguredDrive = -1.f;
+    FilterMode lastConfiguredMode = FilterMode::NumModes;
 
     // Drive waveshaper
     juce::dsp::WaveShaper<float> shaper;
 
     float computeCutoff(float envValue, float lfoValue) const;
+    bool  needsReconfigure(float cutHz, float res, bool includeDrive) const;
+    void  markConfigured(float cutHz, float res);
     void  configureSVF(float cutHz, float res);
     void  configureIIR(float cutHz, float res);
 };

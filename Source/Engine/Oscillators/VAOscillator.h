@@ -32,9 +32,11 @@ private:
     Params params;
 
     float phases[kMaxUnison] = {};
+    float phaseIncs[kMaxUnison] = {};
     float panWeights[kMaxUnison][2] = {};  // [voice][L/R]
+    float outputScale = 1.f;
 
-    void rebuildPanWeights();
+    void rebuildVoiceState();
 
     // PolyBLEP helpers
     static float polyBlep(float phase, float phaseInc);

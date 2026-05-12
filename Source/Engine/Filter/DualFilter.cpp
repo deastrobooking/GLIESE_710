@@ -36,6 +36,10 @@ void SingleFilter::reset()
     iirFilter.reset();
     combBuffer.fill(0.f);
     combWritePos = 0;
+    lastConfiguredCutoff = -1.f;
+    lastConfiguredRes = -1.f;
+    lastConfiguredDrive = -1.f;
+    lastConfiguredMode = FilterMode::NumModes;
 }
 
 void SingleFilter::setParams(const Params& p)
@@ -54,8 +58,27 @@ float SingleFilter::computeCutoff(float envValue, float lfoValue) const
     return juce::jlimit(20.f, (float)(sr * 0.49), modulated);
 }
 
+bool SingleFilter::needsReconfigure(float cutHz, float res, bool includeDrive) const
+{
+    return params.mode != lastConfiguredMode
+        || std::abs(cutHz - lastConfiguredCutoff) > 0.5f
+        || std::abs(res - lastConfiguredRes) > 0.0001f
+        || (includeDrive && std::abs(params.drive - lastConfiguredDrive) > 0.0001f);
+}
+
+void SingleFilter::markConfigured(float cutHz, float res)
+{
+    lastConfiguredCutoff = cutHz;
+    lastConfiguredRes = res;
+    lastConfiguredDrive = params.drive;
+    lastConfiguredMode = params.mode;
+}
+
 void SingleFilter::configureSVF(float cutHz, float res)
 {
+    if (!needsReconfigure(cutHz, res, false))
+        return;
+
     using SVFType = juce::dsp::StateVariableTPTFilterType;
     // Q capped at 10: still self-oscillates but avoids the +28dB peak of Q=25
     float Q = juce::jlimit(0.5f, 10.f, 0.5f + res * 9.5f);
@@ -85,10 +108,15 @@ void SingleFilter::configureSVF(float cutHz, float res)
             svf1.setType(SVFType::lowpass);
             break;
     }
+
+    markConfigured(cutHz, res);
 }
 
 void SingleFilter::configureIIR(float cutHz, float res)
 {
+    if (!needsReconfigure(cutHz, res, true))
+        return;
+
     juce::dsp::IIR::Coefficients<float>::Ptr coeffs;
     float q = 0.707f + res * 10.f;
 
@@ -112,6 +140,8 @@ void SingleFilter::configureIIR(float cutHz, float res)
 
     if (coeffs != nullptr)
         *iirFilter.coefficients = *coeffs;
+
+    markConfigured(cutHz, res);
 }
 
 float SingleFilter::processSample(float input, float envValue, float lfoValue, float amMod)

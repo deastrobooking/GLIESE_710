@@ -126,14 +126,12 @@ void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
     fm.setVelocity(velocity);
     fm.setMidiNote(midiNote);
 
-    {
-        ADSREnvelope::Params ep;
-        ep.attackSec  = getF("osc_fm_adsr_a");
-        ep.decaySec   = getF("osc_fm_adsr_d");
-        ep.sustain    = getF("osc_fm_adsr_s");
-        ep.releaseSec = getF("osc_fm_adsr_r");
-        envBank.get(ENV_FM).setParams(ep);
-    }
+    ADSREnvelope::Params fmLayerEnv;
+    fmLayerEnv.attackSec  = getF("osc_fm_adsr_a");
+    fmLayerEnv.decaySec   = getF("osc_fm_adsr_d");
+    fmLayerEnv.sustain    = getF("osc_fm_adsr_s");
+    fmLayerEnv.releaseSec = getF("osc_fm_adsr_r");
+    envBank.get(ENV_FM).setParams(fmLayerEnv);
 
     for (int i = 0; i < 10; ++i)
     {
@@ -156,7 +154,7 @@ void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
         ep.attackSec  = getF(pfx + "adsr_a");
         ep.decaySec   = getF(pfx + "adsr_d");
         ep.sustain    = getF(pfx + "adsr_s");
-        ep.releaseSec = getF(pfx + "adsr_r");
+        ep.releaseSec = juce::jmax(getF(pfx + "adsr_r"), fmLayerEnv.releaseSec);
         fm.getOperator(i).getEnvelope().setParams(ep);
     }
 
@@ -279,6 +277,7 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
                               juce::AudioProcessorValueTreeState& apvts)
 {
     if (!isActive()) return;
+    static constexpr float kSilent = 1.0e-5f;
 
     auto getF = [&](const juce::String& id) -> float {
         auto* p = apvts.getRawParameterValue(id);
@@ -339,6 +338,13 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
     float lfoA = lfo.getValue(0);
     float lfoB = lfo.getValue(1);
 
+    const bool use3D = osc3dLevel > kSilent;
+    const bool useFM = fmLevel > kSilent;
+    const bool useWT = wtLevel > kSilent;
+    const bool useVA = vaLevel > kSilent;
+    const float panGainL = masterVol * std::sqrt(0.5f - 0.5f * masterPan);
+    const float panGainR = masterVol * std::sqrt(0.5f + 0.5f * masterPan);
+
     auto* leftCh  = buffer.getWritePointer(0, startSample);
     auto* rightCh = buffer.getWritePointer(1, startSample);
 
@@ -356,26 +362,41 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
 
         // Mix oscillators
         float monoSig = 0.f;
-        if (osc3dLevel > 0.f)
+        if (use3D && env3D > kSilent)
             monoSig += osc3d.processSample() * env3D * osc3dLevel;
-        float fmSig = fm.processSample();
-        if (fmLevel > 0.f)
+
+        if (useFM && envFM > kSilent)
+        {
+            float fmSig = fm.processSample();
             monoSig += fmSig * envFM * fmLevel;
+        }
+        else if (useFM)
+        {
+            fm.advanceEnvelopes();
+        }
 
-        auto [wtL, wtR] = wtOsc.processSample();
-        auto [vaL, vaR] = vaOsc.processSample();
+        float sigL = monoSig;
+        float sigR = monoSig;
 
-        float sigL = monoSig + wtL * envWT * wtLevel + vaL * envVA * vaLevel;
-        float sigR = monoSig + wtR * envWT * wtLevel + vaR * envVA * vaLevel;
+        if (useWT && envWT > kSilent)
+        {
+            auto [wtL, wtR] = wtOsc.processSample();
+            sigL += wtL * envWT * wtLevel;
+            sigR += wtR * envWT * wtLevel;
+        }
+
+        if (useVA && envVA > kSilent)
+        {
+            auto [vaL, vaR] = vaOsc.processSample();
+            sigL += vaL * envVA * vaLevel;
+            sigR += vaR * envVA * vaLevel;
+        }
 
         // Dual filter
         auto [fL, fR] = dualFilter.processSample(sigL, sigR, lfoA, lfoB);
 
         // Master ADSR, volume, pan
-        float gainL = masterVol * masterEnv * std::sqrt(0.5f - 0.5f * masterPan);
-        float gainR = masterVol * masterEnv * std::sqrt(0.5f + 0.5f * masterPan);
-
-        leftCh[s]  += fL * gainL;
-        rightCh[s] += fR * gainR;
+        leftCh[s]  += fL * masterEnv * panGainL;
+        rightCh[s] += fR * masterEnv * panGainR;
     }
 }

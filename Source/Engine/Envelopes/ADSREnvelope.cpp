@@ -27,6 +27,10 @@ void ADSREnvelope::prepare(double sampleRate)
 void ADSREnvelope::setParams(const Params& p)
 {
     params = p;
+    params.attackSec  = juce::jmax(0.f, params.attackSec);
+    params.decaySec   = juce::jmax(0.f, params.decaySec);
+    params.sustain    = juce::jlimit(0.f, 1.f, params.sustain);
+    params.releaseSec = juce::jmax(0.f, params.releaseSec);
     recalcCoeffs();
 }
 
