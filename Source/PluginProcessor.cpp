@@ -72,6 +72,7 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("osc_3d_z_ratio",    "3D Z Ratio",    0.25f, 4.0f,  1.0f, 0.7f);
     addFloat("osc_3d_fold",       "3D Fold",       0.0f,  1.0f,  0.0f);
     addFloat("osc_3d_drive",      "3D Drive",      0.25f, 4.0f,  1.0f, 0.5f);
+    addBool ("osc_3d_on",       "3D Enable",   true);
     addFloat("osc_3d_level",    "3D Level",    0.0f, 1.0f, 0.8f);
     addFloat("osc_3d_octave",   "3D Octave",   -3.0f, 3.0f, 0.0f);
     addEnvTime("osc_3d_adsr_a",   "3D Env Attack",  0.01f);
@@ -80,6 +81,7 @@ static APVTS::ParameterLayout buildLayout()
     addEnvTime("osc_3d_adsr_r",   "3D Env Release", 0.3f);
 
     // ── FM Engine ─────────────────────────────────────────────────────────────
+    addBool ("osc_fm_on",        "FM Enable",    true);
     addInt  ("osc_fm_algorithm", "FM Algorithm", 0, 39, 0);
     addFloat("osc_fm_level",     "FM Level",     0.0f, 1.0f, 0.0f);
     addFloat("osc_fm_octave",    "FM Octave",   -3.0f, 3.0f, 0.0f);
@@ -108,6 +110,7 @@ static APVTS::ParameterLayout buildLayout()
     }
 
     // ── Wavetable Oscillator ──────────────────────────────────────────────────
+    addBool ("osc_wt_on",    "WT Enable",   true);
     addChoice("osc_wt_table", "WT Table",
               {"Sine","Triangle","Saw","Square","Pulse","Half Sine","Abs Sine","Sine Cube"}, 0);
     addFloat("osc_wt_pos",    "WT Position", 0.0f, 1.0f, 0.0f);
@@ -119,6 +122,7 @@ static APVTS::ParameterLayout buildLayout()
     addEnvTime("osc_wt_adsr_r", "WT Env Release", 0.3f);
 
     // ── Virtual Analog Oscillator ─────────────────────────────────────────────
+    addBool  ("osc_va_on",    "VA Enable",   true);
     addChoice("osc_va_shape", "VA Shape",
               {"Sine", "Saw", "RevSaw", "Square", "Triangle", "Pulse"}, 1);
     addFloat("osc_va_pw",     "VA Pulse Width", 0.05f, 0.95f, 0.5f);

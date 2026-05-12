@@ -10,6 +10,15 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
 
     juce::String pfx = "osc_" + oscId + "_";
 
+    // Enable / hard-shutoff toggle
+    enableButton.setButtonText("ON");
+    enableButton.setTooltip("Enable / disable this oscillator engine");
+    enableButton.setColour(juce::ToggleButton::textColourId,    accent);
+    enableButton.setColour(juce::ToggleButton::tickColourId,    accent);
+    enableButton.setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(0xff555555));
+    addAndMakeVisible(enableButton);
+    enableAtt = std::make_unique<BAtt>(apvts, pfx + "on", enableButton);
+
     setupSlider(levelSlider,  "Oscillator Level");
     levelAtt = std::make_unique<Att>(apvts, pfx + "level", levelSlider);
 
@@ -165,7 +174,11 @@ void OscPanel::resized()
     };
 
     auto area = getLocalBounds().reduced(6);
-    titleLabel.setBounds(area.removeFromTop(20));
+    {
+        auto titleRow = area.removeFromTop(20);
+        enableButton.setBounds(titleRow.removeFromRight(44));
+        titleLabel  .setBounds(titleRow);
+    }
     area.removeFromTop(2);
 
     // ── Level + Octave ────────────────────────────────────────────────────────

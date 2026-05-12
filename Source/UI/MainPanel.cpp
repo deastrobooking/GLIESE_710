@@ -30,6 +30,20 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
 
     // ── FM Engine tab ─────────────────────────────────────────────────────────
     engineTab = new juce::Component();
+
+    // FM engine hard-shutoff toggle
+    fmEnableButton.setButtonText("ON");
+    fmEnableButton.setTooltip("Enable / disable the FM engine");
+    fmEnableButton.setColour(juce::ToggleButton::textColourId,        IndustrialTheme::accentFM());
+    fmEnableButton.setColour(juce::ToggleButton::tickColourId,        IndustrialTheme::accentFM());
+    fmEnableButton.setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(0xff555555));
+    engineTab->addAndMakeVisible(fmEnableButton);
+    fmEnableAtt = std::make_unique<BAtt>(apvts, "osc_fm_on", fmEnableButton);
+
+    fmEnableLabel.setText("FM ENGINE", juce::dontSendNotification);
+    IndustrialTheme::styleTitle(fmEnableLabel, IndustrialTheme::accentFM(), 13.f);
+    engineTab->addAndMakeVisible(fmEnableLabel);
+
     fmAlgorithmBox.addItemList([]
     {
         juce::StringArray items;
@@ -222,6 +236,14 @@ void MainPanel::resized()
     {
         auto tabArea = engineTab->getLocalBounds().reduced(8);
         const int opW = juce::jmax(64, tabArea.getWidth() / 10);
+
+        // Title row: "FM ENGINE" label left, "ON" toggle far right
+        {
+            auto titleRow = tabArea.removeFromTop(20);
+            fmEnableButton.setBounds(titleRow.removeFromRight(48));
+            fmEnableLabel .setBounds(titleRow.removeFromLeft(160));
+        }
+        tabArea.removeFromTop(4);
 
         // Top row: algo + level + octave
         auto topLabelRow = tabArea.removeFromTop(13);

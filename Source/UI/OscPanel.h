@@ -20,8 +20,13 @@ private:
 
     juce::Label titleLabel;
 
-    using Att = juce::AudioProcessorValueTreeState::SliderAttachment;
+    using Att  = juce::AudioProcessorValueTreeState::SliderAttachment;
     using CAtt = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
+    using BAtt = juce::AudioProcessorValueTreeState::ButtonAttachment;
+
+    // Engine enable / hard shutoff
+    juce::ToggleButton enableButton;
+    std::unique_ptr<BAtt> enableAtt;
 
     // Level + octave shared by all osc types
     juce::Slider levelSlider, octaveSlider;

@@ -51,6 +51,13 @@ private:
 
     using Att  = juce::AudioProcessorValueTreeState::SliderAttachment;
     using CAtt = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
+    using BAtt = juce::AudioProcessorValueTreeState::ButtonAttachment;
+
+    // FM engine enable toggle
+    juce::ToggleButton fmEnableButton;
+    std::unique_ptr<BAtt> fmEnableAtt;
+    juce::Label fmEnableLabel;
+
     std::unique_ptr<Att> masterVolAtt, masterTuneAtt, masterOctaveAtt, masterPanAtt;
     std::unique_ptr<Att> masterAAtt, masterDAtt, masterSAtt, masterRAtt;
     std::unique_ptr<CAtt> fmAlgorithmAtt;

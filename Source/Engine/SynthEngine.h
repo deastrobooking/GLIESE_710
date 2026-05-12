@@ -7,7 +7,7 @@
 class SynthEngine
 {
 public:
-    static constexpr int kNumVoices = 16;
+    static constexpr int kNumVoices = 10;
 
     void prepare(const juce::dsp::ProcessSpec& spec);
     void reset();
