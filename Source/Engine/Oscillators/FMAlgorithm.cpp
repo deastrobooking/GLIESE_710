@@ -141,6 +141,16 @@ void FMAlgorithm::setNoteFrequency(float hz)
     for (auto& op : ops) op.setNoteFrequency(hz);
 }
 
+void FMAlgorithm::setVelocity(float v)
+{
+    for (auto& op : ops) op.setVelocity(v);
+}
+
+void FMAlgorithm::setMidiNote(int note)
+{
+    for (auto& op : ops) op.setMidiNote(note);
+}
+
 void FMAlgorithm::noteOn()
 {
     lastOutputs.fill(0.f);

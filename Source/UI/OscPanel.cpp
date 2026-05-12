@@ -17,10 +17,10 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     setupSlider(octaveSlider, "Octave Transpose");
     octaveAtt = std::make_unique<Att>(apvts, pfx + "octave", octaveSlider);
 
-    setupSlider(adsrA, "Attack");  attA = std::make_unique<Att>(apvts, pfx + "adsr_a", adsrA);
-    setupSlider(adsrD, "Decay");   attD = std::make_unique<Att>(apvts, pfx + "adsr_d", adsrD);
-    setupSlider(adsrS, "Sustain"); attS = std::make_unique<Att>(apvts, pfx + "adsr_s", adsrS);
-    setupSlider(adsrR, "Release"); attR = std::make_unique<Att>(apvts, pfx + "adsr_r", adsrR);
+    setupADSRSlider(adsrA, "Attack");  attA = std::make_unique<Att>(apvts, pfx + "adsr_a", adsrA);
+    setupADSRSlider(adsrD, "Decay");   attD = std::make_unique<Att>(apvts, pfx + "adsr_d", adsrD);
+    setupADSRSlider(adsrS, "Sustain"); attS = std::make_unique<Att>(apvts, pfx + "adsr_s", adsrS);
+    setupADSRSlider(adsrR, "Release"); attR = std::make_unique<Att>(apvts, pfx + "adsr_r", adsrR);
 
     if (oscId == "3d")
     {
@@ -115,17 +115,29 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         makeLabel(extraLabels[0], "POS");
     }
 
-    adsrLabel.setText("A  D  S  R", juce::dontSendNotification);
-    adsrLabel.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
-    adsrLabel.setFont(juce::Font(juce::FontOptions { 10.f }));
-    adsrLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(adsrLabel);
+    const char* adsrNames[4] = { "A", "D", "S", "R" };
+    for (int i = 0; i < 4; ++i)
+    {
+        adsrLabels[(size_t)i].setText(adsrNames[i], juce::dontSendNotification);
+        adsrLabels[(size_t)i].setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
+        adsrLabels[(size_t)i].setFont(juce::Font(juce::FontOptions { 10.f, juce::Font::bold }));
+        adsrLabels[(size_t)i].setJustificationType(juce::Justification::centred);
+        addAndMakeVisible(adsrLabels[(size_t)i]);
+    }
 }
 
 void OscPanel::setupSlider(juce::Slider& s, const juce::String& tooltip)
 {
     s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 16);
+    s.setTooltip(tooltip);
+    addAndMakeVisible(s);
+}
+
+void OscPanel::setupADSRSlider(juce::Slider& s, const juce::String& tooltip)
+{
+    s.setSliderStyle(juce::Slider::LinearVertical);
+    s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 14);
     s.setTooltip(tooltip);
     addAndMakeVisible(s);
 }
@@ -231,10 +243,12 @@ void OscPanel::resized()
         area.removeFromTop(4);
     }
 
-    // ── ADSR ──────────────────────────────────────────────────────────────────
-    adsrLabel.setBounds(area.removeFromTop(14));
-    auto adsrRow = area.removeFromTop(80);
+    // ── ADSR — vertical sliders filling remaining space ───────────────────────
     juce::Slider* adsrSliders[4] = { &adsrA, &adsrD, &adsrS, &adsrR };
     for (int i = 0; i < 4; ++i)
-        adsrSliders[i]->setBounds(portion(adsrRow, i, 4));
+    {
+        auto col = portion(area, i, 4).reduced(2, 0);
+        adsrLabels[(size_t)i].setBounds(col.removeFromTop(13));
+        adsrSliders[i]->setBounds(col);
+    }
 }

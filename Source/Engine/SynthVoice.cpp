@@ -122,6 +122,8 @@ void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
     fm.setAlgorithm(getI("osc_fm_algorithm"));
     hz = midiToHz(midiNote, totalPitch) * std::pow(2.f, getF("osc_fm_octave"));
     fm.setNoteFrequency(hz);
+    fm.setVelocity(velocity);
+    fm.setMidiNote(midiNote);
 
     {
         ADSREnvelope::Params ep;
@@ -137,13 +139,16 @@ void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
         juce::String pfx = "op" + juce::String(i) + "_";
         FMOperator::Params op;
         float ratioMod = i < 5 ? modDests.dests[(int)ModDest::FM_Op0_Ratio + i] : 0.f;
-        op.coarse   = getI(pfx + "coarse");
-        op.fine     = getF(pfx + "fine");
+        op.coarse      = getI(pfx + "coarse");
+        op.fine        = getF(pfx + "fine");
         op.ratioOffset = ratioMod;
-        op.level    = juce::jlimit(0.f, 1.f, getF(pfx + "level") +
-                          modDests.dests[(int)ModDest::FM_Op0_Level + i]);
-        op.feedback = getF(pfx + "feedback");
-        op.fixedFreq = getI(pfx + "fixed") != 0;
+        op.level       = juce::jlimit(0.f, 1.f, getF(pfx + "level") +
+                             modDests.dests[(int)ModDest::FM_Op0_Level + i]);
+        op.feedback    = getF(pfx + "feedback");
+        op.fixedFreq   = getI(pfx + "fixed") != 0;
+        op.waveShape   = static_cast<FMOperator::Wave>(getI(pfx + "wave"));
+        op.velocityDepth = getF(pfx + "vel");
+        op.keyScaleDepth = getF(pfx + "key");
         fm.getOperator(i).setParams(op);
 
         ADSREnvelope::Params ep;

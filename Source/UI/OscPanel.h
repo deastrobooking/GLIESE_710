@@ -38,11 +38,13 @@ private:
     int numExtraSliders = 0;
     int numModeBoxes = 0;
 
-    juce::Label levelLabel, octaveLabel, adsrLabel;
+    juce::Label levelLabel, octaveLabel;
     juce::Label modeALabel, modeBLabel;
     std::array<juce::Label, 10> extraLabels;
+    std::array<juce::Label,  4> adsrLabels;  // A D S R
 
     void setupSlider(juce::Slider& slider, const juce::String& tooltip);
+    void setupADSRSlider(juce::Slider& slider, const juce::String& tooltip);
     void setupExtraSlider(juce::Slider& slider, const juce::String& paramId,
                           const juce::String& tooltip, std::unique_ptr<Att>& attachment);
 };

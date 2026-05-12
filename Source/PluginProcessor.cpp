@@ -78,18 +78,23 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("osc_fm_adsr_s",    "FM Env Sustain", 0.0f,   1.0f,  1.0f);
     addFloat("osc_fm_adsr_r",    "FM Env Release", 0.001f, 10.0f, 0.3f,  0.4f);
 
+    juce::StringArray opWaveforms { "Sine","Triangle","Saw","Square","Pulse","Noise" };
+
     for (int i = 0; i < 10; ++i)
     {
         juce::String prefix = "op" + juce::String(i) + "_";
-        addInt  (prefix + "coarse",   "Op" + juce::String(i) + " Coarse",   0,  31, i == 0 ? 1 : 1);
-        addFloat(prefix + "fine",     "Op" + juce::String(i) + " Fine",    -1.0f, 1.0f, 0.0f);
-        addFloat(prefix + "level",    "Op" + juce::String(i) + " Level",    0.0f, 1.0f, i == 0 ? 1.0f : 0.5f);
-        addFloat(prefix + "feedback", "Op" + juce::String(i) + " Feedback", 0.0f, 1.0f, 0.0f);
-        addBool (prefix + "fixed",    "Op" + juce::String(i) + " Fixed Freq", false);
-        addFloat(prefix + "adsr_a",   "Op" + juce::String(i) + " Attack",  0.001f, 10.0f, 0.01f, 0.4f);
-        addFloat(prefix + "adsr_d",   "Op" + juce::String(i) + " Decay",   0.001f, 10.0f, 0.5f,  0.4f);
-        addFloat(prefix + "adsr_s",   "Op" + juce::String(i) + " Sustain", 0.0f,   1.0f,  0.8f);
-        addFloat(prefix + "adsr_r",   "Op" + juce::String(i) + " Release", 0.001f, 10.0f, 0.3f,  0.4f);
+        addInt   (prefix + "coarse",   "Op" + juce::String(i) + " Coarse",   0,  31, i == 0 ? 1 : 1);
+        addFloat (prefix + "fine",     "Op" + juce::String(i) + " Fine",    -1.0f, 1.0f, 0.0f);
+        addFloat (prefix + "level",    "Op" + juce::String(i) + " Level",    0.0f, 1.0f, i == 0 ? 1.0f : 0.5f);
+        addFloat (prefix + "feedback", "Op" + juce::String(i) + " Feedback", 0.0f, 1.0f, 0.0f);
+        addBool  (prefix + "fixed",    "Op" + juce::String(i) + " Fixed Freq", false);
+        addChoice(prefix + "wave",     "Op" + juce::String(i) + " Wave",     opWaveforms, 0);
+        addFloat (prefix + "vel",      "Op" + juce::String(i) + " Vel Depth",   0.0f, 1.0f, 0.0f);
+        addFloat (prefix + "key",      "Op" + juce::String(i) + " Key Scale",  -1.0f, 1.0f, 0.0f);
+        addFloat (prefix + "adsr_a",   "Op" + juce::String(i) + " Attack",  0.001f, 10.0f, 0.01f, 0.4f);
+        addFloat (prefix + "adsr_d",   "Op" + juce::String(i) + " Decay",   0.001f, 10.0f, 0.5f,  0.4f);
+        addFloat (prefix + "adsr_s",   "Op" + juce::String(i) + " Sustain", 0.0f,   1.0f,  0.8f);
+        addFloat (prefix + "adsr_r",   "Op" + juce::String(i) + " Release", 0.001f, 10.0f, 0.3f,  0.4f);
     }
 
     // ── Wavetable Oscillator ──────────────────────────────────────────────────

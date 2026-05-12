@@ -20,6 +20,8 @@ public:
     void prepare(double sampleRate);
     void setAlgorithm(int index);
     void setNoteFrequency(float hz);
+    void setVelocity(float v);
+    void setMidiNote(int note);
 
     FMOperator& getOperator(int i) { return ops[(size_t) juce::jlimit(0, kNumOperators - 1, i)]; }
 

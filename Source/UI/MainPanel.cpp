@@ -40,6 +40,8 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     setupKnob(fmLevelSlider, "osc_fm_level", "FM Level", fmLevelAtt, *engineTab);
     setupKnob(fmOctaveSlider, "osc_fm_octave", "FM Octave", fmOctaveAtt, *engineTab);
 
+    static const juce::StringArray kOpWaves { "Sine","Triangle","Saw","Square","Pulse","Noise" };
+
     for (int i = 0; i < 10; ++i)
     {
         auto pfx = "op" + juce::String(i) + "_";
@@ -49,6 +51,18 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
         setupKnob(fmOpLevelSliders[(size_t)i], pfx + "level",
                   "Operator " + juce::String(i) + " Level",
                   fmOpLevelAtts[(size_t)i], *engineTab);
+
+        fmOpWaveBoxes[(size_t)i].addItemList(kOpWaves, 1);
+        fmOpWaveBoxes[(size_t)i].setTooltip("Operator " + juce::String(i) + " Waveform");
+        engineTab->addAndMakeVisible(fmOpWaveBoxes[(size_t)i]);
+        fmOpWaveAtts[(size_t)i] = std::make_unique<CAtt>(apvts, pfx + "wave", fmOpWaveBoxes[(size_t)i]);
+
+        setupKnob(fmOpVelSliders[(size_t)i], pfx + "vel",
+                  "Operator " + juce::String(i) + " Velocity Depth",
+                  fmOpVelAtts[(size_t)i], *engineTab);
+        setupKnob(fmOpKeySliders[(size_t)i], pfx + "key",
+                  "Operator " + juce::String(i) + " Key Scale",
+                  fmOpKeyAtts[(size_t)i], *engineTab);
     }
     tabs.addTab("FM ENGINE", kBg, engineTab, true);
 
@@ -94,11 +108,14 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     for (int i = 0; i < 7; ++i)
         makeSmallLabel(masterLabels[(size_t)i], masterLabelTexts[i], *this);
 
-    makeSmallLabel(fmAlgoLabel,      "ALGORITHM", *engineTab);
-    makeSmallLabel(fmLvlLabel,       "FM LEVEL",  *engineTab);
-    makeSmallLabel(fmOctLabel,       "FM OCTAVE", *engineTab);
+    makeSmallLabel(fmAlgoLabel,      "ALGORITHM",    *engineTab);
+    makeSmallLabel(fmLvlLabel,       "FM LEVEL",     *engineTab);
+    makeSmallLabel(fmOctLabel,       "FM OCTAVE",    *engineTab);
     makeSmallLabel(fmCoarseHdrLabel, "COARSE RATIO", *engineTab);
-    makeSmallLabel(fmLevelHdrLabel,  "OP LEVEL",  *engineTab);
+    makeSmallLabel(fmLevelHdrLabel,  "OP LEVEL",     *engineTab);
+    makeSmallLabel(fmWaveHdrLabel,   "WAVEFORM",     *engineTab);
+    makeSmallLabel(fmVelHdrLabel,    "VEL DEPTH",    *engineTab);
+    makeSmallLabel(fmKeyHdrLabel,    "KEY SCALE",    *engineTab);
     for (int i = 0; i < 10; ++i)
         makeSmallLabel(fmOpLabels[(size_t)i], juce::String(i), *engineTab);
 }
@@ -164,9 +181,9 @@ void MainPanel::resized()
     if (engineTab)
     {
         auto tabArea = engineTab->getLocalBounds().reduced(8);
-        const int opW = juce::jmax(70, tabArea.getWidth() / 10);
+        const int opW = juce::jmax(64, tabArea.getWidth() / 10);
 
-        // Top row: algo + level + octave with labels above
+        // Top row: algo + level + octave
         auto topLabelRow = tabArea.removeFromTop(13);
         fmAlgoLabel.setBounds(topLabelRow.removeFromLeft(180));
         fmLvlLabel .setBounds(topLabelRow.removeFromLeft(80));
@@ -177,23 +194,50 @@ void MainPanel::resized()
         fmLevelSlider .setBounds(topRow.removeFromLeft(80));
         fmOctaveSlider.setBounds(topRow.removeFromLeft(80));
 
-        tabArea.removeFromTop(8);
+        tabArea.removeFromTop(6);
 
-        // Coarse row: header on left + op-index labels above each knob
+        // Operator index labels (shared across all op rows)
         fmCoarseHdrLabel.setBounds(tabArea.removeFromTop(13));
-        auto coarseLabelRow = tabArea.removeFromTop(13);
+        auto opIndexRow = tabArea.removeFromTop(13);
         for (int i = 0; i < 10; ++i)
-            fmOpLabels[(size_t)i].setBounds(coarseLabelRow.removeFromLeft(opW));
+            fmOpLabels[(size_t)i].setBounds(opIndexRow.removeFromLeft(opW));
 
-        auto coarseRow = tabArea.removeFromTop(80);
+        // Coarse ratio row
+        auto coarseRow = tabArea.removeFromTop(72);
         for (int i = 0; i < 10; ++i)
             fmOpCoarseSliders[(size_t)i].setBounds(coarseRow.removeFromLeft(opW).reduced(2));
 
-        // Level row: header on left, op knobs below
+        tabArea.removeFromTop(4);
+
+        // Level row
         fmLevelHdrLabel.setBounds(tabArea.removeFromTop(13));
-        auto levelRow = tabArea.removeFromTop(80);
+        auto levelRow = tabArea.removeFromTop(72);
         for (int i = 0; i < 10; ++i)
             fmOpLevelSliders[(size_t)i].setBounds(levelRow.removeFromLeft(opW).reduced(2));
+
+        tabArea.removeFromTop(4);
+
+        // Waveform combo row
+        fmWaveHdrLabel.setBounds(tabArea.removeFromTop(13));
+        auto waveRow = tabArea.removeFromTop(22);
+        for (int i = 0; i < 10; ++i)
+            fmOpWaveBoxes[(size_t)i].setBounds(waveRow.removeFromLeft(opW).reduced(2, 0));
+
+        tabArea.removeFromTop(4);
+
+        // Velocity depth row
+        fmVelHdrLabel.setBounds(tabArea.removeFromTop(13));
+        auto velRow = tabArea.removeFromTop(juce::jmin(72, tabArea.getHeight() / 2));
+        for (int i = 0; i < 10; ++i)
+            fmOpVelSliders[(size_t)i].setBounds(velRow.removeFromLeft(opW).reduced(2));
+
+        tabArea.removeFromTop(4);
+
+        // Key scaling row
+        fmKeyHdrLabel.setBounds(tabArea.removeFromTop(13));
+        auto keyRow = tabArea;
+        for (int i = 0; i < 10; ++i)
+            fmOpKeySliders[(size_t)i].setBounds(keyRow.removeFromLeft(opW).reduced(2));
     }
 
     // Layout filter/mod/arp/lfo tab content

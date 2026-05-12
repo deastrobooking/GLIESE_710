@@ -37,14 +37,14 @@ LFOPanel::LFOPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
         addAndMakeVisible(lfo.syncBox);
         lfo.syncAtt = std::make_unique<LFOControls::CAtt>(apvts, p + "sync", lfo.syncBox);
 
-        lfo.rateSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-        lfo.rateSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 48, 14);
+        lfo.rateSlider.setSliderStyle(juce::Slider::LinearVertical);
+        lfo.rateSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 44, 14);
         lfo.rateSlider.setTooltip("LFO " + juce::String(i + 1) + " Rate (Hz)");
         addAndMakeVisible(lfo.rateSlider);
         lfo.rateAtt = std::make_unique<LFOControls::Att>(apvts, p + "rate", lfo.rateSlider);
 
-        lfo.amountSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-        lfo.amountSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 48, 14);
+        lfo.amountSlider.setSliderStyle(juce::Slider::LinearVertical);
+        lfo.amountSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 44, 14);
         lfo.amountSlider.setTooltip("LFO " + juce::String(i + 1) + " Amount");
         addAndMakeVisible(lfo.amountSlider);
         lfo.amtAtt = std::make_unique<LFOControls::Att>(apvts, p + "amount", lfo.amountSlider);

@@ -5,6 +5,8 @@
 class FMOperator
 {
 public:
+    enum class Wave { Sine = 0, Triangle, Saw, Square, Pulse, Noise, NumWaves };
+
     struct Params
     {
         int   coarse   = 1;       // frequency ratio integer part (0 = 0.5)
@@ -14,15 +16,18 @@ public:
         float feedback = 0.f;     // self-feedback 0..1
         bool  fixedFreq = false;  // if true, uses fixedHz instead of ratio*noteFreq
         float fixedHz   = 440.f;
+
+        Wave  waveShape     = Wave::Sine;  // operator waveform
+        float velocityDepth = 0.f;         // 0 = velocity ignored, 1 = linear vel scaling
+        float keyScaleDepth = 0.f;         // level change per octave from C4 (-1..+1)
     };
 
     void prepare(double sampleRate);
     void setParams(const Params& p);
     void setNoteFrequency(float noteHz);
+    void setVelocity(float v)  { velocity  = juce::jlimit(0.f, 1.f, v); }
+    void setMidiNote(int note) { midiNote  = note; }
 
-    // Process one sample. modInput = summed modulation in radians.
-    // Returns operator output (before envelope scaling for modulators,
-    // after for carriers).
     float processSample(float modInput);
 
     void noteOn()  { env.noteOn(); }
@@ -37,10 +42,15 @@ public:
 private:
     double sr       = 48000.0;
     float  phase    = 0.f;
-    float  prevOut  = 0.f;   // for feedback
+    float  prevOut  = 0.f;
     float  noteFreq = 440.f;
+    float  velocity = 1.f;
+    int    midiNote = 60;
     Params params;
     ADSREnvelope env;
 
+    juce::Random rng;
+
     float getFrequency() const;
+    float generateWave(float normalizedPhase) noexcept;
 };
