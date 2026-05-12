@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 #include "UI/MainPanel.h"
 #include "UI/PresetBrowser.h"
+#include "UI/PatchBrowserPanel.h"
 
 class GLIESE710AudioProcessorEditor : public juce::AudioProcessorEditor
 {
@@ -14,8 +15,9 @@ public:
     void resized() override;
 
 private:
-    MainPanel    mainPanel;
-    PresetBrowser presetBrowser;
+    MainPanel         mainPanel;
+    PresetBrowser     presetBrowser;
+    PatchBrowserPanel patchBrowser;
 
     static constexpr int kDefaultWidth  = 1200;
     static constexpr int kDefaultHeight = 780;

@@ -67,6 +67,7 @@ PRIVATE
     Source/UI/ArpPanel.cpp
     Source/UI/LFOPanel.cpp
     Source/UI/PresetBrowser.cpp
+    Source/UI/PatchBrowserPanel.cpp
 )
 
 # ── Compile definitions ───────────────────────────────────────────────────────

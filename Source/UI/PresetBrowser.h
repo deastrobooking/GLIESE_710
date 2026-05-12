@@ -10,13 +10,17 @@ public:
     void resized() override;
     void refreshList();
 
+    // Called when the user clicks the BROWSE button
+    std::function<void()> onBrowseClicked;
+
 private:
     PresetManager& presetManager;
 
-    juce::ComboBox presetBox;
-    juce::TextButton saveButton  { "Save" };
+    juce::ComboBox   presetBox;
+    juce::TextButton saveButton  { "SAVE" };
     juce::TextButton prevButton  { "<" };
     juce::TextButton nextButton  { ">" };
+    juce::TextButton browseButton{ "BROWSE" };
     juce::Label      nameLabel;
 
     int currentPresetIndex = -1;

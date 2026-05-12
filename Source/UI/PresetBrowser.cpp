@@ -4,6 +4,7 @@
 PresetBrowser::PresetBrowser(PresetManager& pm) : presetManager(pm)
 {
     auto accent = IndustrialTheme::accentMaster();
+
     nameLabel.setText("GLIESE 710", juce::dontSendNotification);
     IndustrialTheme::styleTitle(nameLabel, accent, 16.f);
     addAndMakeVisible(nameLabel);
@@ -35,9 +36,13 @@ PresetBrowser::PresetBrowser(PresetManager& pm) : presetManager(pm)
     };
     addAndMakeVisible(presetBox);
 
-    saveButton.onClick = [this] { saveCurrentPreset(); };
     IndustrialTheme::styleButton(saveButton, accent);
+    saveButton.onClick = [this] { saveCurrentPreset(); };
     addAndMakeVisible(saveButton);
+
+    IndustrialTheme::styleButton(browseButton, accent);
+    browseButton.onClick = [this] { if (onBrowseClicked) onBrowseClicked(); };
+    addAndMakeVisible(browseButton);
 
     refreshList();
 }
@@ -68,9 +73,9 @@ void PresetBrowser::selectPreset(int index)
 void PresetBrowser::saveCurrentPreset()
 {
     auto* window = new juce::AlertWindow("Save Preset", "Enter preset name:",
-                                         juce::AlertWindow::NoIcon, this);
+                                         juce::AlertWindow::NoIcon, nullptr);
     window->addTextEditor("presetName", presetManager.getCurrentPresetName(), "Name");
-    window->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    window->addButton("Save",   1, juce::KeyPress(juce::KeyPress::returnKey));
     window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
     window->enterModalState(
@@ -85,7 +90,6 @@ void PresetBrowser::saveCurrentPreset()
                     refreshList();
                 }
             }
-
             delete window;
         }),
         false);
@@ -101,10 +105,12 @@ void PresetBrowser::paint(juce::Graphics& g)
 void PresetBrowser::resized()
 {
     auto area = getLocalBounds().reduced(4, 2);
-    nameLabel.setBounds(area.removeFromLeft(130));
-    saveButton.setBounds(area.removeFromRight(60));
-    nextButton.setBounds(area.removeFromRight(28));
-    prevButton.setBounds(area.removeFromRight(28));
+    nameLabel   .setBounds(area.removeFromLeft(130));
+    browseButton.setBounds(area.removeFromLeft(70).reduced(2, 0));
     area.removeFromLeft(4);
-    presetBox.setBounds(area);
+    saveButton  .setBounds(area.removeFromRight(60));
+    nextButton  .setBounds(area.removeFromRight(28));
+    prevButton  .setBounds(area.removeFromRight(28));
+    area.removeFromLeft(4);
+    presetBox   .setBounds(area);
 }
