@@ -34,13 +34,6 @@ juce_add_plugin(GLIESE_710
     VST3_CATEGORIES             "Instrument|Synth"
 )
 
-# ── Binary assets ─────────────────────────────────────────────────────────────
-# Placeholder single-cycle sine for initial build (real tables added in Phase 6)
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Assets/Wavetables/.gitkeep
-    ${CMAKE_CURRENT_BINARY_DIR}/Assets/Wavetables/.gitkeep COPYONLY
-)
-
 # ── Sources ───────────────────────────────────────────────────────────────────
 target_sources(GLIESE_710
 PRIVATE
@@ -95,8 +88,35 @@ PUBLIC
 option(GLIESE_BUILD_TESTS "Build unit tests" OFF)
 if(GLIESE_BUILD_TESTS)
     CPMAddPackage("gh:catchorg/Catch2@3.6.0")
-    add_executable(GLIESE_Tests Tests/EngineTests.cpp)
-    target_link_libraries(GLIESE_Tests PRIVATE Catch2::Catch2WithMain juce::juce_dsp)
+
+    juce_add_console_app(GLIESE_Tests PRODUCT_NAME "GLIESE Tests")
+
+    target_sources(GLIESE_Tests PRIVATE
+        Tests/EngineTests.cpp
+        Source/Engine/Envelopes/ADSREnvelope.cpp
+        Source/Engine/Oscillators/Osc3D.cpp
+        Source/Engine/Filter/DualFilter.cpp
+        Source/Engine/Modulation/ModMatrix.cpp
+        Source/Engine/LFO/LFOEngine.cpp
+        Source/Engine/Oscillators/VAOscillator.cpp
+    )
+
+    target_include_directories(GLIESE_Tests PRIVATE Source)
+
+    target_compile_definitions(GLIESE_Tests PUBLIC
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+    )
+
+    target_link_libraries(GLIESE_Tests
+        PRIVATE
+            Catch2::Catch2WithMain
+            juce::juce_dsp
+            juce::juce_audio_utils
+        PUBLIC
+            juce::juce_recommended_config_flags
+    )
+
     include(CTest)
     include(Catch)
     catch_discover_tests(GLIESE_Tests)

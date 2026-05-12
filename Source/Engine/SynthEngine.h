@@ -26,8 +26,7 @@ private:
 
     std::array<SynthVoice, kNumVoices> voices;
     Arpeggiator arp;
-
-    int voiceAgeCounter = 0;
+    juce::MidiBuffer arpMidi;
 
     void handleMidi(const juce::MidiBuffer& midi, int startSample, int endSample);
     void noteOn(int note, float velocity);

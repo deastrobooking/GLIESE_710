@@ -68,6 +68,7 @@ static APVTS::ParameterLayout buildLayout()
     // ── FM Engine ─────────────────────────────────────────────────────────────
     addInt  ("osc_fm_algorithm", "FM Algorithm", 0, 39, 0);
     addFloat("osc_fm_level",     "FM Level",     0.0f, 1.0f, 0.0f);
+    addFloat("osc_fm_octave",    "FM Octave",   -3.0f, 3.0f, 0.0f);
     addFloat("osc_fm_adsr_a",    "FM Env Attack",  0.001f, 10.0f, 0.01f, 0.4f);
     addFloat("osc_fm_adsr_d",    "FM Env Decay",   0.001f, 10.0f, 0.2f,  0.4f);
     addFloat("osc_fm_adsr_s",    "FM Env Sustain", 0.0f,   1.0f,  1.0f);
@@ -215,6 +216,11 @@ GLIESE710AudioProcessor::GLIESE710AudioProcessor()
 }
 
 GLIESE710AudioProcessor::~GLIESE710AudioProcessor() = default;
+
+bool GLIESE710AudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
+{
+    return layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
+}
 
 //==============================================================================
 void GLIESE710AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)

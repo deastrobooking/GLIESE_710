@@ -5,8 +5,7 @@
 #include "ModMatrixPanel.h"
 #include "ArpPanel.h"
 
-class MainPanel : public juce::Component,
-                  public juce::TabbedComponent
+class MainPanel : public juce::TabbedComponent
 {
 public:
     explicit MainPanel(juce::AudioProcessorValueTreeState& apvts);

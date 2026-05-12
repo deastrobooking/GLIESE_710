@@ -93,6 +93,30 @@ void SynthEngine::handleMidi(const juce::MidiBuffer& midi, int startSample, int 
             noteOff(msg.getNoteNumber());
         else if (msg.isAllNotesOff())
             allNotesOff();
+        else if (msg.isAftertouch() || msg.isChannelPressure())
+        {
+            float pressure = msg.isChannelPressure()
+                                 ? msg.getChannelPressureValue() / 127.f
+                                 : msg.getAfterTouchValue() / 127.f;
+            for (auto& v : voices)
+                v.setMidiCC(ModSource::Aftertouch, pressure);
+        }
+        else if (msg.isController())
+        {
+            float norm = msg.getControllerValue() / 127.f;
+            if (msg.getControllerNumber() == 1)
+                for (auto& v : voices)
+                    v.setMidiCC(ModSource::ModWheel, norm);
+            else if (msg.getControllerNumber() == 74)
+                for (auto& v : voices)
+                    v.setMidiCC(ModSource::CC74, norm);
+        }
+        else if (msg.isPitchWheel())
+        {
+            float pb = (msg.getPitchWheelValue() - 8192) / 8192.f;
+            for (auto& v : voices)
+                v.setMidiCC(ModSource::PitchBend, pb);
+        }
     }
 }
 
@@ -131,13 +155,13 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
         // Get host BPM
         if (auto* ph = juce::AudioProcessor::getPlayHead())
         {
-            juce::AudioPlayHead::CurrentPositionInfo info;
-            if (ph->getCurrentPosition(info))
-                arp.setHostBPM(info.bpm);
+            if (auto pos = ph->getPosition())
+                if (auto bpm = pos->getBpm())
+                    arp.setHostBPM(*bpm);
         }
 
-        // Generate arp MIDI events into buffer
-        juce::MidiBuffer arpMidi;
+        // Generate arp MIDI events into member buffer (avoids audio-thread allocation)
+        arpMidi.clear();
         arp.processBlock(arpMidi, startSample, numSamples);
 
         // Play arp notes

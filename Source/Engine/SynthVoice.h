@@ -28,12 +28,18 @@ public:
     void renderBlock(juce::AudioBuffer<float>& buffer, int startSample, int numSamples,
                      juce::AudioProcessorValueTreeState& apvts);
 
+    // Route MIDI CC/AT/PB into mod sources (called from message-to-audio bridge)
+    void setMidiCC(ModSource src, float value);
+
     WavetableOsc& getWavetableOsc() { return wtOsc; }
 
 private:
     int    midiNote = -1;
     float  velocity = 1.f;
     int    age      = 0;
+
+    // MIDI mod source values set from handleMidi — read in buildModSources()
+    float midiCCs[(int)ModSource::NumSources] = {};
 
     double sampleRate = 48000.0;
 

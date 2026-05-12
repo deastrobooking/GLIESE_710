@@ -53,6 +53,13 @@ void SynthVoice::noteOff()
     dualFilter.noteOff();
 }
 
+void SynthVoice::setMidiCC(ModSource src, float value)
+{
+    int idx = (int)src;
+    if (idx >= 0 && idx < (int)ModSource::NumSources)
+        midiCCs[idx] = value;
+}
+
 bool SynthVoice::isActive() const
 {
     return midiNote >= 0 && envBank.anyActive();
@@ -82,11 +89,12 @@ void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
     p3d.morphT   = juce::jlimit(0.f, 1.f, getF("osc_3d_morph") + modDests.dests[(int)ModDest::Osc3D_Morph]);
     osc3d.setParams(p3d);
 
-    // Apply pitch modulation
-    float pitchMod = modDests.dests[(int)ModDest::OscPitch_All];
-    float hz = midiToHz(midiNote, pitchMod * 12.f);  // up to ±12 semitones from mod
-    float octOffset = getF("osc_3d_octave");
-    hz *= std::pow(2.f, octOffset);
+    // Apply pitch modulation — master_tune is in cents (±100)
+    float pitchMod   = modDests.dests[(int)ModDest::OscPitch_All];
+    float tuneSemi   = getF("master_tune") / 100.f;  // cents → semitones
+    float totalPitch = pitchMod * 12.f + tuneSemi;
+
+    float hz = midiToHz(midiNote, totalPitch) * std::pow(2.f, getF("osc_3d_octave"));
     osc3d.setFrequency(hz);
 
     // Per-oscillator ADSR
@@ -101,7 +109,7 @@ void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
 
     // ── FM Engine ─────────────────────────────────────────────────────────
     fm.setAlgorithm(getI("osc_fm_algorithm"));
-    hz = midiToHz(midiNote, pitchMod * 12.f) * std::pow(2.f, getF("osc_3d_octave")); // reuse pitch
+    hz = midiToHz(midiNote, totalPitch) * std::pow(2.f, getF("osc_fm_octave"));
     fm.setNoteFrequency(hz);
 
     for (int i = 0; i < 10; ++i)
@@ -125,12 +133,12 @@ void SynthVoice::syncParams(juce::AudioProcessorValueTreeState& apvts)
     }
 
     // ── Wavetable ─────────────────────────────────────────────────────────
-    float wtHz = midiToHz(midiNote, pitchMod * 12.f) * std::pow(2.f, getF("osc_wt_octave"));
+    float wtHz = midiToHz(midiNote, totalPitch) * std::pow(2.f, getF("osc_wt_octave"));
     wtOsc.setFrequency(wtHz);
     wtOsc.setTablePosition(getI("osc_wt_table"), getF("osc_wt_pos") + modDests.dests[(int)ModDest::WT_Position]);
 
     // ── VA Oscillator ─────────────────────────────────────────────────────
-    float vaHz = midiToHz(midiNote, pitchMod * 12.f) * std::pow(2.f, getF("osc_va_octave"));
+    float vaHz = midiToHz(midiNote, totalPitch) * std::pow(2.f, getF("osc_va_octave"));
     vaOsc.setFrequency(vaHz);
     VAOscillator::Params vap;
     vap.shape      = static_cast<VAOscillator::Shape>(getI("osc_va_shape"));
@@ -208,7 +216,12 @@ void SynthVoice::buildModSources()
     modSources.sources[(int)ModSource::Env_FilterA] = envBank.get(ENV_FILTER_A).getCurrentValue();
     modSources.sources[(int)ModSource::Env_FilterB] = envBank.get(ENV_FILTER_B).getCurrentValue();
 
-    modSources.sources[(int)ModSource::Velocity] = velocity;
+    modSources.sources[(int)ModSource::Velocity]     = velocity;
+    modSources.sources[(int)ModSource::Aftertouch]   = midiCCs[(int)ModSource::Aftertouch];
+    modSources.sources[(int)ModSource::ModWheel]     = midiCCs[(int)ModSource::ModWheel];
+    modSources.sources[(int)ModSource::PitchBend]    = midiCCs[(int)ModSource::PitchBend];
+    modSources.sources[(int)ModSource::CC74]         = midiCCs[(int)ModSource::CC74];
+    modSources.sources[(int)ModSource::ChanPressure] = midiCCs[(int)ModSource::Aftertouch];
 }
 
 //──────────────────────────────────────────────────────────────────────────────

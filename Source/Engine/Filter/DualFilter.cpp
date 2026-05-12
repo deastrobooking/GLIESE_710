@@ -17,6 +17,11 @@ void SingleFilter::prepare(double sampleRate)
     svf2.prepare(spec);
     iirFilter.prepare(spec);
 
+    // Initialize IIR to unity-gain low-pass at Nyquist so first processSample is safe
+    // if a Peak/Shelf mode is selected before configureIIR() runs.
+    iirFilter.coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass(
+        sampleRate, sampleRate * 0.45, juce::MathConstants<float>::sqrt2 * 0.5f);
+
     shaper.functionToUse = [](float x) { return std::tanh(x); };
     shaper.prepare(spec);
 

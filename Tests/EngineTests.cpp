@@ -1,9 +1,10 @@
-#define CATCH_CONFIG_MAIN
 #include <catch2/catch_all.hpp>
 #include "../Source/Engine/Envelopes/ADSREnvelope.h"
 #include "../Source/Engine/Oscillators/Osc3D.h"
+#include "../Source/Engine/Oscillators/VAOscillator.h"
 #include "../Source/Engine/Filter/DualFilter.h"
 #include "../Source/Engine/Modulation/ModMatrix.h"
+#include "../Source/Engine/LFO/LFOEngine.h"
 
 //──────────────────────────────────────────────────────────────────────────────
 TEST_CASE("ADSREnvelope basic lifecycle", "[envelope]")
@@ -56,6 +57,45 @@ TEST_CASE("ADSREnvelope basic lifecycle", "[envelope]")
         for (int i = 0; i < 500; ++i) env.processSample();
         REQUIRE(!env.isActive());
     }
+
+    SECTION("zero sustain decays to silence")
+    {
+        ADSREnvelope::Params p;
+        p.attackSec  = 0.001f;
+        p.decaySec   = 0.001f;
+        p.sustain    = 0.0f;
+        p.releaseSec = 0.1f;
+        env.setParams(p);
+        env.noteOn();
+        float v = 0.f;
+        for (int i = 0; i < 500; ++i) v = env.processSample();
+        REQUIRE(v == Approx(0.f).margin(0.05f));
+    }
+
+    SECTION("reset returns to idle immediately")
+    {
+        env.noteOn();
+        for (int i = 0; i < 10; ++i) env.processSample();
+        env.reset();
+        REQUIRE(!env.isActive());
+        REQUIRE(env.processSample() == Approx(0.f));
+    }
+
+    SECTION("noteOff during attack triggers release")
+    {
+        ADSREnvelope::Params p;
+        p.attackSec  = 1.0f;    // slow attack so we're mid-attack at noteOff
+        p.decaySec   = 0.001f;
+        p.sustain    = 0.8f;
+        p.releaseSec = 0.001f;  // fast release
+        env.setParams(p);
+        env.noteOn();
+        for (int i = 0; i < 24; ++i) env.processSample();
+        REQUIRE(env.isActive());
+        env.noteOff();
+        for (int i = 0; i < 1000; ++i) env.processSample();
+        REQUIRE(!env.isActive());
+    }
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -81,6 +121,93 @@ TEST_CASE("Osc3D outputs bounded signal", "[osc3d]")
             }
         }
     }
+
+    SECTION("all path types produce output in [-1, 1]")
+    {
+        for (int pt = 0; pt < (int)Osc3D::PathType::NumPaths; ++pt)
+        {
+            Osc3D::Params p;
+            p.path = static_cast<Osc3D::PathType>(pt);
+            osc.setParams(p);
+            osc.reset();
+            for (int i = 0; i < 2400; ++i)
+            {
+                float s = osc.processSample();
+                REQUIRE(s >= -1.01f);
+                REQUIRE(s <=  1.01f);
+            }
+        }
+    }
+}
+
+//──────────────────────────────────────────────────────────────────────────────
+TEST_CASE("VAOscillator stereo output bounds", "[vaosc]")
+{
+    VAOscillator va;
+    va.prepare(48000.0);
+    va.setFrequency(440.f);
+
+    for (int shape = 0; shape < 6; ++shape)
+    {
+        VAOscillator::Params p;
+        p.shape       = static_cast<VAOscillator::Shape>(shape);
+        p.unisonCount = 3;
+        p.spread      = 0.5f;
+        va.setParams(p);
+        va.reset();
+
+        for (int i = 0; i < 4800; ++i)
+        {
+            auto [L, R] = va.processSample();
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            // Allow some headroom for unison summing (3 voices)
+            REQUIRE(L >= -4.f);
+            REQUIRE(L <=  4.f);
+            REQUIRE(R >= -4.f);
+            REQUIRE(R <=  4.f);
+        }
+    }
+}
+
+//──────────────────────────────────────────────────────────────────────────────
+TEST_CASE("LFOEngine shape output ranges", "[lfo]")
+{
+    LFOEngine lfo;
+    lfo.prepare(48000.0);
+    lfo.noteOn();
+
+    // Sine, Triangle, Saw, RevSaw, Square all produce -1..1 (scaled by amount=1)
+    const LFOEngine::Shape shapes[] = {
+        LFOEngine::Shape::Sine,
+        LFOEngine::Shape::Triangle,
+        LFOEngine::Shape::Saw,
+        LFOEngine::Shape::RevSaw,
+        LFOEngine::Shape::Square,
+    };
+
+    for (auto shape : shapes)
+    {
+        LFOEngine::LFOParams p;
+        p.shape  = shape;
+        p.rate   = 5.f;
+        p.amount = 1.f;
+        lfo.setParams(0, p);
+
+        float mn = 1.f, mx = -1.f;
+        for (int block = 0; block < 100; ++block)
+        {
+            lfo.processBlock(128);
+            float v = lfo.getValue(0);
+            mn = std::min(mn, v);
+            mx = std::max(mx, v);
+        }
+        // Should swing both positive and negative and not exceed ±1
+        REQUIRE(mx <=  1.01f);
+        REQUIRE(mn >= -1.01f);
+        REQUIRE(mx > 0.f);   // reaches positive territory
+        REQUIRE(mn < 0.f);   // reaches negative territory
+    }
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -100,8 +227,42 @@ TEST_CASE("ModMatrix accumulates correctly", "[modmatrix]")
     src.sources[(int)ModSource::LFO1] = 0.8f;
     mm.process(src, dst);
 
-    // Unipolar: srcVal = 0.8, amount = 0.5 → accumulation = 0.4 (bipolar converts 0.8→0.6)
-    REQUIRE(dst.dests[(int)ModDest::FilterA_Cutoff] != 0.f);
+    // Unipolar (bipolar=false): dest = srcVal * amount = 0.8 * 0.5 = 0.4
+    REQUIRE(dst.dests[(int)ModDest::FilterA_Cutoff] == Approx(0.4f));
+}
+
+TEST_CASE("ModMatrix bipolar conversion", "[modmatrix]")
+{
+    ModMatrix mm;
+    mm.clear();
+
+    ModSlot slot;
+    slot.source  = ModSource::LFO1;
+    slot.dest    = ModDest::FilterA_Cutoff;
+    slot.amount  = 0.5f;
+    slot.bipolar = true;   // converts 0..1 → -1..1
+    mm.setSlot(0, slot);
+
+    ModValues src{}, dst{};
+    src.sources[(int)ModSource::LFO1] = 0.8f;
+    mm.process(src, dst);
+
+    // Bipolar: srcVal = 0.8*2-1 = 0.6, dest = 0.6 * 0.5 = 0.3
+    REQUIRE(dst.dests[(int)ModDest::FilterA_Cutoff] == Approx(0.3f));
+}
+
+TEST_CASE("ModMatrix None slot is skipped", "[modmatrix]")
+{
+    ModMatrix mm;
+    mm.clear();
+
+    ModValues src{}, dst{};
+    src.sources[(int)ModSource::LFO1] = 1.0f;
+    mm.process(src, dst);
+
+    // All slots are None — all destinations should be zero
+    for (const auto& d : dst.dests)
+        REQUIRE(d == Approx(0.f));
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -128,4 +289,31 @@ TEST_CASE("DualFilter LP12 attenuates high freq", "[filter]")
     }
     float rms = std::sqrt(sumSq / 4800.f);
     REQUIRE(rms < 0.1f);  // should be heavily attenuated
+}
+
+TEST_CASE("DualFilter output is finite", "[filter]")
+{
+    DualFilter df;
+    df.prepare(48000.0);
+
+    // Test all filter modes produce finite output
+    for (int mode = 0; mode < 12; ++mode)
+    {
+        SingleFilter::Params p;
+        p.mode      = static_cast<FilterMode>(mode);
+        p.cutoff    = 1000.f;
+        p.resonance = 0.5f;
+        p.drive     = 0.3f;
+        df.setFilterA(p);
+        df.setRouting(FilterRouting::AOnly);
+        df.noteOn();
+
+        for (int i = 0; i < 512; ++i)
+        {
+            float s = std::sin(2.f * 3.14159f * 440.f * (float)i / 48000.f);
+            auto [L, R] = df.processSample(s, s, 0.f, 0.f);
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+        }
+    }
 }
