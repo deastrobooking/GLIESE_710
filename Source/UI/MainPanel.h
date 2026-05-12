@@ -6,7 +6,7 @@
 #include "ArpPanel.h"
 #include <array>
 
-class MainPanel : public juce::TabbedComponent
+class MainPanel : public juce::Component
 {
 public:
     explicit MainPanel(juce::AudioProcessorValueTreeState& apvts);
@@ -44,9 +44,11 @@ private:
     std::array<std::unique_ptr<Att>, 10> fmOpCoarseAtts;
     std::array<std::unique_ptr<Att>, 10> fmOpLevelAtts;
 
-    juce::Component* oscillatorsTab;
-    juce::Component* engineTab;
-    juce::Component* effectsTab;
+    juce::Component* oscillatorsTab = nullptr;
+    juce::Component* engineTab      = nullptr;
+    juce::Component* effectsTab     = nullptr;
+
+    juce::TabbedComponent tabs { juce::TabbedButtonBar::TabsAtTop };
 
     void buildOscillatorsTab();
     void buildEngineTab();

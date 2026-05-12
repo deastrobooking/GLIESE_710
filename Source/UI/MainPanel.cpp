@@ -4,12 +4,12 @@ static juce::Colour kBg    { 0xff0d0d14 };
 static juce::Colour kAccent{ 0xff4466cc };
 
 MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
-    : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop),
-      apvts(a)
+    : apvts(a)
 {
-    setTabBarDepth(28);
-    setOutline(0);
-    setColour(juce::TabbedComponent::backgroundColourId, kBg);
+    tabs.setTabBarDepth(28);
+    tabs.setOutline(0);
+    tabs.setColour(juce::TabbedComponent::backgroundColourId, kBg);
+    addAndMakeVisible(tabs);
 
     // ── Oscillators tab ───────────────────────────────────────────────────────
     oscillatorsTab = new juce::Component();
@@ -22,7 +22,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     oscillatorsTab->addAndMakeVisible(*oscVAPanel);
     oscillatorsTab->addAndMakeVisible(*oscWTPanel);
 
-    addTab("OSCILLATORS", kBg, oscillatorsTab, true);
+    tabs.addTab("OSCILLATORS", kBg, oscillatorsTab, true);
 
     // ── FM Engine tab ─────────────────────────────────────────────────────────
     engineTab = new juce::Component();
@@ -50,7 +50,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
                   "Operator " + juce::String(i) + " Level",
                   fmOpLevelAtts[(size_t)i], *engineTab);
     }
-    addTab("FM ENGINE", kBg, engineTab, true);
+    tabs.addTab("FM ENGINE", kBg, engineTab, true);
 
     // ── Filter + Mod + Arp tab ────────────────────────────────────────────────
     effectsTab = new juce::Component();
@@ -63,7 +63,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     effectsTab->addAndMakeVisible(*modPanel);
     effectsTab->addAndMakeVisible(*arpPanel);
 
-    addTab("FILTER / MOD / ARP", kBg, effectsTab, true);
+    tabs.addTab("FILTER / MOD / ARP", kBg, effectsTab, true);
 
     // ── Master controls ───────────────────────────────────────────────────────
     masterLabel.setText("MASTER", juce::dontSendNotification);
@@ -115,11 +115,10 @@ void MainPanel::resized()
     masterS.setBounds(masterStrip.removeFromLeft(kw));
     masterR.setBounds(masterStrip.removeFromLeft(kw));
 
-    // TabbedComponent takes the rest
-    juce::TabbedComponent::setBounds(area);
+    tabs.setBounds(area);
 
     // Layout oscillators tab content
-    if (oscillatorsTab)
+    if (oscillatorsTab && osc3dPanel && oscVAPanel && oscWTPanel)
     {
         auto tabArea = oscillatorsTab->getLocalBounds().reduced(6);
         int w3 = tabArea.getWidth() / 3;
@@ -149,7 +148,7 @@ void MainPanel::resized()
     }
 
     // Layout effects tab content
-    if (effectsTab)
+    if (effectsTab && filterPanel && modPanel && arpPanel)
     {
         auto tabArea = effectsTab->getLocalBounds().reduced(6);
         int filterH = 220;
