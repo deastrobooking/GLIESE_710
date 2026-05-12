@@ -38,7 +38,9 @@ private:
     int numExtraSliders = 0;
     int numModeBoxes = 0;
 
-    juce::Label levelLabel, adsrLabel;
+    juce::Label levelLabel, octaveLabel, adsrLabel;
+    juce::Label modeALabel, modeBLabel;
+    std::array<juce::Label, 10> extraLabels;
 
     void setupSlider(juce::Slider& slider, const juce::String& tooltip);
     void setupExtraSlider(juce::Slider& slider, const juce::String& paramId,

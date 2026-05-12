@@ -78,6 +78,27 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     setupKnob(masterD,          "master_adsr_d", "Decay",         masterDAtt, *this);
     setupKnob(masterS,          "master_adsr_s", "Sustain",       masterSAtt, *this);
     setupKnob(masterR,          "master_adsr_r", "Release",       masterRAtt, *this);
+
+    // ── Label helpers ─────────────────────────────────────────────────────────
+    auto makeSmallLabel = [&](juce::Label& l, const juce::String& text, juce::Component& parent) {
+        l.setText(text, juce::dontSendNotification);
+        l.setColour(juce::Label::textColourId, juce::Colour(0xff9999bb));
+        l.setFont(juce::Font(juce::FontOptions { 10.f }));
+        l.setJustificationType(juce::Justification::centred);
+        parent.addAndMakeVisible(l);
+    };
+
+    const juce::String masterLabelTexts[] = { "VOL","TUNE","PAN","ATK","DEC","SUS","REL" };
+    for (int i = 0; i < 7; ++i)
+        makeSmallLabel(masterLabels[(size_t)i], masterLabelTexts[i], *this);
+
+    makeSmallLabel(fmAlgoLabel,      "ALGORITHM", *engineTab);
+    makeSmallLabel(fmLvlLabel,       "FM LEVEL",  *engineTab);
+    makeSmallLabel(fmOctLabel,       "FM OCTAVE", *engineTab);
+    makeSmallLabel(fmCoarseHdrLabel, "COARSE RATIO", *engineTab);
+    makeSmallLabel(fmLevelHdrLabel,  "OP LEVEL",  *engineTab);
+    for (int i = 0; i < 10; ++i)
+        makeSmallLabel(fmOpLabels[(size_t)i], juce::String(i), *engineTab);
 }
 
 void MainPanel::setupKnob(juce::Slider& s, const juce::String& paramId,
@@ -100,20 +121,30 @@ void MainPanel::resized()
 {
     auto area = getLocalBounds();
 
-    // Reserve bottom strip for master controls
-    auto masterStrip = area.removeFromBottom(110);
+    // Reserve bottom strip for master controls (extra 14px for label row)
+    auto masterStrip = area.removeFromBottom(124);
 
-    // Layout master controls
+    // MASTER title spans full strip height on the left
     masterLabel.setBounds(masterStrip.removeFromLeft(70));
-    int kw = 70;
-    masterVolSlider .setBounds(masterStrip.removeFromLeft(kw));
-    masterTuneSlider.setBounds(masterStrip.removeFromLeft(kw));
-    masterPanSlider .setBounds(masterStrip.removeFromLeft(kw));
-    masterStrip.removeFromLeft(10);
-    masterA.setBounds(masterStrip.removeFromLeft(kw));
-    masterD.setBounds(masterStrip.removeFromLeft(kw));
-    masterS.setBounds(masterStrip.removeFromLeft(kw));
-    masterR.setBounds(masterStrip.removeFromLeft(kw));
+
+    // Split remaining strip into label row (top 14px) + knob row
+    auto masterLabelRow = masterStrip.removeFromTop(14);
+    auto masterKnobRow  = masterStrip;
+
+    auto positionMaster = [&](juce::Label& lbl, juce::Slider& knob, int w) {
+        lbl .setBounds(masterLabelRow.removeFromLeft(w));
+        knob.setBounds(masterKnobRow .removeFromLeft(w));
+    };
+
+    positionMaster(masterLabels[0], masterVolSlider,  70);
+    positionMaster(masterLabels[1], masterTuneSlider, 70);
+    positionMaster(masterLabels[2], masterPanSlider,  70);
+    masterLabelRow.removeFromLeft(10);
+    masterKnobRow .removeFromLeft(10);
+    positionMaster(masterLabels[3], masterA, 70);
+    positionMaster(masterLabels[4], masterD, 70);
+    positionMaster(masterLabels[5], masterS, 70);
+    positionMaster(masterLabels[6], masterR, 70);
 
     tabs.setBounds(area);
 
@@ -127,31 +158,47 @@ void MainPanel::resized()
         oscWTPanel->setBounds(tabArea.reduced(3));
     }
 
-    // Layout effects tab content
+    // Layout FM ENGINE tab content
     if (engineTab)
     {
         auto tabArea = engineTab->getLocalBounds().reduced(8);
+        const int opW = juce::jmax(70, tabArea.getWidth() / 10);
+
+        // Top row: algo + level + octave with labels above
+        auto topLabelRow = tabArea.removeFromTop(13);
+        fmAlgoLabel.setBounds(topLabelRow.removeFromLeft(180));
+        fmLvlLabel .setBounds(topLabelRow.removeFromLeft(80));
+        fmOctLabel .setBounds(topLabelRow.removeFromLeft(80));
+
         auto topRow = tabArea.removeFromTop(84);
         fmAlgorithmBox.setBounds(topRow.removeFromLeft(180).withHeight(24));
-        fmLevelSlider.setBounds(topRow.removeFromLeft(80));
+        fmLevelSlider .setBounds(topRow.removeFromLeft(80));
         fmOctaveSlider.setBounds(topRow.removeFromLeft(80));
 
         tabArea.removeFromTop(8);
-        const int opW = juce::jmax(70, tabArea.getWidth() / 10);
-        auto coarseRow = tabArea.removeFromTop(86);
+
+        // Coarse row: header on left + op-index labels above each knob
+        fmCoarseHdrLabel.setBounds(tabArea.removeFromTop(13));
+        auto coarseLabelRow = tabArea.removeFromTop(13);
+        for (int i = 0; i < 10; ++i)
+            fmOpLabels[(size_t)i].setBounds(coarseLabelRow.removeFromLeft(opW));
+
+        auto coarseRow = tabArea.removeFromTop(80);
         for (int i = 0; i < 10; ++i)
             fmOpCoarseSliders[(size_t)i].setBounds(coarseRow.removeFromLeft(opW).reduced(2));
 
-        auto levelRow = tabArea.removeFromTop(86);
+        // Level row: header on left, op knobs below
+        fmLevelHdrLabel.setBounds(tabArea.removeFromTop(13));
+        auto levelRow = tabArea.removeFromTop(80);
         for (int i = 0; i < 10; ++i)
             fmOpLevelSliders[(size_t)i].setBounds(levelRow.removeFromLeft(opW).reduced(2));
     }
 
-    // Layout effects tab content
+    // Layout filter/mod/arp tab content
     if (effectsTab && filterPanel && modPanel && arpPanel)
     {
         auto tabArea = effectsTab->getLocalBounds().reduced(6);
-        int filterH = 220;
+        int filterH = 244;
         filterPanel->setBounds(tabArea.removeFromTop(filterH).reduced(3));
         tabArea.removeFromTop(4);
         int arpW = 260;

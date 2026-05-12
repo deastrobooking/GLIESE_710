@@ -42,6 +42,20 @@ ArpPanel::ArpPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 
     setupSlider(swingSlider, "Swing");
     swingAtt = std::make_unique<Att>(apvts, "arp_swing", swingSlider);
+
+    auto makeLabel = [&](juce::Label& l, const juce::String& text) {
+        l.setText(text, juce::dontSendNotification);
+        l.setColour(juce::Label::textColourId, juce::Colour(0xff9999bb));
+        l.setFont(juce::Font(juce::FontOptions { 10.f }));
+        l.setJustificationType(juce::Justification::centred);
+        addAndMakeVisible(l);
+    };
+
+    makeLabel(patternLabel, "PATTERN");
+    makeLabel(rateLabel,    "RATE");
+    makeLabel(octLabel,     "OCT");
+    makeLabel(gateLabel,    "GATE");
+    makeLabel(swingLabel,   "SWING");
 }
 
 void ArpPanel::paint(juce::Graphics& g)
@@ -54,9 +68,16 @@ void ArpPanel::paint(juce::Graphics& g)
 
 void ArpPanel::resized()
 {
+    auto portion = [](juce::Rectangle<int> r, int i, int n) {
+        int x  = r.getX() + r.getWidth() * i / n;
+        int x2 = r.getX() + r.getWidth() * (i + 1) / n;
+        return r.withX(x).withWidth(x2 - x);
+    };
+
     auto area = getLocalBounds().reduced(6);
     titleLabel.setBounds(area.removeFromTop(20));
 
+    // ON / Sync / Latch toggles (buttons carry their own text)
     auto row1 = area.removeFromTop(24);
     onToggle.setBounds(row1.removeFromLeft(40));
     row1.removeFromLeft(4);
@@ -65,14 +86,25 @@ void ArpPanel::resized()
     latchToggle.setBounds(row1.removeFromLeft(50));
 
     area.removeFromTop(4);
-    auto row2 = area.removeFromTop(24);
-    patternBox.setBounds(row2.removeFromLeft(row2.getWidth() / 2 - 2));
-    row2.removeFromLeft(4);
-    rateBox.setBounds(row2);
 
-    area.removeFromTop(6);
-    int sw = area.getWidth() / 3;
-    octavesSlider.setBounds(area.removeFromLeft(sw));
-    gateSlider   .setBounds(area.removeFromLeft(sw));
-    swingSlider  .setBounds(area);
+    // Pattern / Rate labels + combos
+    auto comboLabelRow = area.removeFromTop(13);
+    patternLabel.setBounds(portion(comboLabelRow, 0, 2));
+    rateLabel   .setBounds(portion(comboLabelRow, 1, 2));
+
+    auto row2 = area.removeFromTop(24);
+    patternBox.setBounds(portion(row2, 0, 2).reduced(2, 0));
+    rateBox   .setBounds(portion(row2, 1, 2).reduced(2, 0));
+
+    area.removeFromTop(4);
+
+    // Oct / Gate / Swing labels + sliders
+    auto sliderLabelRow = area.removeFromTop(13);
+    octLabel  .setBounds(portion(sliderLabelRow, 0, 3));
+    gateLabel .setBounds(portion(sliderLabelRow, 1, 3));
+    swingLabel.setBounds(portion(sliderLabelRow, 2, 3));
+
+    octavesSlider.setBounds(portion(area, 0, 3));
+    gateSlider   .setBounds(portion(area, 1, 3));
+    swingSlider  .setBounds(portion(area, 2, 3));
 }

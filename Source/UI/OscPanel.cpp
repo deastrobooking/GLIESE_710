@@ -11,72 +11,109 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
 
     juce::String pfx = "osc_" + oscId + "_";
 
-    setupSlider(levelSlider, "Oscillator Level");
+    setupSlider(levelSlider,  "Oscillator Level");
     levelAtt = std::make_unique<Att>(apvts, pfx + "level", levelSlider);
 
     setupSlider(octaveSlider, "Octave Transpose");
     octaveAtt = std::make_unique<Att>(apvts, pfx + "octave", octaveSlider);
 
-    setupSlider(adsrA, "Attack");
-    attA = std::make_unique<Att>(apvts, pfx + "adsr_a", adsrA);
-    setupSlider(adsrD, "Decay");
-    attD = std::make_unique<Att>(apvts, pfx + "adsr_d", adsrD);
-    setupSlider(adsrS, "Sustain");
-    attS = std::make_unique<Att>(apvts, pfx + "adsr_s", adsrS);
-    setupSlider(adsrR, "Release");
-    attR = std::make_unique<Att>(apvts, pfx + "adsr_r", adsrR);
+    setupSlider(adsrA, "Attack");  attA = std::make_unique<Att>(apvts, pfx + "adsr_a", adsrA);
+    setupSlider(adsrD, "Decay");   attD = std::make_unique<Att>(apvts, pfx + "adsr_d", adsrD);
+    setupSlider(adsrS, "Sustain"); attS = std::make_unique<Att>(apvts, pfx + "adsr_s", adsrS);
+    setupSlider(adsrR, "Release"); attR = std::make_unique<Att>(apvts, pfx + "adsr_r", adsrR);
 
     if (oscId == "3d")
     {
-        modeBoxA.addItemList({"SinSum", "SinProduct", "Ripple", "Torus", "Vortex", "Noise",
-                              "Lorenz", "Dipole", "Folded", "Chebyshev"}, 1);
-        modeBoxB.addItemList({"Circle", "Spiral", "Lissajous", "Random", "Orbit"}, 1);
+        modeBoxA.addItemList({"SinSum","SinProduct","Ripple","Torus","Vortex",
+                              "Noise","Lorenz","Dipole","Folded","Chebyshev"}, 1);
+        modeBoxB.addItemList({"Circle","Spiral","Lissajous","Random","Orbit"}, 1);
         modeBoxA.setTooltip("3D Field");
         modeBoxB.setTooltip("3D Path");
         addAndMakeVisible(modeBoxA);
         addAndMakeVisible(modeBoxB);
         modeAttA = std::make_unique<CAtt>(apvts, "osc_3d_field", modeBoxA);
-        modeAttB = std::make_unique<CAtt>(apvts, "osc_3d_path", modeBoxB);
+        modeAttB = std::make_unique<CAtt>(apvts, "osc_3d_path",  modeBoxB);
         numModeBoxes = 2;
 
-        setupExtraSlider(extra1, "osc_3d_radius", "3D Radius", extraAtt1);
-        setupExtraSlider(extra2, "osc_3d_depth", "3D Depth", extraAtt2);
-        setupExtraSlider(extra3, "osc_3d_warp", "3D Warp", extraAtt3);
-        setupExtraSlider(extra4, "osc_3d_rotation", "3D Rotation", extraAtt4);
-        setupExtraSlider(extra5, "osc_3d_chaos", "3D Chaos", extraAtt5);
-        setupExtraSlider(extra6, "osc_3d_morph", "3D Morph", extraAtt6);
-        setupExtraSlider(extra7, "osc_3d_field_freq", "Field Frequency", extraAtt7);
-        setupExtraSlider(extra8, "osc_3d_z_ratio", "Z Ratio", extraAtt8);
-        setupExtraSlider(extra9, "osc_3d_fold", "Coordinate Fold", extraAtt9);
-        setupExtraSlider(extra10, "osc_3d_drive", "Field Drive", extraAtt10);
+        setupExtraSlider(extra1,  "osc_3d_radius",    "3D Radius",       extraAtt1);
+        setupExtraSlider(extra2,  "osc_3d_depth",     "3D Depth",        extraAtt2);
+        setupExtraSlider(extra3,  "osc_3d_warp",      "3D Warp",         extraAtt3);
+        setupExtraSlider(extra4,  "osc_3d_rotation",  "3D Rotation",     extraAtt4);
+        setupExtraSlider(extra5,  "osc_3d_chaos",     "3D Chaos",        extraAtt5);
+        setupExtraSlider(extra6,  "osc_3d_morph",     "3D Morph",        extraAtt6);
+        setupExtraSlider(extra7,  "osc_3d_field_freq","Field Frequency",  extraAtt7);
+        setupExtraSlider(extra8,  "osc_3d_z_ratio",   "Z Ratio",          extraAtt8);
+        setupExtraSlider(extra9,  "osc_3d_fold",      "Coordinate Fold",  extraAtt9);
+        setupExtraSlider(extra10, "osc_3d_drive",     "Field Drive",      extraAtt10);
         numExtraSliders = 10;
     }
     else if (oscId == "va")
     {
-        modeBoxA.addItemList({"Sine", "Saw", "RevSaw", "Square", "Triangle", "Pulse"}, 1);
+        modeBoxA.addItemList({"Sine","Saw","RevSaw","Square","Triangle","Pulse"}, 1);
         modeBoxA.setTooltip("VA Shape");
         addAndMakeVisible(modeBoxA);
         modeAttA = std::make_unique<CAtt>(apvts, "osc_va_shape", modeBoxA);
         numModeBoxes = 1;
 
-        setupExtraSlider(extra1, "osc_va_pw", "Pulse Width", extraAtt1);
-        setupExtraSlider(extra2, "osc_va_detune", "Unison Detune", extraAtt2);
-        setupExtraSlider(extra3, "osc_va_unison", "Unison Voices", extraAtt3);
-        setupExtraSlider(extra4, "osc_va_spread", "Stereo Spread", extraAtt4);
+        setupExtraSlider(extra1, "osc_va_pw",     "Pulse Width",    extraAtt1);
+        setupExtraSlider(extra2, "osc_va_detune", "Unison Detune",  extraAtt2);
+        setupExtraSlider(extra3, "osc_va_unison", "Unison Voices",  extraAtt3);
+        setupExtraSlider(extra4, "osc_va_spread", "Stereo Spread",  extraAtt4);
         numExtraSliders = 4;
     }
     else if (oscId == "wt")
     {
-        setupExtraSlider(extra1, "osc_wt_table", "Wavetable Index", extraAtt1);
-        setupExtraSlider(extra2, "osc_wt_pos", "Wavetable Position", extraAtt2);
+        setupExtraSlider(extra1, "osc_wt_table", "Wavetable Index",    extraAtt1);
+        setupExtraSlider(extra2, "osc_wt_pos",   "Wavetable Position", extraAtt2);
         numExtraSliders = 2;
     }
 
+    // ── Labels ────────────────────────────────────────────────────────────────
+    auto makeLabel = [&](juce::Label& l, const juce::String& text) {
+        l.setText(text, juce::dontSendNotification);
+        l.setColour(juce::Label::textColourId, juce::Colour(0xff9999bb));
+        l.setFont(juce::Font(juce::FontOptions { 10.f }));
+        l.setJustificationType(juce::Justification::centred);
+        addAndMakeVisible(l);
+    };
+
+    makeLabel(levelLabel,  "LEVEL");
+    makeLabel(octaveLabel, "OCTAVE");
+
+    if (oscId == "3d")
+    {
+        makeLabel(modeALabel, "FIELD");
+        makeLabel(modeBLabel, "PATH");
+        makeLabel(extraLabels[0], "RADIUS");
+        makeLabel(extraLabels[1], "DEPTH");
+        makeLabel(extraLabels[2], "WARP");
+        makeLabel(extraLabels[3], "ROTAT");
+        makeLabel(extraLabels[4], "CHAOS");
+        makeLabel(extraLabels[5], "MORPH");
+        makeLabel(extraLabels[6], "FREQ");
+        makeLabel(extraLabels[7], "Z-RAT");
+        makeLabel(extraLabels[8], "FOLD");
+        makeLabel(extraLabels[9], "DRIVE");
+    }
+    else if (oscId == "va")
+    {
+        makeLabel(modeALabel, "SHAPE");
+        makeLabel(extraLabels[0], "PW");
+        makeLabel(extraLabels[1], "DETUNE");
+        makeLabel(extraLabels[2], "UNISON");
+        makeLabel(extraLabels[3], "SPREAD");
+    }
+    else if (oscId == "wt")
+    {
+        makeLabel(extraLabels[0], "TABLE");
+        makeLabel(extraLabels[1], "POS");
+    }
+
     adsrLabel.setText("A  D  S  R", juce::dontSendNotification);
-    adsrLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
+    adsrLabel.setColour(juce::Label::textColourId, juce::Colour(0xff9999bb));
+    adsrLabel.setFont(juce::Font(juce::FontOptions { 10.f }));
     adsrLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(adsrLabel);
-    addAndMakeVisible(levelLabel);
 }
 
 void OscPanel::setupSlider(juce::Slider& s, const juce::String& tooltip)
@@ -104,70 +141,94 @@ void OscPanel::paint(juce::Graphics& g)
 
 void OscPanel::resized()
 {
+    // Evenly distributes rect 'r' into n equal slices, returning the i-th
+    auto portion = [](juce::Rectangle<int> r, int i, int n) {
+        int x  = r.getX() + r.getWidth() * i / n;
+        int x2 = r.getX() + r.getWidth() * (i + 1) / n;
+        return r.withX(x).withWidth(x2 - x);
+    };
+
     auto area = getLocalBounds().reduced(6);
     titleLabel.setBounds(area.removeFromTop(20));
+    area.removeFromTop(2);
 
-    auto topRow = area.removeFromTop(70);
-    int sliderW = topRow.getWidth() / 2;
-    levelSlider .setBounds(topRow.removeFromLeft(sliderW));
-    octaveSlider.setBounds(topRow);
-
+    // ── Level + Octave ────────────────────────────────────────────────────────
+    auto lr0 = area.removeFromTop(13);
+    auto sr0 = area.removeFromTop(70);
+    levelLabel  .setBounds(portion(lr0, 0, 2));
+    octaveLabel .setBounds(portion(lr0, 1, 2));
+    levelSlider .setBounds(portion(sr0, 0, 2));
+    octaveSlider.setBounds(portion(sr0, 1, 2));
     area.removeFromTop(4);
 
+    // ── Mode Combo Boxes ──────────────────────────────────────────────────────
     if (numModeBoxes > 0)
     {
-        auto modeRow = area.removeFromTop(24);
-        if (numModeBoxes == 1)
-            modeBoxA.setBounds(modeRow);
-        else
+        int n = numModeBoxes;
+        auto lr = area.removeFromTop(13);
+        auto mr = area.removeFromTop(24);
+        modeALabel.setBounds(portion(lr, 0, n));
+        modeBoxA  .setBounds(portion(mr, 0, n).reduced(1, 0));
+        if (n > 1)
         {
-            int modeW = modeRow.getWidth() / 2;
-            modeBoxA.setBounds(modeRow.removeFromLeft(modeW).reduced(1, 0));
-            modeBoxB.setBounds(modeRow.reduced(1, 0));
+            modeBLabel.setBounds(portion(lr, 1, n));
+            modeBoxB  .setBounds(portion(mr, 1, n).reduced(1, 0));
         }
         area.removeFromTop(4);
     }
 
+    // ── Extra Sliders ─────────────────────────────────────────────────────────
     if (numExtraSliders > 0)
     {
-        auto firstRow = area.removeFromTop(70);
-        int firstCount = juce::jmin(3, numExtraSliders);
-        int firstW = firstRow.getWidth() / firstCount;
-        if (numExtraSliders >= 1) extra1.setBounds(firstRow.removeFromLeft(firstW));
-        if (numExtraSliders >= 2) extra2.setBounds(firstRow.removeFromLeft(firstW));
-        if (numExtraSliders >= 3) extra3.setBounds(firstRow);
+        // Row 1: extra1–extra3 (label indices 0–2)
+        int n1 = juce::jmin(3, numExtraSliders);
+        {
+            auto lr = area.removeFromTop(13);
+            auto sr = area.removeFromTop(70);
+            juce::Slider* sl[3] = { &extra1, &extra2, &extra3 };
+            for (int i = 0; i < n1; ++i)
+            {
+                extraLabels[(size_t)i].setBounds(portion(lr, i, n1));
+                sl[i]->setBounds(portion(sr, i, n1));
+            }
+        }
 
+        // Row 2: extra4–extra6 (label indices 3–5)
         if (numExtraSliders > 3)
         {
             area.removeFromTop(2);
-            auto secondRow = area.removeFromTop(70);
-            int secondCount = juce::jmin(3, numExtraSliders - 3);
-            int secondW = secondRow.getWidth() / secondCount;
-            if (numExtraSliders >= 4) extra4.setBounds(secondRow.removeFromLeft(secondW));
-            if (numExtraSliders >= 5) extra5.setBounds(secondRow.removeFromLeft(secondW));
-            if (numExtraSliders >= 6) extra6.setBounds(secondRow);
+            int n2 = juce::jmin(3, numExtraSliders - 3);
+            auto lr = area.removeFromTop(13);
+            auto sr = area.removeFromTop(70);
+            juce::Slider* sl[3] = { &extra4, &extra5, &extra6 };
+            for (int i = 0; i < n2; ++i)
+            {
+                extraLabels[(size_t)(3 + i)].setBounds(portion(lr, i, n2));
+                sl[i]->setBounds(portion(sr, i, n2));
+            }
         }
 
+        // Row 3: extra7–extra10 (label indices 6–9)
         if (numExtraSliders > 6)
         {
             area.removeFromTop(2);
-            auto thirdRow = area.removeFromTop(70);
-            int thirdCount = numExtraSliders - 6;
-            int thirdW = thirdRow.getWidth() / thirdCount;
-            if (numExtraSliders >= 7) extra7.setBounds(thirdRow.removeFromLeft(thirdW));
-            if (numExtraSliders >= 8) extra8.setBounds(thirdRow.removeFromLeft(thirdW));
-            if (numExtraSliders >= 9) extra9.setBounds(thirdRow.removeFromLeft(thirdW));
-            if (numExtraSliders >= 10) extra10.setBounds(thirdRow);
+            int n3 = numExtraSliders - 6;
+            auto lr = area.removeFromTop(13);
+            auto sr = area.removeFromTop(70);
+            juce::Slider* sl[4] = { &extra7, &extra8, &extra9, &extra10 };
+            for (int i = 0; i < n3; ++i)
+            {
+                extraLabels[(size_t)(6 + i)].setBounds(portion(lr, i, n3));
+                sl[i]->setBounds(portion(sr, i, n3));
+            }
         }
         area.removeFromTop(4);
     }
 
-    adsrLabel.setBounds(area.removeFromTop(16));
-
+    // ── ADSR ──────────────────────────────────────────────────────────────────
+    adsrLabel.setBounds(area.removeFromTop(14));
     auto adsrRow = area.removeFromTop(80);
-    int w = adsrRow.getWidth() / 4;
-    adsrA.setBounds(adsrRow.removeFromLeft(w));
-    adsrD.setBounds(adsrRow.removeFromLeft(w));
-    adsrS.setBounds(adsrRow.removeFromLeft(w));
-    adsrR.setBounds(adsrRow);
+    juce::Slider* adsrSliders[4] = { &adsrA, &adsrD, &adsrS, &adsrR };
+    for (int i = 0; i < 4; ++i)
+        adsrSliders[i]->setBounds(portion(adsrRow, i, 4));
 }

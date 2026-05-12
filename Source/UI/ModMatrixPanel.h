@@ -33,4 +33,5 @@ private:
     juce::Component rowContainer;
 
     juce::Label titleLabel;
+    juce::Label headerSource, headerDest, headerAmount, headerBipolar;
 };

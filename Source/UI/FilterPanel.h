@@ -25,6 +25,8 @@ private:
     std::unique_ptr<Att>  cutBAtt, resBAtt, drvBAtt, envBAtt, lfoBAtt;
 
     juce::Label titleLabel;
+    std::array<juce::Label, 3> comboLabels;   // TYPE A / TYPE B / ROUTING
+    std::array<juce::Label, 5> colLabels;     // CUT / RES / DRIVE / ENV / LFO
 
     void addSlider(juce::Slider& s, const juce::String& paramId, const juce::String& tip,
                    std::unique_ptr<Att>& att);

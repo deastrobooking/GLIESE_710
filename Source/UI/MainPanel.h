@@ -28,12 +28,16 @@ private:
     juce::Slider    masterVolSlider, masterTuneSlider, masterPanSlider;
     juce::Slider    masterA, masterD, masterS, masterR;
     juce::Label     masterLabel;
+    std::array<juce::Label, 7> masterLabels;   // VOL TUNE PAN ATK DEC SUS REL
 
     // FM controls
     juce::ComboBox  fmAlgorithmBox;
     juce::Slider    fmLevelSlider, fmOctaveSlider;
     std::array<juce::Slider, 10> fmOpCoarseSliders;
     std::array<juce::Slider, 10> fmOpLevelSliders;
+    juce::Label     fmAlgoLabel, fmLvlLabel, fmOctLabel;
+    juce::Label     fmCoarseHdrLabel, fmLevelHdrLabel;
+    std::array<juce::Label, 10> fmOpLabels;    // "0"–"9" operator index
 
     using Att = juce::AudioProcessorValueTreeState::SliderAttachment;
     using CAtt = juce::AudioProcessorValueTreeState::ComboBoxAttachment;

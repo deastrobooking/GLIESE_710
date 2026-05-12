@@ -16,6 +16,8 @@ private:
     juce::ToggleButton syncToggle, latchToggle;
     juce::Slider       octavesSlider, gateSlider, swingSlider;
     juce::Label        titleLabel;
+    juce::Label        patternLabel, rateLabel;
+    juce::Label        octLabel, gateLabel, swingLabel;
 
     using Att  = juce::AudioProcessorValueTreeState::SliderAttachment;
     using CAtt = juce::AudioProcessorValueTreeState::ComboBoxAttachment;

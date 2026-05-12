@@ -41,6 +41,23 @@ FilterPanel::FilterPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
     addSlider(driveB,      "filter_b_drive",      "Filter B Drive",     drvBAtt);
     addSlider(envAmtB,     "filter_b_env_amt",    "Filter B Env Amt",   envBAtt);
     addSlider(lfoAmtB,     "filter_b_lfo_amt",    "Filter B LFO Amt",   lfoBAtt);
+
+    auto makeLabel = [&](juce::Label& l, const juce::String& text) {
+        l.setText(text, juce::dontSendNotification);
+        l.setColour(juce::Label::textColourId, juce::Colour(0xff9999bb));
+        l.setFont(juce::Font(juce::FontOptions { 10.f }));
+        l.setJustificationType(juce::Justification::centred);
+        addAndMakeVisible(l);
+    };
+
+    makeLabel(comboLabels[0], "TYPE A");
+    makeLabel(comboLabels[1], "TYPE B");
+    makeLabel(comboLabels[2], "ROUTING");
+    makeLabel(colLabels[0], "CUT");
+    makeLabel(colLabels[1], "RES");
+    makeLabel(colLabels[2], "DRIVE");
+    makeLabel(colLabels[3], "ENV");
+    makeLabel(colLabels[4], "LFO");
 }
 
 void FilterPanel::addSlider(juce::Slider& s, const juce::String& paramId,
@@ -63,30 +80,39 @@ void FilterPanel::paint(juce::Graphics& g)
 
 void FilterPanel::resized()
 {
+    auto portion = [](juce::Rectangle<int> r, int i, int n) {
+        int x  = r.getX() + r.getWidth() * i / n;
+        int x2 = r.getX() + r.getWidth() * (i + 1) / n;
+        return r.withX(x).withWidth(x2 - x);
+    };
+
     auto area = getLocalBounds().reduced(6);
     titleLabel.setBounds(area.removeFromTop(20));
 
+    auto comboLabelRow = area.removeFromTop(13);
+    for (int i = 0; i < 3; ++i)
+        comboLabels[(size_t)i].setBounds(portion(comboLabelRow, i, 3));
+
     auto topRow = area.removeFromTop(24);
-    int w3 = topRow.getWidth() / 3;
-    filterAType.setBounds(topRow.removeFromLeft(w3));
-    filterBType.setBounds(topRow.removeFromLeft(w3));
-    filterRouting.setBounds(topRow);
+    filterAType  .setBounds(portion(topRow, 0, 3));
+    filterBType  .setBounds(portion(topRow, 1, 3));
+    filterRouting.setBounds(portion(topRow, 2, 3));
 
     area.removeFromTop(4);
 
-    auto rowA = area.removeFromTop(80);
+    auto colLabelRow = area.removeFromTop(13);
+    for (int i = 0; i < 5; ++i)
+        colLabels[(size_t)i].setBounds(portion(colLabelRow, i, 5));
+
+    auto rowA = area.removeFromTop(76);
+    area.removeFromTop(4);
     auto rowB = area;
-    int sw = rowA.getWidth() / 5;
 
-    cutoffA   .setBounds(rowA.removeFromLeft(sw));
-    resonanceA.setBounds(rowA.removeFromLeft(sw));
-    driveA    .setBounds(rowA.removeFromLeft(sw));
-    envAmtA   .setBounds(rowA.removeFromLeft(sw));
-    lfoAmtA   .setBounds(rowA);
-
-    cutoffB   .setBounds(rowB.removeFromLeft(sw));
-    resonanceB.setBounds(rowB.removeFromLeft(sw));
-    driveB    .setBounds(rowB.removeFromLeft(sw));
-    envAmtB   .setBounds(rowB.removeFromLeft(sw));
-    lfoAmtB   .setBounds(rowB);
+    for (int i = 0; i < 5; ++i)
+    {
+        juce::Slider* sa[5] = { &cutoffA, &resonanceA, &driveA, &envAmtA, &lfoAmtA };
+        juce::Slider* sb[5] = { &cutoffB, &resonanceB, &driveB, &envAmtB, &lfoAmtB };
+        sa[i]->setBounds(portion(rowA, i, 5));
+        sb[i]->setBounds(portion(rowB, i, 5));
+    }
 }
