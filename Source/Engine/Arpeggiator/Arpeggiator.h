@@ -1,0 +1,65 @@
+#pragma once
+#include <JuceHeader.h>
+#include <vector>
+
+class Arpeggiator
+{
+public:
+    enum class Pattern { Up, Down, UpDown, DownUp, AsPlayed, Random, RandomLatch };
+
+    // arp_rate index values, in beats
+    static constexpr float kRateBeats[] = {
+        1.f/32.f, 1.f/16.f, 1.f/8.f, 3.f/16.f,
+        0.25f, 3.f/8.f, 0.5f, 0.75f, 1.0f
+    };
+    static constexpr int kNumRates = 9;
+
+    struct Params
+    {
+        Pattern pattern = Pattern::Up;
+        int     rateIdx = 3;      // index into kRateBeats (default = 3/16 = dotted 8th)
+        bool    sync    = true;
+        int     octaves = 1;      // 1..4
+        float   gate    = 0.8f;   // 0..1
+        float   swing   = 0.f;    // 0..0.66
+        bool    latch   = false;
+    };
+
+    void prepare(double sampleRate);
+    void setParams(const Params& p);
+    void setHostBPM(double bpm);
+    void reset();
+
+    void handleMidi(const juce::MidiMessage& msg);
+
+    // Writes note-on/off MIDI events into buffer for this block
+    void processBlock(juce::MidiBuffer& outputMidi, int startSample, int numSamples);
+
+private:
+    double sr  = 48000.0;
+    double bpm = 120.0;
+    Params params;
+
+    std::vector<int> heldNotes;     // currently pressed keys (sorted)
+    std::vector<int> latchedNotes;  // latched
+    int arpIndex   = 0;             // position in the pattern
+    int octaveStep = 0;
+    int direction  = 1;            // +1 or -1 for UpDown/DownUp
+
+    // Timing (in samples)
+    double samplesPerBeat    = 24000.0;
+    double stepPhase         = 0.0;  // 0..1 within current step
+    double gateSamples       = 0.0;
+    double stepSamples       = 0.0;
+    bool   noteIsOn          = false;
+    int    currentNoteNumber = -1;
+    int    swingToggle       = 0;
+
+    uint32_t rngState = 42;
+
+    std::vector<int>& activeNotes();
+    int  nextNote();
+    void sendNoteOff(juce::MidiBuffer& buf, int sample);
+    void sendNoteOn(juce::MidiBuffer& buf, int sample, int note);
+    int  randInt(int max);
+};
