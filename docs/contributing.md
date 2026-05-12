@@ -55,7 +55,7 @@ To detect allocations in the audio thread during testing, intercept `operator ne
 
 ## Adding a Parameter
 
-1. **Register** it in `PluginProcessor::createParameterLayout()` using `addFloat`, `addInt`, `addBool`, or `addChoice`
+1. **Register** it in `buildLayout()` (static function in `PluginProcessor.cpp`) using `addFloat`, `addInt`, `addBool`, or `addChoice`
 2. **Read** it in `SynthVoice::syncParams()` via `apvts.getRawParameterValue("id")->load()`
 3. **Apply** the value to the relevant engine
 4. **Wire UI**: add a `juce::Slider` or `juce::ComboBox` with a matching `SliderAttachment` or `ComboBoxAttachment` in the relevant UI panel
@@ -125,12 +125,12 @@ If a filter produces NaN or Inf: add `juce::FloatVectorOperations::disableDenorm
 
 | Want to change... | Edit these files |
 |---|---|
-| Parameter layout | `PluginProcessor.cpp` → `createParameterLayout()` |
+| Parameter layout | `PluginProcessor.cpp` → `buildLayout()` |
 | 3D field types | `Osc3D.h` (enum) + `Osc3D.cpp` (evaluateField switch) |
 | FM algorithms | `FMAlgorithm.cpp` (kAlgorithms table) + `FMAlgorithm.h` (kNumAlgorithms) |
 | Filter modes | `FilterTypes.h` (enum) + `DualFilter.cpp` (processSample switch) |
 | Mod sources/dests | `ModSource.h` / `ModDest.h` + `SynthVoice.cpp` + UI |
-| Arp patterns | `Arpeggiator.h` (enum) + `Arpeggiator.cpp` (nextNote switch) |
+| Arp patterns/params | `Arpeggiator.h` (enum) + `Arpeggiator.cpp` (nextNote switch) + [docs/arpeggiator.md](arpeggiator.md) |
 | LFO shapes | `LFOEngine.h` (enum) + `LFOEngine.cpp` (generateShape switch) |
 | UI layout | `MainPanel.cpp` → `resized()` |
 | Build system | `CMakeLists.txt` |

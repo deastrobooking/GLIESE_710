@@ -108,12 +108,14 @@ Operator envelope parameters: `op{N}_adsr_{a,d,s,r}` where N is 0–9.
 |---|---|---|
 | `osc_fm_algorithm` | 0–39 | Algorithm selection |
 | `osc_fm_level` | 0.0–1.0 | Overall FM output level |
+| `osc_fm_octave` | −3–+3 | Octave transpose |
+| `osc_fm_adsr_{a,d,s,r}` | — | FM engine-level amplitude envelope |
 | `op{N}_coarse` | 0–31 | Frequency ratio (0=0.5×, 1=1×, ...) |
 | `op{N}_fine` | −1.0–+1.0 | Fine tune in semitones |
 | `op{N}_level` | 0.0–1.0 | Operator output level |
 | `op{N}_feedback` | 0.0–1.0 | Self-feedback depth |
 | `op{N}_fixed` | bool | Fixed frequency mode |
-| `op{N}_adsr_{a,d,s,r}` | — | Operator envelope |
+| `op{N}_adsr_{a,d,s,r}` | — | Per-operator envelope |
 
 The modulation matrix can target `FM_Op0_Ratio` through `FM_Op4_Ratio`. These destinations add to the operator ratio before fine tuning, which is useful for controlled ratio bends and evolving inharmonic tones.
 
