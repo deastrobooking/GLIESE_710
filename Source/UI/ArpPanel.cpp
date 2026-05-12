@@ -3,7 +3,7 @@
 ArpPanel::ArpPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 {
     titleLabel.setText("ARPEGGIATOR", juce::dontSendNotification);
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::lightcyan);
+    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     titleLabel.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
     addAndMakeVisible(titleLabel);
 
@@ -45,7 +45,7 @@ ArpPanel::ArpPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 
     auto makeLabel = [&](juce::Label& l, const juce::String& text) {
         l.setText(text, juce::dontSendNotification);
-        l.setColour(juce::Label::textColourId, juce::Colour(0xff9999bb));
+        l.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
         l.setFont(juce::Font(juce::FontOptions { 10.f }));
         l.setJustificationType(juce::Justification::centred);
         addAndMakeVisible(l);
@@ -60,9 +60,9 @@ ArpPanel::ArpPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 
 void ArpPanel::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colour(0xff1a1a28));
+    g.setColour(juce::Colour(0xff141414));
     g.fillRoundedRectangle(getLocalBounds().toFloat(), 6.f);
-    g.setColour(juce::Colour(0xff3a3a5a));
+    g.setColour(juce::Colour(0xff2a2a2a));
     g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 6.f, 1.f);
 }
 

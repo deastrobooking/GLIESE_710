@@ -1,7 +1,7 @@
 #include "MainPanel.h"
 
-static juce::Colour kBg    { 0xff0d0d14 };
-static juce::Colour kAccent{ 0xff4466cc };
+static juce::Colour kBg    { 0xff0d0d0d };
+static juce::Colour kAccent{ 0xffcc2222 };
 
 MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     : apvts(a)
@@ -67,7 +67,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
 
     // ── Master controls ───────────────────────────────────────────────────────
     masterLabel.setText("MASTER", juce::dontSendNotification);
-    masterLabel.setColour(juce::Label::textColourId, juce::Colours::lightcyan);
+    masterLabel.setColour(juce::Label::textColourId, juce::Colours::white);
     masterLabel.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
     addAndMakeVisible(masterLabel);
 
@@ -82,7 +82,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     // ── Label helpers ─────────────────────────────────────────────────────────
     auto makeSmallLabel = [&](juce::Label& l, const juce::String& text, juce::Component& parent) {
         l.setText(text, juce::dontSendNotification);
-        l.setColour(juce::Label::textColourId, juce::Colour(0xff9999bb));
+        l.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
         l.setFont(juce::Font(juce::FontOptions { 10.f }));
         l.setJustificationType(juce::Justification::centred);
         parent.addAndMakeVisible(l);

@@ -17,7 +17,7 @@ GLIESE710AudioProcessorEditor::~GLIESE710AudioProcessorEditor() = default;
 
 void GLIESE710AudioProcessorEditor::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(0xff0d0d14));
+    g.fillAll(juce::Colour(0xff0d0d0d));
 }
 
 void GLIESE710AudioProcessorEditor::resized()

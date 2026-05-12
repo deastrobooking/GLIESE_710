@@ -3,7 +3,7 @@
 PresetBrowser::PresetBrowser(PresetManager& pm) : presetManager(pm)
 {
     nameLabel.setText("GLIESE 710", juce::dontSendNotification);
-    nameLabel.setColour(juce::Label::textColourId, juce::Colour(0xff88aaff));
+    nameLabel.setColour(juce::Label::textColourId, juce::Colour(0xffcc2222));
     nameLabel.setFont(juce::Font(juce::FontOptions { 16.f, juce::Font::bold }));
     addAndMakeVisible(nameLabel);
 
@@ -89,9 +89,9 @@ void PresetBrowser::saveCurrentPreset()
 
 void PresetBrowser::paint(juce::Graphics& g)
 {
-    g.setColour(juce::Colour(0xff0d0d1c));
+    g.setColour(juce::Colour(0xff0d0d0d));
     g.fillAll();
-    g.setColour(juce::Colour(0xff3a3a5a));
+    g.setColour(juce::Colour(0xff2a2a2a));
     g.drawLine(0.f, (float)getHeight() - 1.f, (float)getWidth(), (float)getHeight() - 1.f, 1.f);
 }
 
