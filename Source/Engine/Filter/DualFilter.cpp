@@ -57,11 +57,12 @@ float SingleFilter::computeCutoff(float envValue, float lfoValue) const
 void SingleFilter::configureSVF(float cutHz, float res)
 {
     using SVFType = juce::dsp::StateVariableTPTFilterType;
-    float resonance = juce::jlimit(0.5f, 25.f, 0.5f + res * 24.5f);
+    // Q capped at 10: still self-oscillates but avoids the +28dB peak of Q=25
+    float Q = juce::jlimit(0.5f, 10.f, 0.5f + res * 9.5f);
     svf1.setCutoffFrequency(cutHz);
-    svf1.setResonance(resonance);
+    svf1.setResonance(Q);
     svf2.setCutoffFrequency(cutHz);
-    svf2.setResonance(resonance);
+    svf2.setResonance(Q);
 
     switch (params.mode)
     {
@@ -118,8 +119,14 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
     float cutHz = computeCutoff(envValue, lfoValue);
     float res   = params.resonance;
 
-    // Pre-drive saturation
+    // 1/Q gain compensation: keeps the resonant peak at roughly unity gain
+    // regardless of Q, preventing the +20dB blow-up at high resonance.
+    float Q = 0.5f + res * 9.5f;  // matches configureSVF mapping
+    float compGain = 1.f / juce::jmax(1.f, Q);
+
+    // Pre-drive saturation, then apply resonance compensation
     float driven = (params.drive > 0.f) ? std::tanh(input * (1.f + params.drive * 4.f)) : input;
+    driven *= compGain;
 
     float out = driven;
 
@@ -134,9 +141,15 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
 
         case FilterMode::LP24:
         case FilterMode::HP24:
+        {
             configureSVF(cutHz, res);
-            out = svf2.processSample(0, svf1.processSample(0, driven));
+            float mid = svf1.processSample(0, driven);
+            // Soft-clip between cascade stages: prevents the second stage amplifying
+            // an already-hot signal from the first stage (series compound gain).
+            mid = std::tanh(mid);
+            out = svf2.processSample(0, mid);
             break;
+        }
 
         case FilterMode::Notch:
         {
@@ -160,12 +173,13 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
 
         case FilterMode::Comb:
         {
-            // Feedback comb
+            // Feedback comb — cap feedback strictly below unity to prevent runaway
             int delaySamples = juce::jlimit(1, kMaxCombDelaySamples - 1,
                                              (int)(sr / juce::jlimit(20.f, (float)(sr * 0.49), cutHz)));
             int readPos = (combWritePos - delaySamples + kMaxCombDelaySamples) % kMaxCombDelaySamples;
             float delayed = combBuffer[readPos];
-            float output  = driven + combFeedback * (0.5f + res * 0.5f) * delayed;
+            float fb = juce::jlimit(0.f, 0.97f, combFeedback * (0.5f + res * 0.5f));
+            float output = driven + fb * delayed;
             combBuffer[combWritePos] = output;
             combWritePos = (combWritePos + 1) % kMaxCombDelaySamples;
             out = output;
@@ -184,7 +198,10 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
             break;
     }
 
-    return out;
+    // Hard-clip as final safety net: compensation gain should keep output in
+    // range most of the time, but this prevents any stray blow-up from reaching
+    // downstream stages.
+    return juce::jlimit(-1.5f, 1.5f, out);
 }
 
 //==============================================================================
