@@ -9,18 +9,18 @@ public:
 
     enum class Shape { Sine, Triangle, Saw, RevSaw, Square, SampleHold, SmoothSH };
 
-    // Sync division: 0=Free, then 1/32 increments
-    static constexpr int kNumSyncRates = 9;
-    // Sync rate in beats: { Free, 1/32, 1/16, 1/8, 1/4, 1/2, 1, 2, 4 }
+    // Sync rate index: 0 = 8 bars, 10 = 1/128 note.
+    static constexpr int kNumSyncRates = 11;
     static constexpr float kSyncBeats[kNumSyncRates] = {
-        0.f, 1.f/32.f, 1.f/16.f, 1.f/8.f, 0.25f, 0.5f, 1.f, 2.f, 4.f
+        32.f, 16.f, 8.f, 4.f, 2.f, 1.f, 0.5f, 0.25f, 0.125f, 0.0625f, 0.03125f
     };
 
     struct LFOParams
     {
         Shape shape   = Shape::Sine;
         float rate    = 1.f;     // Hz when free-running
-        int   syncIdx = 0;       // index into kSyncBeats (0 = free)
+        bool  sync    = false;
+        float syncRate = 5.f;    // 0..10, continuous between kSyncBeats entries
         float amount  = 0.5f;   // output scale 0..1
         float phase   = 0.f;    // start phase offset 0..1
         bool  retrig  = false;

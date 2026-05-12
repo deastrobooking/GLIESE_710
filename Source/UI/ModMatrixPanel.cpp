@@ -28,7 +28,8 @@ static const juce::StringArray kDestNames {
     "VA Shape","VA Ring","VA Fold",
     "VA2 Shape","VA2 PW","VA2 Detune","VA2 Spread","VA2 Level","VA2 Ring","VA2 Fold",
     "VA3 Shape","VA3 PW","VA3 Detune","VA3 Spread","VA3 Level","VA3 Ring","VA3 Fold",
-    "VA4 Shape","VA4 PW","VA4 Detune","VA4 Spread","VA4 Level","VA4 Ring","VA4 Fold"
+    "VA4 Shape","VA4 PW","VA4 Detune","VA4 Spread","VA4 Level","VA4 Ring","VA4 Fold",
+    "LFO1 SyncRt","LFO2 SyncRt","LFO3 SyncRt","LFO4 SyncRt"
 };
 
 ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)

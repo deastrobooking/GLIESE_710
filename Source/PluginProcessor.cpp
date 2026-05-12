@@ -172,14 +172,14 @@ static APVTS::ParameterLayout buildLayout()
 
     // ── LFOs 1-4 ─────────────────────────────────────────────────────────────
     juce::StringArray lfoShapes { "Sine","Triangle","Saw","RevSaw","Square","S&H","Smooth S&H" };
-    juce::StringArray lfoSync   { "Free","1/32","1/16","1/8","1/4","1/2","1 Bar","2 Bars","4 Bars" };
 
     for (int i = 1; i <= 4; ++i)
     {
         juce::String p = "lfo" + juce::String(i) + "_";
         addChoice(p + "shape",  "LFO" + juce::String(i) + " Shape",  lfoShapes, 0);
         addFloat (p + "rate",   "LFO" + juce::String(i) + " Rate",   0.01f, 100.0f, 1.0f, 0.3f);
-        addChoice(p + "sync",   "LFO" + juce::String(i) + " Sync",   lfoSync, 0);
+        addBool  (p + "sync",   "LFO" + juce::String(i) + " Sync",   false);
+        addFloat (p + "sync_rate", "LFO" + juce::String(i) + " Sync Rate", 0.0f, 10.0f, 5.0f);
         addFloat (p + "amount", "LFO" + juce::String(i) + " Amount", 0.0f, 1.0f, 0.5f);
         addFloat (p + "phase",  "LFO" + juce::String(i) + " Phase",  0.0f, 1.0f, 0.0f);
         addBool  (p + "retrig", "LFO" + juce::String(i) + " Retrig", false);
@@ -213,7 +213,8 @@ static APVTS::ParameterLayout buildLayout()
         "VA_Shape","VA_Ring","VA_Fold",
         "VA2_Shape","VA2_PW","VA2_Detune","VA2_Spread","VA2_Level","VA2_Ring","VA2_Fold",
         "VA3_Shape","VA3_PW","VA3_Detune","VA3_Spread","VA3_Level","VA3_Ring","VA3_Fold",
-        "VA4_Shape","VA4_PW","VA4_Detune","VA4_Spread","VA4_Level","VA4_Ring","VA4_Fold"
+        "VA4_Shape","VA4_PW","VA4_Detune","VA4_Spread","VA4_Level","VA4_Ring","VA4_Fold",
+        "LFO1_SyncRate","LFO2_SyncRate","LFO3_SyncRate","LFO4_SyncRate"
     };
 
     for (int i = 0; i < 32; ++i)

@@ -48,11 +48,16 @@ float LFOEngine::whiteSample(int i)
 float LFOEngine::lfoRateHz(int i) const
 {
     const auto& p = params[lfoIndex(i)];
-    if (p.syncIdx == 0 || bpm <= 0.0)
+    if (!p.sync || bpm <= 0.0)
         return juce::jlimit(0.01f, 100.f, p.rate);
 
-    auto syncIdx = static_cast<size_t>(juce::jlimit(0, kNumSyncRates - 1, p.syncIdx));
-    float beats  = kSyncBeats[syncIdx];
+    float syncPos = juce::jlimit(0.f, (float)(kNumSyncRates - 1), p.syncRate);
+    int lower = (int)std::floor(syncPos);
+    int upper = juce::jmin(lower + 1, kNumSyncRates - 1);
+    float mix = syncPos - (float)lower;
+    float beats = std::exp2(std::log2(kSyncBeats[(size_t)lower])
+                            + (std::log2(kSyncBeats[(size_t)upper])
+                               - std::log2(kSyncBeats[(size_t)lower])) * mix);
     float hz     = (float)(bpm / 60.0) / beats;
     return juce::jlimit(0.01f, 200.f, hz);
 }

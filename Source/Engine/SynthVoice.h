@@ -151,6 +151,7 @@ private:
             std::atomic<float>* shape    = nullptr;
             std::atomic<float>* rate     = nullptr;
             std::atomic<float>* sync     = nullptr;
+            std::atomic<float>* syncRate = nullptr;
             std::atomic<float>* amount   = nullptr;
             std::atomic<float>* phase    = nullptr;
             std::atomic<float>* retrig   = nullptr;

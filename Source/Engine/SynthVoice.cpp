@@ -263,6 +263,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         l.shape  = get(pfx + "shape");
         l.rate   = get(pfx + "rate");
         l.sync   = get(pfx + "sync");
+        l.syncRate = get(pfx + "sync_rate");
         l.amount = get(pfx + "amount");
         l.phase  = get(pfx + "phase");
         l.retrig = get(pfx + "retrig");
@@ -471,7 +472,10 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
         lp.shape   = static_cast<LFOEngine::Shape>(pI(lc.shape));
         lp.rate    = juce::jlimit(0.01f, 100.f,
                                   pF(lc.rate, 1.f) + modDests.dests[(int)ModDest::LFO1_Rate + i]);
-        lp.syncIdx = pI(lc.sync);
+        lp.sync    = pB(lc.sync, false);
+        lp.syncRate = juce::jlimit(0.f, 10.f,
+                                   pF(lc.syncRate, 5.f)
+                                   + modDests.dests[(int)ModDest::LFO1_SyncRate + i] * 10.f);
         lp.amount  = juce::jlimit(0.f, 1.f,
                                   pF(lc.amount, 0.5f) + modDests.dests[(int)ModDest::LFO1_Amount + i]);
         lp.phase   = pF(lc.phase);

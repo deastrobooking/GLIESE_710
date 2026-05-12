@@ -21,5 +21,6 @@ enum class ModDest : int
     VA2_Shape, VA2_PW, VA2_Detune, VA2_Spread, VA2_Level, VA2_Ring, VA2_Fold,
     VA3_Shape, VA3_PW, VA3_Detune, VA3_Spread, VA3_Level, VA3_Ring, VA3_Fold,
     VA4_Shape, VA4_PW, VA4_Detune, VA4_Spread, VA4_Level, VA4_Ring, VA4_Fold,
+    LFO1_SyncRate, LFO2_SyncRate, LFO3_SyncRate, LFO4_SyncRate,
     NumDests
 };
