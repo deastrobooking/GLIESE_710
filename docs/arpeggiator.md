@@ -31,9 +31,9 @@ Incoming MIDI
 | Down | Notes sorted descending |
 | Up-Down | Ascending then descending (shared endpoints) |
 | Down-Up | Descending then ascending |
-| As Played | Steps through notes in the order they were pressed |
+| As Played | Steps through notes in the order they were pressed or latched |
 | Random | Picks a random note each step (no repeat guarantee) |
-| Random Latch | Like Random but remembers a fixed random order until notes change |
+| Random Latch | Shuffles the active notes once, then repeats that order until the active note list changes |
 
 ## Timing
 
@@ -51,19 +51,18 @@ Step length is controlled by `arp_rate` (index into a fixed rate table) and `arp
 | 7 | 3/4 | Dotted half |
 | 8 | 1 bar | Whole note |
 
-When `arp_sync = true`, tempo is taken from the DAW's play-head BPM (forwarded by `GLIESE710AudioProcessor::processBlock`). When false, a fixed internal tempo is used.
+When `arp_sync = true`, tempo is taken from the DAW's play-head BPM (forwarded by `GLIESE710AudioProcessor::processBlock`). When false, the arpeggiator uses an internal 120 BPM clock.
 
 ## Swing
 
-`arp_swing` (0.0–0.66) delays every other step by a fraction of the step length:
+`arp_swing` (0.0–0.66) alternates long and short step lengths around the base rate:
 
 ```
-swingAmount = swing × stepSamples
-odd steps: start on time
-even steps: start + swingAmount late
+longStepSamples  = stepSamples × (1 + swing × 0.5)
+shortStepSamples = stepSamples × (1 - swing × 0.5)
 ```
 
-At `swing = 0`: straight. At `swing = 0.5`: triplet-feel swing. The cap at 0.66 prevents steps from overlapping.
+At `swing = 0`: straight. Higher values push the alternating long/short feel harder. The cap at 0.66 keeps step lengths practical.
 
 ## Octaves
 
@@ -86,7 +85,7 @@ Cycle 3: pattern + 24 semitones (if octaves ≥ 3)
 
 ## Latch Mode
 
-When `arp_latch = true`, held notes are copied into a latch buffer when a new note-on arrives. Releasing all keys does **not** stop the arpeggiator — it keeps cycling the latched notes. To reset latch, press any new key (which replaces the latch buffer).
+When `arp_latch = true`, note-ons toggle notes in the latch buffer. Press a note once to add it, press it again to remove it. Releasing all keys does **not** stop the arpeggiator — it keeps cycling the latched notes until they are toggled out or an all-notes-off/reset message arrives.
 
 ## Parameters
 
@@ -105,14 +104,14 @@ When `arp_latch = true`, held notes are copied into a latch buffer when a new no
 
 | Destination | Effect |
 |---|---|
-| `Arp_Gate` | Adds to gate fraction (clamped 0–1) |
-| `Arp_Rate` | Adds to rate index |
+| `Arp_Gate` | Adds to gate fraction, averaged across active voices and clamped to 0.01–1.0 |
+| `Arp_Rate` | Adds a rounded offset to the rate index, averaged across active voices and clamped to the rate table |
 
 Use `LFO → Arp_Gate` for rhythmic accents, or `Macro → Arp_Gate` for a performance-friendly gate sweep.
 
 ## Implementation Notes
 
-- The arpeggiator maintains two note lists: `heldNotes` (currently pressed keys) and `latchedNotes`. `activeNotes()` returns whichever is relevant given the latch state.
+- The arpeggiator maintains two note lists: `heldNotes` (currently pressed keys in played order) and `latchedNotes` (toggled latch notes in played order). `activeNotes()` returns whichever is relevant given the latch state.
 - Timing is tracked in fractional samples (`stepPhase`) to avoid drift across blocks.
-- When the host is not playing (no BPM available), the arpeggiator continues running at the last known BPM.
-- RandomLatch fixes a shuffled order until the active note list changes, giving a consistent but non-sequential pattern.
+- When host sync is off, the arpeggiator runs at 120 BPM. When sync is on and the host has not supplied a new BPM, it continues at the last known BPM.
+- `RandomLatch` fixes a shuffled order until the active note list changes, giving a consistent but non-sequential pattern.

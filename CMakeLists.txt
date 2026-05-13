@@ -76,7 +76,6 @@ PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
-    JUCE_DISPLAY_SPLASH_SCREEN=0
 )
 
 # ── Include paths ─────────────────────────────────────────────────────────────
@@ -113,6 +112,7 @@ if(GLIESE_BUILD_TESTS)
         Source/Engine/Modulation/ModMatrix.cpp
         Source/Engine/LFO/LFOEngine.cpp
         Source/Engine/Oscillators/VAOscillator.cpp
+        Source/Engine/Arpeggiator/Arpeggiator.cpp
     )
 
     target_include_directories(GLIESE_Tests PRIVATE Source)

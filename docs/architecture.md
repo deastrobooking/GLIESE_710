@@ -9,9 +9,9 @@ MIDI Input
 Sample-accurate MIDI / Arpeggiator scheduler
     │
     ▼
-SynthEngine  (voice pool — 16 voices, oldest-note stealing)
+SynthEngine  (voice pool — 10 voices, oldest-note stealing)
     │
-    ├── SynthVoice × 16
+    ├── SynthVoice × 10
     │       │
     │       ├── [LFO Engine]  (4 LFOs — processed once per block)
     │       ├── [Mod Matrix]  (32 slots: source → dest accumulation)
@@ -19,7 +19,7 @@ SynthEngine  (voice pool — 16 voices, oldest-note stealing)
     │       ├── Osc3D          → env3D  ─╮  field freq / z ratio / warp / fold / drive
     │       ├── FMAlgorithm    → envFM  ─┤  additive mix
     │       ├── WavetableOsc   → envWT  ─┤
-    │       ├── VAOscillator   → envVA  ─╯
+    │       ├── VAOscillator ×4 → envVA1-4 ─╯
     │       │
     │       ├── DualFilter (Filter A → Filter B  or  parallel)
     │       │       └── per-filter ADSR envelopes
@@ -35,11 +35,11 @@ Stereo Output Buffer (accumulated across all active voices)
 | Class | Owns | Lives in |
 |---|---|---|
 | `GLIESE710AudioProcessor` | `SynthEngine`, `PresetManager`, `APVTS` | PluginProcessor |
-| `SynthEngine` | `SynthVoice[16]`, `Arpeggiator` | Engine/ |
-| `SynthVoice` | `Osc3D`, `FMAlgorithm`, `WavetableOsc`, `VAOscillator`, `EnvelopeBank`, `LFOEngine`, `DualFilter`, `ModMatrix` | Engine/ |
+| `SynthEngine` | `SynthVoice[10]`, `Arpeggiator`, master age/feedback effects | Engine/ |
+| `SynthVoice` | `Osc3D`, `FMAlgorithm`, `WavetableOsc`, `VAOscillator[4]`, `EnvelopeBank`, `LFOEngine`, `DualFilter`, `ModMatrix` | Engine/ |
 | `FMAlgorithm` | `FMOperator[10]` | Engine/Oscillators/ |
 | `DualFilter` | `SingleFilter × 2`, `ADSREnvelope × 2` | Engine/Filter/ |
-| `EnvelopeBank` | `ADSREnvelope[7]` | Engine/Envelopes/ |
+| `EnvelopeBank` | `ADSREnvelope[10]` | Engine/Envelopes/ |
 
 ## Thread Model
 
@@ -64,7 +64,7 @@ All controls are registered as `juce::AudioProcessorParameter` children of `Audi
 - Free undo/redo
 - One-call preset serialization via `copyState()` → `ValueTree` → XML
 
-Parameters are read once per active voice block at the top of `SynthVoice::renderBlock` and applied to sub-engines. See [docs/modulation-matrix.md](modulation-matrix.md) for how mod matrix offsets are layered on top of base parameter values.
+Parameter pointers are cached as `std::atomic<float>*` during engine setup with a render-time fallback for unusual host lifecycle ordering. Values are read once per active voice block in `SynthVoice::renderBlock`, then applied to sub-engines through `SynthVoice::syncParams()`. See [docs/modulation-matrix.md](modulation-matrix.md) for how mod matrix offsets are layered on top of base parameter values.
 
 ## MIDI Timing
 
@@ -81,7 +81,7 @@ noteOn(note, vel)
   → findFreeVoice() or stealVoice() (oldest age)
       → voice.noteOn(note, vel)
       → set frequency on all oscillators
-      → envBank.noteOn()  ← triggers all 7 envelopes
+      → envBank.noteOn()  ← triggers all 10 voice envelopes
       → fm.noteOn()       ← triggers per-operator envelopes
       → dualFilter.noteOn()
 
@@ -106,8 +106,8 @@ Every envelope in `EnvelopeBank` is advanced each rendered sample, even if the c
 3. Add it as a member of `SynthVoice`
 4. Call `prepare()` in `SynthVoice::prepare()`
 5. Call `reset()` in `SynthVoice::reset()`
-6. Register any new parameters in `PluginProcessor::createParameterLayout()`
-7. Read params and call your module in `SynthVoice::syncParams()`
+6. Register any new parameters in `PluginProcessor.cpp` → `buildLayout()`
+7. Cache/read params and call your module in `SynthVoice::buildParamCache()` and `SynthVoice::syncParams()`
 8. Add the `.cpp` to `target_sources` in `CMakeLists.txt`
 
 ## UI Layout
@@ -115,37 +115,35 @@ Every envelope in `EnvelopeBank` is advanced each rendered sample, even if the c
 The editor is a `GLIESE710AudioProcessorEditor` (default 1200×780, resizable 900–1920 × 600–1200). It has two direct children, stacked vertically:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  PresetBrowser  (36 px, top strip)                      │
-├─────────────────────────────────────────────────────────┤
-│  MainPanel  (remaining height)                          │
-│                                                         │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │  TabbedComponent  (TabsAtTop, depth 28 px)      │   │
-│  │                                                 │   │
-│  │  Tab 1 — OSCILLATORS                            │   │
-│  │    OscPanel("3d")  │ OscPanel("va")  │ OscPanel("wt")│
-│  │    1/3 width each, side-by-side                 │   │
-│  │                                                 │   │
-│  │  Tab 2 — FM ENGINE                              │   │
-│  │    Algorithm selector (180 px) + FM Level knob  │   │
-│  │    + FM Octave knob                             │   │
-│  │    Row: Op0–Op9 Coarse knobs (86 px height)     │   │
-│  │    Row: Op0–Op9 Level  knobs (86 px height)     │   │
-│  │                                                 │   │
-│  │  Tab 3 — FILTER / MOD / ARP                     │   │
-│  │    FilterPanel  (top 220 px)                    │   │
-│  │    ArpPanel     (right 260 px, remaining height)│   │
-│  │    ModMatrixPanel (remaining space)             │   │
-│  └─────────────────────────────────────────────────┘   │
-│                                                         │
-│  Master strip  (bottom 110 px)                          │
-│    MASTER label │ Vol │ Tune │ Oct │ Pan │ A │ D │ S │ R│
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  PresetBrowser  (36 px, top strip)                       │
+├──────────────────────────────────────────────────────────┤
+│  MainPanel  (remaining height)                           │
+│                                                          │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │  TabbedComponent  (TabsAtTop, depth 28 px)       │   │
+│  │                                                  │   │
+│  │  Tab 1 — OSCILLATORS                             │   │
+│  │    3D OscPanel │ VA tabbed panel │ WT OscPanel   │   │
+│  │    VA tabbed panel contains VA 1–4               │   │
+│  │                                                  │   │
+│  │  Tab 2 — FM ENGINE                               │   │
+│  │    Enable + algorithm + FM level/octave + ADSR   │   │
+│  │    Rows: Op0–Op9 coarse, level, wave, velocity,  │   │
+│  │    and key-scale controls                        │   │
+│  │                                                  │   │
+│  │  Tab 3 — FILTER / MOD / ARP                      │   │
+│  │    FilterPanel  (top 240 px)                     │   │
+│  │    Bottom row: ModMatrixPanel | LFOPanel | ArpPanel│  │
+│  └──────────────────────────────────────────────────┘   │
+│                                                          │
+│  Master strip  (bottom 124 px)                           │
+│    MASTER │ Vol Tune Oct Pan Port Age Feed PB MW │ A D S R│
+└──────────────────────────────────────────────────────────┘
 ```
 
-**Color scheme**: background `#0d0d14`, accent `#4466cc`, text `lightcyan`.
+**Color scheme**: industrial dark faceplate, background `#050607`, and per-module accent colors from `IndustrialTheme`.
 
-**OscPanel** is a generic panel parameterized by `oscId` (`"3d"`, `"va"`, `"wt"`). It shows a title label, level/octave knobs, per-oscillator ADSR, mode combo boxes, and type-specific extra sliders — all wired to APVTS parameter IDs prefixed with `osc_{oscId}_`.
+**OscPanel** is a generic panel parameterized by `oscId` (`"3d"`, `"va"`, `"va2"`, `"va3"`, `"va4"`, `"wt"`). It shows a title label, enable toggle, level/octave knobs, per-oscillator ADSR, mode combo boxes, and type-specific extra sliders — all wired to APVTS parameter IDs prefixed with `osc_{oscId}_`.
 
 To change the tab layout, edit `MainPanel::resized()` in [Source/UI/MainPanel.cpp](../Source/UI/MainPanel.cpp).

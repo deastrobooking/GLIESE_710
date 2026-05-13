@@ -56,7 +56,7 @@ To detect allocations in the audio thread during testing, intercept `operator ne
 ## Adding a Parameter
 
 1. **Register** it in `buildLayout()` (static function in `PluginProcessor.cpp`) using `addFloat`, `addInt`, `addBool`, or `addChoice`
-2. **Read** it in `SynthVoice::syncParams()` via `apvts.getRawParameterValue("id")->load()`
+2. **Cache/read** it in `SynthVoice::buildParamCache()` and `SynthVoice::syncParams()` using cached `std::atomic<float>*` pointers
 3. **Apply** the value to the relevant engine
 4. **Wire UI**: add a `juce::Slider` or `juce::ComboBox` with a matching `SliderAttachment` or `ComboBoxAttachment` in the relevant UI panel
 5. **Document**: add it to the parameter table in the relevant docs file
@@ -84,6 +84,7 @@ Add tests to [Tests/EngineTests.cpp](../Tests/EngineTests.cpp). Run with `ctest`
 ```bash
 ctest --test-dir build --output-on-failure
 ./build/GLIESE_Tests_artefacts/GLIESE_Tests
+./build/GLIESE_Tests_artefacts/GLIESE_Tests "[arp]"
 ```
 
 ## Debugging Tips
@@ -129,7 +130,7 @@ If a filter produces NaN or Inf: add `juce::FloatVectorOperations::disableDenorm
 | 3D field types | `Osc3D.h` (enum) + `Osc3D.cpp` (evaluateField switch) |
 | FM algorithms | `FMAlgorithm.cpp` (kAlgorithms table) + `FMAlgorithm.h` (kNumAlgorithms) |
 | Filter modes | `FilterTypes.h` (enum) + `DualFilter.cpp` (processSample switch) |
-| Mod sources/dests | `ModSource.h` / `ModDest.h` + `SynthVoice.cpp` + UI |
+| Mod sources/dests | `ModSource.h` / `ModDest.h` + `PluginProcessor.cpp` + `SynthVoice.cpp`/`SynthEngine.cpp` + UI |
 | Arp patterns/params | `Arpeggiator.h` (enum) + `Arpeggiator.cpp` (nextNote switch) + [docs/arpeggiator.md](arpeggiator.md) |
 | LFO shapes | `LFOEngine.h` (enum) + `LFOEngine.cpp` (generateShape switch) |
 | UI layout | `MainPanel.cpp` → `resized()` |

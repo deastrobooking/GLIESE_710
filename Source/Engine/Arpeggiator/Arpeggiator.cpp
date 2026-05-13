@@ -2,17 +2,24 @@
 #include <algorithm>
 #include <random>
 
-constexpr float Arpeggiator::kRateBeats[];
-
 void Arpeggiator::prepare(double sampleRate)
 {
     sr = sampleRate;
     heldNotes.reserve(128);
     latchedNotes.reserve(128);
+    sortedNotes.reserve(128);
+    randomLatchOrder.reserve(128);
     reset();
 }
 
-void Arpeggiator::setParams(const Params& p) { params = p; }
+void Arpeggiator::setParams(const Params& p)
+{
+    bool latchModeChanged = params.latch != p.latch;
+    params = p;
+
+    if (latchModeChanged)
+        markNotesChanged();
+}
 void Arpeggiator::setHostBPM(double b)        { bpm = juce::jlimit(20.0, 300.0, b); }
 
 void Arpeggiator::reset()
@@ -26,6 +33,9 @@ void Arpeggiator::reset()
     swingToggle  = 0;
     heldNotes.clear();
     latchedNotes.clear();
+    sortedNotes.clear();
+    randomLatchOrder.clear();
+    markNotesChanged();
 }
 
 int Arpeggiator::randInt(int max)
@@ -40,6 +50,44 @@ std::vector<int>& Arpeggiator::activeNotes()
     return params.latch ? latchedNotes : heldNotes;
 }
 
+void Arpeggiator::markNotesChanged()
+{
+    sortedNotesDirty = true;
+    randomLatchDirty = true;
+    arpIndex = 0;
+}
+
+const std::vector<int>& Arpeggiator::orderedNotesForPattern()
+{
+    auto& notes = activeNotes();
+
+    if (params.pattern == Pattern::Up || params.pattern == Pattern::Down
+        || params.pattern == Pattern::UpDown || params.pattern == Pattern::DownUp)
+    {
+        if (sortedNotesDirty)
+        {
+            sortedNotes = notes;
+            std::sort(sortedNotes.begin(), sortedNotes.end());
+            sortedNotesDirty = false;
+        }
+        return sortedNotes;
+    }
+
+    if (params.pattern == Pattern::RandomLatch)
+    {
+        if (randomLatchDirty)
+        {
+            randomLatchOrder = notes;
+            for (int i = (int)randomLatchOrder.size() - 1; i > 0; --i)
+                std::swap(randomLatchOrder[(size_t)i], randomLatchOrder[(size_t)randInt(i + 1)]);
+            randomLatchDirty = false;
+        }
+        return randomLatchOrder;
+    }
+
+    return notes;
+}
+
 void Arpeggiator::handleMidi(const juce::MidiMessage& msg)
 {
     if (msg.isNoteOn())
@@ -48,7 +96,8 @@ void Arpeggiator::handleMidi(const juce::MidiMessage& msg)
         if (std::find(heldNotes.begin(), heldNotes.end(), note) == heldNotes.end())
         {
             heldNotes.push_back(note);
-            std::sort(heldNotes.begin(), heldNotes.end());
+            if (!params.latch)
+                markNotesChanged();
         }
 
         if (params.latch)
@@ -58,24 +107,27 @@ void Arpeggiator::handleMidi(const juce::MidiMessage& msg)
             if (it == latchedNotes.end())
             {
                 latchedNotes.push_back(note);
-                std::sort(latchedNotes.begin(), latchedNotes.end());
             }
             else
             {
                 latchedNotes.erase(it);
             }
+            markNotesChanged();
         }
     }
     else if (msg.isNoteOff())
     {
         int note = msg.getNoteNumber();
+        auto oldSize = heldNotes.size();
         heldNotes.erase(std::remove(heldNotes.begin(), heldNotes.end(), note), heldNotes.end());
+        if (!params.latch && heldNotes.size() != oldSize)
+            markNotesChanged();
     }
 }
 
 int Arpeggiator::nextNote()
 {
-    auto& notes = activeNotes();
+    const auto& notes = orderedNotesForPattern();
     if (notes.empty()) return -1;
 
     int totalSteps = (int)notes.size() * params.octaves;
@@ -138,17 +190,22 @@ int Arpeggiator::nextNote()
             break;
 
         case Pattern::Random:
-        case Pattern::RandomLatch:
         {
             int r = randInt(totalSteps);
             noteIdx = r % (int)notes.size();
             oct     = r / (int)notes.size();
             break;
         }
+
+        case Pattern::RandomLatch:
+            noteIdx = arpIndex % (int)notes.size();
+            oct     = arpIndex / (int)notes.size();
+            arpIndex = (arpIndex + 1) % totalSteps;
+            break;
     }
 
     if (noteIdx < 0 || noteIdx >= (int)notes.size()) return -1;
-    return notes[noteIdx] + oct * 12;
+    return notes[(size_t)noteIdx] + oct * 12;
 }
 
 void Arpeggiator::sendNoteOff(juce::MidiBuffer& buf, int sample)
@@ -176,14 +233,13 @@ void Arpeggiator::processBlock(juce::MidiBuffer& outputMidi, int startSample, in
     }
 
     float rateBeats    = kRateBeats[juce::jlimit(0, kNumRates - 1, params.rateIdx)];
-    double beatsPerSec = bpm / 60.0;
+    double effectiveBpm = params.sync ? bpm : 120.0;
+    double beatsPerSec = effectiveBpm / 60.0;
     stepSamples        = (rateBeats / beatsPerSec) * sr;
 
     // Apply swing: alternate long/short steps
     double swingFactor = 1.0 + (swingToggle == 0 ? params.swing : -params.swing) * 0.5;
     double currentStepSamples = stepSamples * swingFactor;
-    gateSamples        = currentStepSamples * (double)params.gate;
-
     for (int s = 0; s < numSamples; ++s)
     {
         double prevPhase = stepPhase;

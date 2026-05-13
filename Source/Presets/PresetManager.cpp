@@ -8,6 +8,7 @@ juce::String PresetManager::categoryToString(Category c)
 {
     switch (c)
     {
+        case Category::All:        return "All";
         case Category::Bass:       return "Bass";
         case Category::Arp:        return "Arp";
         case Category::Pad:        return "Pad";
@@ -15,8 +16,11 @@ juce::String PresetManager::categoryToString(Category c)
         case Category::Percussion: return "Percussion";
         case Category::Lead:       return "Lead";
         case Category::Other:      return "Other";
-        default:                   return "Other";
+        case Category::NumCategories:
+            break;
     }
+
+    return "Other";
 }
 
 PresetManager::Category PresetManager::categoryFromString(const juce::String& s)

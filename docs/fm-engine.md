@@ -6,7 +6,7 @@ GLIESE 710 implements a **10-operator FM synthesizer** with 40 configurable algo
 
 ## Operator Model
 
-Each `FMOperator` is a sine oscillator with:
+Each `FMOperator` is an oscillator with a selectable waveform:
 
 ```
 frequency  = noteFreq × ratio + fine_detune
@@ -19,7 +19,10 @@ phase     += frequency / sampleRate
 - **Fine**: ±1 semitone continuous offset
 - **Ratio offset**: additive modulation amount applied before fine tune, currently exposed for operators 0–4 in the modulation matrix
 - **Feedback**: operator feeds its own previous output back into its phase (`feedback × π` radians)
-- **Fixed freq mode**: operator uses a fixed Hz rather than tracking the note — useful for noise-like tones or additive constant partials
+- **Waveform**: sine, triangle, saw, square, pulse, or noise
+- **Velocity depth**: scales operator level by note velocity
+- **Key scale depth**: raises or lowers operator level by keyboard position relative to C4
+- **Fixed freq mode**: operator uses its fixed-frequency path rather than tracking the note. No APVTS knob exposes `fixedHz` yet, so the current UI path uses the operator default.
 
 ## Algorithm Encoding
 
@@ -98,7 +101,7 @@ Each operator has its own `ADSREnvelope` that scales the operator output level. 
 
 - Modulators that fade out as the note progresses (harmonic evolution)
 - Carriers that attack at different rates
-- Operators that re-trigger independently via the mod matrix
+- Operators with independent attack, decay, sustain, and release contours under the FM layer envelope
 
 Operator envelope parameters: `op{N}_adsr_{a,d,s,r}` where N is 0–9.
 
@@ -106,6 +109,7 @@ Operator envelope parameters: `op{N}_adsr_{a,d,s,r}` where N is 0–9.
 
 | Parameter | Range | Description |
 |---|---|---|
+| `osc_fm_on` | bool | Hard enable/disable for the FM engine |
 | `osc_fm_algorithm` | 0–39 | Algorithm selection |
 | `osc_fm_level` | 0.0–1.0 | Overall FM output level |
 | `osc_fm_octave` | −3–+3 | Octave transpose |
@@ -115,6 +119,9 @@ Operator envelope parameters: `op{N}_adsr_{a,d,s,r}` where N is 0–9.
 | `op{N}_level` | 0.0–1.0 | Operator output level |
 | `op{N}_feedback` | 0.0–1.0 | Self-feedback depth |
 | `op{N}_fixed` | bool | Fixed frequency mode |
+| `op{N}_wave` | 0–5 | Sine / Triangle / Saw / Square / Pulse / Noise |
+| `op{N}_vel` | 0.0–1.0 | Velocity depth |
+| `op{N}_key` | −1.0–+1.0 | Keyboard level scaling around C4 |
 | `op{N}_adsr_{a,d,s,r}` | — | Per-operator envelope |
 
 The modulation matrix can target `FM_Op0_Ratio` through `FM_Op4_Ratio`. These destinations add to the operator ratio before fine tuning, which is useful for controlled ratio bends and evolving inharmonic tones.

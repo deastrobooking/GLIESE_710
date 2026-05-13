@@ -40,24 +40,28 @@ private:
     double bpm = 120.0;
     Params params;
 
-    std::vector<int> heldNotes;     // currently pressed keys (sorted)
+    std::vector<int> heldNotes;     // currently pressed keys, in played order
     std::vector<int> latchedNotes;  // latched
+    std::vector<int> sortedNotes;   // rebuilt only when active notes change
+    std::vector<int> randomLatchOrder;
     int arpIndex   = 0;             // position in the pattern
     int octaveStep = 0;
     int direction  = 1;            // +1 or -1 for UpDown/DownUp
 
     // Timing (in samples)
-    double samplesPerBeat    = 24000.0;
     double stepPhase         = 0.0;  // 0..1 within current step
-    double gateSamples       = 0.0;
     double stepSamples       = 0.0;
     bool   noteIsOn          = false;
     int    currentNoteNumber = -1;
     int    swingToggle       = 0;
 
     uint32_t rngState = 42;
+    bool sortedNotesDirty = true;
+    bool randomLatchDirty = true;
 
     std::vector<int>& activeNotes();
+    const std::vector<int>& orderedNotesForPattern();
+    void markNotesChanged();
     int  nextNote();
     void sendNoteOff(juce::MidiBuffer& buf, int sample);
     void sendNoteOn(juce::MidiBuffer& buf, int sample, int note);

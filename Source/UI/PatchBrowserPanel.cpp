@@ -89,7 +89,7 @@ void PatchBrowserPanel::textEditorTextChanged(juce::TextEditor& e)
 // Constructor
 //──────────────────────────────────────────────────────────────────────────────
 
-PatchBrowserPanel::PatchBrowserPanel(PresetManager& pm) : pm(pm)
+PatchBrowserPanel::PatchBrowserPanel(PresetManager& presetManager) : pm(presetManager)
 {
     setVisible(false);
 

@@ -10,7 +10,7 @@ dest_value += source_value × amount
 
 Multiple slots can share the same destination — their contributions accumulate.
 
-## Sources (25)
+## Sources (25 + None)
 
 | ID | Source | Range | Notes |
 |---|---|---|---|
@@ -20,7 +20,7 @@ Multiple slots can share the same destination — their contributions accumulate
 | 6 | Env_3D | 0 to +1 | 3D oscillator ADSR |
 | 7 | Env_FM | 0 to +1 | FM envelope |
 | 8 | Env_WT | 0 to +1 | Wavetable envelope |
-| 9 | Env_VA | 0 to +1 | Virtual analog envelope |
+| 9 | Env_VA | 0 to +1 | Maximum of the four virtual analog layer envelopes |
 | 10 | Env_FilterA | 0 to +1 | Filter A envelope |
 | 11 | Env_FilterB | 0 to +1 | Filter B envelope |
 | 12 | Velocity | 0 to +1 | MIDI note velocity |
@@ -31,7 +31,7 @@ Multiple slots can share the same destination — their contributions accumulate
 | 17 | ChanPressure | 0 to +1 | MIDI channel pressure |
 | 18–25 | Macro1–Macro8 | 0 to +1 | Panel macro knobs |
 
-## Destinations (50)
+## Destinations (78 + None)
 
 | ID | Destination | Base range | Modulation effect |
 |---|---|---|---|
@@ -63,6 +63,13 @@ Multiple slots can share the same destination — their contributions accumulate
 | 48 | Osc3D_ZRatio | 0.25–4.0 | Adds to z-axis motion ratio |
 | 49 | Osc3D_Fold | 0–1.0 | Adds to coordinate fold amount |
 | 50 | Osc3D_Drive | 0.25–4.0 | Adds to output shaper drive |
+| 51 | VA_Shape | 0–5.0 | Adds to VA 1 shape morph, scaled across the full shape range |
+| 52 | VA_Ring | 0–1.0 | Adds to VA 1 ring modulation amount |
+| 53 | VA_Fold | 0–1.0 | Adds to VA 1 wavefold amount |
+| 54–60 | VA2_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 2 |
+| 61–67 | VA3_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 3 |
+| 68–74 | VA4_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 4 |
+| 75–78 | LFO1–4_SyncRate | 0–10 | Adds to synced LFO rate index, scaled across the sync-rate table |
 
 ## Bipolar vs Unipolar
 
@@ -78,11 +85,12 @@ Use **unipolar** for sources like velocity, envelopes, or macros where 0 means "
 ## Processing Order
 
 ```
-1. LFO::processBlock(numSamples)   ← one value per LFO per block
-2. EnvelopeBank::processAndGet()   ← per sample in voice render loop
-3. buildModSources()               ← copy LFO+env values into ModValues
-4. ModMatrix::process()            ← accumulate destinations
-5. syncParams()                    ← apply dest offsets to engine params
+1. LFO params are applied and `LFOEngine::processBlock()` produces one value per LFO for the block
+2. Mod slots and macro parameters are read from cached APVTS pointers
+3. `buildModSources()` copies LFO, current envelope, MIDI, and macro values into `ModValues`
+4. `ModMatrix::process()` accumulates destination offsets
+5. `syncParams()` applies destination offsets to engine params
+6. `EnvelopeBank::processAndGet()` advances envelopes per sample during voice rendering
 ```
 
 ## Slot Parameters

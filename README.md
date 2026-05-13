@@ -2,7 +2,7 @@
 
 **A 3D Function Oscillator Synthesizer Plugin**
 
-GLIESE 710 is a polyphonic synthesizer plugin built in C++20 and JUCE 8. Its centerpiece is a novel **3D Function Oscillator** — instead of selecting a waveform, you design the mathematical space the waveform travels through. Around it sits a 10-operator FM engine, anti-aliased wavetable oscillator, virtual analog oscillator, dual multimode filter, 32-slot modulation matrix, 4 LFOs, arpeggiator, and a full preset system.
+GLIESE 710 is a polyphonic synthesizer plugin built in C++20 and JUCE 8. Its centerpiece is a novel **3D Function Oscillator** — instead of selecting a waveform, you design the mathematical space the waveform travels through. Around it sits a 10-operator FM engine, anti-aliased wavetable oscillator, four virtual analog oscillator layers, dual multimode filter, 32-slot modulation matrix, 4 LFOs, arpeggiator, and a full preset system.
 
 ---
 
@@ -76,9 +76,9 @@ ctest --test-dir build --output-on-failure
 | **3D Function**  | 10 mathematical field types, 5 path types, domain warping, coordinate folding, field-frequency control, chaos injection, field morphing |
 | **FM (10-op)**   | 10 operators, 40 algorithms (DX7-compatible 0–31 + 8 extended), per-operator ADSR + feedback |
 | **Wavetable**    | 2048-sample tables, 10 mipmap levels, Catmull-Rom interpolation, table morphing |
-| **Virtual Analog** | PolyBLEP saw/square/triangle/pulse, 8-voice unison with stereo spread |
+| **Virtual Analog** | 4 independent VA layers, continuous shape morph, PolyBLEP saw/square/pulse, reverse saw, triangle, sine, 8-voice unison, stereo spread, ring modulation, wave folding |
 
-All four oscillators mix additively. Each has an independent level, octave transpose, and ADSR envelope.
+The 3D, FM, wavetable, and four VA layers mix additively. Each engine or layer has an independent level, octave transpose, and ADSR envelope.
 
 ### 3D Oscillator Fields
 
@@ -132,9 +132,9 @@ AM+  AM- (ring modulation variants)
 
 32 slots. Each slot: **Source → Destination → Amount (−1 to +1) → Bipolar toggle**
 
-**25 sources** including LFO1–4, all 7 envelopes, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, 8 macro knobs.
+**25 sources** including LFO1–4, 7 envelope source groups, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, and 8 macro knobs.
 
-**50 destinations** including 3D oscillator math controls, FM operator levels and ratios, both filter cutoffs/resonances/drives, LFO rates and amounts, master volume/pan, arp gate/rate.
+**78 usable destinations** including 3D oscillator math controls, FM operator levels and ratios, wavetable position, all VA layer shape/PW/detune/spread/level/ring/fold controls, both filter cutoffs/resonances/drives, LFO rates/amounts/sync rates, master volume/pan, arp gate/rate.
 
 ### Arpeggiator
 
@@ -156,9 +156,11 @@ GLIESE_710/
 ├── docs/                        ← Developer documentation
 │   ├── architecture.md
 │   ├── oscillator-3d.md
+│   ├── 3D_OSC_math.md
 │   ├── fm-engine.md
 │   ├── modulation-matrix.md
 │   ├── filter.md
+│   ├── arpeggiator.md
 │   ├── preset-system.md
 │   ├── build-targets.md
 │   └── contributing.md

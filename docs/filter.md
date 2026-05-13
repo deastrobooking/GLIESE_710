@@ -118,10 +118,10 @@ Drive before the filter, not after — this means resonance at high drive produc
 | `filter_{s}_drive` | 0–1.0 | Pre-filter saturation |
 | `filter_{s}_env_amt` | −1 to +1 | Envelope depth (octaves) |
 | `filter_{s}_lfo_amt` | −1 to +1 | LFO depth (octaves) |
-| `filter_{s}_adsr_a` | 0.001–10s | Env attack |
-| `filter_{s}_adsr_d` | 0.001–10s | Env decay |
+| `filter_{s}_adsr_a` | 0.001–60s | Env attack |
+| `filter_{s}_adsr_d` | 0.001–60s | Env decay |
 | `filter_{s}_adsr_s` | 0–1.0 | Env sustain level |
-| `filter_{s}_adsr_r` | 0.001–10s | Env release |
+| `filter_{s}_adsr_r` | 0.001–60s | Env release |
 
 ### Global
 | Parameter | Range | Description |

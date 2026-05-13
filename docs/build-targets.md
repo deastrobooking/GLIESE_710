@@ -91,6 +91,7 @@ Individual test filtering:
 ./build/GLIESE_Tests_artefacts/GLIESE_Tests "[envelope]"
 ./build/GLIESE_Tests_artefacts/GLIESE_Tests "[filter]"
 ./build/GLIESE_Tests_artefacts/GLIESE_Tests "[osc3d]"
+./build/GLIESE_Tests_artefacts/GLIESE_Tests "[arp]"
 ```
 
 ## GitHub Actions CI (Planned — Phase 6)

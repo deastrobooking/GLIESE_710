@@ -8,9 +8,26 @@
 #include "../Source/Engine/Filter/DualFilter.h"
 #include "../Source/Engine/Modulation/ModMatrix.h"
 #include "../Source/Engine/LFO/LFOEngine.h"
+#include "../Source/Engine/Arpeggiator/Arpeggiator.h"
 #include <vector>
 
 using Catch::Approx;
+
+static std::vector<int> collectArpNoteOns(Arpeggiator& arp, int numSamples)
+{
+    juce::MidiBuffer midi;
+    arp.processBlock(midi, 0, numSamples);
+
+    std::vector<int> notes;
+    for (const auto meta : midi)
+    {
+        const auto msg = meta.getMessage();
+        if (msg.isNoteOn())
+            notes.push_back(msg.getNoteNumber());
+    }
+
+    return notes;
+}
 
 //──────────────────────────────────────────────────────────────────────────────
 TEST_CASE("ADSREnvelope basic lifecycle", "[envelope]")
@@ -568,4 +585,88 @@ TEST_CASE("FMAlgorithm processes operators once per sample", "[fm]")
 
     REQUIRE(maxAbs > 0.001f);
     REQUIRE(maxAbs <= 1.f);
+}
+
+//──────────────────────────────────────────────────────────────────────────────
+TEST_CASE("Arpeggiator honours played order separately from sorted patterns", "[arp]")
+{
+    Arpeggiator arp;
+    arp.prepare(3200.0);
+
+    Arpeggiator::Params p;
+    p.pattern = Arpeggiator::Pattern::AsPlayed;
+    p.rateIdx = 0;
+    p.sync = false;
+    p.gate = 0.5f;
+    arp.setParams(p);
+
+    arp.handleMidi(juce::MidiMessage::noteOn(1, 64, (juce::uint8)100));
+    arp.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
+    arp.handleMidi(juce::MidiMessage::noteOn(1, 67, (juce::uint8)100));
+
+    auto asPlayed = collectArpNoteOns(arp, 160);
+    REQUIRE(asPlayed.size() >= 3);
+    REQUIRE(asPlayed[0] == 64);
+    REQUIRE(asPlayed[1] == 60);
+    REQUIRE(asPlayed[2] == 67);
+
+    arp.reset();
+    p.pattern = Arpeggiator::Pattern::Up;
+    arp.setParams(p);
+    arp.handleMidi(juce::MidiMessage::noteOn(1, 67, (juce::uint8)100));
+    arp.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
+    arp.handleMidi(juce::MidiMessage::noteOn(1, 64, (juce::uint8)100));
+
+    auto sorted = collectArpNoteOns(arp, 160);
+    REQUIRE(sorted.size() >= 3);
+    REQUIRE(sorted[0] == 60);
+    REQUIRE(sorted[1] == 64);
+    REQUIRE(sorted[2] == 67);
+}
+
+TEST_CASE("Arpeggiator sync toggle chooses host tempo or internal tempo", "[arp]")
+{
+    Arpeggiator::Params p;
+    p.pattern = Arpeggiator::Pattern::Up;
+    p.rateIdx = 0;
+    p.gate = 0.5f;
+
+    Arpeggiator hostSynced;
+    hostSynced.prepare(3200.0);
+    hostSynced.setHostBPM(240.0);
+    p.sync = true;
+    hostSynced.setParams(p);
+    hostSynced.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
+    REQUIRE(!collectArpNoteOns(hostSynced, 30).empty());
+
+    Arpeggiator freeRunning;
+    freeRunning.prepare(3200.0);
+    freeRunning.setHostBPM(240.0);
+    p.sync = false;
+    freeRunning.setParams(p);
+    freeRunning.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
+    REQUIRE(collectArpNoteOns(freeRunning, 30).empty());
+}
+
+TEST_CASE("Arpeggiator random latch repeats its shuffled order", "[arp]")
+{
+    Arpeggiator arp;
+    arp.prepare(3200.0);
+
+    Arpeggiator::Params p;
+    p.pattern = Arpeggiator::Pattern::RandomLatch;
+    p.rateIdx = 0;
+    p.sync = false;
+    p.gate = 0.5f;
+    arp.setParams(p);
+
+    arp.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
+    arp.handleMidi(juce::MidiMessage::noteOn(1, 64, (juce::uint8)100));
+    arp.handleMidi(juce::MidiMessage::noteOn(1, 67, (juce::uint8)100));
+
+    auto notes = collectArpNoteOns(arp, 320);
+    REQUIRE(notes.size() >= 6);
+    REQUIRE(notes[0] == notes[3]);
+    REQUIRE(notes[1] == notes[4]);
+    REQUIRE(notes[2] == notes[5]);
 }
