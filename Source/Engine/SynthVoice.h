@@ -4,6 +4,7 @@
 #include "Oscillators/FMAlgorithm.h"
 #include "Oscillators/WavetableOsc.h"
 #include "Oscillators/VAOscillator.h"
+#include "Oscillators/KarplusStrong.h"
 #include "Envelopes/EnvelopeBank.h"
 #include "LFO/LFOEngine.h"
 #include "Filter/DualFilter.h"
@@ -12,8 +13,9 @@
 class SynthVoice
 {
 public:
-    static constexpr int kVoiceId = -1;
+    static constexpr int kVoiceId   = -1;
     static constexpr int kNumVAOscs = 4;
+    static constexpr int kNum3DOscs = 6;
 
     void prepare(double sampleRate);
     void reset();
@@ -42,19 +44,26 @@ private:
     float  velocity = 1.f;
     int    age      = 0;
 
-    // Portamento state: portaHz glides toward portaTargetHz each block
+    // Portamento state
     float  portaHz       = 0.f;
     float  portaTargetHz = 0.f;
 
-    // MIDI mod source values set from handleMidi — read in buildModSources()
+    // MIDI mod source values
     float midiCCs[(int)ModSource::NumSources] = {};
 
     double sampleRate = 48000.0;
 
-    Osc3D       osc3d;
-    FMAlgorithm fm;
+    // Engine state (set in syncParams, read in renderBlock)
+    int  current3dCount   = 1;
+    bool currentUseDualFM = false;
+
+    std::array<Osc3D, kNum3DOscs> osc3dArray;
+    FMAlgorithm  fm;
+    FMAlgorithm  fm2;
     WavetableOsc wtOsc;
     std::array<VAOscillator, kNumVAOscs> vaOscs;
+    KarplusStrong ksOsc;
+    KarplusStrong::Params cachedKSParams;
 
     EnvelopeBank envBank;
     LFOEngine    lfo;
@@ -64,9 +73,6 @@ private:
     ModValues modSources, modDests;
 
     // ── Parameter pointer cache ───────────────────────────────────────────────
-    // Caching std::atomic<float>* from APVTS eliminates string construction and
-    // hash-map lookups on the audio thread. Built during engine setup, with a
-    // render-time fallback only for unusual host lifecycle ordering.
     struct ParamCache
     {
         struct EnvPtrs {
@@ -131,6 +137,23 @@ private:
             std::atomic<float>* octave  = nullptr;
             EnvPtrs env;
         };
+        struct KSPtrs {
+            std::atomic<float>* on         = nullptr;
+            std::atomic<float>* level      = nullptr;
+            std::atomic<float>* octave     = nullptr;
+            std::atomic<float>* decay      = nullptr;
+            std::atomic<float>* brightness = nullptr;
+            std::atomic<float>* stiffness  = nullptr;
+            std::atomic<float>* morph      = nullptr;
+            std::atomic<float>* position   = nullptr;
+            EnvPtrs env;
+        };
+        struct EngineConfigPtrs {
+            std::atomic<float>* osc3dCount  = nullptr;
+            std::atomic<float>* osc3dDetune = nullptr;
+            std::atomic<float>* fmDual      = nullptr;
+            std::atomic<float>* fmDetune    = nullptr;
+        };
         struct FilterPtrs {
             std::atomic<float>* type      = nullptr;
             std::atomic<float>* cutoff    = nullptr;
@@ -174,20 +197,21 @@ private:
         std::array<LFOPtrs,       4> lfos;
         std::array<ModSlotPtrs,  32> mods;
         std::array<std::atomic<float>*, 8> macros {};
-        MasterPtrs master;
-        Osc3DPtrs osc3d;
-        FMPtrs fm;
-        WTPtrs wt;
+        MasterPtrs       master;
+        Osc3DPtrs        osc3d;
+        FMPtrs           fm;
+        WTPtrs           wt;
         std::array<VAPtrs, kNumVAOscs> va;
-        FilterPtrs filterA;
-        FilterPtrs filterB;
+        KSPtrs           ks;
+        EngineConfigPtrs engineConfig;
+        FilterPtrs       filterA;
+        FilterPtrs       filterB;
         std::atomic<float>* filterRouting = nullptr;
 
         bool built = false;
     };
     ParamCache pc;
 
-    // Read all APVTS params and configure sub-engines
     void syncParams();
     void buildModSources();
 

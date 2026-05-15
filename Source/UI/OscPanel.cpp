@@ -72,8 +72,8 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
 
     if (oscId == "3d")
     {
-        modeBoxA.addItemList({"SinSum","SinProduct","Ripple","Torus","Vortex",
-                              "Noise","Lorenz","Dipole","Folded","Chebyshev"}, 1);
+        modeBoxA.addItemList({"Harmonic","Chord","Shell","Gravity",
+                              "Formant","Metallic","Tension","Body"}, 1);
         modeBoxB.addItemList({"Circle","Spiral","Lissajous","Random","Orbit"}, 1);
         modeBoxA.setTooltip("3D Field");
         modeBoxB.setTooltip("3D Path");
@@ -96,6 +96,15 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         setupExtraSlider(extra9,  "osc_3d_fold",      "Coordinate Fold",  extraAtt9);
         setupExtraSlider(extra10, "osc_3d_drive",     "Field Drive",      extraAtt10);
         numExtraSliders = 10;
+    }
+    else if (oscId == "ks")
+    {
+        setupExtraSlider(extra1, "osc_ks_decay",      "Decay (0=short, 1=long)",         extraAtt1);
+        setupExtraSlider(extra2, "osc_ks_brightness", "Brightness (loop LPF blend)",      extraAtt2);
+        setupExtraSlider(extra3, "osc_ks_stiffness",  "Stiffness (all-pass dispersion)",  extraAtt3);
+        setupExtraSlider(extra4, "osc_ks_morph",      "Excitation morph (noise→glitch)",  extraAtt4);
+        setupExtraSlider(extra5, "osc_ks_position",   "Pluck position",                   extraAtt5);
+        numExtraSliders = 5;
     }
     else if (oscId.startsWith("va"))
     {
@@ -154,6 +163,14 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         makeLabel(extraLabels[7], "Z-RAT");
         makeLabel(extraLabels[8], "FOLD");
         makeLabel(extraLabels[9], "DRIVE");
+    }
+    else if (oscId == "ks")
+    {
+        makeLabel(extraLabels[0], "DECAY");
+        makeLabel(extraLabels[1], "BRIGHT");
+        makeLabel(extraLabels[2], "STIFF");
+        makeLabel(extraLabels[3], "MORPH");
+        makeLabel(extraLabels[4], "POS");
     }
     else if (oscId.startsWith("va"))
     {

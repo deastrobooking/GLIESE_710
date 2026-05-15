@@ -8,16 +8,14 @@ class Osc3D
 public:
     enum class FieldType
     {
-        SinSumXYZ = 0,     // sin(x)+cos(y)+sin(z)
-        SinProduct,        // sin(x*y)+cos(z)
-        SphericalRipple,   // sin(sqrt(x²+y²+z²))
-        Torus,             // torus surface scan
-        VortexField,       // curl-like attractor
-        TurbulenceNoise,   // value-noise field
-        LorenzAttractor,   // Lorenz system
-        MagneticDipole,    // dipole B-field magnitude
-        FoldedSpace,       // abs-fold fractal
-        ChebyshevMorph,    // Chebyshev T4+T5+T6
+        HarmonicLattice = 0, // sin(x) + a*sin(2y+z) + b*sin(3z+x) — harmonic series
+        ChordField,          // x=root y=third z=fifth — chordal axis ratios
+        ResonanceShell,      // sin(k * dist) — spherical harmonic shells
+        IntervalGravity,     // gravity wells at root / fifth / octave positions
+        FormantVowel,        // Gaussian formant envelopes along axes
+        MetallicRatio,       // blend harmonic vs irrational (sqrt2/phi) ratios
+        TensionResolution,   // blend stable harmonic + tense nonlinear
+        BodyEdgeAir,         // x=body y=edge y=air — timbral axis model
         NumFields
     };
 
@@ -33,7 +31,7 @@ public:
 
     struct Params
     {
-        FieldType field     = FieldType::SinSumXYZ;
+        FieldType field     = FieldType::HarmonicLattice;
         PathType  path      = PathType::Circle;
         float     radius    = 1.0f;
         float     depth     = 1.0f;

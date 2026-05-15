@@ -20,6 +20,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
 
     osc3dPanel = std::make_unique<OscPanel>(apvts, "3d", "3D OSCILLATOR");
     oscWTPanel = std::make_unique<OscPanel>(apvts, "wt", "WAVETABLE");
+    ksPanel    = std::make_unique<OscPanel>(apvts, "ks", "KARPLUS-STRONG");
 
     vaTabs.setTabBarDepth(24);
     vaTabs.setOutline(0);
@@ -43,6 +44,30 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     oscillatorsTab->addAndMakeVisible(*osc3dPanel);
     oscillatorsTab->addAndMakeVisible(vaTabs);
     oscillatorsTab->addAndMakeVisible(*oscWTPanel);
+    oscillatorsTab->addAndMakeVisible(*ksPanel);
+
+    // ── Engine config strip (inside oscillators tab) ──────────────────────────
+    auto makeEngLabel = [&](juce::Label& l, const juce::String& text) {
+        l.setText(text, juce::dontSendNotification);
+        IndustrialTheme::styleLabel(l, IndustrialTheme::accentMaster(), 10.f);
+        oscillatorsTab->addAndMakeVisible(l);
+    };
+    makeEngLabel(engConfigLabels[0], "VOICES");
+    makeEngLabel(engConfigLabels[1], "DETUNE");
+    makeEngLabel(engConfigLabels[2], "DUAL FM");
+    makeEngLabel(engConfigLabels[3], "FM DTUNE");
+
+    setupKnob(eng3dCountSlider,  "engine_3d_count",  "3D Oscillator Count (1-6)",  eng3dCountAtt,  *oscillatorsTab, IndustrialTheme::accentMaster());
+    setupKnob(eng3dDetuneSlider, "engine_3d_detune", "3D Ensemble Detune",          eng3dDetuneAtt, *oscillatorsTab, IndustrialTheme::accentMaster());
+    setupKnob(engFMDetuneSlider, "engine_fm_detune", "FM Dual Engine Detune (cents)",engFMDetuneAtt,*oscillatorsTab, IndustrialTheme::accentMaster());
+
+    engFMDualButton.setButtonText("DUAL");
+    engFMDualButton.setTooltip("Enable second FM engine for stereo detuned chorus");
+    engFMDualButton.setColour(juce::ToggleButton::textColourId,        IndustrialTheme::accentMaster());
+    engFMDualButton.setColour(juce::ToggleButton::tickColourId,        IndustrialTheme::accentMaster());
+    engFMDualButton.setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(0xff555555));
+    oscillatorsTab->addAndMakeVisible(engFMDualButton);
+    engFMDualAtt = std::make_unique<BAtt>(apvts, "engine_fm_dual", engFMDualButton);
 
     tabs.addTab("OSCILLATORS", kBg, oscillatorsTab, true);
 
@@ -254,13 +279,39 @@ void MainPanel::resized()
     tabs.setBounds(area);
 
     // Layout oscillators tab content
-    if (oscillatorsTab && osc3dPanel && oscWTPanel)
+    if (oscillatorsTab && osc3dPanel && oscWTPanel && ksPanel)
     {
         auto tabArea = oscillatorsTab->getLocalBounds().reduced(6);
-        int w3 = tabArea.getWidth() / 3;
-        osc3dPanel->setBounds(tabArea.removeFromLeft(w3).reduced(3));
-        vaTabs.setBounds(tabArea.removeFromLeft(w3).reduced(3));
-        oscWTPanel->setBounds(tabArea.reduced(3));
+
+        // Engine config strip at bottom: 4 controls × 70px each
+        auto engStrip     = tabArea.removeFromBottom(84);
+        auto engLabelRow  = engStrip.removeFromTop(14);
+        auto engKnobRow   = engStrip.removeFromTop(60);
+        auto engToggleRow = engStrip;
+
+        engConfigLabels[0].setBounds(engLabelRow.removeFromLeft(70));
+        eng3dCountSlider .setBounds(engKnobRow .removeFromLeft(70));
+        engLabelRow.removeFromLeft(4); engKnobRow.removeFromLeft(4);
+
+        engConfigLabels[1].setBounds(engLabelRow.removeFromLeft(70));
+        eng3dDetuneSlider.setBounds(engKnobRow .removeFromLeft(70));
+        engLabelRow.removeFromLeft(12); engKnobRow.removeFromLeft(12);
+
+        engConfigLabels[2].setBounds(engLabelRow.removeFromLeft(70));
+        engFMDualButton  .setBounds(engToggleRow.removeFromLeft(60));
+        engLabelRow.removeFromLeft(4); engKnobRow.removeFromLeft(4);
+
+        engConfigLabels[3].setBounds(engLabelRow.removeFromLeft(70));
+        engFMDetuneSlider.setBounds(engKnobRow .removeFromLeft(70));
+
+        tabArea.removeFromBottom(4);
+
+        // 4 oscillator panels: 3D / VA tabs / WT / KS — each 1/4 width
+        int wPanel = tabArea.getWidth() / 4;
+        osc3dPanel->setBounds(tabArea.removeFromLeft(wPanel).reduced(3));
+        vaTabs     .setBounds(tabArea.removeFromLeft(wPanel).reduced(3));
+        oscWTPanel ->setBounds(tabArea.removeFromLeft(wPanel).reduced(3));
+        ksPanel    ->setBounds(tabArea.reduced(3));
     }
 
     // Layout FM ENGINE tab content

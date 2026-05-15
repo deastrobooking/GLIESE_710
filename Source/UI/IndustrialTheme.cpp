@@ -77,6 +77,7 @@ juce::Colour accentForOsc(const juce::String& oscId)
     if (oscId == "va3") return juce::Colour(0xfffff000);
     if (oscId == "va4") return juce::Colour(0xffff6a00);
     if (oscId == "wt") return juce::Colour(0xffffb000);
+    if (oscId == "ks") return juce::Colour(0xff00ffcc);
     return accentMaster();
 }
 

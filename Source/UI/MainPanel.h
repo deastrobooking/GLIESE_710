@@ -22,6 +22,7 @@ private:
     // Oscillator sub-panels
     std::unique_ptr<OscPanel>        osc3dPanel;
     std::unique_ptr<OscPanel>        oscWTPanel;
+    std::unique_ptr<OscPanel>        ksPanel;
     std::array<std::unique_ptr<OscPanel>, 4> vaPanels;
     std::unique_ptr<FilterPanel>     filterPanel;
     std::unique_ptr<ModMatrixPanel>  modPanel;
@@ -73,6 +74,13 @@ private:
     std::array<std::unique_ptr<CAtt>, 10> fmOpWaveAtts;
     std::array<std::unique_ptr<Att>,  10> fmOpVelAtts;
     std::array<std::unique_ptr<Att>,  10> fmOpKeyAtts;
+
+    // Engine config strip (shown at bottom of oscillators tab)
+    juce::Slider    eng3dCountSlider, eng3dDetuneSlider, engFMDetuneSlider;
+    juce::ToggleButton engFMDualButton;
+    std::array<juce::Label, 4> engConfigLabels;   // "VOICES" "DETUNE" "DUAL FM" "FM DTUNE"
+    std::unique_ptr<Att>  eng3dCountAtt, eng3dDetuneAtt, engFMDetuneAtt;
+    std::unique_ptr<BAtt> engFMDualAtt;
 
     juce::Component* oscillatorsTab = nullptr;
     juce::Component* engineTab      = nullptr;

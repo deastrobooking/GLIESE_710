@@ -66,7 +66,7 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("master_mw_range",   "Mod Wheel Range",  0.0f, 1.0f,  0.5f);
 
     // ── 3D Oscillator ─────────────────────────────────────────────────────────
-    addInt  ("osc_3d_field",    "3D Field",    0, 9, 0);
+    addInt  ("osc_3d_field",    "3D Field",    0, 7, 0);
     addInt  ("osc_3d_path",     "3D Path",     0, 4, 0);
     addFloat("osc_3d_radius",   "3D Radius",   0.1f, 4.0f, 1.0f);
     addFloat("osc_3d_depth",    "3D Depth",    0.0f, 4.0f, 1.0f);
@@ -151,6 +151,26 @@ static APVTS::ParameterLayout buildLayout()
     addVAOsc(2, "osc_va2_", false);
     addVAOsc(3, "osc_va3_", false);
     addVAOsc(4, "osc_va4_", false);
+
+    // ── Karplus-Strong Oscillator ─────────────────────────────────────────────
+    addBool  ("osc_ks_on",         "KS Enable",    true);
+    addFloat ("osc_ks_level",      "KS Level",     0.0f, 1.0f, 0.0f);
+    addFloat ("osc_ks_octave",     "KS Octave",   -3.0f, 3.0f, 0.0f);
+    addFloat ("osc_ks_decay",      "KS Decay",     0.0f, 1.0f, 0.6f);
+    addFloat ("osc_ks_brightness", "KS Brightness",0.0f, 1.0f, 0.5f);
+    addFloat ("osc_ks_stiffness",  "KS Stiffness", 0.0f, 0.95f,0.0f);
+    addFloat ("osc_ks_morph",      "KS Morph",     0.0f, 1.0f, 0.0f);
+    addFloat ("osc_ks_position",   "KS Position",  0.05f,0.95f,0.3f);
+    addEnvTime("osc_ks_adsr_a",    "KS Env Attack",  0.001f);
+    addEnvTime("osc_ks_adsr_d",    "KS Env Decay",   0.1f);
+    addFloat  ("osc_ks_adsr_s",    "KS Env Sustain", 0.0f, 1.0f, 0.0f);
+    addEnvTime("osc_ks_adsr_r",    "KS Env Release", 1.0f);
+
+    // ── Engine Configuration ──────────────────────────────────────────────────
+    addInt  ("engine_3d_count",  "3D Osc Count",   1, 6,    1);
+    addFloat("engine_3d_detune", "3D Ensemble Detune", 0.0f, 1.0f, 0.0f);
+    addBool ("engine_fm_dual",   "FM Dual Engine", false);
+    addFloat("engine_fm_detune", "FM Dual Detune", 0.0f, 100.0f, 0.0f);
 
     // ── Dual Filter ───────────────────────────────────────────────────────────
     juce::StringArray filterModes {

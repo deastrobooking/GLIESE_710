@@ -168,92 +168,98 @@ Vec3 Osc3D::foldCoordinates(Vec3 p) const
 //──────────────────────────────────────────────────────────────────────────────
 float Osc3D::evaluateField(Vec3 p, FieldType ft) const
 {
-    float f = cachedFieldFreq;
+    float f       = cachedFieldFreq;
+    float a       = params.radius;    // primary harmonic weight
+    float b       = params.depth;     // secondary weight
+    float tension = params.morphT;    // morphT reused as tension/vowel/morph
 
     switch (ft)
     {
-        case FieldType::SinSumXYZ:
-            return std::sin(p.x * 4.f * f) + std::cos(p.y * 3.f * f) + std::sin(p.z * 5.f * f);
-
-        case FieldType::SinProduct:
-            return std::sin(p.x * p.y * 2.f * f) + std::cos(p.z * 3.f * f);
-
-        case FieldType::SphericalRipple:
+        case FieldType::HarmonicLattice:
         {
-            float r = std::sqrt(p.x*p.x + p.y*p.y + p.z*p.z) + 1e-6f;
-            return std::sin(r * 6.f * f) / r;
+            float wa = juce::jlimit(0.f, 2.f, a) * 0.5f;
+            float wb = juce::jlimit(0.f, 2.f, b) * 0.25f;
+            return std::sin(p.x * f)
+                 + wa * std::sin(2.f * p.y * f + p.z)
+                 + wb * std::sin(3.f * p.z * f + p.x);
         }
 
-        case FieldType::Torus:
+        case FieldType::ChordField:
         {
-            float a = 0.7f, b = 0.3f;
-            float dist = std::sqrt(p.x*p.x + p.y*p.y);
-            float dx = dist - a;
-            float d  = std::sqrt(dx*dx + p.z*p.z) - b;
-            return std::sin(d * kTau * 2.f * f);
+            float third = 1.25f - tension * 0.05f;   // 5/4 → 6/5 (major→minor)
+            float wa = juce::jlimit(0.f, 1.f, a * 0.25f);
+            float wb = juce::jlimit(0.f, 1.f, b * 0.25f);
+            return (std::sin(p.x * f)
+                  + wa * std::sin(p.y * third * f)
+                  + wb * std::sin(p.z * 1.5f * f)) * 0.6f;
         }
 
-        case FieldType::VortexField:
+        case FieldType::ResonanceShell:
         {
-            // Cross-product vortex: (y-z, z-x, x-y) → dot with normalised input
-            Vec3 v { p.y - p.z, p.z - p.x, p.x - p.y };
-            return std::sin(v.x * 2.f * f) + std::cos(v.y * 3.f * f);
+            float d = std::sqrt(p.x*p.x + p.y*p.y + p.z*p.z) + 1e-6f;
+            float k = juce::jmax(0.5f, a + b * 2.f);
+            return std::sin(d * k * f);
         }
 
-        case FieldType::TurbulenceNoise:
+        case FieldType::IntervalGravity:
         {
-            // Value noise approximation via trig
-            float n  = std::sin((p.x * 12.9f + p.y * 4.1f) * f) * 43758.5453f;
-            n -= std::floor(n);
-            float n2 = std::sin((p.y * 7.8f + p.z * 9.3f) * f) * 43758.5453f;
-            n2 -= std::floor(n2);
-            return (n + n2 - 1.f) * 0.7f;
+            Vec3 root   { 0.f,        0.f,         0.f   };
+            Vec3 fifth  { 0.7f * a,   0.2f,       -0.1f  };
+            Vec3 octave {-0.4f,        0.6f * b,   0.3f  };
+            auto dist3 = [](Vec3 u, Vec3 v) {
+                return std::sqrt((u.x-v.x)*(u.x-v.x)+(u.y-v.y)*(u.y-v.y)+(u.z-v.z)*(u.z-v.z));
+            };
+            return std::sin(dist3(p, root) * f)
+                 + 0.6f * std::sin(dist3(p, fifth)  * 1.5f * f)
+                 + 0.4f * std::sin(dist3(p, octave) * 2.0f * f);
         }
 
-        case FieldType::LorenzAttractor:
+        case FieldType::FormantVowel:
         {
-            // Return normalised distance from strange attractor centroid
-            float dist = std::sqrt((p.x-0.f)*(p.x-0.f) + (p.y-0.f)*(p.y-0.f) + (p.z-27.f)*(p.z-27.f));
-            return std::sin(dist * 0.5f * f);
+            auto gauss = [](float x, float c, float w) {
+                float d = x - c;
+                return std::exp(-(d*d) / (2.f * w * w + 1e-6f));
+            };
+            float f1 = gauss(p.x,  0.2f + tension * 0.2f,  0.3f + params.warpAmt * 0.1f);
+            float f2 = gauss(p.y, -0.1f + tension * 0.2f,  0.25f);
+            float f3 = gauss(p.z,  0.5f - tension * 0.2f,  0.2f);
+            return f1 * std::sin(p.x * 3.f  * f)
+                 + f2 * std::sin(p.y * 6.f  * f)
+                 + f3 * std::sin(p.z * 10.f * f);
         }
 
-        case FieldType::MagneticDipole:
+        case FieldType::MetallicRatio:
         {
-            float r2 = p.x*p.x + p.y*p.y + p.z*p.z + 0.1f;
-            float r  = std::sqrt(r2);
-            float cosTheta = p.z / r;
-            return ((3.f * cosTheta * cosTheta - 1.f) / (r2 * r)) * std::sqrt(f);
+            constexpr float kSqrt2 = 1.41421356f;
+            constexpr float kPhi   = 1.61803398f;
+            float metal = juce::jlimit(0.f, 1.f, params.chaos);
+            float r2 = 2.f + metal * (kSqrt2 - 2.f);
+            float r3 = 3.f + metal * (kPhi   - 3.f);
+            return std::sin(p.x * f)
+                 + 0.5f  * std::sin(p.y * r2 * f)
+                 + 0.25f * std::sin(p.z * r3 * f);
         }
 
-        case FieldType::FoldedSpace:
+        case FieldType::TensionResolution:
         {
-            float px = p.x, py = p.y, pz = p.z;
-            for (int i = 0; i < 4; ++i)
-            {
-                px = std::abs(px) - 0.7f;
-                py = std::abs(py) - 0.7f;
-                pz = std::abs(pz) - 0.7f;
-            }
-            return std::sin(px * 5.f * f) + std::cos(py * 5.f * f) + std::sin(pz * 5.f * f);
+            float stable = std::sin(p.x * f) + 0.5f * std::sin(2.f * p.y * f);
+            float tense  = std::sin(p.x * p.y * p.z * 8.f * f);
+            return stable * (1.f - tension) + tense * tension;
         }
 
-        case FieldType::ChebyshevMorph:
+        case FieldType::BodyEdgeAir:
         {
-            // T4(x) + T5(y) + T6(z) Chebyshev polynomials
-            float xc = juce::jlimit(-1.f, 1.f, p.x);
-            float yc = juce::jlimit(-1.f, 1.f, p.y);
-            float zc = juce::jlimit(-1.f, 1.f, p.z);
-            float x = juce::jlimit(-1.f, 1.f, xc * f);
-            float y = juce::jlimit(-1.f, 1.f, yc * f);
-            float z = juce::jlimit(-1.f, 1.f, zc * f);
-            float T4x = 8.f*x*x*x*x - 8.f*x*x + 1.f;
-            float T5y = 16.f*y*y*y*y*y - 20.f*y*y*y + 5.f*y;
-            float T6z = 32.f*z*z*z*z*z*z - 48.f*z*z*z*z + 18.f*z*z - 1.f;
-            return (T4x + T5y + T6z) * 0.333f;
+            float body = std::sin(p.x * f);
+            float edge = std::sin(p.x * f + 3.f * std::sin(p.y * f));
+            float air  = std::sin(8.f * p.z * f + p.x * p.y * f);
+            return body
+                 + params.warpAmt * 0.5f * edge
+                 + params.chaos   * 0.3f * air;
         }
 
         case FieldType::NumFields:
-        default: return 0.f;
+        default:
+            return std::sin(p.x * f) + std::cos(p.y * f);
     }
 }
 

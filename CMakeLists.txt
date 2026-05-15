@@ -52,6 +52,7 @@ PRIVATE
     Source/Engine/Oscillators/FMAlgorithm.cpp
     Source/Engine/Oscillators/WavetableOsc.cpp
     Source/Engine/Oscillators/VAOscillator.cpp
+    Source/Engine/Oscillators/KarplusStrong.cpp
     Source/Engine/Envelopes/ADSREnvelope.cpp
     Source/Engine/Envelopes/EnvelopeBank.cpp
     Source/Engine/LFO/LFOEngine.cpp
@@ -112,6 +113,7 @@ if(GLIESE_BUILD_TESTS)
         Source/Engine/Modulation/ModMatrix.cpp
         Source/Engine/LFO/LFOEngine.cpp
         Source/Engine/Oscillators/VAOscillator.cpp
+        Source/Engine/Oscillators/KarplusStrong.cpp
         Source/Engine/Arpeggiator/Arpeggiator.cpp
     )
 
