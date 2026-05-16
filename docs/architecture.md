@@ -13,12 +13,13 @@ SynthEngine  (voice pool — 10 voices, oldest-note stealing)
     │
     ├── SynthVoice × 10
     │       │
-    │       ├── [LFO Engine]  (4 LFOs — processed once per block)
-    │       ├── [Mod Matrix]  (32 slots: source → dest accumulation)
+    │       ├── [LFO Engine]    (4 LFOs — processed once per block)
+    │       ├── [Mod Matrix]    (32 slots: source → dest accumulation)
     │       │
-    │       ├── Osc3D          → env3D  ─╮  field freq / z ratio / warp / fold / drive
-    │       ├── FMAlgorithm    → envFM  ─┤  additive mix
-    │       ├── WavetableOsc   → envWT  ─┤
+    │       ├── Osc3D ×6        → env3D    ─╮  ensemble detune / field / path / warp / fold / drive
+    │       ├── FMAlgorithm ×2  → envFM    ─┤  dual-engine detuned chorus (2nd engine optional)
+    │       ├── KarplusStrong   → envKS    ─┤  plucked on noteOn, self-decaying
+    │       ├── WavetableOsc    → envWT    ─┤  additive mix
     │       ├── VAOscillator ×4 → envVA1-4 ─╯
     │       │
     │       ├── DualFilter (Filter A → Filter B  or  parallel)
@@ -36,10 +37,11 @@ Stereo Output Buffer (accumulated across all active voices)
 |---|---|---|
 | `GLIESE710AudioProcessor` | `SynthEngine`, `PresetManager`, `APVTS` | PluginProcessor |
 | `SynthEngine` | `SynthVoice[10]`, `Arpeggiator`, master age/feedback effects | Engine/ |
-| `SynthVoice` | `Osc3D`, `FMAlgorithm`, `WavetableOsc`, `VAOscillator[4]`, `EnvelopeBank`, `LFOEngine`, `DualFilter`, `ModMatrix` | Engine/ |
+| `SynthVoice` | `Osc3D[6]`, `FMAlgorithm×2`, `KarplusStrong`, `WavetableOsc`, `VAOscillator[4]`, `EnvelopeBank`, `LFOEngine`, `DualFilter`, `ModMatrix` | Engine/ |
 | `FMAlgorithm` | `FMOperator[10]` | Engine/Oscillators/ |
+| `KarplusStrong` | circular delay buffer, LPF state, APF state | Engine/Oscillators/ |
 | `DualFilter` | `SingleFilter × 2`, `ADSREnvelope × 2` | Engine/Filter/ |
-| `EnvelopeBank` | `ADSREnvelope[10]` | Engine/Envelopes/ |
+| `EnvelopeBank` | `ADSREnvelope[12]` (master, 3D, FM, WT, VA×4, KS, filterA, filterB) | Engine/Envelopes/ |
 
 ## Thread Model
 
@@ -80,15 +82,16 @@ Host BPM is read by `GLIESE710AudioProcessor::processBlock()` and passed into th
 noteOn(note, vel)
   → findFreeVoice() or stealVoice() (oldest age)
       → voice.noteOn(note, vel)
-      → set frequency on all oscillators
-      → envBank.noteOn()  ← triggers all 10 voice envelopes
-      → fm.noteOn()       ← triggers per-operator envelopes
+      → set frequency on all Osc3D[6], fm, fm2, wtOsc, vaOscs[4], ksOsc
+      → ksOsc.pluck(velocity, cachedKSParams)  ← KS triggered immediately
+      → envBank.noteOn()  ← triggers all 12 voice envelopes
+      → fm.noteOn(), fm2.noteOn()  ← per-operator envelopes
       → dualFilter.noteOn()
 
 noteOff(note)
   → voice.noteOff()
       → envBank.noteOff()  ← starts release on all envelopes
-      → fm.noteOff()
+      → fm.noteOff(), fm2.noteOff()
       → dualFilter.noteOff()
 
 Voice::isActive()
@@ -123,9 +126,10 @@ The editor is a `GLIESE710AudioProcessorEditor` (default 1200×780, resizable 90
 │  ┌──────────────────────────────────────────────────┐   │
 │  │  TabbedComponent  (TabsAtTop, depth 28 px)       │   │
 │  │                                                  │   │
-│  │  Tab 1 — OSCILLATORS                             │   │
-│  │    3D OscPanel │ VA tabbed panel │ WT OscPanel   │   │
-│  │    VA tabbed panel contains VA 1–4               │   │
+│  │  Tab 1 — OSCILLATORS                                      │   │
+│  │    3D (¼) │ VA tabbed panel (¼) │ WT (¼) │ KS (¼)        │   │
+│  │    VA tabbed panel contains VA 1–4                        │   │
+│  │    Engine config strip (bottom): VOICES DETUNE DUAL FM-DTUNE │ │
 │  │                                                  │   │
 │  │  Tab 2 — FM ENGINE                               │   │
 │  │    Enable + algorithm + FM level/octave + ADSR   │   │
@@ -144,6 +148,6 @@ The editor is a `GLIESE710AudioProcessorEditor` (default 1200×780, resizable 90
 
 **Color scheme**: industrial dark faceplate, background `#050607`, and per-module accent colors from `IndustrialTheme`.
 
-**OscPanel** is a generic panel parameterized by `oscId` (`"3d"`, `"va"`, `"va2"`, `"va3"`, `"va4"`, `"wt"`). It shows a title label, enable toggle, level/octave knobs, per-oscillator ADSR, mode combo boxes, and type-specific extra sliders — all wired to APVTS parameter IDs prefixed with `osc_{oscId}_`.
+**OscPanel** is a generic panel parameterized by `oscId` (`"3d"`, `"ks"`, `"va"`, `"va2"`, `"va3"`, `"va4"`, `"wt"`). It shows a title label, enable toggle, level/octave knobs, per-oscillator ADSR, mode combo boxes, and type-specific extra sliders — all wired to APVTS parameter IDs prefixed with `osc_{oscId}_`.
 
 To change the tab layout, edit `MainPanel::resized()` in [Source/UI/MainPanel.cpp](../Source/UI/MainPanel.cpp).

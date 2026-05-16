@@ -72,7 +72,10 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
 
     if (oscId == "3d")
     {
-        modeBoxA.addItemList({"Harmonic","Chord","Shell","Gravity",
+        modeBoxA.addItemList({"SinSum","SinProd","Ripple","Torus",
+                              "Vortex","Turbulence","Lorenz","Dipole",
+                              "Folded","Chebyshev",
+                              "Harmonic","Chord","Shell","Gravity",
                               "Formant","Metallic","Tension","Body"}, 1);
         modeBoxB.addItemList({"Circle","Spiral","Lissajous","Random","Orbit"}, 1);
         modeBoxA.setTooltip("3D Field");

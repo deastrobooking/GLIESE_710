@@ -66,7 +66,7 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("master_mw_range",   "Mod Wheel Range",  0.0f, 1.0f,  0.5f);
 
     // ── 3D Oscillator ─────────────────────────────────────────────────────────
-    addInt  ("osc_3d_field",    "3D Field",    0, 7, 0);
+    addInt  ("osc_3d_field",    "3D Field",    0, 17, 0);
     addInt  ("osc_3d_path",     "3D Path",     0, 4, 0);
     addFloat("osc_3d_radius",   "3D Radius",   0.1f, 4.0f, 1.0f);
     addFloat("osc_3d_depth",    "3D Depth",    0.0f, 4.0f, 1.0f);
@@ -151,6 +151,10 @@ static APVTS::ParameterLayout buildLayout()
     addVAOsc(2, "osc_va2_", false);
     addVAOsc(3, "osc_va3_", false);
     addVAOsc(4, "osc_va4_", false);
+    addVAOsc(5, "osc_va5_", false);
+    addVAOsc(6, "osc_va6_", false);
+    addVAOsc(7, "osc_va7_", false);
+    addVAOsc(8, "osc_va8_", false);
 
     // ── Karplus-Strong Oscillator ─────────────────────────────────────────────
     addBool  ("osc_ks_on",         "KS Enable",    true);
@@ -167,10 +171,21 @@ static APVTS::ParameterLayout buildLayout()
     addEnvTime("osc_ks_adsr_r",    "KS Env Release", 1.0f);
 
     // ── Engine Configuration ──────────────────────────────────────────────────
-    addInt  ("engine_3d_count",  "3D Osc Count",   1, 6,    1);
-    addFloat("engine_3d_detune", "3D Ensemble Detune", 0.0f, 1.0f, 0.0f);
-    addBool ("engine_fm_dual",   "FM Dual Engine", false);
-    addFloat("engine_fm_detune", "FM Dual Detune", 0.0f, 100.0f, 0.0f);
+    // Two engine blocks (A=left, B=right), each covers 4 slot units.
+    // Mode 0=Multi (up to 4 individual engines), 1=FM (one FM engine, full block).
+    addInt  ("engine_block_a_mode",   "Block A Mode",   0, 1, 1); // default FM
+    addInt  ("engine_block_b_mode",   "Block B Mode",   0, 1, 0); // default Multi
+    // Slot types for Multi mode: 0=None 1=3D 2=VA 3=WT 4=KS
+    addInt  ("engine_block_a_slot_0", "Block A Slot 0", 0, 4, 0);
+    addInt  ("engine_block_a_slot_1", "Block A Slot 1", 0, 4, 0);
+    addInt  ("engine_block_a_slot_2", "Block A Slot 2", 0, 4, 0);
+    addInt  ("engine_block_a_slot_3", "Block A Slot 3", 0, 4, 0);
+    addInt  ("engine_block_b_slot_0", "Block B Slot 0", 0, 4, 1); // 3D
+    addInt  ("engine_block_b_slot_1", "Block B Slot 1", 0, 4, 2); // VA
+    addInt  ("engine_block_b_slot_2", "Block B Slot 2", 0, 4, 3); // WT
+    addInt  ("engine_block_b_slot_3", "Block B Slot 3", 0, 4, 4); // KS
+    addFloat("engine_3d_detune",  "3D Ensemble Detune", 0.0f, 1.0f, 0.0f);
+    addFloat("engine_fm_detune",  "FM Dual Detune",     0.0f, 100.0f, 0.0f);
 
     // ── Dual Filter ───────────────────────────────────────────────────────────
     juce::StringArray filterModes {

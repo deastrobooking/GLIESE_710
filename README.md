@@ -2,7 +2,7 @@
 
 **A 3D Function Oscillator Synthesizer Plugin**
 
-GLIESE 710 is a polyphonic synthesizer plugin built in C++20 and JUCE 8. Its centerpiece is a novel **3D Function Oscillator** — instead of selecting a waveform, you design the mathematical space the waveform travels through. Around it sits a 10-operator FM engine, anti-aliased wavetable oscillator, four virtual analog oscillator layers, dual multimode filter, 32-slot modulation matrix, 4 LFOs, arpeggiator, and a full preset system.
+GLIESE 710 is a polyphonic synthesizer plugin built in C++20 and JUCE 8. Its centerpiece is a novel **3D Function Oscillator** — instead of selecting a waveform, you design the mathematical space the waveform travels through. Around it sits a 10-operator FM engine (optionally dual-engine), anti-aliased wavetable oscillator, four virtual analog oscillator layers, Karplus-Strong string synthesis, dual multimode filter, 32-slot modulation matrix, 4 LFOs, arpeggiator, and a full preset system.
 
 ---
 
@@ -71,28 +71,38 @@ ctest --test-dir build --output-on-failure
 
 ### Oscillators
 
-| Engine           | Description |
-|------------------|-------------|
-| **3D Function**  | 10 mathematical field types, 5 path types, domain warping, coordinate folding, field-frequency control, chaos injection, field morphing |
-| **FM (10-op)**   | 10 operators, 40 algorithms (DX7-compatible 0–31 + 8 extended), per-operator ADSR + feedback |
-| **Wavetable**    | 2048-sample tables, 10 mipmap levels, Catmull-Rom interpolation, table morphing |
-| **Virtual Analog** | 4 independent VA layers, continuous shape morph, PolyBLEP saw/square/pulse, reverse saw, triangle, sine, 8-voice unison, stereo spread, ring modulation, wave folding |
+| Engine                | Description |
+|-----------------------|-------------|
+| **3D Function**       | 8 musical scalar fields, 5 path types, up to 6-voice ensemble with per-voice detune, domain warping, coordinate folding, field-frequency control, chaos injection, field morphing |
+| **FM (10-op)**        | 10 operators, 40 algorithms (DX7-compatible 0–31 + 8 extended), optional dual-engine mode with independent detune, per-operator ADSR + feedback |
+| **Karplus-Strong**    | Plucked string synthesis — circular delay loop, LPF brightness, all-pass stiffness, excitation morphing (white noise → glitch burst), pluck position |
+| **Wavetable**         | 2048-sample tables, 10 mipmap levels, Catmull-Rom interpolation, table morphing |
+| **Virtual Analog**    | 4 independent VA layers, continuous shape morph, PolyBLEP saw/square/pulse, reverse saw, triangle, sine, 8-voice unison, stereo spread, ring modulation, wave folding |
 
-The 3D, FM, wavetable, and four VA layers mix additively. Each engine or layer has an independent level, octave transpose, and ADSR envelope.
+All engines mix additively. Each engine or layer has an independent level, octave transpose, and ADSR envelope.
+
+### Engine Configuration
+
+The oscillators tab exposes a configuration strip for the 3D and FM engines:
+
+| Control       | Range | Effect |
+|---------------|-------|--------|
+| **3D Voices** | 1–6   | How many Osc3D instances run in parallel per voice — loudness-normalized (÷√N) |
+| **3D Detune** | 0–1 st| Semitone spread across the ensemble; instances spread symmetrically around center pitch |
+| **Dual FM**   | on/off| Activates a second FM engine sharing the same algorithm and operator params |
+| **FM Detune** | 0–100 ¢| Cent offset for the second FM engine — creates a detuned chorus effect |
 
 ### 3D Oscillator Fields
 
 ```
-SinSumXYZ      sin(x)+cos(y)+sin(z)
-SinProduct     sin(x·y)+cos(z)
-SphericalRipple sin(√(x²+y²+z²)) / r
-Torus          torus surface scan
-VortexField    curl-attractor
-TurbulenceNoise value-noise field
-LorenzAttractor Lorenz strange attractor
-MagneticDipole  dipole B-field
-FoldedSpace     abs-fold fractal (Sierpinski-like)
-ChebyshevMorph  T4(x)+T5(y)+T6(z) basis
+Harmonic   sin(x·F) + a·sin(2y·F+z) + b·sin(3z·F+x) — harmonic series layering
+Chord      x=root, y=third (major→minor via morphT), z=fifth — chordal axis ratios
+Shell      sin(dist·k·F) — concentric spherical resonance shells
+Gravity    gravity wells at root / fifth / octave positions in 3D space
+Formant    Gaussian envelope functions along each axis — vowel-like formant shaping
+Metallic   blend integer ratios → √2 / φ via chaos param — harmonic vs irrational
+Tension    stable harmonic blend + tense nonlinear product, morphed by morphT
+Body       x=body y=edge z=air — timbral axis model (warpAmt/chaos control blend)
 ```
 
 ### 3D Path Types
@@ -168,7 +178,7 @@ GLIESE_710/
 │   ├── PluginProcessor.{h,cpp}
 │   ├── PluginEditor.{h,cpp}
 │   ├── Engine/
-│   │   ├── Oscillators/
+│   │   ├── Oscillators/         ← Osc3D, FMAlgorithm, WavetableOsc, VAOscillator, KarplusStrong
 │   │   ├── Envelopes/
 │   │   ├── LFO/
 │   │   ├── Filter/
@@ -184,11 +194,12 @@ GLIESE_710/
 
 ## Roadmap
 
-- [ ] FFT-based mipmap generation (WavetableOsc)
-- [ ] 2×/4× quality modes for nonlinear 3D oscillator patches (`juce::dsp::Oversampling`)
+- [ ] 2×/4× oversampling quality mode for nonlinear 3D oscillator patches (`juce::dsp::Oversampling`)
 - [ ] FM algorithm graph visualization
 - [ ] 3D field visualizer panel (OpenGL)
+- [ ] KS per-voice stereo width (pair of delay lines with independent detune)
 - [ ] User wavetable import (drag-and-drop `.wav`)
+- [ ] FFT-based mipmap generation (WavetableOsc)
 - [ ] MPE support
 - [ ] GitHub Actions CI (macOS AU+VST3, Windows VST3, Linux LV2)
 - [ ] Factory preset bank

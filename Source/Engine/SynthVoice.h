@@ -13,9 +13,11 @@
 class SynthVoice
 {
 public:
-    static constexpr int kVoiceId   = -1;
-    static constexpr int kNumVAOscs = 4;
-    static constexpr int kNum3DOscs = 6;
+    static constexpr int kVoiceId      = -1;
+    static constexpr int kNum3DOscs    = 8;  // max 3D instances (8 slots, each can be 3D)
+    static constexpr int kNumVAOscs    = 8;  // max VA instances (4 independent param sets + 4 shared)
+    static constexpr int kNumWTOscs    = 4;  // max WT instances (shared params, ensemble)
+    static constexpr int kNumKSOscs    = 4;  // max KS instances (shared params, ensemble)
 
     void prepare(double sampleRate);
     void reset();
@@ -27,16 +29,14 @@ public:
     int  getMidiNote() const { return midiNote; }
     int  getVoiceAge() const { return age; }
 
-    // Called each block from SynthEngine — fills outputL/R buffers (accumulate)
     void renderBlock(juce::AudioBuffer<float>& buffer, int startSample, int numSamples,
                      juce::AudioProcessorValueTreeState& apvts);
 
-    // Route MIDI CC/AT/PB into mod sources (called from message-to-audio bridge)
     void setMidiCC(ModSource src, float value);
     void setHostBPM(double bpm);
     float getModDestination(ModDest dest) const { return modDests.dests[(int)dest]; }
 
-    WavetableOsc& getWavetableOsc() { return wtOsc; }
+    WavetableOsc& getWavetableOsc() { return wtOscs[0]; }
     void buildParamCache(juce::AudioProcessorValueTreeState& apvts);
 
 private:
@@ -44,25 +44,27 @@ private:
     float  velocity = 1.f;
     int    age      = 0;
 
-    // Portamento state
     float  portaHz       = 0.f;
     float  portaTargetHz = 0.f;
 
-    // MIDI mod source values
     float midiCCs[(int)ModSource::NumSources] = {};
 
     double sampleRate = 48000.0;
 
-    // Engine state (set in syncParams, read in renderBlock)
-    int  current3dCount   = 1;
-    bool currentUseDualFM = false;
+    // Active engine counts (derived in syncParams, used in renderBlock)
+    int  current3dCount    = 0;
+    int  currentVACount    = 0;
+    int  currentWTCount    = 0;
+    int  currentKSCount    = 0;
+    bool currentBlockAIsFM = true;
+    bool currentBlockBIsFM = false;
 
-    std::array<Osc3D, kNum3DOscs> osc3dArray;
+    std::array<Osc3D,         kNum3DOscs> osc3dArray;
     FMAlgorithm  fm;
     FMAlgorithm  fm2;
-    WavetableOsc wtOsc;
-    std::array<VAOscillator, kNumVAOscs> vaOscs;
-    KarplusStrong ksOsc;
+    std::array<WavetableOsc,  kNumWTOscs> wtOscs;
+    std::array<VAOscillator,  kNumVAOscs> vaOscs;
+    std::array<KarplusStrong, kNumKSOscs> ksOscs;
     KarplusStrong::Params cachedKSParams;
 
     EnvelopeBank envBank;
@@ -148,10 +150,11 @@ private:
             std::atomic<float>* position   = nullptr;
             EnvPtrs env;
         };
-        struct EngineConfigPtrs {
-            std::atomic<float>* osc3dCount  = nullptr;
+        struct SlotCfgPtrs {
+            std::atomic<float>* blockAMode = nullptr;
+            std::atomic<float>* blockBMode = nullptr;
+            std::atomic<float>* slotTypes[2][4] {};   // [block][slot]
             std::atomic<float>* osc3dDetune = nullptr;
-            std::atomic<float>* fmDual      = nullptr;
             std::atomic<float>* fmDetune    = nullptr;
         };
         struct FilterPtrs {
@@ -203,7 +206,7 @@ private:
         WTPtrs           wt;
         std::array<VAPtrs, kNumVAOscs> va;
         KSPtrs           ks;
-        EngineConfigPtrs engineConfig;
+        SlotCfgPtrs      slotCfg;
         FilterPtrs       filterA;
         FilterPtrs       filterB;
         std::atomic<float>* filterRouting = nullptr;

@@ -17,74 +17,63 @@ bool pB(std::atomic<float>* p, bool def = true) noexcept
     return p ? p->load(std::memory_order_relaxed) > 0.5f : def;
 }
 
+// VA param prefix: index 0 → "osc_va_", 1 → "osc_va2_", 4 → "osc_va5_", etc.
 juce::String vaPrefix(int index)
 {
     return index == 0 ? juce::String("osc_va_")
                       : juce::String("osc_va") + juce::String(index + 1) + "_";
 }
 
+// Map VA instance index to envelope slot (clamp at 4 available slots)
 EnvIndex vaEnvIndex(int index)
 {
     static constexpr EnvIndex envs[] = { ENV_VA, ENV_VA2, ENV_VA3, ENV_VA4 };
-    return envs[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+    return envs[juce::jlimit(0, 3, index)];
 }
 
 ModDest vaShapeDest(int index)
 {
-    static constexpr ModDest dests[] = {
-        ModDest::VA_Shape, ModDest::VA2_Shape, ModDest::VA3_Shape, ModDest::VA4_Shape
-    };
-    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+    static constexpr ModDest d[] = {
+        ModDest::VA_Shape, ModDest::VA2_Shape, ModDest::VA3_Shape, ModDest::VA4_Shape };
+    return d[juce::jlimit(0, 3, index)];
 }
-
 ModDest vaPwDest(int index)
 {
-    static constexpr ModDest dests[] = {
-        ModDest::VA_PW, ModDest::VA2_PW, ModDest::VA3_PW, ModDest::VA4_PW
-    };
-    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+    static constexpr ModDest d[] = {
+        ModDest::VA_PW, ModDest::VA2_PW, ModDest::VA3_PW, ModDest::VA4_PW };
+    return d[juce::jlimit(0, 3, index)];
 }
-
 ModDest vaDetuneDest(int index)
 {
-    static constexpr ModDest dests[] = {
-        ModDest::VA_Detune, ModDest::VA2_Detune, ModDest::VA3_Detune, ModDest::VA4_Detune
-    };
-    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+    static constexpr ModDest d[] = {
+        ModDest::VA_Detune, ModDest::VA2_Detune, ModDest::VA3_Detune, ModDest::VA4_Detune };
+    return d[juce::jlimit(0, 3, index)];
 }
-
 ModDest vaSpreadDest(int index)
 {
-    static constexpr ModDest dests[] = {
-        ModDest::VA_Spread, ModDest::VA2_Spread, ModDest::VA3_Spread, ModDest::VA4_Spread
-    };
-    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+    static constexpr ModDest d[] = {
+        ModDest::VA_Spread, ModDest::VA2_Spread, ModDest::VA3_Spread, ModDest::VA4_Spread };
+    return d[juce::jlimit(0, 3, index)];
 }
-
 ModDest vaLevelDest(int index)
 {
-    static constexpr ModDest dests[] = {
-        ModDest::VA_Level, ModDest::VA2_Level, ModDest::VA3_Level, ModDest::VA4_Level
-    };
-    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+    static constexpr ModDest d[] = {
+        ModDest::VA_Level, ModDest::VA2_Level, ModDest::VA3_Level, ModDest::VA4_Level };
+    return d[juce::jlimit(0, 3, index)];
 }
-
 ModDest vaRingDest(int index)
 {
-    static constexpr ModDest dests[] = {
-        ModDest::VA_Ring, ModDest::VA2_Ring, ModDest::VA3_Ring, ModDest::VA4_Ring
-    };
-    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+    static constexpr ModDest d[] = {
+        ModDest::VA_Ring, ModDest::VA2_Ring, ModDest::VA3_Ring, ModDest::VA4_Ring };
+    return d[juce::jlimit(0, 3, index)];
 }
-
 ModDest vaFoldDest(int index)
 {
-    static constexpr ModDest dests[] = {
-        ModDest::VA_Fold, ModDest::VA2_Fold, ModDest::VA3_Fold, ModDest::VA4_Fold
-    };
-    return dests[(size_t)juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
+    static constexpr ModDest d[] = {
+        ModDest::VA_Fold, ModDest::VA2_Fold, ModDest::VA3_Fold, ModDest::VA4_Fold };
+    return d[juce::jlimit(0, 3, index)];
 }
-}
+} // namespace
 
 float SynthVoice::midiToHz(int note, float pitchBendSemitones)
 {
@@ -94,14 +83,12 @@ float SynthVoice::midiToHz(int note, float pitchBendSemitones)
 void SynthVoice::prepare(double sr)
 {
     sampleRate = sr;
-    for (auto& osc : osc3dArray)
-        osc.prepare(sr);
+    for (auto& osc : osc3dArray) osc.prepare(sr);
     fm.prepare(sr);
     fm2.prepare(sr);
-    wtOsc.prepare(sr);
-    for (auto& va : vaOscs)
-        va.prepare(sr);
-    ksOsc.prepare(sr);
+    for (auto& wt : wtOscs) wt.prepare(sr);
+    for (auto& va : vaOscs) va.prepare(sr);
+    for (auto& ks : ksOscs) ks.prepare(sr);
     envBank.prepare(sr);
     lfo.prepare(sr);
     dualFilter.prepare(sr);
@@ -111,14 +98,12 @@ void SynthVoice::reset()
 {
     midiNote = -1;
     age      = 0;
-    for (auto& osc : osc3dArray)
-        osc.reset();
+    for (auto& osc : osc3dArray) osc.reset();
     fm.reset();
     fm2.reset();
-    wtOsc.reset();
-    for (auto& va : vaOscs)
-        va.reset();
-    ksOsc.reset();
+    for (auto& wt : wtOscs) wt.reset();
+    for (auto& va : vaOscs) va.reset();
+    for (auto& ks : ksOscs) ks.reset();
     envBank.reset();
     lfo.reset();
     dualFilter.reset();
@@ -135,15 +120,15 @@ void SynthVoice::noteOn(int note, float vel)
         portaHz = portaTargetHz;
 
     float hz = portaHz;
-    for (auto& osc : osc3dArray)
-        osc.setFrequency(hz);
+    for (auto& osc : osc3dArray) osc.setFrequency(hz);
     fm.setNoteFrequency(hz);
     fm2.setNoteFrequency(hz);
-    wtOsc.setFrequency(hz);
-    for (auto& va : vaOscs)
-        va.setFrequency(hz);
-    ksOsc.setFrequency(hz);
-    ksOsc.pluck(velocity, cachedKSParams);
+    for (auto& wt : wtOscs) wt.setFrequency(hz);
+    for (auto& va : vaOscs) va.setFrequency(hz);
+    for (auto& ks : ksOscs) {
+        ks.setFrequency(hz);
+        ks.pluck(velocity, cachedKSParams);
+    }
 
     envBank.noteOn();
     fm.noteOn();
@@ -160,10 +145,7 @@ void SynthVoice::noteOff()
     dualFilter.noteOff();
 }
 
-void SynthVoice::setHostBPM(double bpm)
-{
-    lfo.setHostBPM(bpm);
-}
+void SynthVoice::setHostBPM(double bpm)  { lfo.setHostBPM(bpm); }
 
 void SynthVoice::setMidiCC(ModSource src, float value)
 {
@@ -254,10 +236,20 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
     pc.ks.position   = get("osc_ks_position");
     cacheEnv(pc.ks.env, "osc_ks_");
 
-    pc.engineConfig.osc3dCount  = get("engine_3d_count");
-    pc.engineConfig.osc3dDetune = get("engine_3d_detune");
-    pc.engineConfig.fmDual      = get("engine_fm_dual");
-    pc.engineConfig.fmDetune    = get("engine_fm_detune");
+    // Slot configuration
+    pc.slotCfg.blockAMode   = get("engine_block_a_mode");
+    pc.slotCfg.blockBMode   = get("engine_block_b_mode");
+    pc.slotCfg.osc3dDetune  = get("engine_3d_detune");
+    pc.slotCfg.fmDetune     = get("engine_fm_detune");
+    for (int b = 0; b < 2; ++b)
+    {
+        for (int s = 0; s < 4; ++s)
+        {
+            juce::String id = juce::String("engine_block_") + (b == 0 ? "a" : "b")
+                              + "_slot_" + juce::String(s);
+            pc.slotCfg.slotTypes[b][s] = get(id);
+        }
+    }
 
     auto cacheFilter = [&](ParamCache::FilterPtrs& f, const juce::String& pfx) {
         f.type      = get(pfx + "type");
@@ -331,50 +323,65 @@ void SynthVoice::syncParams()
         return ep;
     };
 
-    // ── Engine config ─────────────────────────────────────────────────────
-    current3dCount   = juce::jlimit(1, kNum3DOscs, pI(pc.engineConfig.osc3dCount, 1));
-    currentUseDualFM = pB(pc.engineConfig.fmDual, false);
+    // ── Resolve block/slot configuration ─────────────────────────────────────
+    currentBlockAIsFM = pI(pc.slotCfg.blockAMode, 1) == 1;
+    currentBlockBIsFM = pI(pc.slotCfg.blockBMode, 0) == 1;
 
-    // ── 3D Oscillator ensemble ────────────────────────────────────────────
+    current3dCount = 0;
+    currentVACount = 0;
+    currentWTCount = 0;
+    currentKSCount = 0;
+
+    for (int b = 0; b < 2; ++b)
+    {
+        bool isFM = (b == 0) ? currentBlockAIsFM : currentBlockBIsFM;
+        if (isFM) continue;
+        for (int s = 0; s < 4; ++s)
+        {
+            int t = pI(pc.slotCfg.slotTypes[b][s], 0);
+            if      (t == 1 && current3dCount < kNum3DOscs) current3dCount++;
+            else if (t == 2 && currentVACount < kNumVAOscs) currentVACount++;
+            else if (t == 3 && currentWTCount < kNumWTOscs) currentWTCount++;
+            else if (t == 4 && currentKSCount < kNumKSOscs) currentKSCount++;
+        }
+    }
+
+    // ── 3D Oscillator ensemble ────────────────────────────────────────────────
     const auto& c3d = pc.osc3d;
     Osc3D::Params p3d;
     p3d.field    = static_cast<Osc3D::FieldType>(pI(c3d.field));
     p3d.path     = static_cast<Osc3D::PathType>(pI(c3d.path));
     p3d.radius   = juce::jlimit(0.1f, 4.0f, pF(c3d.radius, 1.f) + modDests.dests[(int)ModDest::Osc3D_Radius]);
-    p3d.depth    = juce::jlimit(0.0f, 4.0f, pF(c3d.depth, 1.f) + modDests.dests[(int)ModDest::Osc3D_Depth]);
+    p3d.depth    = juce::jlimit(0.0f, 4.0f, pF(c3d.depth, 1.f)  + modDests.dests[(int)ModDest::Osc3D_Depth]);
     p3d.warpAmt  = juce::jlimit(0.0f, 2.0f, pF(c3d.warp, 0.25f) + modDests.dests[(int)ModDest::Osc3D_Warp]);
     p3d.rotation = pF(c3d.rotation);
-    p3d.chaos    = juce::jlimit(0.f, 1.f, pF(c3d.chaos) + modDests.dests[(int)ModDest::Osc3D_Chaos]);
-    p3d.morphT   = juce::jlimit(0.f, 1.f, pF(c3d.morph) + modDests.dests[(int)ModDest::Osc3D_Morph]);
+    p3d.chaos    = juce::jlimit(0.f, 1.f, pF(c3d.chaos)       + modDests.dests[(int)ModDest::Osc3D_Chaos]);
+    p3d.morphT   = juce::jlimit(0.f, 1.f, pF(c3d.morph)       + modDests.dests[(int)ModDest::Osc3D_Morph]);
     p3d.fieldFreq = juce::jlimit(0.25f, 16.0f, pF(c3d.fieldFreq, 1.f) + modDests.dests[(int)ModDest::Osc3D_FieldFreq]);
-    p3d.zRatio    = juce::jlimit(0.25f, 4.0f, pF(c3d.zRatio, 1.f) + modDests.dests[(int)ModDest::Osc3D_ZRatio]);
-    p3d.foldAmt   = juce::jlimit(0.f, 1.f, pF(c3d.fold) + modDests.dests[(int)ModDest::Osc3D_Fold]);
-    p3d.drive     = juce::jlimit(0.25f, 4.0f, pF(c3d.drive, 1.f) + modDests.dests[(int)ModDest::Osc3D_Drive]);
+    p3d.zRatio    = juce::jlimit(0.25f, 4.0f,  pF(c3d.zRatio, 1.f)    + modDests.dests[(int)ModDest::Osc3D_ZRatio]);
+    p3d.foldAmt   = juce::jlimit(0.f, 1.f,     pF(c3d.fold)            + modDests.dests[(int)ModDest::Osc3D_Fold]);
+    p3d.drive     = juce::jlimit(0.25f, 4.0f,  pF(c3d.drive, 1.f)     + modDests.dests[(int)ModDest::Osc3D_Drive]);
 
-    // ── Portamento glide ──────────────────────────────────────────────────
+    // ── Portamento glide ──────────────────────────────────────────────────────
     float portaTime = pF(pc.master.portamento, 0.f);
     if (portaTime > 0.f)
     {
         float coef = std::exp(-1.f / (portaTime * (float)sampleRate));
         portaHz = portaTargetHz + coef * (portaHz - portaTargetHz);
     }
-    else
-    {
-        portaHz = portaTargetHz;
-    }
+    else portaHz = portaTargetHz;
 
-    // ── Global pitch offsets ──────────────────────────────────────────────
+    // ── Global pitch ──────────────────────────────────────────────────────────
     float pitchMod   = modDests.dests[(int)ModDest::OscPitch_All];
     float tuneSemi   = pF(pc.master.tune) / 100.f;
     float octaveSemi = (float)pI(pc.master.octave) * 12.f;
-    float pbRangeSemis = pF(pc.master.pbRange, 2.f);
-    float pbEffect   = midiCCs[(int)ModSource::PitchBend] * pbRangeSemis;
+    float pbEffect   = midiCCs[(int)ModSource::PitchBend] * pF(pc.master.pbRange, 2.f);
     float totalPitch = pitchMod * 12.f + tuneSemi + octaveSemi + pbEffect;
     float pitchedHz  = portaHz * std::pow(2.f, totalPitch / 12.f);
 
-    // Apply shared p3d params + per-instance detune for ensemble
-    float baseHz3d     = pitchedHz * std::pow(2.f, pF(c3d.octave));
-    float detuneSemis  = pF(pc.engineConfig.osc3dDetune, 0.f);
+    // 3D ensemble — symmetric detune per instance
+    float baseHz3d    = pitchedHz * std::pow(2.f, pF(c3d.octave));
+    float detuneSemis = pF(pc.slotCfg.osc3dDetune, 0.f);
     for (int i = 0; i < kNum3DOscs; ++i)
     {
         osc3dArray[(size_t)i].setParams(p3d);
@@ -388,7 +395,7 @@ void SynthVoice::syncParams()
     }
     envBank.get(ENV_3D).setParams(envParams(c3d.env, 0.01f, 0.2f, 1.f, 0.3f));
 
-    // ── FM Engine ─────────────────────────────────────────────────────────
+    // ── FM Engines ────────────────────────────────────────────────────────────
     const auto& cfm = pc.fm;
     int   fmAlgo = pI(cfm.algorithm);
     float fmHz   = pitchedHz * std::pow(2.f, pF(cfm.octave));
@@ -397,9 +404,9 @@ void SynthVoice::syncParams()
     fm.setVelocity(velocity);
     fm.setMidiNote(midiNote);
 
-    if (currentUseDualFM)
+    if (currentBlockBIsFM)
     {
-        float fmDetuneCents = pF(pc.engineConfig.fmDetune, 0.f);
+        float fmDetuneCents = pF(pc.slotCfg.fmDetune, 0.f);
         float hz2 = fmHz * std::pow(2.f, fmDetuneCents / 1200.f);
         fm2.setAlgorithm(fmAlgo);
         fm2.setNoteFrequency(hz2);
@@ -414,19 +421,19 @@ void SynthVoice::syncParams()
     {
         const auto& opc = pc.ops[(size_t)i];
         FMOperator::Params op;
-        float ratioMod    = i < 5 ? modDests.dests[(int)ModDest::FM_Op0_Ratio + i] : 0.f;
-        op.coarse         = pI(opc.coarse, 1);
-        op.fine           = pF(opc.fine);
-        op.ratioOffset    = ratioMod;
-        op.level          = juce::jlimit(0.f, 1.f, pF(opc.level, 1.f) +
+        float ratioMod   = i < 5 ? modDests.dests[(int)ModDest::FM_Op0_Ratio + i] : 0.f;
+        op.coarse        = pI(opc.coarse, 1);
+        op.fine          = pF(opc.fine);
+        op.ratioOffset   = ratioMod;
+        op.level         = juce::jlimit(0.f, 1.f, pF(opc.level, 1.f) +
                                 modDests.dests[(int)ModDest::FM_Op0_Level + i]);
-        op.feedback       = pF(opc.feedback);
-        op.fixedFreq      = pI(opc.fixed) != 0;
-        op.waveShape      = static_cast<FMOperator::Wave>(pI(opc.wave));
-        op.velocityDepth  = pF(opc.vel);
-        op.keyScaleDepth  = pF(opc.key);
+        op.feedback      = pF(opc.feedback);
+        op.fixedFreq     = pI(opc.fixed) != 0;
+        op.waveShape     = static_cast<FMOperator::Wave>(pI(opc.wave));
+        op.velocityDepth = pF(opc.vel);
+        op.keyScaleDepth = pF(opc.key);
         fm.getOperator(i).setParams(op);
-        if (currentUseDualFM)
+        if (currentBlockBIsFM)
             fm2.getOperator(i).setParams(op);
 
         ADSREnvelope::Params ep;
@@ -435,18 +442,21 @@ void SynthVoice::syncParams()
         ep.sustain    = pF(opc.adsrS, 0.8f);
         ep.releaseSec = juce::jmax(pF(opc.adsrR, 0.3f), fmLayerEnv.releaseSec);
         fm.getOperator(i).getEnvelope().setParams(ep);
-        if (currentUseDualFM)
+        if (currentBlockBIsFM)
             fm2.getOperator(i).getEnvelope().setParams(ep);
     }
 
-    // ── Wavetable ─────────────────────────────────────────────────────────
+    // ── Wavetable ─────────────────────────────────────────────────────────────
     const auto& cwt = pc.wt;
     float wtHz = pitchedHz * std::pow(2.f, pF(cwt.octave));
-    wtOsc.setFrequency(wtHz);
-    wtOsc.setTablePosition(pI(cwt.table), pF(cwt.pos) + modDests.dests[(int)ModDest::WT_Position]);
+    for (auto& wt : wtOscs)
+    {
+        wt.setFrequency(wtHz);
+        wt.setTablePosition(pI(cwt.table), pF(cwt.pos) + modDests.dests[(int)ModDest::WT_Position]);
+    }
     envBank.get(ENV_WT).setParams(envParams(cwt.env, 0.01f, 0.2f, 1.f, 0.3f));
 
-    // ── VA Oscillators ────────────────────────────────────────────────────
+    // ── VA Oscillators ────────────────────────────────────────────────────────
     for (int i = 0; i < kNumVAOscs; ++i)
     {
         const auto& cv = pc.va[(size_t)i];
@@ -455,8 +465,9 @@ void SynthVoice::syncParams()
 
         VAOscillator::Params vap;
         vap.shapeMorph  = juce::jlimit(0.f, 5.f,
-                                        pF(cv.shape, 1.f) + modDests.dests[(int)vaShapeDest(i)] * 5.f);
-        vap.pulseWidth  = juce::jlimit(0.05f, 0.95f, pF(cv.pw, 0.5f) + modDests.dests[(int)vaPwDest(i)]);
+                            pF(cv.shape, 1.f) + modDests.dests[(int)vaShapeDest(i)] * 5.f);
+        vap.pulseWidth  = juce::jlimit(0.05f, 0.95f,
+                            pF(cv.pw, 0.5f) + modDests.dests[(int)vaPwDest(i)]);
         vap.detune      = pF(cv.detune) + modDests.dests[(int)vaDetuneDest(i)];
         vap.unisonCount = pI(cv.unison, 1);
         vap.spread      = pF(cv.spread, 0.5f) + modDests.dests[(int)vaSpreadDest(i)];
@@ -467,7 +478,7 @@ void SynthVoice::syncParams()
         envBank.get(vaEnvIndex(i)).setParams(envParams(cv.env, 0.01f, 0.2f, 1.f, 0.3f));
     }
 
-    // ── Karplus-Strong ────────────────────────────────────────────────────
+    // ── Karplus-Strong ────────────────────────────────────────────────────────
     const auto& cks = pc.ks;
     cachedKSParams.decay      = 0.99f + 0.0099f * juce::jlimit(0.f, 1.f, pF(cks.decay, 0.6f));
     cachedKSParams.brightness = juce::jlimit(0.f, 1.f, pF(cks.brightness, 0.5f));
@@ -475,20 +486,19 @@ void SynthVoice::syncParams()
     cachedKSParams.morph      = juce::jlimit(0.f, 1.f, pF(cks.morph, 0.f));
     cachedKSParams.position   = juce::jlimit(0.05f, 0.95f, pF(cks.position, 0.3f));
     float ksHz = pitchedHz * std::pow(2.f, pF(cks.octave, 0.f));
-    ksOsc.setFrequency(ksHz);
+    for (auto& ks : ksOscs) ks.setFrequency(ksHz);
     envBank.get(ENV_KS).setParams(envParams(cks.env, 0.001f, 0.1f, 0.f, 1.0f));
 
-    // ── Filters ───────────────────────────────────────────────────────────
+    // ── Filters ───────────────────────────────────────────────────────────────
     const auto& cfa = pc.filterA;
     SingleFilter::Params fpA;
     fpA.mode      = static_cast<FilterMode>(pI(cfa.type));
     fpA.cutoff    = juce::jlimit(20.f, (float)(sampleRate * 0.49),
                                  pF(cfa.cutoff, 20000.f) * std::pow(2.f, modDests.dests[(int)ModDest::FilterA_Cutoff] * 4.f));
     fpA.resonance = juce::jlimit(0.f, 1.f, pF(cfa.resonance) + modDests.dests[(int)ModDest::FilterA_Resonance]);
-    fpA.drive     = juce::jlimit(0.f, 1.f, pF(cfa.drive) + modDests.dests[(int)ModDest::FilterA_Drive]);
+    fpA.drive     = juce::jlimit(0.f, 1.f, pF(cfa.drive)     + modDests.dests[(int)ModDest::FilterA_Drive]);
     fpA.envAmount = pF(cfa.envAmt);
     fpA.lfoAmount = pF(cfa.lfoAmt);
-
     auto envA = envParams(cfa.env, 0.05f, 0.3f, 0.f, 0.2f);
     dualFilter.getEnvA().setParams(envA);
     envBank.get(ENV_FILTER_A).setParams(envA);
@@ -499,10 +509,9 @@ void SynthVoice::syncParams()
     fpB.cutoff    = juce::jlimit(20.f, (float)(sampleRate * 0.49),
                                  pF(cfb.cutoff, 20000.f) * std::pow(2.f, modDests.dests[(int)ModDest::FilterB_Cutoff] * 4.f));
     fpB.resonance = juce::jlimit(0.f, 1.f, pF(cfb.resonance) + modDests.dests[(int)ModDest::FilterB_Resonance]);
-    fpB.drive     = juce::jlimit(0.f, 1.f, pF(cfb.drive) + modDests.dests[(int)ModDest::FilterB_Drive]);
+    fpB.drive     = juce::jlimit(0.f, 1.f, pF(cfb.drive)     + modDests.dests[(int)ModDest::FilterB_Drive]);
     fpB.envAmount = pF(cfb.envAmt);
     fpB.lfoAmount = pF(cfb.lfoAmt);
-
     auto envB = envParams(cfb.env, 0.05f, 0.3f, 0.f, 0.2f);
     dualFilter.getEnvB().setParams(envB);
     envBank.get(ENV_FILTER_B).setParams(envB);
@@ -511,7 +520,6 @@ void SynthVoice::syncParams()
     dualFilter.setFilterB(fpB);
     dualFilter.setRouting(static_cast<FilterRouting>(pI(pc.filterRouting)));
 
-    // ── Master ADSR ───────────────────────────────────────────────────────
     envBank.get(ENV_MASTER).setParams(envParams(pc.master.env, 0.01f, 0.2f, 0.8f, 0.3f));
 }
 
@@ -560,8 +568,7 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
                                   pF(lc.rate, 1.f) + modDests.dests[(int)ModDest::LFO1_Rate + i]);
         lp.sync    = pB(lc.sync, false);
         lp.syncRate = juce::jlimit(0.f, 10.f,
-                                   pF(lc.syncRate, 5.f)
-                                   + modDests.dests[(int)ModDest::LFO1_SyncRate + i] * 10.f);
+                                   pF(lc.syncRate, 5.f) + modDests.dests[(int)ModDest::LFO1_SyncRate + i] * 10.f);
         lp.amount  = juce::jlimit(0.f, 1.f,
                                   pF(lc.amount, 0.5f) + modDests.dests[(int)ModDest::LFO1_Amount + i]);
         lp.phase   = pF(lc.phase);
@@ -582,14 +589,13 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
     }
 
     for (int i = 0; i < 8; ++i)
-        modSources.sources[(int)ModSource::Macro1 + i] =
-            pF(pc.macros[(size_t)i]);
+        modSources.sources[(int)ModSource::Macro1 + i] = pF(pc.macros[(size_t)i]);
 
     buildModSources();
     modMatrix.process(modSources, modDests);
-
     syncParams();
 
+    // ── Level / enable flags ──────────────────────────────────────────────────
     float osc3dLevel = juce::jlimit(0.f, 1.f, pF(pc.osc3d.level, 0.8f) + modDests.dests[(int)ModDest::Osc3D_Level]);
     float fmLevel    = juce::jlimit(0.f, 1.f, pF(pc.fm.level));
     float wtLevel    = juce::jlimit(0.f, 1.f, pF(pc.wt.level) + modDests.dests[(int)ModDest::WT_Level]);
@@ -597,32 +603,37 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
 
     std::array<float, kNumVAOscs> vaLevels {};
     for (int i = 0; i < kNumVAOscs; ++i)
-    {
         vaLevels[(size_t)i] = juce::jlimit(0.f, 1.f,
             pF(pc.va[(size_t)i].level) + modDests.dests[(int)vaLevelDest(i)]);
-    }
 
-    float masterVol  = pF(pc.master.volume, 0.8f);
-    float masterPan  = juce::jlimit(-1.f, 1.f, pF(pc.master.pan) + modDests.dests[(int)ModDest::Master_Pan]);
-    masterVol = juce::jlimit(0.f, 1.f, masterVol + modDests.dests[(int)ModDest::Master_Volume]);
+    float masterVol  = juce::jlimit(0.f, 1.f,
+        pF(pc.master.volume, 0.8f) + modDests.dests[(int)ModDest::Master_Volume]);
+    float masterPan  = juce::jlimit(-1.f, 1.f,
+        pF(pc.master.pan) + modDests.dests[(int)ModDest::Master_Pan]);
 
     float lfoA = lfo.getValue(0);
     float lfoB = lfo.getValue(1);
 
-    const bool use3D = pB(pc.osc3d.on) && osc3dLevel > kSilent;
-    const bool useFM = pB(pc.fm.on) && fmLevel    > kSilent;
-    const bool useWT = pB(pc.wt.on) && wtLevel    > kSilent;
-    const bool useKS = pB(pc.ks.on) && ksLevel    > kSilent;
+    const bool use3D = pB(pc.osc3d.on) && osc3dLevel > kSilent && current3dCount > 0;
+    const bool useFM = pB(pc.fm.on)    && fmLevel    > kSilent && (currentBlockAIsFM || currentBlockBIsFM);
+    const bool useWT = pB(pc.wt.on)    && wtLevel    > kSilent && currentWTCount > 0;
+    const bool useKS = pB(pc.ks.on)    && ksLevel    > kSilent && currentKSCount > 0;
+
     std::array<bool, kNumVAOscs> useVA {};
-    for (int i = 0; i < kNumVAOscs; ++i)
+    for (int i = 0; i < currentVACount; ++i)
         useVA[(size_t)i] = pB(pc.va[(size_t)i].on) && vaLevels[(size_t)i] > kSilent;
 
     const float panGainL = masterVol * std::sqrt(0.5f - 0.5f * masterPan);
     const float panGainR = masterVol * std::sqrt(0.5f + 0.5f * masterPan);
 
-    // Normalisation factor for 3D ensemble — preserves loudness across voice counts
-    const float osc3dNorm = 1.f / std::sqrt(juce::jmax(1.f, (float)current3dCount));
-    const float fmDualScale = currentUseDualFM ? 0.5f : 1.f;
+    const float osc3dNorm = current3dCount > 0
+        ? 1.f / std::sqrt((float)current3dCount) : 1.f;
+    const bool  dualFM     = currentBlockAIsFM && currentBlockBIsFM;
+    const float fmScale    = dualFM ? 0.5f : 1.f;
+    const float wtNorm     = currentWTCount > 0
+        ? 1.f / std::sqrt((float)currentWTCount) : 1.f;
+    const float ksNorm     = currentKSCount > 0
+        ? 1.f / (float)currentKSCount : 1.f;
 
     auto* leftCh  = buffer.getWritePointer(0, startSample);
     auto* rightCh = buffer.getWritePointer(1, startSample);
@@ -635,6 +646,7 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
 
         if (masterEnv < kSilent)
         {
+            // Drain envelopes while tailing off
             envBank.processAndGet(ENV_3D);
             envBank.processAndGet(ENV_FM);
             envBank.processAndGet(ENV_WT);
@@ -644,12 +656,8 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             envBank.processAndGet(ENV_FILTER_A);
             envBank.processAndGet(ENV_FILTER_B);
             fm.advanceEnvelopes();
-            if (currentUseDualFM) fm2.advanceEnvelopes();
-            if (!envBank.anyActive())
-            {
-                midiNote = -1;
-                break;
-            }
+            if (dualFM) fm2.advanceEnvelopes();
+            if (!envBank.anyActive()) { midiNote = -1; break; }
             continue;
         }
 
@@ -665,6 +673,7 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
 
         float monoSig = 0.f;
 
+        // 3D ensemble
         if (use3D && env3D > kSilent)
         {
             float sum = 0.f;
@@ -673,33 +682,43 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             monoSig += sum * osc3dNorm * env3D * osc3dLevel;
         }
 
+        // FM engines
         if (useFM && envFM > kSilent)
         {
-            float fmSig = fm.processSample();
-            if (currentUseDualFM)
-                fmSig += fm2.processSample();
-            monoSig += fmSig * fmDualScale * envFM * fmLevel;
+            float fmSig = 0.f;
+            if (currentBlockAIsFM) fmSig += fm.processSample();
+            if (currentBlockBIsFM) fmSig += fm2.processSample();
+            monoSig += fmSig * fmScale * envFM * fmLevel;
         }
         else if (useFM)
         {
             fm.advanceEnvelopes();
-            if (currentUseDualFM) fm2.advanceEnvelopes();
+            if (dualFM) fm2.advanceEnvelopes();
         }
 
-        if (useKS && (ksOsc.isActive() || envKS > kSilent))
-            monoSig += ksOsc.processSample(cachedKSParams) * envKS * ksLevel;
+        // KS pool
+        for (int i = 0; i < currentKSCount; ++i)
+        {
+            if (useKS && (ksOscs[(size_t)i].isActive() || envKS > kSilent))
+                monoSig += ksOscs[(size_t)i].processSample(cachedKSParams) * envKS * ksLevel * ksNorm;
+        }
 
         float sigL = monoSig;
         float sigR = monoSig;
 
+        // WT pool (stereo)
         if (useWT && envWT > kSilent)
         {
-            auto [wtL, wtR] = wtOsc.processSample();
-            sigL += wtL * envWT * wtLevel;
-            sigR += wtR * envWT * wtLevel;
+            for (int i = 0; i < currentWTCount; ++i)
+            {
+                auto [wtL, wtR] = wtOscs[(size_t)i].processSample();
+                sigL += wtL * envWT * wtLevel * wtNorm;
+                sigR += wtR * envWT * wtLevel * wtNorm;
+            }
         }
 
-        for (int i = 0; i < kNumVAOscs; ++i)
+        // VA instances (stereo, each independent)
+        for (int i = 0; i < currentVACount; ++i)
         {
             if (useVA[(size_t)i] && envVA[i] > kSilent)
             {

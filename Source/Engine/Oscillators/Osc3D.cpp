@@ -175,6 +175,81 @@ float Osc3D::evaluateField(Vec3 p, FieldType ft) const
 
     switch (ft)
     {
+        // ── Original geometric fields ─────────────────────────────────────────
+        case FieldType::SinSumXYZ:
+            return std::sin(p.x * 4.f * f) + std::cos(p.y * 3.f * f) + std::sin(p.z * 5.f * f);
+
+        case FieldType::SinProduct:
+            return std::sin(p.x * p.y * 2.f * f) + std::cos(p.z * 3.f * f);
+
+        case FieldType::SphericalRipple:
+        {
+            float r = std::sqrt(p.x*p.x + p.y*p.y + p.z*p.z) + 1e-6f;
+            return std::sin(r * 6.f * f) / r;
+        }
+
+        case FieldType::Torus:
+        {
+            float ta = 0.7f, tb = 0.3f;
+            float dist = std::sqrt(p.x*p.x + p.y*p.y);
+            float dx = dist - ta;
+            float d  = std::sqrt(dx*dx + p.z*p.z) - tb;
+            return std::sin(d * kTau * 2.f * f);
+        }
+
+        case FieldType::VortexField:
+        {
+            Vec3 v { p.y - p.z, p.z - p.x, p.x - p.y };
+            return std::sin(v.x * 2.f * f) + std::cos(v.y * 3.f * f);
+        }
+
+        case FieldType::TurbulenceNoise:
+        {
+            float n  = std::sin((p.x * 12.9f + p.y * 4.1f) * f) * 43758.5453f;
+            n -= std::floor(n);
+            float n2 = std::sin((p.y * 7.8f + p.z * 9.3f) * f) * 43758.5453f;
+            n2 -= std::floor(n2);
+            return (n + n2 - 1.f) * 0.7f;
+        }
+
+        case FieldType::LorenzAttractor:
+        {
+            float dist = std::sqrt(p.x*p.x + p.y*p.y + (p.z-27.f)*(p.z-27.f));
+            return std::sin(dist * 0.5f * f);
+        }
+
+        case FieldType::MagneticDipole:
+        {
+            float r2 = p.x*p.x + p.y*p.y + p.z*p.z + 0.1f;
+            float r  = std::sqrt(r2);
+            float cosTheta = p.z / r;
+            return ((3.f * cosTheta * cosTheta - 1.f) / (r2 * r)) * std::sqrt(f);
+        }
+
+        case FieldType::FoldedSpace:
+        {
+            float px = p.x, py = p.y, pz = p.z;
+            for (int i = 0; i < 4; ++i)
+            {
+                px = std::abs(px) - 0.7f;
+                py = std::abs(py) - 0.7f;
+                pz = std::abs(pz) - 0.7f;
+            }
+            return std::sin(px * 5.f * f) + std::cos(py * 5.f * f) + std::sin(pz * 5.f * f);
+        }
+
+        case FieldType::ChebyshevMorph:
+        {
+            float xc = juce::jlimit(-1.f, 1.f, p.x * f);
+            float yc = juce::jlimit(-1.f, 1.f, p.y * f);
+            float zc = juce::jlimit(-1.f, 1.f, p.z * f);
+            float T4x = 8.f*xc*xc*xc*xc - 8.f*xc*xc + 1.f;
+            float T5y = 16.f*yc*yc*yc*yc*yc - 20.f*yc*yc*yc + 5.f*yc;
+            float T6z = 32.f*zc*zc*zc*zc*zc*zc - 48.f*zc*zc*zc*zc + 18.f*zc*zc - 1.f;
+            return (T4x + T5y + T6z) * 0.333f;
+        }
+
+        // ── Musical / harmonic fields ─────────────────────────────────────────
         case FieldType::HarmonicLattice:
         {
             float wa = juce::jlimit(0.f, 2.f, a) * 0.5f;

@@ -67,6 +67,7 @@ PRIVATE
     Source/UI/ModMatrixPanel.cpp
     Source/UI/ArpPanel.cpp
     Source/UI/LFOPanel.cpp
+    Source/UI/EngineSlotBar.cpp
     Source/UI/PresetBrowser.cpp
     Source/UI/PatchBrowserPanel.cpp
 )

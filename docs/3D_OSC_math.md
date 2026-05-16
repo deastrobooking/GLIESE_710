@@ -1507,22 +1507,22 @@ That means a 440 Hz note stays a 440 Hz note while the field becomes denser, bri
 
 ## Implemented Field Examples
 
-GLIESE currently exposes ten scalar fields:
+GLIESE currently exposes eight musically-named scalar fields:
 
 ```text
-SinSumXYZ       sin(4xF) + cos(3yF) + sin(5zF)
-SinProduct      sin(x*y*2F) + cos(3zF)
-SphericalRipple sin(6rF) / r
-Torus           sin(torusDistance * 4πF)
-VortexField     sin((y-z)2F) + cos((z-x)3F)
-TurbulenceNoise trig-hash value noise
-LorenzAttractor sin(distanceFromLorenzCenter * 0.5F)
-MagneticDipole  dipole magnitude scaled by sqrt(F)
-FoldedSpace     repeated abs fold, then sine/cosine field
-ChebyshevMorph  T4(x) + T5(y) + T6(z)
+Harmonic   sin(x·F) + a·sin(2y·F+z) + b·sin(3z·F+x)   harmonic series (radius/depth → a/b)
+Chord      sin(x·F) + a·sin(y·third·F) + b·sin(z·1.5·F)  chordal axes; morphT slides major→minor
+Shell      sin(dist·k·F)                                spherical resonance shells
+Gravity    sum of sin(|p–well|·F) for root/fifth/octave wells
+Formant    Gaussian envelope functions × sin along each axis — vowel/formant shaping
+Metallic   sin(x·F) + 0.5·sin(y·r₂·F) + 0.25·sin(z·r₃·F)  integer→irrational blend via chaos
+Tension    stable + tense blend via morphT
+Body       body + warpAmt·edge + chaos·air — timbral axis model
 ```
 
-`F` is `osc_3d_field_freq`. For pitched patches, values around `0.5` to `4.0` tend to stay controlled. Higher values are useful for sharp digital tones and should eventually be paired with oversampling.
+`F` is `osc_3d_field_freq`. The `radius`, `depth`, `morphT`, `warpAmt`, and `chaos` parameters take on field-specific musical meanings (harmonic weight, vowel tension, metallic blend, etc.) in each field — see [oscillator-3d.md](oscillator-3d.md) for per-field descriptions.
+
+For pitched patches, `field_freq` values around `0.5` to `4.0` tend to stay controlled. Higher values produce sharper, more digital tones and should eventually be paired with oversampling.
 
 ## Implemented Path Examples
 
@@ -1554,7 +1554,7 @@ This makes the oscillator revisit mirrored regions of the same field. It is espe
 Stable bell:
 
 ```text
-osc_3d_field      = SphericalRipple
+osc_3d_field      = Shell (2)
 osc_3d_path       = Circle
 osc_3d_radius     = 1.2
 osc_3d_depth      = 0.7
@@ -1564,13 +1564,12 @@ osc_3d_fold       = 0.0
 osc_3d_drive      = 1.2
 ```
 
-Digital folded lead:
+Digital tension lead:
 
 ```text
-osc_3d_field      = SinProduct
+osc_3d_field      = Tension (6)
 osc_3d_path       = Lissajous
-osc_3d_radius     = 1.0
-osc_3d_depth      = 1.0
+osc_3d_morph      = 0.7
 osc_3d_field_freq = 4.0
 osc_3d_z_ratio    = 2.0
 osc_3d_warp       = 0.35
@@ -1578,10 +1577,10 @@ osc_3d_fold       = 0.45
 osc_3d_drive      = 2.0
 ```
 
-Organic drift texture:
+Organic vowel drift:
 
 ```text
-osc_3d_field      = TurbulenceNoise
+osc_3d_field      = Formant (4)
 osc_3d_path       = RandomWalk
 osc_3d_radius     = 1.5
 osc_3d_depth      = 1.2
@@ -1592,17 +1591,17 @@ osc_3d_fold       = 0.10
 osc_3d_drive      = 1.0
 ```
 
-Chebyshev harmonic scan:
+Chord pad with morph:
 
 ```text
-osc_3d_field      = ChebyshevMorph
+osc_3d_field      = Chord (1)
 osc_3d_path       = Circle
-osc_3d_radius     = 0.8
+osc_3d_radius     = 1.0
 osc_3d_depth      = 0.8
 osc_3d_field_freq = 1.0
-osc_3d_morph      = 0.25
+osc_3d_morph      = 0.25    ← slides toward minor
 osc_3d_z_ratio    = 1.0
-osc_3d_drive      = 1.4
+osc_3d_drive      = 1.2
 ```
 
 ## Modulation Examples
