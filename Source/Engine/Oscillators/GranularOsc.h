@@ -8,6 +8,8 @@ class GranularOsc
 public:
     static constexpr int kMaxGrains = 96;
     static constexpr int kSourceSamples = 65536;
+    static constexpr int kTableFrames = 128;
+    static constexpr int kFrameSamples = kSourceSamples / kTableFrames;
 
     enum class TriggerMode
     {
@@ -91,6 +93,8 @@ private:
         bool active = false;
         float readPos = 0.f;
         float step = 1.f;
+        int loopStart = 0;
+        int loopLength = kFrameSamples;
         int age = 0;
         int length = 1;
         float gain = 1.f;
@@ -127,7 +131,7 @@ private:
 
     void generateDefaultSource();
     void triggerGrain();
-    float readSource(float pos) const;
+    float readSource(float pos, int loopStart, int loopLength) const;
     float windowValue(Window window, float phase) const;
     void configureBody();
     std::pair<float, float> processBody(float dryL, float dryR);

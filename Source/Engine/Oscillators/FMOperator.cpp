@@ -20,6 +20,7 @@ void FMOperator::setParams(const Params& p)
     params.spectralResonance = juce::jlimit(0.f, 1.f, params.spectralResonance);
     params.velocityDepth = juce::jlimit(0.f, 1.f, params.velocityDepth);
     params.keyScaleDepth = juce::jlimit(-1.f, 1.f, params.keyScaleDepth);
+    params.phaseOffset   -= std::floor(params.phaseOffset);
     params.waveShape     = static_cast<Wave>(juce::jlimit(0, (int)Wave::NumWaves - 1,
                                                           (int)params.waveShape));
     updateDerived();
@@ -43,7 +44,7 @@ void FMOperator::updateDerived()
 
 void FMOperator::reset()
 {
-    phase   = 0.f;
+    phase   = params.phaseOffset;
     prevOut = 0.f;
     env.reset();
 }
@@ -52,7 +53,7 @@ void FMOperator::noteOn()
 {
     if (params.keyOnReset)
     {
-        phase = 0.f;
+        phase = params.phaseOffset;
         prevOut = 0.f;
     }
 

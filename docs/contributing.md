@@ -67,11 +67,15 @@ Parameter IDs are immutable after shipping — changing an ID breaks saved prese
 
 1. Create `Source/Engine/Oscillators/MyOsc.{h,cpp}`
 2. Implement `prepare(double sampleRate)`, `reset()`, `setFrequency(float)`, `processSample()` returning `std::pair<float,float>`
-3. Add as a member of `SynthVoice`
+3. Add as a member of `SynthVoice`, usually as an eight-instance array if it is a slot oscillator
 4. Call `prepare` in `SynthVoice::prepare()` and `reset` in `SynthVoice::reset()`
-5. Add per-oscillator parameters (level, octave, ADSR at minimum)
-6. Mix its output into `sigL / sigR` in `SynthVoice::renderBlock()`
-7. Add the `.cpp` to `target_sources` in `CMakeLists.txt`
+5. Add per-oscillator parameters (level, octave, ADSR at minimum) in `PluginProcessor.cpp`
+6. Add envelope IDs to `EnvelopeBank` if the oscillator needs per-slot envelopes
+7. Cache/read/sync parameters in `SynthVoice`
+8. Mix its output into `sigL / sigR` in `SynthVoice::renderBlock()`
+9. Add the type to `EngineSlotBar`, `MainPanel`, and `OscPanel`
+10. Add the `.cpp` to `target_sources` in `CMakeLists.txt`
+11. Add a focused test and update the relevant docs
 
 ## Testing Philosophy
 
@@ -128,6 +132,7 @@ If a filter produces NaN or Inf: add `juce::FloatVectorOperations::disableDenorm
 |---|---|
 | Parameter layout | `PluginProcessor.cpp` → `buildLayout()` |
 | 3D field types | `Osc3D.h` (enum) + `Osc3D.cpp` (evaluateField switch) |
+| Terrain oscillator | `TerrainOsc.h/.cpp` + `OscPanel.cpp` + `MainPanel.cpp` |
 | FM algorithms | `FMAlgorithm.cpp` (kAlgorithms table) + `FMAlgorithm.h` (kNumAlgorithms) |
 | Filter modes | `FilterTypes.h` (enum) + `DualFilter.cpp` (processSample switch) |
 | Mod sources/dests | `ModSource.h` / `ModDest.h` + `PluginProcessor.cpp` + `SynthVoice.cpp`/`SynthEngine.cpp` + UI |

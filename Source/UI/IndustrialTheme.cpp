@@ -71,14 +71,16 @@ juce::Colour accentLFO(int index)
 
 juce::Colour accentForOsc(const juce::String& oscId)
 {
-    if (oscId == "3d") return juce::Colour(0xff39ff14);
+    if (oscId.startsWith("3d")) return juce::Colour(0xff39ff14);
     if (oscId == "va")  return juce::Colour(0xffff2bd6);
     if (oscId == "va2") return juce::Colour(0xff00e5ff);
     if (oscId == "va3") return juce::Colour(0xfffff000);
     if (oscId == "va4") return juce::Colour(0xffff6a00);
-    if (oscId == "wt") return juce::Colour(0xffffb000);
-    if (oscId == "ks") return juce::Colour(0xff00ffcc);
-    if (oscId == "grain") return juce::Colour(0xff7dff7a);
+    if (oscId.startsWith("va")) return juce::Colour(0xff00e5ff);
+    if (oscId.startsWith("wt")) return juce::Colour(0xffffb000);
+    if (oscId.startsWith("ks")) return juce::Colour(0xff00ffcc);
+    if (oscId.startsWith("grain")) return juce::Colour(0xff7dff7a);
+    if (oscId.startsWith("terrain")) return juce::Colour(0xff7aa6ff);
     return accentMaster();
 }
 

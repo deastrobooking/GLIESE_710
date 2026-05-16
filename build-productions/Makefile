@@ -973,6 +973,33 @@ Source/Engine/Oscillators/Osc3D.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_Tests.dir/build.make CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/Osc3D.cpp.s
 .PHONY : Source/Engine/Oscillators/Osc3D.cpp.s
 
+Source/Engine/Oscillators/TerrainOsc.o: Source/Engine/Oscillators/TerrainOsc.cpp.o
+.PHONY : Source/Engine/Oscillators/TerrainOsc.o
+
+# target to build an object file
+Source/Engine/Oscillators/TerrainOsc.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/Engine/Oscillators/TerrainOsc.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_Tests.dir/build.make CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/TerrainOsc.cpp.o
+.PHONY : Source/Engine/Oscillators/TerrainOsc.cpp.o
+
+Source/Engine/Oscillators/TerrainOsc.i: Source/Engine/Oscillators/TerrainOsc.cpp.i
+.PHONY : Source/Engine/Oscillators/TerrainOsc.i
+
+# target to preprocess a source file
+Source/Engine/Oscillators/TerrainOsc.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/Engine/Oscillators/TerrainOsc.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_Tests.dir/build.make CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/TerrainOsc.cpp.i
+.PHONY : Source/Engine/Oscillators/TerrainOsc.cpp.i
+
+Source/Engine/Oscillators/TerrainOsc.s: Source/Engine/Oscillators/TerrainOsc.cpp.s
+.PHONY : Source/Engine/Oscillators/TerrainOsc.s
+
+# target to generate assembly for a file
+Source/Engine/Oscillators/TerrainOsc.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/Engine/Oscillators/TerrainOsc.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_Tests.dir/build.make CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/TerrainOsc.cpp.s
+.PHONY : Source/Engine/Oscillators/TerrainOsc.cpp.s
+
 Source/Engine/Oscillators/VAOscillator.o: Source/Engine/Oscillators/VAOscillator.cpp.o
 .PHONY : Source/Engine/Oscillators/VAOscillator.o
 
@@ -2366,6 +2393,9 @@ help:
 	@echo "... Source/Engine/Oscillators/Osc3D.o"
 	@echo "... Source/Engine/Oscillators/Osc3D.i"
 	@echo "... Source/Engine/Oscillators/Osc3D.s"
+	@echo "... Source/Engine/Oscillators/TerrainOsc.o"
+	@echo "... Source/Engine/Oscillators/TerrainOsc.i"
+	@echo "... Source/Engine/Oscillators/TerrainOsc.s"
 	@echo "... Source/Engine/Oscillators/VAOscillator.o"
 	@echo "... Source/Engine/Oscillators/VAOscillator.i"
 	@echo "... Source/Engine/Oscillators/VAOscillator.s"

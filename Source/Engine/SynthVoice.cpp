@@ -24,11 +24,40 @@ juce::String vaPrefix(int index)
                       : juce::String("osc_va") + juce::String(index + 1) + "_";
 }
 
-// Map VA instance index to envelope slot (clamp at 4 available slots)
+juce::String indexedOscPrefix(const juce::String& base, int index)
+{
+    return index == 0 ? juce::String("osc_") + base + "_"
+                      : juce::String("osc_") + base + juce::String(index + 1) + "_";
+}
+
+EnvIndex osc3dEnvIndex(int index)
+{
+    return static_cast<EnvIndex>((int)ENV_3D1 + juce::jlimit(0, SynthVoice::kNum3DOscs - 1, index));
+}
+
+EnvIndex wtEnvIndex(int index)
+{
+    return static_cast<EnvIndex>((int)ENV_WT1 + juce::jlimit(0, SynthVoice::kNumWTOscs - 1, index));
+}
+
 EnvIndex vaEnvIndex(int index)
 {
-    static constexpr EnvIndex envs[] = { ENV_VA, ENV_VA2, ENV_VA3, ENV_VA4 };
-    return envs[juce::jlimit(0, 3, index)];
+    return static_cast<EnvIndex>((int)ENV_VA1 + juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index));
+}
+
+EnvIndex ksEnvIndex(int index)
+{
+    return static_cast<EnvIndex>((int)ENV_KS1 + juce::jlimit(0, SynthVoice::kNumKSOscs - 1, index));
+}
+
+EnvIndex granEnvIndex(int index)
+{
+    return static_cast<EnvIndex>((int)ENV_GRAN1 + juce::jlimit(0, SynthVoice::kNumGranOscs - 1, index));
+}
+
+EnvIndex terrainEnvIndex(int index)
+{
+    return static_cast<EnvIndex>((int)ENV_TERRAIN1 + juce::jlimit(0, SynthVoice::kNumTerrainOscs - 1, index));
 }
 
 ModDest vaShapeDest(int index)
@@ -90,6 +119,7 @@ void SynthVoice::prepare(double sr)
     for (auto& va : vaOscs) va.prepare(sr);
     for (auto& ks : ksOscs) ks.prepare(sr);
     for (auto& grain : granularOscs) grain.prepare(sr);
+    for (auto& terrain : terrainOscs) terrain.prepare(sr);
     envBank.prepare(sr);
     lfo.prepare(sr);
     dualFilter.prepare(sr);
@@ -106,6 +136,7 @@ void SynthVoice::reset()
     for (auto& va : vaOscs) va.reset();
     for (auto& ks : ksOscs) ks.reset();
     for (auto& grain : granularOscs) grain.reset();
+    for (auto& terrain : terrainOscs) terrain.reset();
     envBank.reset();
     lfo.reset();
     dualFilter.reset();
@@ -128,30 +159,38 @@ void SynthVoice::noteOn(int note, float vel)
     for (auto& wt : wtOscs) wt.setFrequency(hz);
     if (pc.built)
     {
-        WavetableOsc::Params wtp;
-        wtp.warpMode = static_cast<WavetableOsc::WarpMode>(pI(pc.wt.warpMode));
-        wtp.warpAmount = pF(pc.wt.warp);
-        wtp.pdBreakpoint = pF(pc.wt.pdBreak, 0.75f);
-        wtp.unison = pI(pc.wt.unison, 1);
-        wtp.detune = pF(pc.wt.detune);
-        wtp.spread = pF(pc.wt.spread);
-        wtp.positionSpread = pF(pc.wt.posSpread);
-        wtp.phaseOffset = pF(pc.wt.phase);
-        wtp.randomPhase = pF(pc.wt.random);
-        wtp.retrigger = pB(pc.wt.retrig, true);
-        for (auto& wt : wtOscs) wt.setParams(wtp);
+        for (int i = 0; i < kNumWTOscs; ++i)
+        {
+            const auto& cwt = pc.wt[(size_t)i];
+            WavetableOsc::Params wtp;
+            wtp.warpMode = static_cast<WavetableOsc::WarpMode>(pI(cwt.warpMode));
+            wtp.warpAmount = pF(cwt.warp);
+            wtp.pdBreakpoint = pF(cwt.pdBreak, 0.75f);
+            wtp.unison = pI(cwt.unison, 1);
+            wtp.detune = pF(cwt.detune);
+            wtp.spread = pF(cwt.spread);
+            wtp.positionSpread = pF(cwt.posSpread);
+            wtp.phaseOffset = pF(cwt.phase);
+            wtp.randomPhase = pF(cwt.random);
+            wtp.retrigger = pB(cwt.retrig, true);
+            wtOscs[(size_t)i].setParams(wtp);
+        }
     }
     for (auto& wt : wtOscs) wt.noteOn();
     for (auto& va : vaOscs) va.setFrequency(hz);
-    for (auto& ks : ksOscs) {
+    for (int i = 0; i < kNumKSOscs; ++i)
+    {
+        auto& ks = ksOscs[(size_t)i];
         ks.setFrequency(hz);
-        ks.pluck(velocity, cachedKSParams);
+        ks.pluck(velocity, cachedKSParams[(size_t)i]);
     }
     for (auto& grain : granularOscs)
     {
         grain.setFrequency(hz);
         grain.noteOn(note, velocity);
     }
+    for (auto& terrain : terrainOscs)
+        terrain.setFrequency(hz);
 
     envBank.noteOn();
     fm.noteOn();
@@ -209,45 +248,64 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
     pc.master.mwRange    = get("master_mw_range");
     cacheEnv(pc.master.env, "master_");
 
-    pc.osc3d.field     = get("osc_3d_field");
-    pc.osc3d.path      = get("osc_3d_path");
-    pc.osc3d.radius    = get("osc_3d_radius");
-    pc.osc3d.depth     = get("osc_3d_depth");
-    pc.osc3d.warp      = get("osc_3d_warp");
-    pc.osc3d.rotation  = get("osc_3d_rotation");
-    pc.osc3d.chaos     = get("osc_3d_chaos");
-    pc.osc3d.morph     = get("osc_3d_morph");
-    pc.osc3d.fieldFreq = get("osc_3d_field_freq");
-    pc.osc3d.zRatio    = get("osc_3d_z_ratio");
-    pc.osc3d.fold      = get("osc_3d_fold");
-    pc.osc3d.drive     = get("osc_3d_drive");
-    pc.osc3d.on        = get("osc_3d_on");
-    pc.osc3d.level     = get("osc_3d_level");
-    pc.osc3d.octave    = get("osc_3d_octave");
-    cacheEnv(pc.osc3d.env, "osc_3d_");
+    for (int i = 0; i < kNum3DOscs; ++i)
+    {
+        auto pfx = indexedOscPrefix("3d", i);
+        auto& c = pc.osc3d[(size_t)i];
+        c.field     = get(pfx + "field");
+        c.path      = get(pfx + "path");
+        c.radius    = get(pfx + "radius");
+        c.depth     = get(pfx + "depth");
+        c.warp      = get(pfx + "warp");
+        c.rotation  = get(pfx + "rotation");
+        c.chaos     = get(pfx + "chaos");
+        c.morph     = get(pfx + "morph");
+        c.fieldFreq = get(pfx + "field_freq");
+        c.zRatio    = get(pfx + "z_ratio");
+        c.fold      = get(pfx + "fold");
+        c.drive     = get(pfx + "drive");
+        c.on        = get(pfx + "on");
+        c.level     = get(pfx + "level");
+        c.octave    = get(pfx + "octave");
+        cacheEnv(c.env, pfx);
+    }
 
-    pc.fm.on        = get("osc_fm_on");
-    pc.fm.algorithm = get("osc_fm_algorithm");
-    pc.fm.level     = get("osc_fm_level");
-    pc.fm.octave    = get("osc_fm_octave");
-    cacheEnv(pc.fm.env, "osc_fm_");
+    auto cacheFM = [&](ParamCache::FMPtrs& f, const juce::String& pfx)
+    {
+        f.on         = get(pfx + "on");
+        f.algorithm  = get(pfx + "algorithm");
+        f.level      = get(pfx + "level");
+        f.octave     = get(pfx + "octave");
+        f.detune     = get(pfx + "detune");
+        f.phase      = get(pfx + "phase");
+        f.algoMorph  = get(pfx + "algo_morph");
+        f.indexScale = get(pfx + "index");
+        cacheEnv(f.env, pfx);
+    };
+    cacheFM(pc.fm,  "osc_fm_");
+    cacheFM(pc.fmB, "osc_fm2_");
 
-    pc.wt.on     = get("osc_wt_on");
-    pc.wt.table  = get("osc_wt_table");
-    pc.wt.pos    = get("osc_wt_pos");
-    pc.wt.warpMode = get("osc_wt_warp_mode");
-    pc.wt.warp   = get("osc_wt_warp");
-    pc.wt.pdBreak = get("osc_wt_pd_break");
-    pc.wt.unison = get("osc_wt_unison");
-    pc.wt.detune = get("osc_wt_detune");
-    pc.wt.spread = get("osc_wt_spread");
-    pc.wt.posSpread = get("osc_wt_pos_spread");
-    pc.wt.phase  = get("osc_wt_phase");
-    pc.wt.random = get("osc_wt_random");
-    pc.wt.retrig = get("osc_wt_retrig");
-    pc.wt.level  = get("osc_wt_level");
-    pc.wt.octave = get("osc_wt_octave");
-    cacheEnv(pc.wt.env, "osc_wt_");
+    for (int i = 0; i < kNumWTOscs; ++i)
+    {
+        auto pfx = indexedOscPrefix("wt", i);
+        auto& c = pc.wt[(size_t)i];
+        c.on     = get(pfx + "on");
+        c.table  = get(pfx + "table");
+        c.pos    = get(pfx + "pos");
+        c.warpMode = get(pfx + "warp_mode");
+        c.warp   = get(pfx + "warp");
+        c.pdBreak = get(pfx + "pd_break");
+        c.unison = get(pfx + "unison");
+        c.detune = get(pfx + "detune");
+        c.spread = get(pfx + "spread");
+        c.posSpread = get(pfx + "pos_spread");
+        c.phase  = get(pfx + "phase");
+        c.random = get(pfx + "random");
+        c.retrig = get(pfx + "retrig");
+        c.level  = get(pfx + "level");
+        c.octave = get(pfx + "octave");
+        cacheEnv(c.env, pfx);
+    }
 
     for (int i = 0; i < kNumVAOscs; ++i)
     {
@@ -266,43 +324,77 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         cacheEnv(v.env, pfx);
     }
 
-    pc.ks.on         = get("osc_ks_on");
-    pc.ks.level      = get("osc_ks_level");
-    pc.ks.octave     = get("osc_ks_octave");
-    pc.ks.decay      = get("osc_ks_decay");
-    pc.ks.brightness = get("osc_ks_brightness");
-    pc.ks.stiffness  = get("osc_ks_stiffness");
-    pc.ks.morph      = get("osc_ks_morph");
-    pc.ks.position   = get("osc_ks_position");
-    cacheEnv(pc.ks.env, "osc_ks_");
+    for (int i = 0; i < kNumKSOscs; ++i)
+    {
+        auto pfx = indexedOscPrefix("ks", i);
+        auto& c = pc.ks[(size_t)i];
+        c.on         = get(pfx + "on");
+        c.level      = get(pfx + "level");
+        c.octave     = get(pfx + "octave");
+        c.decay      = get(pfx + "decay");
+        c.brightness = get(pfx + "brightness");
+        c.stiffness  = get(pfx + "stiffness");
+        c.morph      = get(pfx + "morph");
+        c.position   = get(pfx + "position");
+        cacheEnv(c.env, pfx);
+    }
 
-    pc.grain.on          = get("osc_grain_on");
-    pc.grain.triggerMode = get("osc_grain_trigger_mode");
-    pc.grain.window      = get("osc_grain_window");
-    pc.grain.position    = get("osc_grain_position");
-    pc.grain.size        = get("osc_grain_size");
-    pc.grain.density     = get("osc_grain_density");
-    pc.grain.pitch       = get("osc_grain_pitch");
-    pc.grain.spray       = get("osc_grain_spray");
-    pc.grain.jitter      = get("osc_grain_jitter");
-    pc.grain.pan         = get("osc_grain_pan");
-    pc.grain.reverse     = get("osc_grain_reverse");
-    pc.grain.scan        = get("osc_grain_scan");
-    pc.grain.freeze      = get("osc_grain_freeze");
-    pc.grain.bodyType    = get("osc_grain_body_type");
-    pc.grain.bodyRoot    = get("osc_grain_body_root");
-    pc.grain.bodySize    = get("osc_grain_body_size");
-    pc.grain.bodyDecay   = get("osc_grain_body_decay");
-    pc.grain.bodyDamp    = get("osc_grain_body_damp");
-    pc.grain.bodyBright  = get("osc_grain_body_bright");
-    pc.grain.bodyInharm  = get("osc_grain_body_inharm");
-    pc.grain.bodyExcite  = get("osc_grain_body_excite");
-    pc.grain.bodyMix     = get("osc_grain_body_mix");
-    pc.grain.bodySpread  = get("osc_grain_body_spread");
-    pc.grain.bodyModes   = get("osc_grain_body_modes");
-    pc.grain.level       = get("osc_grain_level");
-    pc.grain.octave      = get("osc_grain_octave");
-    cacheEnv(pc.grain.env, "osc_grain_");
+    for (int i = 0; i < kNumGranOscs; ++i)
+    {
+        auto pfx = indexedOscPrefix("grain", i);
+        auto& c = pc.grain[(size_t)i];
+        c.on          = get(pfx + "on");
+        c.triggerMode = get(pfx + "trigger_mode");
+        c.window      = get(pfx + "window");
+        c.position    = get(pfx + "position");
+        c.size        = get(pfx + "size");
+        c.density     = get(pfx + "density");
+        c.pitch       = get(pfx + "pitch");
+        c.spray       = get(pfx + "spray");
+        c.jitter      = get(pfx + "jitter");
+        c.pan         = get(pfx + "pan");
+        c.reverse     = get(pfx + "reverse");
+        c.scan        = get(pfx + "scan");
+        c.freeze      = get(pfx + "freeze");
+        c.bodyType    = get(pfx + "body_type");
+        c.bodyRoot    = get(pfx + "body_root");
+        c.bodySize    = get(pfx + "body_size");
+        c.bodyDecay   = get(pfx + "body_decay");
+        c.bodyDamp    = get(pfx + "body_damp");
+        c.bodyBright  = get(pfx + "body_bright");
+        c.bodyInharm  = get(pfx + "body_inharm");
+        c.bodyExcite  = get(pfx + "body_excite");
+        c.bodyMix     = get(pfx + "body_mix");
+        c.bodySpread  = get(pfx + "body_spread");
+        c.bodyModes   = get(pfx + "body_modes");
+        c.level       = get(pfx + "level");
+        c.octave      = get(pfx + "octave");
+        cacheEnv(c.env, pfx);
+    }
+
+    for (int i = 0; i < kNumTerrainOscs; ++i)
+    {
+        auto pfx = indexedOscPrefix("terrain", i);
+        auto& c = pc.terrain[(size_t)i];
+        c.on        = get(pfx + "on");
+        c.path      = get(pfx + "path");
+        c.centerX   = get(pfx + "center_x");
+        c.centerY   = get(pfx + "center_y");
+        c.radiusX   = get(pfx + "radius_x");
+        c.radiusY   = get(pfx + "radius_y");
+        c.ratioX    = get(pfx + "ratio_x");
+        c.ratioY    = get(pfx + "ratio_y");
+        c.phase     = get(pfx + "phase");
+        c.spiral    = get(pfx + "spiral");
+        c.drive     = get(pfx + "drive");
+        c.offset    = get(pfx + "offset");
+        c.smoothing = get(pfx + "smoothing");
+        c.morph     = get(pfx + "morph");
+        c.gain      = get(pfx + "gain");
+        c.level     = get(pfx + "level");
+        c.octave    = get(pfx + "octave");
+        cacheEnv(c.env, pfx);
+    }
 
     // Slot configuration
     pc.slotCfg.blockAMode   = get("engine_block_a_mode");
@@ -338,27 +430,32 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
     cacheFilter(pc.filterB, "filter_b_");
     pc.filterRouting = get("filter_routing");
 
-    for (int i = 0; i < 10; ++i)
+    auto cacheOps = [&](std::array<ParamCache::OpPtrs, 10>& ops, const juce::String& base)
     {
-        juce::String pfx = "op" + juce::String(i) + "_";
-        auto& o  = pc.ops[(size_t)i];
-        o.coarse   = get(pfx + "coarse");
-        o.fine     = get(pfx + "fine");
-        o.detune   = get(pfx + "detune");
-        o.level    = get(pfx + "level");
-        o.feedback = get(pfx + "feedback");
-        o.fixed    = get(pfx + "fixed");
-        o.wave     = get(pfx + "wave");
-        o.skirt    = get(pfx + "skirt");
-        o.resonance = get(pfx + "resonance");
-        o.keyReset = get(pfx + "key_reset");
-        o.vel      = get(pfx + "vel");
-        o.key      = get(pfx + "key");
-        o.adsrA    = get(pfx + "adsr_a");
-        o.adsrD    = get(pfx + "adsr_d");
-        o.adsrS    = get(pfx + "adsr_s");
-        o.adsrR    = get(pfx + "adsr_r");
-    }
+        for (int i = 0; i < 10; ++i)
+        {
+            juce::String pfx = base + juce::String(i) + "_";
+            auto& o  = ops[(size_t)i];
+            o.coarse   = get(pfx + "coarse");
+            o.fine     = get(pfx + "fine");
+            o.detune   = get(pfx + "detune");
+            o.level    = get(pfx + "level");
+            o.feedback = get(pfx + "feedback");
+            o.fixed    = get(pfx + "fixed");
+            o.wave     = get(pfx + "wave");
+            o.skirt    = get(pfx + "skirt");
+            o.resonance = get(pfx + "resonance");
+            o.keyReset = get(pfx + "key_reset");
+            o.vel      = get(pfx + "vel");
+            o.key      = get(pfx + "key");
+            o.adsrA    = get(pfx + "adsr_a");
+            o.adsrD    = get(pfx + "adsr_d");
+            o.adsrS    = get(pfx + "adsr_s");
+            o.adsrR    = get(pfx + "adsr_r");
+        }
+    };
+    cacheOps(pc.ops,  "op");
+    cacheOps(pc.opsB, "op2_");
 
     for (int i = 0; i < 4; ++i)
     {
@@ -412,6 +509,7 @@ void SynthVoice::syncParams()
     currentWTCount = 0;
     currentKSCount = 0;
     currentGranCount = 0;
+    currentTerrainCount = 0;
 
     for (int b = 0; b < 2; ++b)
     {
@@ -420,29 +518,15 @@ void SynthVoice::syncParams()
         for (int s = 0; s < 4; ++s)
         {
             int t = pI(pc.slotCfg.slotTypes[b][s], 0);
-            if      (t == 1 && current3dCount < kNum3DOscs) current3dCount++;
-            else if (t == 2 && currentVACount < kNumVAOscs) currentVACount++;
-            else if (t == 3 && currentWTCount < kNumWTOscs) currentWTCount++;
-            else if (t == 4 && currentKSCount < kNumKSOscs) currentKSCount++;
-            else if (t == 5 && currentGranCount < kNumGranOscs) currentGranCount++;
+            const int slotIndex = b * 4 + s;
+            if      (t == 1 && current3dCount < kNum3DOscs) active3dIndices[(size_t)current3dCount++] = slotIndex;
+            else if (t == 2 && currentVACount < kNumVAOscs) activeVAIndices[(size_t)currentVACount++] = slotIndex;
+            else if (t == 3 && currentWTCount < kNumWTOscs) activeWTIndices[(size_t)currentWTCount++] = slotIndex;
+            else if (t == 4 && currentKSCount < kNumKSOscs) activeKSIndices[(size_t)currentKSCount++] = slotIndex;
+            else if (t == 5 && currentGranCount < kNumGranOscs) activeGranIndices[(size_t)currentGranCount++] = slotIndex;
+            else if (t == 6 && currentTerrainCount < kNumTerrainOscs) activeTerrainIndices[(size_t)currentTerrainCount++] = slotIndex;
         }
     }
-
-    // ── 3D Oscillator ensemble ────────────────────────────────────────────────
-    const auto& c3d = pc.osc3d;
-    Osc3D::Params p3d;
-    p3d.field    = static_cast<Osc3D::FieldType>(pI(c3d.field));
-    p3d.path     = static_cast<Osc3D::PathType>(pI(c3d.path));
-    p3d.radius   = juce::jlimit(0.1f, 4.0f, pF(c3d.radius, 1.f) + modDests.dests[(int)ModDest::Osc3D_Radius]);
-    p3d.depth    = juce::jlimit(0.0f, 4.0f, pF(c3d.depth, 1.f)  + modDests.dests[(int)ModDest::Osc3D_Depth]);
-    p3d.warpAmt  = juce::jlimit(0.0f, 2.0f, pF(c3d.warp, 0.25f) + modDests.dests[(int)ModDest::Osc3D_Warp]);
-    p3d.rotation = pF(c3d.rotation);
-    p3d.chaos    = juce::jlimit(0.f, 1.f, pF(c3d.chaos)       + modDests.dests[(int)ModDest::Osc3D_Chaos]);
-    p3d.morphT   = juce::jlimit(0.f, 1.f, pF(c3d.morph)       + modDests.dests[(int)ModDest::Osc3D_Morph]);
-    p3d.fieldFreq = juce::jlimit(0.25f, 16.0f, pF(c3d.fieldFreq, 1.f) + modDests.dests[(int)ModDest::Osc3D_FieldFreq]);
-    p3d.zRatio    = juce::jlimit(0.25f, 4.0f,  pF(c3d.zRatio, 1.f)    + modDests.dests[(int)ModDest::Osc3D_ZRatio]);
-    p3d.foldAmt   = juce::jlimit(0.f, 1.f,     pF(c3d.fold)            + modDests.dests[(int)ModDest::Osc3D_Fold]);
-    p3d.drive     = juce::jlimit(0.25f, 4.0f,  pF(c3d.drive, 1.f)     + modDests.dests[(int)ModDest::Osc3D_Drive]);
 
     // ── Portamento glide ──────────────────────────────────────────────────────
     float portaTime = pF(pc.master.portamento, 0.f);
@@ -461,100 +545,125 @@ void SynthVoice::syncParams()
     float totalPitch = pitchMod * 12.f + tuneSemi + octaveSemi + pbEffect;
     float pitchedHz  = portaHz * std::pow(2.f, totalPitch / 12.f);
 
-    // 3D ensemble — symmetric detune per instance
-    float baseHz3d    = pitchedHz * std::pow(2.f, pF(c3d.octave));
+    // 3D instances — symmetric detune per active 3D slot, independent controls
     float detuneSemis = pF(pc.slotCfg.osc3dDetune, 0.f);
     for (int i = 0; i < kNum3DOscs; ++i)
     {
+        const auto& c3d = pc.osc3d[(size_t)i];
+        Osc3D::Params p3d;
+        p3d.field    = static_cast<Osc3D::FieldType>(pI(c3d.field));
+        p3d.path     = static_cast<Osc3D::PathType>(pI(c3d.path));
+        p3d.radius   = juce::jlimit(0.1f, 4.0f, pF(c3d.radius, 1.f) + modDests.dests[(int)ModDest::Osc3D_Radius]);
+        p3d.depth    = juce::jlimit(0.0f, 4.0f, pF(c3d.depth, 1.f)  + modDests.dests[(int)ModDest::Osc3D_Depth]);
+        p3d.warpAmt  = juce::jlimit(0.0f, 2.0f, pF(c3d.warp, 0.25f) + modDests.dests[(int)ModDest::Osc3D_Warp]);
+        p3d.rotation = pF(c3d.rotation);
+        p3d.chaos    = juce::jlimit(0.f, 1.f, pF(c3d.chaos)       + modDests.dests[(int)ModDest::Osc3D_Chaos]);
+        p3d.morphT   = juce::jlimit(0.f, 1.f, pF(c3d.morph)       + modDests.dests[(int)ModDest::Osc3D_Morph]);
+        p3d.fieldFreq = juce::jlimit(0.25f, 16.0f, pF(c3d.fieldFreq, 1.f) + modDests.dests[(int)ModDest::Osc3D_FieldFreq]);
+        p3d.zRatio    = juce::jlimit(0.25f, 4.0f,  pF(c3d.zRatio, 1.f)    + modDests.dests[(int)ModDest::Osc3D_ZRatio]);
+        p3d.foldAmt   = juce::jlimit(0.f, 1.f,     pF(c3d.fold)            + modDests.dests[(int)ModDest::Osc3D_Fold]);
+        p3d.drive     = juce::jlimit(0.25f, 4.0f,  pF(c3d.drive, 1.f)      + modDests.dests[(int)ModDest::Osc3D_Drive]);
+
         osc3dArray[(size_t)i].setParams(p3d);
         float offset = 0.f;
-        if (current3dCount > 1 && detuneSemis > 0.f)
+        int activeRank = -1;
+        for (int n = 0; n < current3dCount; ++n)
         {
-            float pos = (float)i / (float)(current3dCount - 1) * 2.f - 1.f;
+            if (active3dIndices[(size_t)n] == i)
+            {
+                activeRank = n;
+                break;
+            }
+        }
+        if (activeRank >= 0 && current3dCount > 1 && detuneSemis > 0.f)
+        {
+            float pos = (float)activeRank / (float)(current3dCount - 1) * 2.f - 1.f;
             offset = pos * detuneSemis * 0.5f;
         }
+        const float baseHz3d = pitchedHz * std::pow(2.f, pF(c3d.octave));
         osc3dArray[(size_t)i].setFrequency(baseHz3d * std::pow(2.f, offset / 12.f));
+        envBank.get(osc3dEnvIndex(i)).setParams(envParams(c3d.env, 0.01f, 0.2f, 1.f, 0.3f));
     }
-    envBank.get(ENV_3D).setParams(envParams(c3d.env, 0.01f, 0.2f, 1.f, 0.3f));
 
     // ── FM Engines ────────────────────────────────────────────────────────────
-    const auto& cfm = pc.fm;
-    int   fmAlgo = pI(cfm.algorithm);
-    float fmHz   = pitchedHz * std::pow(2.f, pF(cfm.octave));
-    fm.setAlgorithm(fmAlgo);
-    fm.setNoteFrequency(fmHz);
-    fm.setVelocity(velocity);
-    fm.setMidiNote(midiNote);
-
-    if (currentBlockBIsFM)
+    auto configureFM = [&](FMAlgorithm& engine, const ParamCache::FMPtrs& cfm,
+                           const std::array<ParamCache::OpPtrs, 10>& ops,
+                           EnvIndex envIndex, float extraDetuneCents)
     {
-        float fmDetuneCents = pF(pc.slotCfg.fmDetune, 0.f);
-        float hz2 = fmHz * std::pow(2.f, fmDetuneCents / 1200.f);
-        fm2.setAlgorithm(fmAlgo);
-        fm2.setNoteFrequency(hz2);
-        fm2.setVelocity(velocity);
-        fm2.setMidiNote(midiNote);
-    }
+        const float detuneCents = pF(cfm.detune) + extraDetuneCents;
+        const float fmHz = pitchedHz * std::pow(2.f, pF(cfm.octave))
+                                  * std::pow(2.f, detuneCents / 1200.f);
+        engine.setAlgorithm(pI(cfm.algorithm));
+        engine.setAlgorithmMorph(pF(cfm.algoMorph));
+        engine.setNoteFrequency(fmHz);
+        engine.setVelocity(velocity);
+        engine.setMidiNote(midiNote);
 
-    ADSREnvelope::Params fmLayerEnv = envParams(cfm.env, 0.01f, 0.2f, 1.f, 0.3f);
-    envBank.get(ENV_FM).setParams(fmLayerEnv);
+        ADSREnvelope::Params fmLayerEnv = envParams(cfm.env, 0.01f, 0.2f, 1.f, 0.3f);
+        envBank.get(envIndex).setParams(fmLayerEnv);
 
-    for (int i = 0; i < 10; ++i)
-    {
-        const auto& opc = pc.ops[(size_t)i];
-        FMOperator::Params op;
-        float ratioMod   = i < 5 ? modDests.dests[(int)ModDest::FM_Op0_Ratio + i] : 0.f;
-        op.coarse        = pI(opc.coarse, 1);
-        op.fine          = pF(opc.fine);
-        op.detune        = pF(opc.detune);
-        op.ratioOffset   = ratioMod;
-        op.level         = juce::jlimit(0.f, 1.f, pF(opc.level, 1.f) +
-                                modDests.dests[(int)ModDest::FM_Op0_Level + i]);
-        op.feedback      = pF(opc.feedback);
-        op.fixedFreq     = pI(opc.fixed) != 0;
-        op.waveShape     = static_cast<FMOperator::Wave>(pI(opc.wave));
-        op.spectralSkirt = pF(opc.skirt, 0.35f);
-        op.spectralResonance = pF(opc.resonance, 0.25f);
-        op.velocityDepth = pF(opc.vel);
-        op.keyScaleDepth = pF(opc.key);
-        op.keyOnReset    = pB(opc.keyReset, true);
-        fm.getOperator(i).setParams(op);
-        if (currentBlockBIsFM)
-            fm2.getOperator(i).setParams(op);
+        const float phaseOffset = pF(cfm.phase);
+        const float indexScale = juce::jlimit(0.f, 2.f, pF(cfm.indexScale, 1.f));
 
-        ADSREnvelope::Params ep;
-        ep.attackSec  = pF(opc.adsrA, 0.01f);
-        ep.decaySec   = pF(opc.adsrD, 0.5f);
-        ep.sustain    = pF(opc.adsrS, 0.8f);
-        ep.releaseSec = juce::jmax(pF(opc.adsrR, 0.3f), fmLayerEnv.releaseSec);
-        fm.getOperator(i).getEnvelope().setParams(ep);
-        if (currentBlockBIsFM)
-            fm2.getOperator(i).getEnvelope().setParams(ep);
-    }
+        for (int i = 0; i < 10; ++i)
+        {
+            const auto& opc = ops[(size_t)i];
+            FMOperator::Params op;
+            float ratioMod = i < 5 ? modDests.dests[(int)ModDest::FM_Op0_Ratio + i] : 0.f;
+            float levelMod = i < 10 ? modDests.dests[(int)ModDest::FM_Op0_Level + i] : 0.f;
+            op.coarse        = pI(opc.coarse, 1);
+            op.fine          = pF(opc.fine);
+            op.detune        = pF(opc.detune);
+            op.ratioOffset   = ratioMod;
+            op.level         = juce::jlimit(0.f, 1.f, (pF(opc.level, 1.f) + levelMod) * indexScale);
+            op.feedback      = pF(opc.feedback);
+            op.fixedFreq     = pI(opc.fixed) != 0;
+            op.waveShape     = static_cast<FMOperator::Wave>(pI(opc.wave));
+            op.spectralSkirt = pF(opc.skirt, 0.35f);
+            op.spectralResonance = pF(opc.resonance, 0.25f);
+            op.velocityDepth = pF(opc.vel);
+            op.keyScaleDepth = pF(opc.key);
+            op.phaseOffset   = phaseOffset;
+            op.keyOnReset    = pB(opc.keyReset, true);
+            engine.getOperator(i).setParams(op);
+
+            ADSREnvelope::Params ep;
+            ep.attackSec  = pF(opc.adsrA, 0.01f);
+            ep.decaySec   = pF(opc.adsrD, 0.5f);
+            ep.sustain    = pF(opc.adsrS, 0.8f);
+            ep.releaseSec = juce::jmax(pF(opc.adsrR, 0.3f), fmLayerEnv.releaseSec);
+            engine.getOperator(i).getEnvelope().setParams(ep);
+        }
+    };
+
+    configureFM(fm,  pc.fm,  pc.ops,  ENV_FM,  0.f);
+    configureFM(fm2, pc.fmB, pc.opsB, ENV_FM2,
+                currentBlockBIsFM ? pF(pc.slotCfg.fmDetune, 0.f) : 0.f);
 
     // ── Wavetable ─────────────────────────────────────────────────────────────
-    const auto& cwt = pc.wt;
-    float wtHz = pitchedHz * std::pow(2.f, pF(cwt.octave));
-    WavetableOsc::Params wtParams;
-    wtParams.warpMode = static_cast<WavetableOsc::WarpMode>(pI(cwt.warpMode));
-    wtParams.warpAmount = juce::jlimit(0.f, 1.f,
-        pF(cwt.warp) + modDests.dests[(int)ModDest::WT_Warp]);
-    wtParams.pdBreakpoint = juce::jlimit(0.f, 1.f,
-        pF(cwt.pdBreak, 0.75f) + modDests.dests[(int)ModDest::WT_PD_Break]);
-    wtParams.unison = pI(cwt.unison, 1);
-    wtParams.detune = pF(cwt.detune);
-    wtParams.spread = pF(cwt.spread);
-    wtParams.positionSpread = pF(cwt.posSpread);
-    wtParams.phaseOffset = pF(cwt.phase);
-    wtParams.randomPhase = pF(cwt.random);
-    wtParams.retrigger = pB(cwt.retrig, true);
-    for (auto& wt : wtOscs)
+    for (int i = 0; i < kNumWTOscs; ++i)
     {
+        const auto& cwt = pc.wt[(size_t)i];
+        float wtHz = pitchedHz * std::pow(2.f, pF(cwt.octave));
+        WavetableOsc::Params wtParams;
+        wtParams.warpMode = static_cast<WavetableOsc::WarpMode>(pI(cwt.warpMode));
+        wtParams.warpAmount = juce::jlimit(0.f, 1.f,
+            pF(cwt.warp) + modDests.dests[(int)ModDest::WT_Warp]);
+        wtParams.pdBreakpoint = juce::jlimit(0.f, 1.f,
+            pF(cwt.pdBreak, 0.75f) + modDests.dests[(int)ModDest::WT_PD_Break]);
+        wtParams.unison = pI(cwt.unison, 1);
+        wtParams.detune = pF(cwt.detune);
+        wtParams.spread = pF(cwt.spread);
+        wtParams.positionSpread = pF(cwt.posSpread);
+        wtParams.phaseOffset = pF(cwt.phase);
+        wtParams.randomPhase = pF(cwt.random);
+        wtParams.retrigger = pB(cwt.retrig, true);
+        auto& wt = wtOscs[(size_t)i];
         wt.setFrequency(wtHz);
         wt.setParams(wtParams);
         wt.setTablePosition(pI(cwt.table), pF(cwt.pos) + modDests.dests[(int)ModDest::WT_Position]);
+        envBank.get(wtEnvIndex(i)).setParams(envParams(cwt.env, 0.01f, 0.2f, 1.f, 0.3f));
     }
-    envBank.get(ENV_WT).setParams(envParams(cwt.env, 0.01f, 0.2f, 1.f, 0.3f));
 
     // ── VA Oscillators ────────────────────────────────────────────────────────
     for (int i = 0; i < kNumVAOscs; ++i)
@@ -579,60 +688,90 @@ void SynthVoice::syncParams()
     }
 
     // ── Karplus-Strong ────────────────────────────────────────────────────────
-    const auto& cks = pc.ks;
-    cachedKSParams.decay      = 0.99f + 0.0099f * juce::jlimit(0.f, 1.f, pF(cks.decay, 0.6f));
-    cachedKSParams.brightness = juce::jlimit(0.f, 1.f, pF(cks.brightness, 0.5f));
-    cachedKSParams.stiffness  = juce::jlimit(0.f, 0.95f, pF(cks.stiffness, 0.f));
-    cachedKSParams.morph      = juce::jlimit(0.f, 1.f, pF(cks.morph, 0.f));
-    cachedKSParams.position   = juce::jlimit(0.05f, 0.95f, pF(cks.position, 0.3f));
-    float ksHz = pitchedHz * std::pow(2.f, pF(cks.octave, 0.f));
-    for (auto& ks : ksOscs) ks.setFrequency(ksHz);
-    envBank.get(ENV_KS).setParams(envParams(cks.env, 0.001f, 0.1f, 0.f, 1.0f));
+    for (int i = 0; i < kNumKSOscs; ++i)
+    {
+        const auto& cks = pc.ks[(size_t)i];
+        auto& ksp = cachedKSParams[(size_t)i];
+        ksp.decay      = 0.99f + 0.0099f * juce::jlimit(0.f, 1.f, pF(cks.decay, 0.6f));
+        ksp.brightness = juce::jlimit(0.f, 1.f, pF(cks.brightness, 0.5f));
+        ksp.stiffness  = juce::jlimit(0.f, 0.95f, pF(cks.stiffness, 0.f));
+        ksp.morph      = juce::jlimit(0.f, 1.f, pF(cks.morph, 0.f));
+        ksp.position   = juce::jlimit(0.05f, 0.95f, pF(cks.position, 0.3f));
+        float ksHz = pitchedHz * std::pow(2.f, pF(cks.octave, 0.f));
+        ksOscs[(size_t)i].setFrequency(ksHz);
+        envBank.get(ksEnvIndex(i)).setParams(envParams(cks.env, 0.001f, 0.1f, 0.f, 1.0f));
+    }
 
     // ── Granular Oscillator Pool ──────────────────────────────────────────────
-    const auto& cg = pc.grain;
-    GranularOsc::Params gp;
-    gp.triggerMode = static_cast<GranularOsc::TriggerMode>(pI(cg.triggerMode));
-    gp.window      = static_cast<GranularOsc::Window>(pI(cg.window));
-    gp.position    = juce::jlimit(0.f, 1.f,
-        pF(cg.position, 0.5f) + modDests.dests[(int)ModDest::Gran_Position]);
-    gp.sizeMs      = juce::jlimit(5.f, 1000.f,
-        pF(cg.size, 120.f) * std::pow(2.f, modDests.dests[(int)ModDest::Gran_Size] * 3.f));
-    gp.density     = juce::jlimit(0.1f, 1200.f,
-        pF(cg.density, 35.f) * std::pow(2.f, modDests.dests[(int)ModDest::Gran_Density] * 4.f));
-    gp.pitchSemis  = juce::jlimit(-48.f, 48.f,
-        pF(cg.pitch) + modDests.dests[(int)ModDest::Gran_Pitch] * 24.f);
-    gp.spray       = juce::jlimit(0.f, 1.f,
-        pF(cg.spray, 0.18f) + modDests.dests[(int)ModDest::Gran_Spray]);
-    gp.jitter      = pF(cg.jitter, 0.04f);
-    gp.panSpread   = pF(cg.pan, 0.7f);
-    gp.reverseProb = pF(cg.reverse);
-    gp.scanSpeed   = pF(cg.scan);
-    gp.freeze      = juce::jlimit(0.f, 1.f,
-        pF(cg.freeze) + modDests.dests[(int)ModDest::Gran_Freeze]);
-    gp.bodyType    = static_cast<GranularOsc::BodyType>(pI(cg.bodyType));
-    gp.bodyRootSemis = pF(cg.bodyRoot);
-    gp.bodySize    = juce::jlimit(0.f, 1.f,
-        pF(cg.bodySize, 0.5f) + modDests.dests[(int)ModDest::Gran_BodySize]);
-    gp.bodyDecay   = pF(cg.bodyDecay, 0.5f);
-    gp.bodyDamping = juce::jlimit(0.f, 1.f,
-        pF(cg.bodyDamp, 0.35f) + modDests.dests[(int)ModDest::Gran_BodyDamping]);
-    gp.bodyBrightness = pF(cg.bodyBright, 0.6f);
-    gp.bodyInharm  = juce::jlimit(0.f, 1.f,
-        pF(cg.bodyInharm, 0.2f) + modDests.dests[(int)ModDest::Gran_BodyInharm]);
-    gp.bodyExcite  = pF(cg.bodyExcite, 0.7f);
-    gp.bodyMix     = juce::jlimit(0.f, 1.f,
-        pF(cg.bodyMix) + modDests.dests[(int)ModDest::Gran_BodyMix]);
-    gp.bodySpread  = pF(cg.bodySpread, 0.5f);
-    gp.bodyModes   = pI(cg.bodyModes, 16);
-
-    const float grainHz = pitchedHz * std::pow(2.f, pF(cg.octave));
-    for (auto& grain : granularOscs)
+    for (int i = 0; i < kNumGranOscs; ++i)
     {
-        grain.setFrequency(grainHz);
-        grain.setParams(gp);
+        const auto& cg = pc.grain[(size_t)i];
+        GranularOsc::Params gp;
+        gp.triggerMode = static_cast<GranularOsc::TriggerMode>(pI(cg.triggerMode));
+        gp.window      = static_cast<GranularOsc::Window>(pI(cg.window));
+        gp.position    = juce::jlimit(0.f, 1.f,
+            pF(cg.position, 0.5f) + modDests.dests[(int)ModDest::Gran_Position]);
+        gp.sizeMs      = juce::jlimit(5.f, 1000.f,
+            pF(cg.size, 120.f) * std::pow(2.f, modDests.dests[(int)ModDest::Gran_Size] * 3.f));
+        gp.density     = juce::jlimit(0.1f, 1200.f,
+            pF(cg.density, 35.f) * std::pow(2.f, modDests.dests[(int)ModDest::Gran_Density] * 4.f));
+        gp.pitchSemis  = juce::jlimit(-48.f, 48.f,
+            pF(cg.pitch) + modDests.dests[(int)ModDest::Gran_Pitch] * 24.f);
+        gp.spray       = juce::jlimit(0.f, 1.f,
+            pF(cg.spray, 0.18f) + modDests.dests[(int)ModDest::Gran_Spray]);
+        gp.jitter      = pF(cg.jitter, 0.04f);
+        gp.panSpread   = pF(cg.pan, 0.7f);
+        gp.reverseProb = pF(cg.reverse);
+        gp.scanSpeed   = pF(cg.scan);
+        gp.freeze      = juce::jlimit(0.f, 1.f,
+            pF(cg.freeze) + modDests.dests[(int)ModDest::Gran_Freeze]);
+        gp.bodyType    = static_cast<GranularOsc::BodyType>(pI(cg.bodyType));
+        gp.bodyRootSemis = pF(cg.bodyRoot);
+        gp.bodySize    = juce::jlimit(0.f, 1.f,
+            pF(cg.bodySize, 0.5f) + modDests.dests[(int)ModDest::Gran_BodySize]);
+        gp.bodyDecay   = pF(cg.bodyDecay, 0.5f);
+        gp.bodyDamping = juce::jlimit(0.f, 1.f,
+            pF(cg.bodyDamp, 0.35f) + modDests.dests[(int)ModDest::Gran_BodyDamping]);
+        gp.bodyBrightness = pF(cg.bodyBright, 0.6f);
+        gp.bodyInharm  = juce::jlimit(0.f, 1.f,
+            pF(cg.bodyInharm, 0.2f) + modDests.dests[(int)ModDest::Gran_BodyInharm]);
+        gp.bodyExcite  = pF(cg.bodyExcite, 0.7f);
+        gp.bodyMix     = juce::jlimit(0.f, 1.f,
+            pF(cg.bodyMix) + modDests.dests[(int)ModDest::Gran_BodyMix]);
+        gp.bodySpread  = pF(cg.bodySpread, 0.5f);
+        gp.bodyModes   = pI(cg.bodyModes, 16);
+
+        const float grainHz = pitchedHz * std::pow(2.f, pF(cg.octave));
+        granularOscs[(size_t)i].setFrequency(grainHz);
+        granularOscs[(size_t)i].setParams(gp);
+        envBank.get(granEnvIndex(i)).setParams(envParams(cg.env, 0.01f, 0.2f, 1.f, 0.4f));
     }
-    envBank.get(ENV_GRAN).setParams(envParams(cg.env, 0.01f, 0.2f, 1.f, 0.4f));
+
+    // ── Terrain Oscillator Pool ──────────────────────────────────────────────
+    for (int i = 0; i < kNumTerrainOscs; ++i)
+    {
+        const auto& ct = pc.terrain[(size_t)i];
+        TerrainOsc::Params tp;
+        tp.pathMode    = static_cast<TerrainOsc::PathMode>(pI(ct.path));
+        tp.centerX     = pF(ct.centerX, 0.5f);
+        tp.centerY     = pF(ct.centerY, 0.5f);
+        tp.radiusX     = pF(ct.radiusX, 0.35f);
+        tp.radiusY     = pF(ct.radiusY, 0.35f);
+        tp.ratioX      = pF(ct.ratioX, 1.f);
+        tp.ratioY      = pF(ct.ratioY, 1.5f);
+        tp.phaseOffset = pF(ct.phase);
+        tp.spiral      = pF(ct.spiral);
+        tp.drive       = pF(ct.drive, 1.5f);
+        tp.offset      = pF(ct.offset);
+        tp.smoothing   = pF(ct.smoothing);
+        tp.morph       = pF(ct.morph);
+        tp.gain        = pF(ct.gain, 1.f);
+
+        const float terrainHz = pitchedHz * std::pow(2.f, pF(ct.octave));
+        terrainOscs[(size_t)i].setFrequency(terrainHz);
+        terrainOscs[(size_t)i].setParams(tp);
+        envBank.get(terrainEnvIndex(i)).setParams(envParams(ct.env, 0.01f, 0.2f, 1.f, 0.3f));
+    }
 
     // ── Filters ───────────────────────────────────────────────────────────────
     const auto& cfa = pc.filterA;
@@ -683,18 +822,24 @@ void SynthVoice::syncParams()
 //──────────────────────────────────────────────────────────────────────────────
 void SynthVoice::buildModSources()
 {
+    auto maxEnv = [this](int first, int count)
+    {
+        float value = 0.f;
+        for (int i = 0; i < count; ++i)
+            value = juce::jmax(value, envBank.get(first + i).getCurrentValue());
+        return value;
+    };
+
     modSources.sources[(int)ModSource::LFO1] = lfo.getValue(0);
     modSources.sources[(int)ModSource::LFO2] = lfo.getValue(1);
     modSources.sources[(int)ModSource::LFO3] = lfo.getValue(2);
     modSources.sources[(int)ModSource::LFO4] = lfo.getValue(3);
 
     modSources.sources[(int)ModSource::Env_Master]  = envBank.get(ENV_MASTER).getCurrentValue();
-    modSources.sources[(int)ModSource::Env_3D]      = envBank.get(ENV_3D).getCurrentValue();
+    modSources.sources[(int)ModSource::Env_3D]      = maxEnv((int)ENV_3D1, kNum3DOscs);
     modSources.sources[(int)ModSource::Env_FM]      = envBank.get(ENV_FM).getCurrentValue();
-    modSources.sources[(int)ModSource::Env_WT]      = envBank.get(ENV_WT).getCurrentValue();
-    modSources.sources[(int)ModSource::Env_VA]      = juce::jmax(
-        juce::jmax(envBank.get(ENV_VA).getCurrentValue(),  envBank.get(ENV_VA2).getCurrentValue()),
-        juce::jmax(envBank.get(ENV_VA3).getCurrentValue(), envBank.get(ENV_VA4).getCurrentValue()));
+    modSources.sources[(int)ModSource::Env_WT]      = maxEnv((int)ENV_WT1, kNumWTOscs);
+    modSources.sources[(int)ModSource::Env_VA]      = maxEnv((int)ENV_VA1, kNumVAOscs);
     modSources.sources[(int)ModSource::Env_FilterA] = envBank.get(ENV_FILTER_A).getCurrentValue();
     modSources.sources[(int)ModSource::Env_FilterB] = envBank.get(ENV_FILTER_B).getCurrentValue();
 
@@ -753,12 +898,31 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
     syncParams();
 
     // ── Level / enable flags ──────────────────────────────────────────────────
-    float osc3dLevel = juce::jlimit(0.f, 1.f, pF(pc.osc3d.level, 0.8f) + modDests.dests[(int)ModDest::Osc3D_Level]);
-    float fmLevel    = juce::jlimit(0.f, 1.f, pF(pc.fm.level));
-    float wtLevel    = juce::jlimit(0.f, 1.f, pF(pc.wt.level) + modDests.dests[(int)ModDest::WT_Level]);
-    float ksLevel    = juce::jlimit(0.f, 1.f, pF(pc.ks.level));
-    float grainLevel = juce::jlimit(0.f, 1.f,
-        pF(pc.grain.level) + modDests.dests[(int)ModDest::Gran_Level]);
+    float fmLevelA   = juce::jlimit(0.f, 1.f, pF(pc.fm.level));
+    float fmLevelB   = juce::jlimit(0.f, 1.f, pF(pc.fmB.level));
+
+    std::array<float, kNum3DOscs> osc3dLevels {};
+    for (int i = 0; i < kNum3DOscs; ++i)
+        osc3dLevels[(size_t)i] = juce::jlimit(0.f, 1.f,
+            pF(pc.osc3d[(size_t)i].level, 0.8f) + modDests.dests[(int)ModDest::Osc3D_Level]);
+
+    std::array<float, kNumWTOscs> wtLevels {};
+    for (int i = 0; i < kNumWTOscs; ++i)
+        wtLevels[(size_t)i] = juce::jlimit(0.f, 1.f,
+            pF(pc.wt[(size_t)i].level) + modDests.dests[(int)ModDest::WT_Level]);
+
+    std::array<float, kNumKSOscs> ksLevels {};
+    for (int i = 0; i < kNumKSOscs; ++i)
+        ksLevels[(size_t)i] = juce::jlimit(0.f, 1.f, pF(pc.ks[(size_t)i].level));
+
+    std::array<float, kNumGranOscs> grainLevels {};
+    for (int i = 0; i < kNumGranOscs; ++i)
+        grainLevels[(size_t)i] = juce::jlimit(0.f, 1.f,
+            pF(pc.grain[(size_t)i].level) + modDests.dests[(int)ModDest::Gran_Level]);
+
+    std::array<float, kNumTerrainOscs> terrainLevels {};
+    for (int i = 0; i < kNumTerrainOscs; ++i)
+        terrainLevels[(size_t)i] = juce::jlimit(0.f, 1.f, pF(pc.terrain[(size_t)i].level));
 
     std::array<float, kNumVAOscs> vaLevels {};
     for (int i = 0; i < kNumVAOscs; ++i)
@@ -773,15 +937,51 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
     float lfoA = lfo.getValue(0);
     float lfoB = lfo.getValue(1);
 
-    const bool use3D = pB(pc.osc3d.on) && osc3dLevel > kSilent && current3dCount > 0;
-    const bool useFM = pB(pc.fm.on)    && fmLevel    > kSilent && (currentBlockAIsFM || currentBlockBIsFM);
-    const bool useWT = pB(pc.wt.on)    && wtLevel    > kSilent && currentWTCount > 0;
-    const bool useKS = pB(pc.ks.on)    && ksLevel    > kSilent && currentKSCount > 0;
-    const bool useGran = pB(pc.grain.on) && grainLevel > kSilent && currentGranCount > 0;
+    const bool useFMA = currentBlockAIsFM && pB(pc.fm.on)  && fmLevelA > kSilent;
+    const bool useFMB = currentBlockBIsFM && pB(pc.fmB.on) && fmLevelB > kSilent;
+    const bool useFM  = useFMA || useFMB;
+
+    std::array<bool, kNum3DOscs> use3D {};
+    for (int i = 0; i < current3dCount; ++i)
+    {
+        const int idx = active3dIndices[(size_t)i];
+        use3D[(size_t)idx] = pB(pc.osc3d[(size_t)idx].on) && osc3dLevels[(size_t)idx] > kSilent;
+    }
+
+    std::array<bool, kNumWTOscs> useWT {};
+    for (int i = 0; i < currentWTCount; ++i)
+    {
+        const int idx = activeWTIndices[(size_t)i];
+        useWT[(size_t)idx] = pB(pc.wt[(size_t)idx].on) && wtLevels[(size_t)idx] > kSilent;
+    }
+
+    std::array<bool, kNumKSOscs> useKS {};
+    for (int i = 0; i < currentKSCount; ++i)
+    {
+        const int idx = activeKSIndices[(size_t)i];
+        useKS[(size_t)idx] = pB(pc.ks[(size_t)idx].on) && ksLevels[(size_t)idx] > kSilent;
+    }
+
+    std::array<bool, kNumGranOscs> useGran {};
+    for (int i = 0; i < currentGranCount; ++i)
+    {
+        const int idx = activeGranIndices[(size_t)i];
+        useGran[(size_t)idx] = pB(pc.grain[(size_t)idx].on) && grainLevels[(size_t)idx] > kSilent;
+    }
+
+    std::array<bool, kNumTerrainOscs> useTerrain {};
+    for (int i = 0; i < currentTerrainCount; ++i)
+    {
+        const int idx = activeTerrainIndices[(size_t)i];
+        useTerrain[(size_t)idx] = pB(pc.terrain[(size_t)idx].on) && terrainLevels[(size_t)idx] > kSilent;
+    }
 
     std::array<bool, kNumVAOscs> useVA {};
     for (int i = 0; i < currentVACount; ++i)
-        useVA[(size_t)i] = pB(pc.va[(size_t)i].on) && vaLevels[(size_t)i] > kSilent;
+    {
+        const int idx = activeVAIndices[(size_t)i];
+        useVA[(size_t)idx] = pB(pc.va[(size_t)idx].on) && vaLevels[(size_t)idx] > kSilent;
+    }
 
     const float panGainL = masterVol * std::sqrt(0.5f - 0.5f * masterPan);
     const float panGainR = masterVol * std::sqrt(0.5f + 0.5f * masterPan);
@@ -789,13 +989,16 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
     const float osc3dNorm = current3dCount > 0
         ? 1.f / std::sqrt((float)current3dCount) : 1.f;
     const bool  dualFM     = currentBlockAIsFM && currentBlockBIsFM;
-    const float fmScale    = dualFM ? 0.5f : 1.f;
+    const int   activeFMCount = (useFMA ? 1 : 0) + (useFMB ? 1 : 0);
+    const float fmScale    = activeFMCount > 0 ? 1.f / std::sqrt((float)activeFMCount) : 1.f;
     const float wtNorm     = currentWTCount > 0
         ? 1.f / std::sqrt((float)currentWTCount) : 1.f;
     const float ksNorm     = currentKSCount > 0
         ? 1.f / (float)currentKSCount : 1.f;
     const float grainNorm  = currentGranCount > 0
         ? 1.f / std::sqrt((float)currentGranCount) : 1.f;
+    const float terrainNorm = currentTerrainCount > 0
+        ? 1.f / std::sqrt((float)currentTerrainCount) : 1.f;
 
     auto* leftCh  = buffer.getWritePointer(0, startSample);
     auto* rightCh = buffer.getWritePointer(1, startSample);
@@ -809,11 +1012,18 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
         if (masterEnv < kSilent)
         {
             // Drain envelopes while tailing off
-            envBank.processAndGet(ENV_3D);
+            for (int i = 0; i < kNum3DOscs; ++i)
+                envBank.processAndGet(osc3dEnvIndex(i));
             envBank.processAndGet(ENV_FM);
-            envBank.processAndGet(ENV_WT);
-            envBank.processAndGet(ENV_KS);
-            envBank.processAndGet(ENV_GRAN);
+            envBank.processAndGet(ENV_FM2);
+            for (int i = 0; i < kNumWTOscs; ++i)
+                envBank.processAndGet(wtEnvIndex(i));
+            for (int i = 0; i < kNumKSOscs; ++i)
+                envBank.processAndGet(ksEnvIndex(i));
+            for (int i = 0; i < kNumGranOscs; ++i)
+                envBank.processAndGet(granEnvIndex(i));
+            for (int i = 0; i < kNumTerrainOscs; ++i)
+                envBank.processAndGet(terrainEnvIndex(i));
             for (int i = 0; i < kNumVAOscs; ++i)
                 envBank.processAndGet(vaEnvIndex(i));
             envBank.processAndGet(ENV_FILTER_A);
@@ -824,11 +1034,23 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             continue;
         }
 
-        float env3D = envBank.processAndGet(ENV_3D);
-        float envFM = envBank.processAndGet(ENV_FM);
-        float envWT = envBank.processAndGet(ENV_WT);
-        float envKS = envBank.processAndGet(ENV_KS);
-        float envGran = envBank.processAndGet(ENV_GRAN);
+        float envFMA = envBank.processAndGet(ENV_FM);
+        float envFMB = envBank.processAndGet(ENV_FM2);
+        float env3D[kNum3DOscs];
+        float envWT[kNumWTOscs];
+        float envKS[kNumKSOscs];
+        float envGran[kNumGranOscs];
+        float envTerrain[kNumTerrainOscs];
+        for (int i = 0; i < kNum3DOscs; ++i)
+            env3D[i] = envBank.processAndGet(osc3dEnvIndex(i));
+        for (int i = 0; i < kNumWTOscs; ++i)
+            envWT[i] = envBank.processAndGet(wtEnvIndex(i));
+        for (int i = 0; i < kNumKSOscs; ++i)
+            envKS[i] = envBank.processAndGet(ksEnvIndex(i));
+        for (int i = 0; i < kNumGranOscs; ++i)
+            envGran[i] = envBank.processAndGet(granEnvIndex(i));
+        for (int i = 0; i < kNumTerrainOscs; ++i)
+            envTerrain[i] = envBank.processAndGet(terrainEnvIndex(i));
         float envVA[kNumVAOscs];
         for (int i = 0; i < kNumVAOscs; ++i)
             envVA[i] = envBank.processAndGet(vaEnvIndex(i));
@@ -837,64 +1059,98 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
 
         float monoSig = 0.f;
 
-        // 3D ensemble
-        if (use3D && env3D > kSilent)
+        // 3D instances
+        if (current3dCount > 0)
         {
             float sum = 0.f;
-            for (int i = 0; i < current3dCount; ++i)
-                sum += osc3dArray[(size_t)i].processSample();
-            monoSig += sum * osc3dNorm * env3D * osc3dLevel;
+            for (int n = 0; n < current3dCount; ++n)
+            {
+                const int i = active3dIndices[(size_t)n];
+                if (use3D[(size_t)i] && env3D[i] > kSilent)
+                    sum += osc3dArray[(size_t)i].processSample() * env3D[i] * osc3dLevels[(size_t)i];
+            }
+            monoSig += sum * osc3dNorm;
         }
 
         // FM engines
-        if (useFM && envFM > kSilent)
+        if (useFM)
         {
-            float fmSig = 0.f;
-            if (currentBlockAIsFM) fmSig += fm.processSample();
-            if (currentBlockBIsFM) fmSig += fm2.processSample();
-            monoSig += fmSig * fmScale * envFM * fmLevel;
-        }
-        else if (useFM)
-        {
-            fm.advanceEnvelopes();
-            if (dualFM) fm2.advanceEnvelopes();
+            if (useFMA)
+            {
+                if (envFMA > kSilent)
+                    monoSig += fm.processSample() * fmScale * envFMA * fmLevelA;
+                else
+                    fm.advanceEnvelopes();
+            }
+
+            if (useFMB)
+            {
+                if (envFMB > kSilent)
+                    monoSig += fm2.processSample() * fmScale * envFMB * fmLevelB;
+                else
+                    fm2.advanceEnvelopes();
+            }
         }
 
         // KS pool
-        for (int i = 0; i < currentKSCount; ++i)
+        for (int n = 0; n < currentKSCount; ++n)
         {
-            if (useKS && (ksOscs[(size_t)i].isActive() || envKS > kSilent))
-                monoSig += ksOscs[(size_t)i].processSample(cachedKSParams) * envKS * ksLevel * ksNorm;
+            const int i = activeKSIndices[(size_t)n];
+            if (useKS[(size_t)i] && (ksOscs[(size_t)i].isActive() || envKS[i] > kSilent))
+                monoSig += ksOscs[(size_t)i].processSample(cachedKSParams[(size_t)i])
+                           * envKS[i] * ksLevels[(size_t)i] * ksNorm;
         }
 
         float sigL = monoSig;
         float sigR = monoSig;
 
         // WT pool (stereo)
-        if (useWT && envWT > kSilent)
+        if (currentWTCount > 0)
         {
-            for (int i = 0; i < currentWTCount; ++i)
+            for (int n = 0; n < currentWTCount; ++n)
             {
-                auto [wtL, wtR] = wtOscs[(size_t)i].processSample();
-                sigL += wtL * envWT * wtLevel * wtNorm;
-                sigR += wtR * envWT * wtLevel * wtNorm;
+                const int i = activeWTIndices[(size_t)n];
+                if (useWT[(size_t)i] && envWT[i] > kSilent)
+                {
+                    auto [wtL, wtR] = wtOscs[(size_t)i].processSample();
+                    sigL += wtL * envWT[i] * wtLevels[(size_t)i] * wtNorm;
+                    sigR += wtR * envWT[i] * wtLevels[(size_t)i] * wtNorm;
+                }
             }
         }
 
         // Granular pool (stereo cloud)
-        if (useGran && envGran > kSilent)
+        if (currentGranCount > 0)
         {
-            for (int i = 0; i < currentGranCount; ++i)
+            for (int n = 0; n < currentGranCount; ++n)
             {
-                auto [gL, gR] = granularOscs[(size_t)i].processSample();
-                sigL += gL * envGran * grainLevel * grainNorm;
-                sigR += gR * envGran * grainLevel * grainNorm;
+                const int i = activeGranIndices[(size_t)n];
+                if (useGran[(size_t)i] && envGran[i] > kSilent)
+                {
+                    auto [gL, gR] = granularOscs[(size_t)i].processSample();
+                    sigL += gL * envGran[i] * grainLevels[(size_t)i] * grainNorm;
+                    sigR += gR * envGran[i] * grainLevels[(size_t)i] * grainNorm;
+                }
+            }
+        }
+
+        // Terrain pool (mono wave-terrain surfaces)
+        for (int n = 0; n < currentTerrainCount; ++n)
+        {
+            const int i = activeTerrainIndices[(size_t)n];
+            if (useTerrain[(size_t)i] && envTerrain[i] > kSilent)
+            {
+                const float t = terrainOscs[(size_t)i].processSample()
+                              * envTerrain[i] * terrainLevels[(size_t)i] * terrainNorm;
+                sigL += t;
+                sigR += t;
             }
         }
 
         // VA instances (stereo, each independent)
-        for (int i = 0; i < currentVACount; ++i)
+        for (int n = 0; n < currentVACount; ++n)
         {
+            const int i = activeVAIndices[(size_t)n];
             if (useVA[(size_t)i] && envVA[i] > kSilent)
             {
                 auto [vaL, vaR] = vaOscs[(size_t)i].processSample();

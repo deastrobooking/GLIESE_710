@@ -12,7 +12,7 @@ sample source -> preallocated stereo grain cloud -> optional physical body -> sy
 
 ## Engine
 
-Each `GranularOsc` instance owns:
+There are eight independent `GranularOsc` instances per voice. Each instance owns:
 
 | Resource | Purpose |
 |---|---|
@@ -25,6 +25,8 @@ Each `GranularOsc` instance owns:
 The fixed source buffer keeps the audio thread allocation-free. Later sample loading should decode and resample off the audio thread, then swap/copy into the fixed source storage through a safe handoff.
 
 ## Parameters
+
+The table shows the first slot prefix. Additional granular slots use `osc_grain2_` through `osc_grain8_`.
 
 | Parameter | Range | Description |
 |---|---|---|
@@ -54,7 +56,7 @@ The fixed source buffer keeps the audio thread allocation-free. Later sample loa
 | `osc_grain_level` | 0-1 | Engine mix level |
 | `osc_grain_octave` | -3 to +3 | Pitch offset inherited from the played note |
 
-The oscillator also has its own ADSR envelope through `ENV_GRAN`.
+Each granular slot has its own ADSR envelope through `ENV_GRAN1` through `ENV_GRAN8`.
 
 ## Trigger Modes
 

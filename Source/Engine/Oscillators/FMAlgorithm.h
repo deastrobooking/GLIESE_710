@@ -19,6 +19,7 @@ public:
 
     void prepare(double sampleRate);
     void setAlgorithm(int index);
+    void setAlgorithmMorph(float morph);
     void setNoteFrequency(float hz);
     void setVelocity(float v);
     void setMidiNote(int note);
@@ -39,6 +40,7 @@ private:
     std::array<FMOperator, kNumOperators> ops;
     std::array<float, kNumOperators> lastOutputs {};
     int algorithmIndex = 0;
+    float algorithmMorph = 0.f;
 
     static AlgorithmDef buildAlgorithms();
     static const AlgorithmDef kAlgorithms[kNumAlgorithms];

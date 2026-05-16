@@ -20,7 +20,7 @@ Multiple slots can share the same destination — their contributions accumulate
 | 6 | Env_3D | 0 to +1 | 3D oscillator ADSR |
 | 7 | Env_FM | 0 to +1 | FM envelope |
 | 8 | Env_WT | 0 to +1 | Wavetable envelope |
-| 9 | Env_VA | 0 to +1 | Maximum of the four virtual analog layer envelopes |
+| 9 | Env_VA | 0 to +1 | Maximum of the eight virtual analog layer envelopes |
 | 10 | Env_FilterA | 0 to +1 | Filter A envelope |
 | 11 | Env_FilterB | 0 to +1 | Filter B envelope |
 | 12 | Velocity | 0 to +1 | MIDI note velocity |
@@ -73,6 +73,10 @@ Multiple slots can share the same destination — their contributions accumulate
 | 79–80 | WT_Warp / WT_PD_Break | 0–1.0 | Wavetable warp amount and phase-distortion breakpoint |
 | 81–87 | Gran_Position/Size/Density/Pitch/Spray/Freeze/Level | — | Granular cloud position, timing, pitch, spread, freeze, and output level |
 | 88–91 | Gran_BodyMix/Size/Damping/Inharm | — | Optional granular physical body blend and material controls |
+
+Terrain oscillator slots have independent envelopes and APVTS parameters, but terrain-specific modulation destinations have not been added yet. The next useful destination group would be center X/Y, radius X/Y, ratio X/Y, smoothing, morph, and drive.
+
+VA slots 5-8 are independent oscillator slots, but dedicated modulation destinations currently cover VA slots 1-4. Add `VA5_*` through `VA8_*` destinations if the later slots need direct matrix control.
 
 ## Bipolar vs Unipolar
 

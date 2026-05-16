@@ -3,6 +3,261 @@
 
 static juce::Colour kBg { 0xff050607 };
 
+namespace
+{
+class FMEngineEditor : public juce::Component
+{
+public:
+    using APVTS = juce::AudioProcessorValueTreeState;
+    using Att   = APVTS::SliderAttachment;
+    using CAtt  = APVTS::ComboBoxAttachment;
+    using BAtt  = APVTS::ButtonAttachment;
+
+    FMEngineEditor(APVTS& state, int index)
+        : apvts(state),
+          engineIndex(index),
+          fmPrefix(index == 0 ? "osc_fm_" : "osc_fm2_"),
+          opBase(index == 0 ? "op" : "op2_")
+    {
+        const auto accent = IndustrialTheme::accentFM();
+        title.setText("FM ENGINE " + juce::String(engineIndex == 0 ? "A" : "B"), juce::dontSendNotification);
+        IndustrialTheme::styleTitle(title, accent, 13.f);
+        addAndMakeVisible(title);
+
+        enableButton.setButtonText("ON");
+        enableButton.setTooltip("Enable / disable this FM engine");
+        enableButton.setColour(juce::ToggleButton::textColourId, accent);
+        enableButton.setColour(juce::ToggleButton::tickColourId, accent);
+        enableButton.setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(0xff555555));
+        addAndMakeVisible(enableButton);
+        enableAtt = std::make_unique<BAtt>(apvts, fmPrefix + "on", enableButton);
+
+        algorithmBox.addItemList([]
+        {
+            juce::StringArray items;
+            for (int i = 0; i < 40; ++i)
+                items.add("Algorithm " + juce::String(i));
+            return items;
+        }(), 1);
+        algorithmBox.setTooltip("FM Algorithm");
+        IndustrialTheme::styleCombo(algorithmBox, accent);
+        addAndMakeVisible(algorithmBox);
+        algorithmAtt = std::make_unique<CAtt>(apvts, fmPrefix + "algorithm", algorithmBox);
+
+        setupRotary(levelSlider,  fmPrefix + "level",      "FM Level", levelAtt, 52);
+        setupRotary(octaveSlider, fmPrefix + "octave",     "FM Octave", octaveAtt, 52);
+        setupRotary(detuneSlider, fmPrefix + "detune",     "Master Detune", detuneAtt, 60);
+        setupRotary(phaseSlider,  fmPrefix + "phase",      "Phase Position", phaseAtt, 60);
+        setupRotary(morphSlider,  fmPrefix + "algo_morph", "Algorithm Morph", morphAtt, 60);
+        setupRotary(indexSlider,  fmPrefix + "index",      "Modulation Index Scale", indexAtt, 60);
+
+        setupRotary(envA, fmPrefix + "adsr_a", "FM Attack",  envAAtt, 42);
+        setupRotary(envD, fmPrefix + "adsr_d", "FM Decay",   envDAtt, 42);
+        setupRotary(envS, fmPrefix + "adsr_s", "FM Sustain", envSAtt, 42);
+        setupRotary(envR, fmPrefix + "adsr_r", "FM Release", envRAtt, 42);
+        for (auto* slider : { &envA, &envD, &envS, &envR })
+        {
+            slider->setSliderStyle(juce::Slider::LinearVertical);
+            slider->setTextBoxStyle(juce::Slider::TextBoxBelow, false, 42, 13);
+        }
+
+        static const juce::StringArray kOpWaves {
+            "Sine","Triangle","Saw","Square","Pulse","Noise",
+            "All Wide","All Narrow","Odd Wide","Odd Narrow","Res Wide","Res Narrow"
+        };
+
+        for (int i = 0; i < 10; ++i)
+        {
+            const juce::String pfx = opBase + juce::String(i) + "_";
+            setupOpSlider(opCoarse[(size_t)i],  pfx + "coarse",   "Op " + juce::String(i) + " Coarse", coarseAtts[(size_t)i]);
+            setupOpSlider(opFine[(size_t)i],    pfx + "fine",     "Op " + juce::String(i) + " Fine", fineAtts[(size_t)i]);
+            setupOpSlider(opDetune[(size_t)i],  pfx + "detune",   "Op " + juce::String(i) + " Detune", detuneAtts[(size_t)i]);
+            setupOpSlider(opLevel[(size_t)i],   pfx + "level",    "Op " + juce::String(i) + " Level", levelAtts[(size_t)i]);
+            setupOpSlider(opFeedback[(size_t)i],pfx + "feedback", "Op " + juce::String(i) + " Feedback", feedbackAtts[(size_t)i]);
+            setupOpSlider(opSkirt[(size_t)i],   pfx + "skirt",    "Op " + juce::String(i) + " Spectral Skirt", skirtAtts[(size_t)i]);
+            setupOpSlider(opRes[(size_t)i],     pfx + "resonance","Op " + juce::String(i) + " Spectral Resonance", resAtts[(size_t)i]);
+            setupOpSlider(opVel[(size_t)i],     pfx + "vel",      "Op " + juce::String(i) + " Velocity Depth", velAtts[(size_t)i]);
+            setupOpSlider(opKey[(size_t)i],     pfx + "key",      "Op " + juce::String(i) + " Key Scale", keyAtts[(size_t)i]);
+
+            opWave[(size_t)i].addItemList(kOpWaves, 1);
+            opWave[(size_t)i].setTooltip("Op " + juce::String(i) + " Waveform");
+            IndustrialTheme::styleCombo(opWave[(size_t)i], IndustrialTheme::accentFM());
+            addAndMakeVisible(opWave[(size_t)i]);
+            waveAtts[(size_t)i] = std::make_unique<CAtt>(apvts, pfx + "wave", opWave[(size_t)i]);
+        }
+
+        auto addLabel = [&](juce::Label& label, const juce::String& text, float size = 10.f)
+        {
+            label.setText(text, juce::dontSendNotification);
+            IndustrialTheme::styleLabel(label, accent, size);
+            addAndMakeVisible(label);
+        };
+
+        addLabel(algoLabel, "ALGORITHM");
+        addLabel(levelLabel, "LEVEL");
+        addLabel(octaveLabel, "OCTAVE");
+        const juce::String envNames[] = { "A", "D", "S", "R" };
+        for (int i = 0; i < 4; ++i)
+            addLabel(envLabels[(size_t)i], envNames[i]);
+        const juce::String perfNames[] = { "DETUNE", "PHASE", "MORPH", "INDEX" };
+        for (int i = 0; i < 4; ++i)
+            addLabel(perfLabels[(size_t)i], perfNames[i]);
+
+        addLabel(coarseHdr, "COARSE RATIO");
+        addLabel(fineHdr, "FINE");
+        addLabel(detuneHdr, "DETUNE");
+        addLabel(levelHdr, "OP LEVEL");
+        addLabel(feedbackHdr, "FEEDBACK");
+        addLabel(waveHdr, "WAVEFORM");
+        addLabel(skirtHdr, "SPECTRAL SKIRT");
+        addLabel(resHdr, "SPECTRAL RES");
+        addLabel(velHdr, "VEL DEPTH");
+        addLabel(keyHdr, "KEY SCALE");
+        for (int i = 0; i < 10; ++i)
+            addLabel(opLabels[(size_t)i], juce::String(i));
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        IndustrialTheme::paintPanel(g, getLocalBounds(), IndustrialTheme::accentFM(), true);
+    }
+
+    void resized() override
+    {
+        auto area = getLocalBounds().reduced(8);
+        const int opW = juce::jmax(54, area.getWidth() / 10);
+
+        auto titleRow = area.removeFromTop(22);
+        enableButton.setBounds(titleRow.removeFromRight(48));
+        title.setBounds(titleRow.removeFromLeft(190));
+        area.removeFromTop(4);
+
+        auto topBand = area.removeFromTop(116);
+        const int perfW = juce::jlimit(248, 344, topBand.getWidth() / 3);
+        auto perfBand = topBand.removeFromRight(perfW);
+        topBand.removeFromRight(8);
+
+        auto perfLabelRow = perfBand.removeFromTop(13);
+        const int perfKnobW = juce::jmax(58, perfBand.getWidth() / 4);
+        for (auto& label : perfLabels)
+            label.setBounds(perfLabelRow.removeFromLeft(perfKnobW));
+        auto perfRow = perfBand;
+        detuneSlider.setBounds(perfRow.removeFromLeft(perfKnobW).reduced(2));
+        phaseSlider .setBounds(perfRow.removeFromLeft(perfKnobW).reduced(2));
+        morphSlider .setBounds(perfRow.removeFromLeft(perfKnobW).reduced(2));
+        indexSlider .setBounds(perfRow.removeFromLeft(perfKnobW).reduced(2));
+
+        auto topLabelRow = topBand.removeFromTop(13);
+        algoLabel .setBounds(topLabelRow.removeFromLeft(172));
+        levelLabel.setBounds(topLabelRow.removeFromLeft(70));
+        octaveLabel.setBounds(topLabelRow.removeFromLeft(70));
+        topLabelRow.removeFromLeft(8);
+        for (auto& label : envLabels)
+            label.setBounds(topLabelRow.removeFromLeft(44));
+
+        auto topRow = topBand;
+        algorithmBox.setBounds(topRow.removeFromLeft(172).withHeight(24));
+        levelSlider .setBounds(topRow.removeFromLeft(70));
+        octaveSlider.setBounds(topRow.removeFromLeft(70));
+        topRow.removeFromLeft(8);
+        envA.setBounds(topRow.removeFromLeft(44).reduced(2, 0));
+        envD.setBounds(topRow.removeFromLeft(44).reduced(2, 0));
+        envS.setBounds(topRow.removeFromLeft(44).reduced(2, 0));
+        envR.setBounds(topRow.removeFromLeft(44).reduced(2, 0));
+
+        area.removeFromTop(4);
+        const int labelH = 10;
+        const int gap = 2;
+        const int waveH = 22;
+        const int sliderRows = 9;
+        const int sliderH = juce::jlimit(18, 54,
+            (area.getHeight() - 13 - labelH - waveH - sliderRows * labelH - (sliderRows + 1) * gap)
+                / sliderRows);
+
+        auto opIndexRow = area.removeFromTop(13);
+        for (int i = 0; i < 10; ++i)
+            opLabels[(size_t)i].setBounds(opIndexRow.removeFromLeft(opW));
+
+        auto layoutSliderRow = [&](juce::Label& header, auto& sliders)
+        {
+            header.setBounds(area.removeFromTop(labelH));
+            auto row = area.removeFromTop(sliderH);
+            for (int i = 0; i < 10; ++i)
+                sliders[(size_t)i].setBounds(row.removeFromLeft(opW).reduced(2));
+            area.removeFromTop(gap);
+        };
+
+        layoutSliderRow(coarseHdr,   opCoarse);
+        layoutSliderRow(fineHdr,     opFine);
+        layoutSliderRow(detuneHdr,   opDetune);
+        layoutSliderRow(levelHdr,    opLevel);
+        layoutSliderRow(feedbackHdr, opFeedback);
+
+        waveHdr.setBounds(area.removeFromTop(labelH));
+        auto waveRow = area.removeFromTop(waveH);
+        for (int i = 0; i < 10; ++i)
+            opWave[(size_t)i].setBounds(waveRow.removeFromLeft(opW).reduced(2, 0));
+        area.removeFromTop(gap);
+
+        layoutSliderRow(skirtHdr, opSkirt);
+        layoutSliderRow(resHdr,   opRes);
+        layoutSliderRow(velHdr,   opVel);
+        layoutSliderRow(keyHdr,   opKey);
+    }
+
+private:
+    void setupRotary(juce::Slider& slider, const juce::String& paramId,
+                     const juce::String& tooltip, std::unique_ptr<Att>& attachment,
+                     int textWidth)
+    {
+        slider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, textWidth, 16);
+        slider.setTooltip(tooltip);
+        IndustrialTheme::styleSlider(slider, IndustrialTheme::accentFM());
+        addAndMakeVisible(slider);
+        attachment = std::make_unique<Att>(apvts, paramId, slider);
+    }
+
+    void setupOpSlider(juce::Slider& slider, const juce::String& paramId,
+                       const juce::String& tooltip, std::unique_ptr<Att>& attachment)
+    {
+        slider.setSliderStyle(juce::Slider::LinearHorizontal);
+        slider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 38, 12);
+        slider.setTooltip(tooltip);
+        IndustrialTheme::styleSlider(slider, IndustrialTheme::accentFM());
+        addAndMakeVisible(slider);
+        attachment = std::make_unique<Att>(apvts, paramId, slider);
+    }
+
+    APVTS& apvts;
+    int engineIndex = 0;
+    juce::String fmPrefix, opBase;
+
+    juce::Label title;
+    juce::ToggleButton enableButton;
+    juce::ComboBox algorithmBox;
+    juce::Slider levelSlider, octaveSlider, detuneSlider, phaseSlider, morphSlider, indexSlider;
+    juce::Slider envA, envD, envS, envR;
+    juce::Label algoLabel, levelLabel, octaveLabel;
+    std::array<juce::Label, 4> envLabels, perfLabels;
+
+    std::array<juce::Slider, 10> opCoarse, opFine, opDetune, opLevel, opFeedback;
+    std::array<juce::ComboBox, 10> opWave;
+    std::array<juce::Slider, 10> opSkirt, opRes, opVel, opKey;
+    juce::Label coarseHdr, fineHdr, detuneHdr, levelHdr, feedbackHdr, waveHdr;
+    juce::Label skirtHdr, resHdr, velHdr, keyHdr;
+    std::array<juce::Label, 10> opLabels;
+
+    std::unique_ptr<BAtt> enableAtt;
+    std::unique_ptr<CAtt> algorithmAtt;
+    std::unique_ptr<Att> levelAtt, octaveAtt, detuneAtt, phaseAtt, morphAtt, indexAtt;
+    std::unique_ptr<Att> envAAtt, envDAtt, envSAtt, envRAtt;
+    std::array<std::unique_ptr<Att>, 10> coarseAtts, fineAtts, detuneAtts, levelAtts, feedbackAtts;
+    std::array<std::unique_ptr<CAtt>, 10> waveAtts;
+    std::array<std::unique_ptr<Att>, 10> skirtAtts, resAtts, velAtts, keyAtts;
+};
+} // namespace
+
 //──────────────────────────────────────────────────────────────────────────────
 MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
     : apvts(a)
@@ -65,10 +320,30 @@ void MainPanel::buildOscillatorsTab()
 {
     oscillatorsTab = new juce::Component();
 
-    osc3dPanel = std::make_unique<OscPanel>(apvts, "3d", "3D OSCILLATOR");
-    oscWTPanel = std::make_unique<OscPanel>(apvts, "wt", "WAVETABLE");
-    ksPanel    = std::make_unique<OscPanel>(apvts, "ks", "KARPLUS-STRONG");
-    granularPanel = std::make_unique<OscPanel>(apvts, "grain", "GRANULAR");
+    auto makeId = [](const juce::String& base, int index)
+    {
+        return index == 0 ? base : base + juce::String(index + 1);
+    };
+
+    for (int i = 0; i < 8; ++i)
+    {
+        osc3dPanels[(size_t)i] = std::make_unique<OscPanel>(
+            apvts, makeId("3d", i), "3D OSCILLATOR " + juce::String(i + 1));
+        oscWTPanels[(size_t)i] = std::make_unique<OscPanel>(
+            apvts, makeId("wt", i), "WAVETABLE " + juce::String(i + 1));
+        ksPanels[(size_t)i] = std::make_unique<OscPanel>(
+            apvts, makeId("ks", i), "KARPLUS-STRONG " + juce::String(i + 1));
+        granularPanels[(size_t)i] = std::make_unique<OscPanel>(
+            apvts, makeId("grain", i), "GRANULAR " + juce::String(i + 1));
+        terrainPanels[(size_t)i] = std::make_unique<OscPanel>(
+            apvts, makeId("terrain", i), "TERRAIN " + juce::String(i + 1));
+
+        oscillatorsTab->addAndMakeVisible(*osc3dPanels[(size_t)i]);
+        oscillatorsTab->addAndMakeVisible(*oscWTPanels[(size_t)i]);
+        oscillatorsTab->addAndMakeVisible(*ksPanels[(size_t)i]);
+        oscillatorsTab->addAndMakeVisible(*granularPanels[(size_t)i]);
+        oscillatorsTab->addAndMakeVisible(*terrainPanels[(size_t)i]);
+    }
 
     static const juce::StringArray vaIds {
         "va","va2","va3","va4","va5","va6","va7","va8" };
@@ -84,11 +359,6 @@ void MainPanel::buildOscillatorsTab()
         fmBlockViews[(size_t)i].engineIndex = i;
         oscillatorsTab->addAndMakeVisible(fmBlockViews[(size_t)i]);
     }
-
-    oscillatorsTab->addAndMakeVisible(*osc3dPanel);
-    oscillatorsTab->addAndMakeVisible(*oscWTPanel);
-    oscillatorsTab->addAndMakeVisible(*ksPanel);
-    oscillatorsTab->addAndMakeVisible(*granularPanel);
 
     // Engine slot bar — drives the layout
     slotBar = std::make_unique<EngineSlotBar>(apvts, [this] { layoutOscillatorsTab(); });
@@ -129,129 +399,9 @@ void MainPanel::buildOscillatorsTab()
 //──────────────────────────────────────────────────────────────────────────────
 void MainPanel::buildEngineTab()
 {
-    engineTab = new juce::Component();
-
-    fmEnableButton.setButtonText("ON");
-    fmEnableButton.setTooltip("Enable / disable the FM engine");
-    fmEnableButton.setColour(juce::ToggleButton::textColourId,        IndustrialTheme::accentFM());
-    fmEnableButton.setColour(juce::ToggleButton::tickColourId,        IndustrialTheme::accentFM());
-    fmEnableButton.setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(0xff555555));
-    engineTab->addAndMakeVisible(fmEnableButton);
-    fmEnableAtt = std::make_unique<BAtt>(apvts, "osc_fm_on", fmEnableButton);
-
-    fmEnableLabel.setText("FM CONTROLS", juce::dontSendNotification);
-    IndustrialTheme::styleTitle(fmEnableLabel, IndustrialTheme::accentFM(), 13.f);
-    engineTab->addAndMakeVisible(fmEnableLabel);
-
-    fmAlgorithmBox.addItemList([]
-    {
-        juce::StringArray items;
-        for (int i = 0; i < 40; ++i)
-            items.add("Algorithm " + juce::String(i));
-        return items;
-    }(), 1);
-    fmAlgorithmBox.setTooltip("FM Algorithm");
-    IndustrialTheme::styleCombo(fmAlgorithmBox, IndustrialTheme::accentFM());
-    engineTab->addAndMakeVisible(fmAlgorithmBox);
-    fmAlgorithmAtt = std::make_unique<CAtt>(apvts, "osc_fm_algorithm", fmAlgorithmBox);
-
-    setupKnob(fmLevelSlider, "osc_fm_level",  "FM Level",   fmLevelAtt,  *engineTab, IndustrialTheme::accentFM());
-    setupKnob(fmOctaveSlider,"osc_fm_octave", "FM Octave",  fmOctaveAtt, *engineTab, IndustrialTheme::accentFM());
-    setupKnob(fmA, "osc_fm_adsr_a", "FM Attack",  fmAAtt, *engineTab, IndustrialTheme::accentFM());
-    setupKnob(fmD, "osc_fm_adsr_d", "FM Decay",   fmDAtt, *engineTab, IndustrialTheme::accentFM());
-    setupKnob(fmS, "osc_fm_adsr_s", "FM Sustain", fmSAtt, *engineTab, IndustrialTheme::accentFM());
-    setupKnob(fmR, "osc_fm_adsr_r", "FM Release", fmRAtt, *engineTab, IndustrialTheme::accentFM());
-    for (auto* s : { &fmA, &fmD, &fmS, &fmR })
-    {
-        s->setSliderStyle(juce::Slider::LinearVertical);
-        s->setTextBoxStyle(juce::Slider::TextBoxBelow, false, 42, 13);
-    }
-
-    static const juce::StringArray kOpWaves {
-        "Sine","Triangle","Saw","Square","Pulse","Noise",
-        "All Wide","All Narrow","Odd Wide","Odd Narrow","Res Wide","Res Narrow"
-    };
-
-    auto compactOpSlider = [](juce::Slider& s)
-    {
-        s.setSliderStyle(juce::Slider::LinearHorizontal);
-        s.setTextBoxStyle(juce::Slider::TextBoxRight, false, 38, 12);
-    };
-
-    for (int i = 0; i < 10; ++i)
-    {
-        auto pfx = "op" + juce::String(i) + "_";
-        setupKnob(fmOpCoarseSliders[(size_t)i], pfx + "coarse",
-                  "Op " + juce::String(i) + " Coarse", fmOpCoarseAtts[(size_t)i],
-                  *engineTab, IndustrialTheme::accentFM());
-        compactOpSlider(fmOpCoarseSliders[(size_t)i]);
-        setupKnob(fmOpFineSliders[(size_t)i], pfx + "fine",
-                  "Op " + juce::String(i) + " Fine Tune", fmOpFineAtts[(size_t)i],
-                  *engineTab, IndustrialTheme::accentFM());
-        compactOpSlider(fmOpFineSliders[(size_t)i]);
-        setupKnob(fmOpDetuneSliders[(size_t)i], pfx + "detune",
-                  "Op " + juce::String(i) + " Detune", fmOpDetuneAtts[(size_t)i],
-                  *engineTab, IndustrialTheme::accentFM());
-        compactOpSlider(fmOpDetuneSliders[(size_t)i]);
-        setupKnob(fmOpLevelSliders[(size_t)i],  pfx + "level",
-                  "Op " + juce::String(i) + " Level",  fmOpLevelAtts[(size_t)i],
-                  *engineTab, IndustrialTheme::accentFM());
-        compactOpSlider(fmOpLevelSliders[(size_t)i]);
-        setupKnob(fmOpFeedbackSliders[(size_t)i], pfx + "feedback",
-                  "Op " + juce::String(i) + " Feedback", fmOpFeedbackAtts[(size_t)i],
-                  *engineTab, IndustrialTheme::accentFM());
-        compactOpSlider(fmOpFeedbackSliders[(size_t)i]);
-
-        fmOpWaveBoxes[(size_t)i].addItemList(kOpWaves, 1);
-        fmOpWaveBoxes[(size_t)i].setTooltip("Op " + juce::String(i) + " Wave");
-        IndustrialTheme::styleCombo(fmOpWaveBoxes[(size_t)i], IndustrialTheme::accentFM());
-        engineTab->addAndMakeVisible(fmOpWaveBoxes[(size_t)i]);
-        fmOpWaveAtts[(size_t)i] = std::make_unique<CAtt>(apvts, pfx + "wave", fmOpWaveBoxes[(size_t)i]);
-
-        setupKnob(fmOpSkirtSliders[(size_t)i], pfx + "skirt",
-                  "Op " + juce::String(i) + " Spectral Skirt", fmOpSkirtAtts[(size_t)i],
-                  *engineTab, IndustrialTheme::accentFM());
-        compactOpSlider(fmOpSkirtSliders[(size_t)i]);
-        setupKnob(fmOpResSliders[(size_t)i], pfx + "resonance",
-                  "Op " + juce::String(i) + " Spectral Resonance", fmOpResAtts[(size_t)i],
-                  *engineTab, IndustrialTheme::accentFM());
-        compactOpSlider(fmOpResSliders[(size_t)i]);
-        setupKnob(fmOpVelSliders[(size_t)i], pfx + "vel",
-                  "Op " + juce::String(i) + " Velocity", fmOpVelAtts[(size_t)i],
-                  *engineTab, IndustrialTheme::accentFM());
-        compactOpSlider(fmOpVelSliders[(size_t)i]);
-        setupKnob(fmOpKeySliders[(size_t)i], pfx + "key",
-                  "Op " + juce::String(i) + " Key Scale", fmOpKeyAtts[(size_t)i],
-                  *engineTab, IndustrialTheme::accentFM());
-        compactOpSlider(fmOpKeySliders[(size_t)i]);
-    }
-
-    auto makeFMLabel = [&](juce::Label& l, const juce::String& text)
-    {
-        l.setText(text, juce::dontSendNotification);
-        IndustrialTheme::styleLabel(l, IndustrialTheme::accentFM(), 10.f);
-        engineTab->addAndMakeVisible(l);
-    };
-    makeFMLabel(fmAlgoLabel,      "ALGORITHM");
-    makeFMLabel(fmLvlLabel,       "FM LEVEL");
-    makeFMLabel(fmOctLabel,       "FM OCTAVE");
-    const juce::String fmAdsrNames[] = { "ATK","DEC","SUS","REL" };
-    for (int i = 0; i < 4; ++i)
-        makeFMLabel(fmAdsrLabels[(size_t)i], fmAdsrNames[i]);
-    makeFMLabel(fmCoarseHdrLabel, "COARSE RATIO");
-    makeFMLabel(fmFineHdrLabel,   "FINE");
-    makeFMLabel(fmDetuneHdrLabel, "DETUNE");
-    makeFMLabel(fmLevelHdrLabel,  "OP LEVEL");
-    makeFMLabel(fmFeedbackHdrLabel, "FEEDBACK");
-    makeFMLabel(fmWaveHdrLabel,   "WAVEFORM");
-    makeFMLabel(fmSkirtHdrLabel,  "SPECTRAL SKIRT");
-    makeFMLabel(fmResHdrLabel,    "SPECTRAL RES");
-    makeFMLabel(fmVelHdrLabel,    "VEL DEPTH");
-    makeFMLabel(fmKeyHdrLabel,    "KEY SCALE");
-    for (int i = 0; i < 10; ++i)
-        makeFMLabel(fmOpLabels[(size_t)i], juce::String(i));
-
-    tabs.addTab("FM CONTROLS", kBg, engineTab, true);
+    tabs.addTab("FM A", kBg, new FMEngineEditor(apvts, 0), true);
+    tabs.addTab("FM B", kBg, new FMEngineEditor(apvts, 1), true);
+    engineTab = nullptr;
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -354,10 +504,11 @@ void MainPanel::layoutOscillatorsTab()
     tabArea.removeFromTop(4);
 
     // Hide all engine panels first
-    osc3dPanel->setVisible(false);
-    oscWTPanel->setVisible(false);
-    ksPanel->setVisible(false);
-    granularPanel->setVisible(false);
+    for (auto& p : osc3dPanels) if (p) p->setVisible(false);
+    for (auto& p : oscWTPanels) if (p) p->setVisible(false);
+    for (auto& p : ksPanels) if (p) p->setVisible(false);
+    for (auto& p : granularPanels) if (p) p->setVisible(false);
+    for (auto& p : terrainPanels) if (p) p->setVisible(false);
     for (auto& p : vaPanels) if (p) p->setVisible(false);
     for (auto& v : fmBlockViews) v.setVisible(false);
 
@@ -366,18 +517,8 @@ void MainPanel::layoutOscillatorsTab()
     struct PanelSlot { juce::Component* comp; int units; };
     std::vector<PanelSlot> panels;
 
-    int vaIndex = 0; // globally tracks which VA param set the next VA slot uses
-
-    auto addOrGrow = [&](juce::Component* comp, int units = 1)
+    auto addPanel = [&](juce::Component* comp, int units = 1)
     {
-        for (auto& p : panels)
-        {
-            if (p.comp == comp)
-            {
-                p.units += units;
-                return;
-            }
-        }
         panels.push_back({comp, units});
     };
 
@@ -392,7 +533,7 @@ void MainPanel::layoutOscillatorsTab()
             if (isActivePage)
             {
                 fmBlockViews[(size_t)b].setVisible(true);
-                addOrGrow(&fmBlockViews[(size_t)b], 4);
+                addPanel(&fmBlockViews[(size_t)b], 4);
             }
         }
         else // Multi block — scan 4 slots
@@ -400,43 +541,49 @@ void MainPanel::layoutOscillatorsTab()
             for (int s = 0; s < 4; ++s)
             {
                 int type = slotBar->getSlotType(b, s);
+                const int slotIndex = b * 4 + s;
                 switch (type)
                 {
                     case 1: // 3D
-                        if (isActivePage)
+                        if (isActivePage && osc3dPanels[(size_t)slotIndex])
                         {
-                            osc3dPanel->setVisible(true);
-                            addOrGrow(osc3dPanel.get());
+                            osc3dPanels[(size_t)slotIndex]->setVisible(true);
+                            addPanel(osc3dPanels[(size_t)slotIndex].get());
                         }
                         break;
                     case 2: // VA
-                        if (isActivePage && vaIndex < 8 && vaPanels[(size_t)vaIndex])
+                        if (isActivePage && vaPanels[(size_t)slotIndex])
                         {
-                            vaPanels[(size_t)vaIndex]->setVisible(true);
-                            panels.push_back({vaPanels[(size_t)vaIndex].get(), 1});
+                            vaPanels[(size_t)slotIndex]->setVisible(true);
+                            addPanel(vaPanels[(size_t)slotIndex].get());
                         }
-                        if (isActivePage && vaIndex >= 8) addGap();
-                        ++vaIndex;
                         break;
                     case 3: // WT
-                        if (isActivePage)
+                        if (isActivePage && oscWTPanels[(size_t)slotIndex])
                         {
-                            oscWTPanel->setVisible(true);
-                            addOrGrow(oscWTPanel.get());
+                            oscWTPanels[(size_t)slotIndex]->setVisible(true);
+                            addPanel(oscWTPanels[(size_t)slotIndex].get());
                         }
                         break;
                     case 4: // KS
-                        if (isActivePage)
+                        if (isActivePage && ksPanels[(size_t)slotIndex])
                         {
-                            ksPanel->setVisible(true);
-                            addOrGrow(ksPanel.get());
+                            ksPanels[(size_t)slotIndex]->setVisible(true);
+                            addPanel(ksPanels[(size_t)slotIndex].get());
                         }
                         break;
                     case 5: // Granular
-                        if (isActivePage)
+                        if (isActivePage && granularPanels[(size_t)slotIndex])
                         {
-                            granularPanel->setVisible(true);
-                            addOrGrow(granularPanel.get());
+                            granularPanels[(size_t)slotIndex]->setVisible(true);
+                            addPanel(granularPanels[(size_t)slotIndex].get());
+                        }
+                        break;
+                    case 6: // Terrain
+                        if (isActivePage && terrainPanels[(size_t)slotIndex])
+                        {
+                            terrainPanels[(size_t)slotIndex]->setVisible(true);
+                            addPanel(terrainPanels[(size_t)slotIndex].get());
                         }
                         break;
                     default:

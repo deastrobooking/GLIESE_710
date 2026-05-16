@@ -18,6 +18,16 @@ enum class FilterMode
     SEMMorph,
     MSDual,
     Formant,
+    RolandJuno106,
+    RolandJuno60,
+    RolandJupiter4,
+    RolandJupiter8,
+    TB303,
+    SequentialP5Rev2,
+    SequentialP5Rev3,
+    SequentialP600,
+    SequentialP6,
+    SequentialProOne,
     NumModes
 };
 

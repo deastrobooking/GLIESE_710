@@ -137,6 +137,11 @@ void FMAlgorithm::setAlgorithm(int index)
     algorithmIndex = juce::jlimit(0, kNumAlgorithms - 1, index);
 }
 
+void FMAlgorithm::setAlgorithmMorph(float morph)
+{
+    algorithmMorph = juce::jlimit(0.f, 1.f, morph);
+}
+
 void FMAlgorithm::setNoteFrequency(float hz)
 {
     for (auto& op : ops) op.setNoteFrequency(hz);
@@ -171,39 +176,54 @@ void FMAlgorithm::reset()
 
 float FMAlgorithm::processSample()
 {
-    const auto& alg = kAlgorithms[algorithmIndex];
+    const auto& algA = kAlgorithms[algorithmIndex];
+    const auto& algB = kAlgorithms[(algorithmIndex + 1) % kNumAlgorithms];
+    const float morph = algorithmMorph;
     auto opOut = lastOutputs;
 
     // Process high-index modulators first. Feedback/cross-FM paths use the
     // previous sample's output, avoiding double-advancing operator phases.
-    for (int i = kNumOperators - 1; i >= 0; --i)
+    auto modulationSum = [&](const AlgorithmDef& alg, int opIndex)
     {
         float modInput = 0.f;
-        uint16_t mods = alg.opModulators[i];
+        uint16_t mods = alg.opModulators[opIndex];
         while (mods != 0)
         {
             int j = std::countr_zero((unsigned)mods);
             modInput += opOut[(size_t)j] * juce::MathConstants<float>::pi;
             mods = (uint16_t)(mods & (mods - 1));
         }
+        return modInput;
+    };
+
+    for (int i = kNumOperators - 1; i >= 0; --i)
+    {
+        float modInput = modulationSum(algA, i);
+        if (morph > 0.f)
+            modInput += (modulationSum(algB, i) - modInput) * morph;
 
         opOut[(size_t) i] = ops[(size_t) i].processSample(modInput);
     }
 
     lastOutputs = opOut;
 
-    // Sum carriers
-    float sum = 0.f;
-    int   numCarriers = 0;
-    uint16_t carriers = alg.carriers;
-    while (carriers != 0)
+    auto carrierSum = [&](const AlgorithmDef& alg)
     {
-        int i = std::countr_zero((unsigned)carriers);
-        sum += opOut[(size_t)i];
-        ++numCarriers;
-        carriers = (uint16_t)(carriers & (carriers - 1));
-    }
-    return (numCarriers > 0) ? sum / (float)numCarriers : 0.f;
+        float sum = 0.f;
+        int   numCarriers = 0;
+        uint16_t carriers = alg.carriers;
+        while (carriers != 0)
+        {
+            int i = std::countr_zero((unsigned)carriers);
+            sum += opOut[(size_t)i];
+            ++numCarriers;
+            carriers = (uint16_t)(carriers & (carriers - 1));
+        }
+        return (numCarriers > 0) ? sum / (float)numCarriers : 0.f;
+    };
+
+    float out = carrierSum(algA);
+    return morph > 0.f ? out + (carrierSum(algB) - out) * morph : out;
 }
 
 void FMAlgorithm::advanceEnvelopes()

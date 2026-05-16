@@ -85,7 +85,7 @@ After the LPF, the output is scaled by `decay` before being written back:
 loopOutput = lpfOutput × decay
 ```
 
-`decay` maps from the APVTS `osc_ks_decay` param (stored as 0–1) to the feedback range 0.99–0.9999:
+`decay` maps from the APVTS `osc_ks*_decay` param (stored as 0–1) to the feedback range 0.99–0.9999:
 
 ```cpp
 cachedKSParams.decay = 0.99f + 0.0099f × decayParam;
@@ -108,7 +108,7 @@ The `− 0.5` offset compensates for the half-sample group delay introduced by t
 
 ## Envelope
 
-KS has its own amplitude envelope (`ENV_KS`) which gates the output independently of the string's internal decay. The string's natural decay and the ADSR envelope interact multiplicatively.
+Each KS slot has its own amplitude envelope (`ENV_KS1` through `ENV_KS8`) which gates the output independently of the string's internal decay. The string's natural decay and the ADSR envelope interact multiplicatively.
 
 For realistic plucked behavior, set the ADSR to:
 ```
@@ -121,6 +121,8 @@ Release = 1.0 s
 This lets the KS loop decay freely after the note-off release phase.
 
 ## Parameters
+
+The table shows the first slot prefix. Additional KS slots use `osc_ks2_` through `osc_ks8_`.
 
 | Parameter | APVTS ID | Range | Effect |
 |---|---|---|---|
@@ -183,8 +185,9 @@ ADSR: A=0.001, D=0.05, S=0, R=0.3
 
 - **Buffer size**: `kMaxDelaySamples = 8192`. At 48 kHz this supports pitches down to ~5.9 Hz (below MIDI note 0), so the buffer is never a limiting factor for musical use.
 - **Active flag**: `isActive()` returns false once the loop output drops below `1e-6`. The voice render loop checks this and skips further KS processing, reclaiming CPU.
-- **Pluck on every noteOn**: `ksOsc.pluck()` is called in `SynthVoice::noteOn()` using `cachedKSParams` (the params from the previous render block). This means the first note of a session uses default KS params — subsequent notes use the live param values.
-- **No retrigger guard**: playing a new note while the previous string is still ringing re-excites the same delay buffer. This is intentional — it simulates re-plucking a still-vibrating string. To avoid this, set short decay or use voice steal.
+- **Eight independent instances**: `SynthVoice` owns `KarplusStrong[8]`, one per oscillator slot.
+- **Pluck on every noteOn**: each active KS slot calls `pluck()` in `SynthVoice::noteOn()` using the cached params for that slot. The first note of a session uses defaults; later notes use live parameter values.
+- **No retrigger guard**: playing a new note while the previous string is still ringing re-excites that slot's delay buffer. This simulates re-plucking a still-vibrating string. To avoid this, set short decay or use voice steal.
 
 ## Source Files
 

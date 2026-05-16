@@ -19,6 +19,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/KarplusStrong.cpp.o.d"
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/Osc3D.cpp.o"
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/Osc3D.cpp.o.d"
+  "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/TerrainOsc.cpp.o"
+  "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/TerrainOsc.cpp.o.d"
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/VAOscillator.cpp.o"
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/VAOscillator.cpp.o.d"
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/WavetableOsc.cpp.o"

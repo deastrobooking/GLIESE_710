@@ -16,6 +16,9 @@ void SingleFilter::prepare(double sampleRate)
     iirFilter.prepare(spec);
     cleanSVF.prepare(sampleRate);
     ladderLP.prepare(sampleRate);
+    tb303LP.prepare(sampleRate);
+    sequentialLP.prepare(sampleRate);
+    rolandLP.prepare(sampleRate);
     semMorph.prepare(sampleRate);
     msDual.prepare(sampleRate);
     combFilter.prepare(sampleRate);
@@ -49,6 +52,9 @@ void SingleFilter::reset()
     iirFilter.reset();
     cleanSVF.reset();
     ladderLP.reset();
+    tb303LP.reset();
+    sequentialLP.reset();
+    rolandLP.reset();
     semMorph.reset();
     msDual.reset();
     combFilter.reset();
@@ -155,6 +161,16 @@ void SingleFilter::configureIIR(float cutHz, float res, float drive)
         case FilterMode::SEMMorph:
         case FilterMode::MSDual:
         case FilterMode::Formant:
+        case FilterMode::RolandJuno106:
+        case FilterMode::RolandJuno60:
+        case FilterMode::RolandJupiter4:
+        case FilterMode::RolandJupiter8:
+        case FilterMode::TB303:
+        case FilterMode::SequentialP5Rev2:
+        case FilterMode::SequentialP5Rev3:
+        case FilterMode::SequentialP600:
+        case FilterMode::SequentialP6:
+        case FilterMode::SequentialProOne:
         case FilterMode::NumModes:
             break;
     }
@@ -205,6 +221,25 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
         case FilterMode::Ladder18:
         case FilterMode::Ladder24:
             out = ladderLP.processSample(input, fp);
+            break;
+
+        case FilterMode::TB303:
+            out = tb303LP.processSample(input, fp);
+            break;
+
+        case FilterMode::SequentialP5Rev2:
+        case FilterMode::SequentialP5Rev3:
+        case FilterMode::SequentialP600:
+        case FilterMode::SequentialP6:
+        case FilterMode::SequentialProOne:
+            out = sequentialLP.processSample(input, fp);
+            break;
+
+        case FilterMode::RolandJuno106:
+        case FilterMode::RolandJuno60:
+        case FilterMode::RolandJupiter4:
+        case FilterMode::RolandJupiter8:
+            out = rolandLP.processSample(input, fp);
             break;
 
         case FilterMode::SEMMorph:

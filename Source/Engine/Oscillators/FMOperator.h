@@ -38,6 +38,7 @@ public:
         float spectralResonance = 0.25f;    // peak position for Res waveforms
         float velocityDepth = 0.f;         // 0 = velocity ignored, 1 = linear vel scaling
         float keyScaleDepth = 0.f;         // level change per octave from C4 (-1..+1)
+        float phaseOffset = 0.f;           // normalized initial phase 0..1
         bool  keyOnReset = true;           // reset phase/feedback on note-on
     };
 

@@ -40,6 +40,9 @@ private:
 
     CleanSVF cleanSVF;
     LadderLP ladderLP;
+    TB303LP tb303LP;
+    SequentialLP sequentialLP;
+    RolandLP rolandLP;
     SEMMorph semMorph;
     MSDual msDual;
     CombFilter combFilter;

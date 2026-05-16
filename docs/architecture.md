@@ -2,154 +2,166 @@
 
 ## Signal Flow
 
-```
+```text
 MIDI Input
-    │
-    ▼
+    |
+    v
 Sample-accurate MIDI / Arpeggiator scheduler
-    │
-    ▼
-SynthEngine  (voice pool — 10 voices, oldest-note stealing)
-    │
-    ├── SynthVoice × 10
-    │       │
-    │       ├── [LFO Engine]    (4 LFOs — processed once per block)
-    │       ├── [Mod Matrix]    (32 slots: source → dest accumulation)
-    │       │
-    │       ├── Osc3D ×6        → env3D    ─╮  ensemble detune / field / path / warp / fold / drive
-    │       ├── FMAlgorithm ×2  → envFM    ─┤  dual-engine detuned chorus (2nd engine optional)
-    │       ├── KarplusStrong   → envKS    ─┤  plucked on noteOn, self-decaying
-    │       ├── WavetableOsc    → envWT    ─┤  additive mix
-    │       ├── GranularOsc ×8  → envGRAN  ─┤  preallocated stereo grain cloud
-    │       ├── VAOscillator ×8 → envVA1-4 ─╯
-    │       │
-    │       ├── DualFilter (Filter A → Filter B  or  parallel)
-    │       │       └── per-filter ADSR envelopes
-    │       │
-    │       └── Master ADSR × volume × pan
-    │
-    ▼
-Stereo Output Buffer (accumulated across all active voices)
+    |
+    v
+SynthEngine  (voice pool, oldest-note stealing)
+    |
+    +-- SynthVoice
+        |
+        +-- LFOEngine        (4 block-rate LFO values)
+        +-- ModMatrix        (32 slots: source -> destination accumulation)
+        |
+        +-- Osc3D[8]         -> ENV_3D1..8
+        +-- FMAlgorithm A    -> ENV_FM
+        +-- FMAlgorithm B    -> ENV_FM2
+        +-- WavetableOsc[8]  -> ENV_WT1..8
+        +-- GranularOsc[8]   -> ENV_GRAN1..8
+        +-- TerrainOsc[8]    -> ENV_TERRAIN1..8
+        +-- VAOscillator[8]  -> ENV_VA1..8
+        +-- KarplusStrong[8] -> ENV_KS1..8
+        |
+        +-- DualFilter       (A -> B, parallel, A only, or B only)
+        |     +-- filter ADSR A / B
+        |
+        +-- Master ADSR x volume x pan
+    |
+    v
+Stereo output buffer
 ```
+
+FM engines are page-level engines. Non-FM oscillators are slot-level engines. A voice owns all possible engines so switching a page or slot type changes which engines are rendered, not which parameters exist.
 
 ## Module Ownership
 
 | Class | Owns | Lives in |
 |---|---|---|
-| `GLIESE710AudioProcessor` | `SynthEngine`, `PresetManager`, `APVTS` | PluginProcessor |
-| `SynthEngine` | `SynthVoice[10]`, `Arpeggiator`, master age/feedback effects | Engine/ |
-| `SynthVoice` | `Osc3D[8]`, `FMAlgorithm×2`, `KarplusStrong[4]`, `WavetableOsc[4]`, `GranularOsc[8]`, `VAOscillator[8]`, `EnvelopeBank`, `LFOEngine`, `DualFilter`, `ModMatrix` | Engine/ |
-| `FMAlgorithm` | `FMOperator[10]` | Engine/Oscillators/ |
-| `GranularOsc` | fixed sample buffer, `Grain[96]`, trigger clock, deterministic RNG | Engine/Oscillators/ |
-| `KarplusStrong` | circular delay buffer, LPF state, APF state | Engine/Oscillators/ |
-| `DualFilter` | `SingleFilter × 2`, Clean SVF/Ladder/SEM/MS/Formant/Comb model cores, `ADSREnvelope × 2` | Engine/Filter/ |
-| `EnvelopeBank` | `ADSREnvelope[12]` (master, 3D, FM, WT, VA×4, KS, granular, filterA, filterB) | Engine/Envelopes/ |
+| `GLIESE710AudioProcessor` | `SynthEngine`, `PresetManager`, `AudioProcessorValueTreeState` | `Source/PluginProcessor.*` |
+| `SynthEngine` | voice pool, arpeggiator, host tempo handoff | `Source/Engine/` |
+| `SynthVoice` | `Osc3D[8]`, `FMAlgorithm[2]`, `WavetableOsc[8]`, `GranularOsc[8]`, `TerrainOsc[8]`, `VAOscillator[8]`, `KarplusStrong[8]`, `EnvelopeBank`, `LFOEngine`, `DualFilter`, `ModMatrix` | `Source/Engine/SynthVoice.*` |
+| `FMAlgorithm` | `FMOperator[10]`, algorithm state, morph/index controls | `Source/Engine/Oscillators/` |
+| `GranularOsc` | fixed sample buffer, preallocated grain pool, optional modal body | `Source/Engine/Oscillators/` |
+| `TerrainOsc` | procedural/imported heightmap, blurred terrain copy, scan-path state | `Source/Engine/Oscillators/` |
+| `DualFilter` | two `SingleFilter` slots, model cores, filter envelopes | `Source/Engine/Filter/` |
+| `EnvelopeBank` | master, FM A/B, eight envelopes for each slot family, filter A/B | `Source/Engine/Envelopes/` |
+
+`EnvelopeBank` currently has 53 envelope slots:
+
+```text
+Master
+FM A, FM B
+3D x8
+WT x8
+VA x8
+KS x8
+Granular x8
+Terrain x8
+Filter A, Filter B
+```
 
 ## Thread Model
 
-```
+```text
 Message Thread          Audio Thread
-─────────────           ─────────────
-APVTS writes            APVTS reads (atomic)
+--------------          ------------
+APVTS writes            atomic APVTS reads
 Preset load/save        processBlock()
-UI repaints             No allocation
-                        No locks
-                        No system calls
+UI repaints             no allocation
+                        no locks
+                        no system calls
 ```
 
-**Rule:** nothing in `processBlock()` or any method called from it may allocate memory, lock a mutex, or call a system API. The arpeggiator reserves its note vectors during prepare, and MIDI rendering uses member buffers rather than per-block heap allocation.
+Parameter pointers are cached during engine setup. Render-time code reads atomics once per active voice block, builds a `ParamCache`, applies modulation offsets, then syncs each sub-engine.
 
-## Parameter System
+## Engine Pages And Slots
 
-All controls are registered as `juce::AudioProcessorParameter` children of `AudioProcessorValueTreeState` (APVTS). This gives:
+The UI has two oscillator pages. Each page has one of two modes:
 
-- Thread-safe reads from the audio thread via `getRawParameterValue()` → `std::atomic<float>*`
-- Automatic DAW automation
-- Free undo/redo
-- One-call preset serialization via `copyState()` → `ValueTree` → XML
+| Mode | Meaning |
+|---|---|
+| `FM` | Both pages display FM engines. Page 1 is FM A, Page 2 is FM B. |
+| `Oscillators` | Both pages display four slots each. Each slot can be none, 3D, VA, wavetable, KS, granular, or terrain. |
 
-Parameter pointers are cached as `std::atomic<float>*` during engine setup with a render-time fallback for unusual host lifecycle ordering. Values are read once per active voice block in `SynthVoice::renderBlock`, then applied to sub-engines through `SynthVoice::syncParams()`. See [docs/modulation-matrix.md](modulation-matrix.md) for how mod matrix offsets are layered on top of base parameter values.
+Slot type IDs are registered in `EngineSlotBar`:
 
-## MIDI Timing
+```text
+0 = None
+1 = 3D
+2 = VA
+3 = Wavetable
+4 = Karplus-Strong
+5 = Granular
+6 = Wave Terrain
+```
 
-`SynthEngine::renderNextBlock()` renders voice audio in segments split at MIDI event sample positions. This keeps note-on/note-off timing sample-accurate within the host block.
+The default multi-page layout shows 3D, VA, WT, and KS on Page 1, then Granular and Terrain on Page 2. The Page 2 engines start with level at zero so they are visible without changing the default patch sound.
 
-When the arpeggiator is enabled, incoming note events update the arpeggiator at their original sample positions. Generated arp events are merged into a member MIDI buffer, then the same segmented renderer plays the resulting events. See [docs/arpeggiator.md](arpeggiator.md) for full parameter and pattern documentation.
+The APVTS stores page mode and slot type separately so adding multiple oscillators of the same type does not resize the GUI or reuse the same control set. Instance prefixes are generated by index:
 
-Host BPM is read by `GLIESE710AudioProcessor::processBlock()` and passed into the synth engine. The engine forwards it to the arpeggiator and each voice's LFO engine for sync-rate calculations.
+```text
+osc_wt_      osc_wt2_      ... osc_wt8_
+osc_grain_   osc_grain2_   ... osc_grain8_
+osc_terrain_ osc_terrain2_ ... osc_terrain8_
+osc_va_      osc_va2_      ... osc_va8_
+osc_ks_      osc_ks2_      ... osc_ks8_
+```
 
 ## Voice Lifecycle
 
-```
-noteOn(note, vel)
-  → findFreeVoice() or stealVoice() (oldest age)
-      → voice.noteOn(note, vel)
-      → set frequency on all Osc3D[6], fm, fm2, wtOsc, vaOscs[4], ksOsc
-      → ksOsc.pluck(velocity, cachedKSParams)  ← KS triggered immediately
-      → envBank.noteOn()  ← triggers all 12 voice envelopes
-      → fm.noteOn(), fm2.noteOn()  ← per-operator envelopes
-      → dualFilter.noteOn()
+```text
+noteOn(note, velocity)
+  -> choose free voice or steal oldest voice
+  -> set base frequency on all oscillator instances
+  -> trigger pluck-style engines that need note-on excitation
+  -> envBank.noteOn()
+  -> fmA.noteOn(), fmB.noteOn()
+  -> dualFilter.noteOn()
 
 noteOff(note)
-  → voice.noteOff()
-      → envBank.noteOff()  ← starts release on all envelopes
-      → fm.noteOff(), fm2.noteOff()
-      → dualFilter.noteOff()
+  -> envBank.noteOff()
+  -> fmA.noteOff(), fmB.noteOff()
+  -> dualFilter.noteOff()
 
-Voice::isActive()
-  → true while envBank.anyActive()
-  → returns false when master ADSR reaches Idle
-  → voice is then available for reuse
+isActive()
+  -> true while the master envelope or any relevant tail remains active
 ```
 
-Every envelope in `EnvelopeBank` is advanced each rendered sample, even if the corresponding oscillator level is zero. This prevents silent oscillators or filter envelopes from holding a voice active forever.
-
-## Adding a New Module
-
-1. Create `Source/Engine/YourModule/YourModule.{h,cpp}`
-2. Add `void prepare(double sampleRate)` and `void reset()`
-3. Add it as a member of `SynthVoice`
-4. Call `prepare()` in `SynthVoice::prepare()`
-5. Call `reset()` in `SynthVoice::reset()`
-6. Register any new parameters in `PluginProcessor.cpp` → `buildLayout()`
-7. Cache/read params and call your module in `SynthVoice::buildParamCache()` and `SynthVoice::syncParams()`
-8. Add the `.cpp` to `target_sources` in `CMakeLists.txt`
+All envelopes are advanced every rendered sample. This prevents disabled oscillators or hidden page modes from holding a voice active forever.
 
 ## UI Layout
 
-The editor is a `GLIESE710AudioProcessorEditor` (default 1200×780, resizable 900–1920 × 600–1200). It has two direct children, stacked vertically:
+The editor has a preset strip, main tab area, and master strip:
 
-```
-┌──────────────────────────────────────────────────────────┐
-│  PresetBrowser  (36 px, top strip)                       │
-├──────────────────────────────────────────────────────────┤
-│  MainPanel  (remaining height)                           │
-│                                                          │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │  TabbedComponent  (TabsAtTop, depth 28 px)       │   │
-│  │                                                  │   │
-│  │  Tab 1 — OSCILLATORS                                      │   │
-│  │    Slot bar + Page 1 / Page 2 selector                    │   │
-│  │    Each page is either an FM engine view or 4 oscillator slots │ │
-│  │    WT panel: table, warp mode, position, unison, phase controls ││
-│  │                                                  │   │
-│  │  Tab 2 — FM CONTROLS                             │   │
-│  │    Enable + algorithm + FM level/octave + ADSR   │   │
-│  │    Rows: Op0–Op9 coarse, level, wave, velocity,  │   │
-│  │    and key-scale controls                        │   │
-│  │                                                  │   │
-│  │  Tab 3 — FILTER / MOD / ARP                      │   │
-│  │    FilterPanel  (top 240 px)                     │   │
-│  │    Bottom row: ModMatrixPanel | LFOPanel | ArpPanel│  │
-│  └──────────────────────────────────────────────────┘   │
-│                                                          │
-│  Master strip  (bottom 124 px)                           │
-│    MASTER │ Vol Tune Oct Pan Port Age Feed PB MW │ A D S R│
-└──────────────────────────────────────────────────────────┘
+```text
+PresetBrowser
+MainPanel
+  Tab 1: Oscillators
+    Slot bar
+    Page 1 / Page 2 selector
+    FM page view or four oscillator panels
+  Tab 2: FM A
+  Tab 3: FM B
+  Tab 4: Filter / Mod / Arp
+Master strip
 ```
 
-**Color scheme**: industrial dark faceplate, background `#050607`, and per-module accent colors from `IndustrialTheme`.
+`OscPanel` is parameterized by an oscillator ID and instance index. It builds the correct APVTS prefix and shows type-specific controls for 3D, WT, granular, terrain, VA, and KS slots.
 
-**OscPanel** is a generic panel parameterized by `oscId` (`"3d"`, `"ks"`, `"va"`, `"va2"`, `"va3"`, `"va4"`, `"wt"`). It shows a title label, enable toggle, level/octave knobs, per-oscillator ADSR, mode combo boxes, and type-specific extra sliders — all wired to APVTS parameter IDs prefixed with `osc_{oscId}_`.
+## Adding A New Oscillator Type
 
-To change the tab layout, edit `MainPanel::resized()` in [Source/UI/MainPanel.cpp](../Source/UI/MainPanel.cpp).
+1. Add `Source/Engine/Oscillators/YourOsc.{h,cpp}`.
+2. Add the class as an array member in `SynthVoice`.
+3. Register APVTS parameters in `PluginProcessor.cpp`.
+4. Add envelope IDs to `EnvelopeBank` if the oscillator needs per-slot amplitude envelopes.
+5. Cache, sync, and render the oscillator in `SynthVoice`.
+6. Add the type to `EngineSlotBar` and `OscPanel`.
+7. Add the `.cpp` file to `CMakeLists.txt`.
+8. Add tests in `Tests/EngineTests.cpp`.
+
+## Build Artefacts
+
+Build outputs are produced under `build/`, `build-productions/`, or any CMake build directory selected by the developer. Those directories are not source-of-truth documentation; source files, docs, and tests are.

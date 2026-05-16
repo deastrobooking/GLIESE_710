@@ -105,13 +105,35 @@ void GranularOsc::setSample(const float* samples, int numSamples)
         return;
     }
 
-    for (int i = 0; i < kSourceSamples; ++i)
+    const int regionSize = juce::jmax(2, numSamples / kTableFrames);
+    std::array<float, kFrameSamples> frame {};
+
+    for (int f = 0; f < kTableFrames; ++f)
     {
-        const float srcPos = (float) i * (float) (numSamples - 1) / (float) (kSourceSamples - 1);
-        const int i0 = juce::jlimit(0, numSamples - 1, (int) srcPos);
-        const int i1 = juce::jlimit(0, numSamples - 1, i0 + 1);
-        const float frac = srcPos - (float) i0;
-        source[(size_t) i] = samples[i0] + (samples[i1] - samples[i0]) * frac;
+        const int frameOffset = f * kFrameSamples;
+        const float regionStart = (float) f * (float) (numSamples - 1) / (float) kTableFrames;
+        const float regionEnd = juce::jmin((float) numSamples - 1.f, regionStart + (float) regionSize);
+
+        for (int i = 0; i < kFrameSamples; ++i)
+        {
+            const float srcPos = regionStart + (regionEnd - regionStart) * (float) i / (float) (kFrameSamples - 1);
+            const int i0 = juce::jlimit(0, numSamples - 1, (int) srcPos);
+            const int i1 = juce::jlimit(0, numSamples - 1, i0 + 1);
+            const float frac = srcPos - (float) i0;
+            frame[(size_t) i] = samples[i0] + (samples[i1] - samples[i0]) * frac;
+        }
+
+        float dc = 0.f;
+        for (float s : frame)
+            dc += s;
+        dc /= (float) kFrameSamples;
+
+        const float endDelta = frame[(size_t) kFrameSamples - 1] - frame[0];
+        for (int i = 0; i < kFrameSamples; ++i)
+        {
+            const float t = (float) i / (float) (kFrameSamples - 1);
+            source[(size_t) frameOffset + (size_t) i] = juce::jlimit(-1.f, 1.f, frame[(size_t) i] - dc - endDelta * t);
+        }
     }
 }
 
@@ -163,16 +185,18 @@ std::pair<float, float> GranularOsc::processSample()
 
         const float phase = (float) grain.age / (float) juce::jmax(1, grain.length);
         const float amp = windowValue(grain.window, phase) * grain.gain;
-        const float s = readSource(grain.readPos) * amp;
+        const float s = readSource(grain.readPos, grain.loopStart, grain.loopLength) * amp;
 
         outL += s * grain.panL;
         outR += s * grain.panR;
 
         grain.readPos += grain.step;
-        while (grain.readPos < 0.f)
-            grain.readPos += (float) kSourceSamples;
-        while (grain.readPos >= (float) kSourceSamples)
-            grain.readPos -= (float) kSourceSamples;
+        const float loopStart = (float) grain.loopStart;
+        const float loopEnd = loopStart + (float) grain.loopLength;
+        while (grain.readPos < loopStart)
+            grain.readPos += (float) grain.loopLength;
+        while (grain.readPos >= loopEnd)
+            grain.readPos -= (float) grain.loopLength;
 
         ++grain.age;
         if (grain.age >= grain.length)
@@ -194,18 +218,34 @@ int GranularOsc::getActiveGrainCount() const
 
 void GranularOsc::generateDefaultSource()
 {
-    uint32_t noise = 0x1234567u;
-    for (int i = 0; i < kSourceSamples; ++i)
+    for (int f = 0; f < kTableFrames; ++f)
     {
-        const float t = (float) i / (float) kSourceSamples;
-        noise = noise * 1664525u + 1013904223u;
-        const float n = ((float) ((noise >> 8u) & 0xffffu) / 32768.f) - 1.f;
+        const float morph = (float) f / (float) (kTableFrames - 1);
+        const float brightness = 0.15f + 0.85f * morph;
+        const float formantCentre = 2.0f + 22.0f * morph;
+        const float oddBias = 0.35f + 0.55f * std::sin(juce::MathConstants<float>::pi * morph);
+        const float drive = 0.95f + 1.8f * morph;
+        const int maxHarm = juce::jlimit(3, 40, 4 + juce::roundToInt(34.f * morph));
 
-        const float formant = std::sin(juce::MathConstants<float>::twoPi * (22.f * t + 0.06f * std::sin(juce::MathConstants<float>::twoPi * 3.f * t)));
-        const float shimmer = std::sin(juce::MathConstants<float>::twoPi * (57.f * t + 0.02f * std::sin(juce::MathConstants<float>::twoPi * 11.f * t)));
-        const float body = std::sin(juce::MathConstants<float>::twoPi * 9.f * t);
-        const float breath = n * (0.25f + 0.75f * std::sin(juce::MathConstants<float>::pi * t));
-        source[(size_t) i] = std::tanh(0.52f * formant + 0.28f * shimmer + 0.18f * body + 0.08f * breath);
+        for (int i = 0; i < kFrameSamples; ++i)
+        {
+            const float phase = juce::MathConstants<float>::twoPi * (float) i / (float) kFrameSamples;
+            float sample = std::sin(phase);
+            float norm = 1.f;
+
+            for (int h = 2; h <= maxHarm; ++h)
+            {
+                const float hf = (float) h;
+                const float rolloff = std::pow(hf, -(1.8f - brightness * 0.95f));
+                const float oddWeight = (h & 1) ? 1.f : (1.f - oddBias);
+                const float formant = 0.35f + 1.15f * std::exp(-0.5f * std::pow((hf - formantCentre) / 3.2f, 2.f));
+                const float amp = rolloff * oddWeight * formant;
+                sample += amp * std::sin(phase * hf + morph * hf * 0.13f);
+                norm += std::abs(amp);
+            }
+
+            source[(size_t) f * (size_t) kFrameSamples + (size_t) i] = std::tanh((sample / norm) * drive);
+        }
     }
 }
 
@@ -230,15 +270,20 @@ void GranularOsc::triggerGrain()
     }
 
     const float position = params.freeze >= 0.5f ? params.position : scanPosition;
-    const float spraySamples = params.spray * params.spray * (float) kSourceSamples * 0.35f;
-    const float pos = wrap01(position + randomBipolar() * spraySamples / (float) kSourceSamples);
+    const float frameSpray = params.spray * params.spray * (float) kTableFrames * 0.35f;
+    const float framePos = wrap01(position + randomBipolar() * frameSpray / (float) kTableFrames);
+    const int frameIndex = juce::jlimit(0, kTableFrames - 1,
+        juce::roundToInt(framePos * (float) (kTableFrames - 1)));
+    const int loopStart = frameIndex * kFrameSamples;
+    const int loopLength = kFrameSamples;
     const float sizeJitter = 1.f + randomBipolar() * params.jitter * 0.75f;
     const int length = juce::jlimit(8, (int) (sr * 1.5),
         juce::roundToInt(params.sizeMs * 0.001f * (float) sr * juce::jlimit(0.2f, 2.f, sizeJitter)));
 
-    const float pitchRand = randomBipolar() * params.jitter * 12.f;
+    const float pitchRand = randomBipolar() * params.jitter * 4.f;
     const float pitch = params.pitchSemis + pitchRand;
-    float step = std::pow(2.f, pitch / 12.f);
+    const float grainHz = juce::jlimit(1.f, 20000.f, frequency * std::pow(2.f, pitch / 12.f));
+    float step = grainHz * (float) kFrameSamples / (float) sr;
 
     bool reverse = random01() < params.reverseProb;
     if (params.reverseProb > 0.49f && params.reverseProb < 0.51f)
@@ -254,7 +299,9 @@ void GranularOsc::triggerGrain()
     const float right = std::sqrt(0.5f + 0.5f * pan);
 
     target->active = true;
-    target->readPos = pos * (float) (kSourceSamples - 1);
+    target->loopStart = loopStart;
+    target->loopLength = loopLength;
+    target->readPos = reverse ? (float) (loopStart + loopLength - 1) : (float) loopStart;
     target->step = step;
     target->age = 0;
     target->length = length;
@@ -264,10 +311,14 @@ void GranularOsc::triggerGrain()
     target->window = params.window;
 }
 
-float GranularOsc::readSource(float pos) const
+float GranularOsc::readSource(float pos, int loopStart, int loopLength) const
 {
-    const int i0 = ((int) pos) & (kSourceSamples - 1);
-    const int i1 = (i0 + 1) & (kSourceSamples - 1);
+    loopStart = juce::jlimit(0, kSourceSamples - 1, loopStart);
+    loopLength = juce::jlimit(1, kSourceSamples - loopStart, loopLength);
+    const int offset0 = juce::jlimit(0, loopLength - 1, (int) std::floor(pos) - loopStart);
+    const int offset1 = (offset0 + 1) % loopLength;
+    const int i0 = loopStart + offset0;
+    const int i1 = loopStart + offset1;
     const float frac = pos - std::floor(pos);
     return source[(size_t) i0] + (source[(size_t) i1] - source[(size_t) i0]) * frac;
 }

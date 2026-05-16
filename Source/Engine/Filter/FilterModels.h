@@ -115,6 +115,16 @@ public:
             case FilterMode::SEMMorph:
             case FilterMode::MSDual:
             case FilterMode::Formant:
+            case FilterMode::RolandJuno106:
+            case FilterMode::RolandJuno60:
+            case FilterMode::RolandJupiter4:
+            case FilterMode::RolandJupiter8:
+            case FilterMode::TB303:
+            case FilterMode::SequentialP5Rev2:
+            case FilterMode::SequentialP5Rev3:
+            case FilterMode::SequentialP600:
+            case FilterMode::SequentialP6:
+            case FilterMode::SequentialProOne:
             case FilterMode::NumModes:
                 return input;
         }
@@ -175,6 +185,16 @@ private:
             case FilterMode::SEMMorph:
             case FilterMode::MSDual:
             case FilterMode::Formant:
+            case FilterMode::RolandJuno106:
+            case FilterMode::RolandJuno60:
+            case FilterMode::RolandJupiter4:
+            case FilterMode::RolandJupiter8:
+            case FilterMode::TB303:
+            case FilterMode::SequentialP5Rev2:
+            case FilterMode::SequentialP5Rev3:
+            case FilterMode::SequentialP600:
+            case FilterMode::SequentialP6:
+            case FilterMode::SequentialProOne:
             case FilterMode::NumModes:
                 break;
         }
@@ -240,7 +260,7 @@ private:
     }
 };
 
-class SEMMorph final : public IFilter
+class TB303LP final : public IFilter
 {
 public:
     void prepare(double sampleRate) override
@@ -251,8 +271,9 @@ public:
 
     void reset() override
     {
-        low = 0.f;
-        band = 0.f;
+        z.fill(0.f);
+        feedbackLow = 0.f;
+        cutoffMemory = 900.f;
     }
 
     float processSample(float input, const FilterProcessParams& params) override
@@ -269,29 +290,577 @@ public:
 
 private:
     double sr = 48000.0;
-    float low = 0.f;
-    float band = 0.f;
+    std::array<float, 3> z {};
+    float feedbackLow = 0.f;
+    float cutoffMemory = 900.f;
+
+    static float softLimit(float x, float amount)
+    {
+        amount = juce::jlimit(0.f, 1.f, amount);
+        if (amount <= 0.0001f)
+            return x;
+
+        const float drive = 1.f + amount * 4.5f;
+        return std::tanh(x * drive) / drive;
+    }
+
+    static float asymLimit(float x, float amount)
+    {
+        const float bias = amount * 0.035f;
+        return softLimit(x + bias, amount) - bias * 0.55f;
+    }
+
+    static float logNormaliseCutoff(float cutoff)
+    {
+        const float hz = juce::jlimit(20.f, 20000.f, cutoff);
+        return juce::jlimit(0.f, 1.f, std::log(hz / 20.f) / std::log(1000.f));
+    }
+
+    static float onePoleG(float cutoff, double sampleRate)
+    {
+        const float g = std::tan(juce::MathConstants<float>::pi * cutoff / (float) sampleRate);
+        return g / (1.f + g);
+    }
 
     float processCore(float input, const FilterProcessParams& params, double coreSr)
     {
-        const float cutoff = juce::jlimit(20.f, (float) coreSr * 0.22f, params.cutoff);
-        const float f = juce::jlimit(0.001f, 0.99f,
-            2.f * std::sin(juce::MathConstants<float>::pi * cutoff / (float) coreSr));
-        const float damping = juce::jlimit(0.05f, 2.f, 1.75f - params.resonance * 1.65f);
+        const float accent = juce::jlimit(0.f, 1.f, params.morph);
+        const float cutoffNorm = logNormaliseCutoff(params.cutoff);
+        const float acidRangeHz = 55.f * std::pow(210.f, cutoffNorm);
+        const float targetCutoff = juce::jlimit(25.f,
+                                                juce::jmin(15500.f, (float) coreSr * 0.36f),
+                                                acidRangeHz * std::pow(2.f, accent * 0.85f));
+        cutoffMemory += (targetCutoff - cutoffMemory) * (0.18f + accent * 0.45f);
+
+        const float cutoff = juce::jlimit(25.f,
+                                          juce::jmin(15500.f, (float) coreSr * 0.36f),
+                                          cutoffMemory);
+        const float G = onePoleG(cutoff, coreSr);
+        const float brightG = onePoleG(juce::jmin(cutoff * 2.05f, (float) coreSr * 0.42f), coreSr);
+
+        const float hpHz = 140.f + accent * 520.f;
+        const float hpG = 1.f - std::exp(-2.f * juce::MathConstants<float>::pi * hpHz / (float) coreSr);
+        feedbackLow += hpG * (z[2] - feedbackLow);
+        const float feedbackHp = z[2] - feedbackLow;
+
+        const float res = juce::jlimit(0.f, 1.f, params.resonance);
+        const float resAmount = std::pow(res, 0.72f) * (2.35f + accent * 1.15f);
+        const float sat = juce::jlimit(0.f, 1.f, params.saturation);
+        const float driveGain = 0.85f + params.drive * 5.25f + accent * 1.35f;
+
+        float stageIn = input * driveGain - softLimit(feedbackHp * resAmount,
+                                                      0.18f + sat * 0.35f + accent * 0.25f);
+        stageIn = asymLimit(stageIn, 0.25f + sat * 0.55f + accent * 0.25f);
+
+        for (int i = 0; i < 3; ++i)
+        {
+            const float stageG = i == 2 ? brightG : G;
+            const float v = (stageIn - z[(size_t) i]) * stageG;
+            const float y = v + z[(size_t) i];
+            z[(size_t) i] = y + v;
+
+            if (std::abs(z[(size_t) i]) < 1.0e-20f)
+                z[(size_t) i] = 0.f;
+
+            stageIn = asymLimit(y, 0.12f + sat * 0.35f + accent * 0.12f);
+        }
+
+        float out = z[2] * (1.0f + res * 0.18f + accent * 0.14f);
+        out *= 1.f + params.bassComp * res * 0.35f;
+        out = asymLimit(out, sat * 0.3f + accent * 0.16f);
+        return FilterModelDetail::clampAudio(out);
+    }
+};
+
+class SequentialLP final : public IFilter
+{
+public:
+    void prepare(double sampleRate) override
+    {
+        sr = sampleRate;
+        reset();
+    }
+
+    void reset() override
+    {
+        z.fill(0.f);
+        feedbackMemory = 0.f;
+        previousOutput = 0.f;
+        cutoffMemory = 1000.f;
+    }
+
+    float processSample(float input, const FilterProcessParams& params) override
+    {
+        const int factor = FilterModelDetail::oversampleFactor(params.oversample);
+        const double coreSr = sr * (double) factor;
+        float out = 0.f;
+
+        for (int i = 0; i < factor; ++i)
+            out = processCore(input, params, coreSr);
+
+        return out;
+    }
+
+private:
+    struct Character
+    {
+        float cutoffScale = 1.f;
+        float maxCutoff = 20000.f;
+        float feedback = 3.75f;
+        float feedbackMorph = 0.f;
+        float resonanceCurve = 1.f;
+        float maxResonance = 1.f;
+        float inputBase = 0.9f;
+        float inputRange = 3.f;
+        float inputSaturation = 0.25f;
+        float stageSaturation = 0.12f;
+        float leakage = 0.9995f;
+        float cutoffSlew = 0.6f;
+        float feedbackSlew = 1.f;
+        float outputSmoothing = 0.f;
+        float highComp = 0.f;
+        float outputGain = 1.f;
+        float bassComp = 0.35f;
+        float compression = 0.f;
+        float stageSpread = 0.f;
+        int poles = 4;
+        bool asymmetric = false;
+        bool prophet6Slope = false;
+        bool aggressiveCutoff = false;
+    };
+
+    double sr = 48000.0;
+    std::array<float, 4> z {};
+    float feedbackMemory = 0.f;
+    float previousOutput = 0.f;
+    float cutoffMemory = 1000.f;
+
+    static Character getCharacter(FilterMode mode)
+    {
+        switch (mode)
+        {
+            case FilterMode::SequentialP5Rev2:
+                // SSM 2040 style: liquid resonance, softer clipping and
+                // slightly imperfect component spread.
+                return { 0.90f, 18000.f, 3.55f, 0.20f, 1.12f, 0.98f,
+                         0.78f, 2.45f, 0.30f, 0.18f, 0.9992f, 0.34f,
+                         0.36f, 0.035f, 0.07f, 0.98f, 0.48f, 0.16f,
+                         0.018f, 4, false, false, false };
+
+            case FilterMode::SequentialP5Rev3:
+                // CEM 3320 Prophet-5 Rev 3: brighter, faster and punchier.
+                return { 1.0f, 20000.f, 3.90f, 0.28f, 0.92f, 1.0f,
+                         0.92f, 3.25f, 0.18f, 0.10f, 0.9998f, 0.82f,
+                         1.0f, 0.01f, 0.11f, 1.02f, 0.35f, 0.035f,
+                         0.006f, 4, false, false, false };
+
+            case FilterMode::SequentialP600:
+                // Same chip family as Rev 3, but darker surrounding values and
+                // slower envelope/filter response.
+                return { 0.72f, 16500.f, 3.35f, 0.10f, 1.05f, 0.92f,
+                         0.66f, 2.15f, 0.24f, 0.16f, 0.9987f, 0.16f,
+                         0.42f, 0.18f, 0.0f, 0.88f, 0.42f, 0.08f,
+                         0.012f, 4, false, false, false };
+
+            case FilterMode::SequentialP6:
+                // Modern SSI/discrete take: controlled resonance with variable
+                // slope on Morph, inspired by the Prophet-6 2/4-pole option.
+                return { 1.0f, 22000.f, 3.78f, 0.12f, 0.98f, 0.99f,
+                         0.92f, 2.80f, 0.16f, 0.10f, 0.9997f, 0.78f,
+                         1.0f, 0.015f, 0.025f, 1.0f, 0.30f, 0.025f,
+                         0.004f, 4, false, true, false };
+
+            case FilterMode::SequentialProOne:
+                // Hot CEM monosynth voice: fast response, aggressive feedback
+                // and a little asymmetric output behavior.
+                return { 1.02f, 20000.f, 4.02f, 0.42f, 1.35f, 1.0f,
+                         1.08f, 4.90f, 0.32f, 0.20f, 0.9999f, 1.0f,
+                         1.0f, 0.0f, 0.08f, 1.04f, 0.32f, 0.02f,
+                         0.006f, 4, true, false, true };
+
+            case FilterMode::LP12:
+            case FilterMode::LP24:
+            case FilterMode::HP12:
+            case FilterMode::HP24:
+            case FilterMode::Bandpass:
+            case FilterMode::Notch:
+            case FilterMode::Peak:
+            case FilterMode::LowShelf:
+            case FilterMode::HighShelf:
+            case FilterMode::Comb:
+            case FilterMode::AM_Plus:
+            case FilterMode::AM_Minus:
+            case FilterMode::Ladder12:
+            case FilterMode::Ladder18:
+            case FilterMode::Ladder24:
+            case FilterMode::SEMMorph:
+            case FilterMode::MSDual:
+            case FilterMode::Formant:
+            case FilterMode::RolandJuno106:
+            case FilterMode::RolandJuno60:
+            case FilterMode::RolandJupiter4:
+            case FilterMode::RolandJupiter8:
+            case FilterMode::TB303:
+            case FilterMode::NumModes:
+                return {};
+        }
+
+        return {};
+    }
+
+    static float softLimit(float x, float amount)
+    {
+        amount = juce::jlimit(0.f, 1.f, amount);
+        if (amount <= 0.0001f)
+            return x;
+
+        const float drive = 1.f + amount * 3.5f;
+        return std::tanh(x * drive) / drive;
+    }
+
+    static float asymLimit(float x, float amount)
+    {
+        const float bias = amount * 0.025f;
+        return softLimit(x + bias, amount) - bias * 0.65f;
+    }
+
+    static float logNormaliseCutoff(float cutoff)
+    {
+        const float hz = juce::jlimit(20.f, 22000.f, cutoff);
+        return juce::jlimit(0.f, 1.f, std::log(hz / 20.f) / std::log(1100.f));
+    }
+
+    static float onePoleG(float cutoff, double sampleRate)
+    {
+        const float g = std::tan(juce::MathConstants<float>::pi * cutoff / (float) sampleRate);
+        return g / (1.f + g);
+    }
+
+    float processCore(float input, const FilterProcessParams& params, double coreSr)
+    {
+        const Character c = getCharacter(params.mode);
+        const float morph = juce::jlimit(0.f, 1.f, params.morph);
+        const float cutoffNorm = logNormaliseCutoff(params.cutoff);
+        float targetCutoff = params.cutoff * c.cutoffScale;
+
+        if (c.aggressiveCutoff)
+            targetCutoff = 20.f * std::pow(c.maxCutoff / 20.f, std::pow(cutoffNorm, 1.18f));
+
+        targetCutoff *= std::pow(2.f, (morph - 0.5f) * c.stageSpread * 5.f);
+        targetCutoff = juce::jlimit(20.f,
+                                    juce::jmin(c.maxCutoff, (float) coreSr * 0.42f),
+                                    targetCutoff);
+        cutoffMemory += (targetCutoff - cutoffMemory) * c.cutoffSlew;
+
+        const float baseCutoff = juce::jlimit(20.f,
+                                              juce::jmin(c.maxCutoff, (float) coreSr * 0.42f),
+                                              cutoffMemory);
+        const int poles = c.prophet6Slope ? 2 + juce::jlimit(0, 2, juce::roundToInt(morph * 2.f))
+                                          : c.poles;
+        const float res = juce::jlimit(0.f, c.maxResonance, params.resonance);
+        const float feedback = std::pow(res, c.resonanceCurve) * (c.feedback + morph * c.feedbackMorph);
+        const float sat = juce::jlimit(0.f, 1.f, params.saturation);
+
+        const float feedbackSource = z[(size_t) poles - 1];
+        if (c.feedbackSlew < 0.999f)
+            feedbackMemory += (feedbackSource - feedbackMemory) * c.feedbackSlew;
+        else
+            feedbackMemory = feedbackSource;
+
+        const float driveGain = c.inputBase + params.drive * c.inputRange + morph * 0.35f;
+        float stageIn = input * driveGain - softLimit(feedbackMemory * feedback,
+                                                      sat * 0.35f + c.stageSaturation);
+        stageIn = c.asymmetric ? asymLimit(stageIn, sat * 0.65f + c.inputSaturation)
+                               : softLimit(stageIn, sat * 0.55f + c.inputSaturation);
+
+        const float tolerance = (morph - 0.5f) * c.stageSpread;
+        for (int i = 0; i < poles; ++i)
+        {
+            const float stageOffset = 1.f + tolerance * ((float) i - 1.5f);
+            const float stageCutoff = juce::jlimit(20.f,
+                                                   (float) coreSr * 0.42f,
+                                                   baseCutoff * stageOffset);
+            const float G = onePoleG(stageCutoff, coreSr);
+            const float v = (stageIn - z[(size_t) i]) * G;
+            const float y = v + z[(size_t) i];
+            z[(size_t) i] = (y + v) * c.leakage;
+
+            if (std::abs(z[(size_t) i]) < 1.0e-20f)
+                z[(size_t) i] = 0.f;
+
+            stageIn = c.asymmetric ? asymLimit(y, sat * 0.35f + c.stageSaturation)
+                                   : softLimit(y, sat * 0.30f + c.stageSaturation);
+        }
+
+        float out = z[(size_t) poles - 1] * c.outputGain;
+        if (c.highComp > 0.f)
+            out += (out - previousOutput) * c.highComp;
+
+        if (c.outputSmoothing > 0.f)
+            out = out * (1.f - c.outputSmoothing) + previousOutput * c.outputSmoothing;
+
+        if (params.mode == FilterMode::SequentialProOne && res > 0.78f)
+            out += out * out * out * (res - 0.78f) * 0.45f;
+
+        out *= 1.f + params.bassComp * res * c.bassComp;
+        if (c.compression > 0.f)
+            out /= 1.f + std::abs(out) * c.compression;
+
+        previousOutput = out;
+        out = c.asymmetric ? asymLimit(out, sat * 0.3f + c.stageSaturation)
+                           : softLimit(out, sat * 0.25f + c.stageSaturation);
+        return FilterModelDetail::clampAudio(out);
+    }
+};
+
+class RolandLP final : public IFilter
+{
+public:
+    void prepare(double sampleRate) override
+    {
+        sr = sampleRate;
+        reset();
+    }
+
+    void reset() override
+    {
+        z.fill(0.f);
+        cutoffMemory = 1000.f;
+        outputMemory = 0.f;
+    }
+
+    float processSample(float input, const FilterProcessParams& params) override
+    {
+        const int factor = FilterModelDetail::oversampleFactor(params.oversample);
+        const double coreSr = sr * (double) factor;
+        float out = 0.f;
+
+        for (int i = 0; i < factor; ++i)
+            out = processCore(input, params, coreSr);
+
+        return out;
+    }
+
+private:
+    struct Character
+    {
+        float cutoffScale = 1.f;
+        float maxCutoff = 20000.f;
+        float feedback = 3.65f;
+        float resonanceCurve = 1.f;
+        float inputBase = 0.95f;
+        float inputRange = 3.5f;
+        float inputSaturation = 0.35f;
+        float stageSaturation = 0.18f;
+        float leakage = 0.9995f;
+        float outputGain = 1.f;
+        float outputMemoryMix = 0.f;
+        float bassComp = 0.45f;
+        float compression = 0.f;
+        float slew = 1.f;
+        bool asymmetric = false;
+    };
+
+    double sr = 48000.0;
+    std::array<float, 4> z {};
+    float cutoffMemory = 1000.f;
+    float outputMemory = 0.f;
+
+    static Character getCharacter(FilterMode mode)
+    {
+        switch (mode)
+        {
+            case FilterMode::RolandJuno106:
+                // 80017A-inspired: smooth, lightly compressed and a bit less
+                // aggressive than the discrete IR3109 voices.
+                return { 0.92f, 18000.f, 3.45f, 1.08f, 0.80f, 3.15f,
+                         0.30f, 0.16f, 0.9994f, 0.98f, 0.06f, 0.34f,
+                         0.18f, 1.f, false };
+
+            case FilterMode::RolandJuno60:
+                // IR3109 with warmer surrounding gain staging and gentler
+                // movement, so sweeps feel a little rounded.
+                return { 0.84f, 17000.f, 3.68f, 1.0f, 0.88f, 3.35f,
+                         0.28f, 0.15f, 0.9991f, 0.95f, 0.09f, 0.45f,
+                         0.08f, 0.18f, false };
+
+            case FilterMode::RolandJupiter4:
+                // Darker, dirtier early-Roland flavor with more drive and a
+                // limited top end.
+                return { 0.68f, 12000.f, 3.82f, 0.92f, 1.10f, 4.80f,
+                         0.48f, 0.28f, 0.9975f, 0.88f, 0.13f, 0.55f,
+                         0.05f, 0.10f, true };
+
+            case FilterMode::RolandJupiter8:
+                // Cleaner, brighter and faster IR3109 response.
+                return { 1.0f, 20000.f, 3.90f, 0.98f, 0.82f, 2.65f,
+                         0.20f, 0.10f, 0.9998f, 1.02f, 0.015f, 0.35f,
+                         0.02f, 1.f, false };
+
+            case FilterMode::LP12:
+            case FilterMode::LP24:
+            case FilterMode::HP12:
+            case FilterMode::HP24:
+            case FilterMode::Bandpass:
+            case FilterMode::Notch:
+            case FilterMode::Peak:
+            case FilterMode::LowShelf:
+            case FilterMode::HighShelf:
+            case FilterMode::Comb:
+            case FilterMode::AM_Plus:
+            case FilterMode::AM_Minus:
+            case FilterMode::Ladder12:
+            case FilterMode::Ladder18:
+            case FilterMode::Ladder24:
+            case FilterMode::SEMMorph:
+            case FilterMode::MSDual:
+            case FilterMode::Formant:
+            case FilterMode::TB303:
+            case FilterMode::SequentialP5Rev2:
+            case FilterMode::SequentialP5Rev3:
+            case FilterMode::SequentialP600:
+            case FilterMode::SequentialP6:
+            case FilterMode::SequentialProOne:
+            case FilterMode::NumModes:
+                return {};
+        }
+
+        return {};
+    }
+
+    static float softLimit(float x, float amount)
+    {
+        amount = juce::jlimit(0.f, 1.f, amount);
+        if (amount <= 0.0001f)
+            return x;
+
+        const float drive = 1.f + amount * 3.f;
+        return std::tanh(x * drive) / drive;
+    }
+
+    static float asymmetricClip(float x, float amount)
+    {
+        const float shaped = softLimit(x + amount * 0.045f, amount);
+        return shaped - amount * 0.025f;
+    }
+
+    float processCore(float input, const FilterProcessParams& params, double coreSr)
+    {
+        const Character c = getCharacter(params.mode);
+        const float targetCutoff = juce::jlimit(20.f,
+                                                juce::jmin(c.maxCutoff, (float) coreSr * 0.42f),
+                                                params.cutoff * c.cutoffScale);
+        cutoffMemory += (targetCutoff - cutoffMemory) * c.slew;
+
+        const float cutoff = juce::jlimit(20.f,
+                                          juce::jmin(c.maxCutoff, (float) coreSr * 0.42f),
+                                          cutoffMemory);
+        const float g = std::tan(juce::MathConstants<float>::pi * cutoff / (float) coreSr);
+        const float G = g / (1.f + g);
+        const float res = juce::jlimit(0.f, 1.f, params.resonance);
+        const float feedback = std::pow(res, c.resonanceCurve) * c.feedback;
+        const float sat = juce::jlimit(0.f, 1.f, params.saturation);
+
+        const float fb = softLimit(z[3] * feedback, sat * 0.5f + c.stageSaturation);
+        const float driveGain = c.inputBase + params.drive * c.inputRange;
+        float stageIn = input * driveGain - fb;
+        stageIn = c.asymmetric ? asymmetricClip(stageIn, sat * 0.75f + c.inputSaturation)
+                               : softLimit(stageIn, sat * 0.65f + c.inputSaturation);
+
+        for (int i = 0; i < 4; ++i)
+        {
+            const float v = (stageIn - z[(size_t) i]) * G;
+            const float y = v + z[(size_t) i];
+            z[(size_t) i] = (y + v) * c.leakage;
+
+            if (std::abs(z[(size_t) i]) < 1.0e-20f)
+                z[(size_t) i] = 0.f;
+
+            stageIn = c.asymmetric ? asymmetricClip(y, sat * 0.35f + c.stageSaturation)
+                                   : softLimit(y, sat * 0.35f + c.stageSaturation);
+        }
+
+        float out = z[3] * c.outputGain;
+        out *= 1.f + params.bassComp * res * c.bassComp;
+
+        if (c.compression > 0.f)
+            out /= 1.f + std::abs(out) * c.compression;
+
+        if (c.outputMemoryMix > 0.f)
+        {
+            out = out * (1.f - c.outputMemoryMix) + outputMemory * c.outputMemoryMix;
+            outputMemory = out;
+        }
+
+        return FilterModelDetail::clampAudio(out);
+    }
+};
+
+class SEMMorph final : public IFilter
+{
+public:
+    void prepare(double sampleRate) override
+    {
+        sr = sampleRate;
+        reset();
+    }
+
+    void reset() override
+    {
+        ic1eq = 0.f;
+        ic2eq = 0.f;
+    }
+
+    float processSample(float input, const FilterProcessParams& params) override
+    {
+        const int factor = FilterModelDetail::oversampleFactor(params.oversample);
+        const double coreSr = sr * (double) factor;
+        float out = 0.f;
+
+        for (int i = 0; i < factor; ++i)
+            out = processCore(input, params, coreSr);
+
+        return out;
+    }
+
+private:
+    double sr = 48000.0;
+    float ic1eq = 0.f;
+    float ic2eq = 0.f;
+
+    float processCore(float input, const FilterProcessParams& params, double coreSr)
+    {
+        const float cutoff = juce::jlimit(20.f, (float) coreSr * 0.45f, params.cutoff);
+        const float g = std::tan(juce::MathConstants<float>::pi * cutoff / (float) coreSr);
+        const float damping = juce::jlimit(0.015f, 2.0f, 1.85f - params.resonance * 1.82f);
+        const float a1 = 1.f / (1.f + g * (g + damping));
+        const float a2 = g * a1;
+        const float a3 = g * a2;
 
         const float x = FilterModelDetail::saturate(input * (1.f + params.drive * 5.f),
                                                     params.saturation);
-        const float high = x - low - damping * band;
-        band += f * high;
-        low += f * band;
 
-        const float notch = (low + high) * 0.5f;
+        // Linear trapezoidal / TPT SVF. This produces simultaneous SEM-style
+        // 12 dB low, band, high and notch outputs from the same filter state.
+        const float v3 = x - ic2eq;
+        const float band = a1 * ic1eq + a2 * v3;
+        const float low = ic2eq + a2 * ic1eq + a3 * v3;
+        const float high = x - damping * band - low;
+        ic1eq = 2.f * band - ic1eq;
+        ic2eq = 2.f * low - ic2eq;
+
+        if (std::abs(ic1eq) < 1.0e-20f) ic1eq = 0.f;
+        if (std::abs(ic2eq) < 1.0e-20f) ic2eq = 0.f;
+
+        const float notch = low + high;
         const float m = juce::jlimit(0.f, 1.f, params.morph);
         const float out = m < 0.5f
             ? FilterModelDetail::lerp(low, notch, m * 2.f)
             : FilterModelDetail::lerp(notch, high, (m - 0.5f) * 2.f);
 
-        return FilterModelDetail::clampAudio(FilterModelDetail::saturate(out, params.saturation * 0.35f));
+        const float semLevel = 1.f + params.resonance * 0.18f;
+        return FilterModelDetail::clampAudio(
+            FilterModelDetail::saturate(out * semLevel, params.saturation * 0.35f));
     }
 };
 

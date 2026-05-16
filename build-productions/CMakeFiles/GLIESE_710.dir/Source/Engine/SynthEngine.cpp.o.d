@@ -1495,6 +1495,7 @@ CMakeFiles/GLIESE_710.dir/Source/Engine/SynthEngine.cpp.o: \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Oscillators/VAOscillator.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Oscillators/KarplusStrong.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Oscillators/GranularOsc.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Oscillators/TerrainOsc.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Envelopes/EnvelopeBank.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/LFO/LFOEngine.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Filter/DualFilter.h \

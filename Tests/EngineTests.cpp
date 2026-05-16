@@ -4,6 +4,7 @@
 #include "../Source/Engine/Oscillators/VAOscillator.h"
 #include "../Source/Engine/Oscillators/WavetableOsc.h"
 #include "../Source/Engine/Oscillators/GranularOsc.h"
+#include "../Source/Engine/Oscillators/TerrainOsc.h"
 #include "../Source/Engine/Oscillators/FMOperator.h"
 #include "../Source/Engine/Oscillators/FMAlgorithm.h"
 #include "../Source/Engine/Filter/DualFilter.h"
@@ -476,7 +477,17 @@ TEST_CASE("DualFilter advanced models stay finite with oversampling", "[filter]"
         FilterMode::Ladder24,
         FilterMode::SEMMorph,
         FilterMode::MSDual,
-        FilterMode::Formant
+        FilterMode::Formant,
+        FilterMode::RolandJuno106,
+        FilterMode::RolandJuno60,
+        FilterMode::RolandJupiter4,
+        FilterMode::RolandJupiter8,
+        FilterMode::TB303,
+        FilterMode::SequentialP5Rev2,
+        FilterMode::SequentialP5Rev3,
+        FilterMode::SequentialP600,
+        FilterMode::SequentialP6,
+        FilterMode::SequentialProOne
     };
 
     for (auto mode : modes)
@@ -498,6 +509,314 @@ TEST_CASE("DualFilter advanced models stay finite with oversampling", "[filter]"
         {
             float s = (i == 0 ? 1.f : 0.f) + 0.25f * std::sin(2.f * 3.14159f * 220.f * (float)i / 48000.f);
             auto [L, R] = df.processSample(s, s, 0.1f, -0.2f);
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            REQUIRE(std::abs(L) <= 1.5f);
+            REQUIRE(std::abs(R) <= 1.5f);
+        }
+    }
+}
+
+TEST_CASE("SEM morph behaves as LP notch HP state-variable filter", "[filter]")
+{
+    auto measureRms = [](float sineHz, float morph)
+    {
+        DualFilter df;
+        df.prepare(48000.0);
+
+        SingleFilter::Params p;
+        p.mode = FilterMode::SEMMorph;
+        p.cutoff = 1000.f;
+        p.resonance = 0.25f;
+        p.drive = 0.f;
+        p.morph = morph;
+        p.saturation = 0.f;
+        p.mix = 1.f;
+        df.setFilterA(p);
+        df.setRouting(FilterRouting::AOnly);
+        df.noteOn();
+
+        for (int i = 0; i < 2048; ++i)
+        {
+            const float s = std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            (void) df.processSample(s, s, 0.f, 0.f);
+        }
+
+        float sumSq = 0.f;
+        constexpr int n = 8192;
+        for (int i = 0; i < n; ++i)
+        {
+            const float s = std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            auto [L, R] = df.processSample(s, s, 0.f, 0.f);
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            sumSq += L * L;
+        }
+
+        return std::sqrt(sumSq / (float) n);
+    };
+
+    const float lpLow = measureRms(100.f, 0.f);
+    const float lpHigh = measureRms(6000.f, 0.f);
+    REQUIRE(lpLow > lpHigh * 8.f);
+
+    const float hpLow = measureRms(100.f, 1.f);
+    const float hpHigh = measureRms(6000.f, 1.f);
+    REQUIRE(hpHigh > hpLow * 8.f);
+
+    const float notchAtCutoff = measureRms(1000.f, 0.5f);
+    const float notchBelow = measureRms(180.f, 0.5f);
+    REQUIRE(notchBelow > notchAtCutoff * 2.f);
+}
+
+TEST_CASE("Roland filters behave as 24 dB low-pass models", "[filter]")
+{
+    const FilterMode modes[] {
+        FilterMode::RolandJuno106,
+        FilterMode::RolandJuno60,
+        FilterMode::RolandJupiter4,
+        FilterMode::RolandJupiter8
+    };
+
+    auto measureRms = [](FilterMode mode, float sineHz)
+    {
+        DualFilter df;
+        df.prepare(48000.0);
+
+        SingleFilter::Params p;
+        p.mode = mode;
+        p.cutoff = 950.f;
+        p.resonance = 0.25f;
+        p.drive = 0.1f;
+        p.saturation = 0.25f;
+        p.mix = 1.f;
+        p.oversample = 1;
+        df.setFilterA(p);
+        df.setRouting(FilterRouting::AOnly);
+        df.noteOn();
+
+        for (int i = 0; i < 4096; ++i)
+        {
+            const float s = 0.5f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            (void) df.processSample(s, s, 0.f, 0.f);
+        }
+
+        float sumSq = 0.f;
+        constexpr int n = 8192;
+        for (int i = 0; i < n; ++i)
+        {
+            const float s = 0.5f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            auto [L, R] = df.processSample(s, s, 0.f, 0.f);
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            sumSq += L * L;
+        }
+
+        return std::sqrt(sumSq / (float) n);
+    };
+
+    for (auto mode : modes)
+    {
+        const float low = measureRms(mode, 180.f);
+        const float high = measureRms(mode, 6000.f);
+        REQUIRE(low > high * 6.f);
+    }
+
+    for (auto mode : modes)
+    {
+        DualFilter df;
+        df.prepare(48000.0);
+
+        SingleFilter::Params p;
+        p.mode = mode;
+        p.cutoff = 650.f;
+        p.resonance = 0.95f;
+        p.drive = 0.75f;
+        p.saturation = 0.85f;
+        p.bassComp = 0.5f;
+        p.mix = 1.f;
+        p.oversample = 2;
+        df.setFilterA(p);
+        df.setRouting(FilterRouting::AOnly);
+        df.noteOn();
+
+        for (int i = 0; i < 2048; ++i)
+        {
+            const float impulse = i == 0 ? 1.f : 0.f;
+            const float sine = 0.25f * std::sin(2.f * juce::MathConstants<float>::pi * 110.f * (float) i / 48000.f);
+            auto [L, R] = df.processSample(impulse + sine, impulse + sine, 0.15f, -0.1f);
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            REQUIRE(std::abs(L) <= 1.5f);
+            REQUIRE(std::abs(R) <= 1.5f);
+        }
+    }
+}
+
+TEST_CASE("TB303 filter behaves as acid 18 dB low-pass", "[filter]")
+{
+    auto measureRms = [](float sineHz, float morph, float resonance)
+    {
+        DualFilter df;
+        df.prepare(48000.0);
+
+        SingleFilter::Params p;
+        p.mode = FilterMode::TB303;
+        p.cutoff = 850.f;
+        p.resonance = resonance;
+        p.drive = 0.35f;
+        p.morph = morph;
+        p.saturation = 0.55f;
+        p.mix = 1.f;
+        p.oversample = 1;
+        df.setFilterA(p);
+        df.setRouting(FilterRouting::AOnly);
+        df.noteOn();
+
+        for (int i = 0; i < 4096; ++i)
+        {
+            const float s = 0.5f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            (void) df.processSample(s, s, 0.f, 0.f);
+        }
+
+        float sumSq = 0.f;
+        constexpr int n = 8192;
+        for (int i = 0; i < n; ++i)
+        {
+            const float s = 0.5f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            auto [L, R] = df.processSample(s, s, 0.f, 0.f);
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            sumSq += L * L;
+        }
+
+        return std::sqrt(sumSq / (float) n);
+    };
+
+    const float low = measureRms(180.f, 0.2f, 0.25f);
+    const float high = measureRms(6000.f, 0.2f, 0.25f);
+    REQUIRE(low > high * 4.f);
+
+    const float unaccented = measureRms(2200.f, 0.f, 0.65f);
+    const float accented = measureRms(2200.f, 1.f, 0.65f);
+    REQUIRE(accented > unaccented * 1.2f);
+
+    DualFilter df;
+    df.prepare(48000.0);
+
+    SingleFilter::Params p;
+    p.mode = FilterMode::TB303;
+    p.cutoff = 550.f;
+    p.resonance = 0.98f;
+    p.drive = 0.9f;
+    p.morph = 1.f;
+    p.saturation = 0.9f;
+    p.bassComp = 0.35f;
+    p.mix = 1.f;
+    p.oversample = 2;
+    df.setFilterA(p);
+    df.setRouting(FilterRouting::AOnly);
+    df.noteOn();
+
+    for (int i = 0; i < 4096; ++i)
+    {
+        const float impulse = i == 0 ? 1.f : 0.f;
+        const float saw = 0.4f * (2.f * std::fmod((float) i * 110.f / 48000.f, 1.f) - 1.f);
+        auto [L, R] = df.processSample(impulse + saw, impulse + saw, 0.25f, -0.25f);
+        REQUIRE(std::isfinite(L));
+        REQUIRE(std::isfinite(R));
+        REQUIRE(std::abs(L) <= 1.5f);
+        REQUIRE(std::abs(R) <= 1.5f);
+    }
+}
+
+TEST_CASE("Sequential filters behave as SSM and CEM low-pass models", "[filter]")
+{
+    const FilterMode modes[] {
+        FilterMode::SequentialP5Rev2,
+        FilterMode::SequentialP5Rev3,
+        FilterMode::SequentialP600,
+        FilterMode::SequentialP6,
+        FilterMode::SequentialProOne
+    };
+
+    auto measureRms = [](FilterMode mode, float sineHz, float morph, float resonance, float cutoff)
+    {
+        DualFilter df;
+        df.prepare(48000.0);
+
+        SingleFilter::Params p;
+        p.mode = mode;
+        p.cutoff = cutoff;
+        p.resonance = resonance;
+        p.drive = 0.22f;
+        p.morph = morph;
+        p.saturation = 0.35f;
+        p.mix = 1.f;
+        p.oversample = 1;
+        df.setFilterA(p);
+        df.setRouting(FilterRouting::AOnly);
+        df.noteOn();
+
+        for (int i = 0; i < 4096; ++i)
+        {
+            const float s = 0.45f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            (void) df.processSample(s, s, 0.f, 0.f);
+        }
+
+        float sumSq = 0.f;
+        constexpr int n = 8192;
+        for (int i = 0; i < n; ++i)
+        {
+            const float s = 0.45f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            auto [L, R] = df.processSample(s, s, 0.f, 0.f);
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            sumSq += L * L;
+        }
+
+        return std::sqrt(sumSq / (float) n);
+    };
+
+    for (auto mode : modes)
+    {
+        const float low = measureRms(mode, 180.f, 0.55f, 0.22f, 1000.f);
+        const float high = measureRms(mode, 6000.f, 0.55f, 0.22f, 1000.f);
+        REQUIRE(low > high * 5.f);
+    }
+
+    const float p600High = measureRms(FilterMode::SequentialP600, 4200.f, 0.5f, 0.2f, 1500.f);
+    const float p5Rev3High = measureRms(FilterMode::SequentialP5Rev3, 4200.f, 0.5f, 0.2f, 1500.f);
+    REQUIRE(p5Rev3High > p600High * 1.15f);
+
+    const float p6Twelve = measureRms(FilterMode::SequentialP6, 6000.f, 0.f, 0.2f, 1200.f);
+    const float p6TwentyFour = measureRms(FilterMode::SequentialP6, 6000.f, 1.f, 0.2f, 1200.f);
+    REQUIRE(p6Twelve > p6TwentyFour * 1.4f);
+
+    for (auto mode : modes)
+    {
+        DualFilter df;
+        df.prepare(48000.0);
+
+        SingleFilter::Params p;
+        p.mode = mode;
+        p.cutoff = 700.f;
+        p.resonance = 0.97f;
+        p.drive = 0.85f;
+        p.morph = 0.8f;
+        p.saturation = 0.85f;
+        p.bassComp = 0.45f;
+        p.mix = 1.f;
+        p.oversample = 2;
+        df.setFilterA(p);
+        df.setRouting(FilterRouting::AOnly);
+        df.noteOn();
+
+        for (int i = 0; i < 2048; ++i)
+        {
+            const float impulse = i == 0 ? 1.f : 0.f;
+            const float pulse = (i % 83) < 36 ? 0.35f : -0.35f;
+            auto [L, R] = df.processSample(impulse + pulse, impulse + pulse, 0.2f, -0.2f);
             REQUIRE(std::isfinite(L));
             REQUIRE(std::isfinite(R));
             REQUIRE(std::abs(L) <= 1.5f);
@@ -664,6 +983,79 @@ TEST_CASE("GranularOsc cloud produces finite stereo grains", "[granular]")
     REQUIRE(osc.getActiveGrainCount() > 0);
 }
 
+TEST_CASE("GranularOsc default graintable tracks played pitch", "[granular]")
+{
+    auto estimatePitch = [](float targetHz)
+    {
+        GranularOsc osc;
+        osc.prepare(48000.0);
+        osc.setFrequency(targetHz);
+
+        GranularOsc::Params p;
+        p.triggerMode = GranularOsc::TriggerMode::FreeCloud;
+        p.window = GranularOsc::Window::Hann;
+        p.position = 0.f;
+        p.sizeMs = 120.f;
+        p.density = targetHz;
+        p.pitchSemis = 0.f;
+        p.spray = 0.f;
+        p.jitter = 0.f;
+        p.panSpread = 0.f;
+        p.bodyType = GranularOsc::BodyType::Off;
+        p.bodyMix = 0.f;
+        osc.setParams(p);
+        osc.noteOn(60, 1.f);
+
+        for (int i = 0; i < 4800; ++i)
+            (void) osc.processSample();
+
+        constexpr int n = 12000;
+        std::vector<float> samples;
+        samples.reserve(n);
+        float mean = 0.f;
+        for (int i = 0; i < n; ++i)
+        {
+            auto [l, r] = osc.processSample();
+            const float s = 0.5f * (l + r);
+            samples.push_back(s);
+            mean += s;
+        }
+        mean /= (float) n;
+        for (auto& s : samples)
+            s -= mean;
+
+        const int minLag = juce::roundToInt(48000.f / (targetHz * 1.25f));
+        const int maxLag = juce::roundToInt(48000.f / (targetHz * 0.75f));
+        int bestLag = minLag;
+        float bestCorr = -1.f;
+        for (int lag = minLag; lag <= maxLag; ++lag)
+        {
+            float corr = 0.f;
+            float e0 = 0.f;
+            float e1 = 0.f;
+            for (int i = 0; i < n - lag; ++i)
+            {
+                const float a = samples[(size_t) i];
+                const float b = samples[(size_t) (i + lag)];
+                corr += a * b;
+                e0 += a * a;
+                e1 += b * b;
+            }
+            corr /= std::sqrt(juce::jmax(1.0e-12f, e0 * e1));
+            if (corr > bestCorr)
+            {
+                bestCorr = corr;
+                bestLag = lag;
+            }
+        }
+
+        return 48000.f / (float) bestLag;
+    };
+
+    REQUIRE(estimatePitch(240.f) == Approx(240.f).margin(6.f));
+    REQUIRE(estimatePitch(480.f) == Approx(480.f).margin(12.f));
+}
+
 TEST_CASE("GranularOsc modes and windows stay finite under heavy density", "[granular]")
 {
     for (int mode = 0; mode < static_cast<int>(GranularOsc::TriggerMode::NumModes); ++mode)
@@ -780,6 +1172,84 @@ TEST_CASE("GranularOsc physical body types stay finite", "[granular]")
     }
 }
 
+TEST_CASE("TerrainOsc scan paths stay finite and audible", "[terrain]")
+{
+    for (int mode = 0; mode < static_cast<int>(TerrainOsc::PathMode::NumModes); ++mode)
+    {
+        TerrainOsc osc;
+        osc.prepare(48000.0);
+        osc.setFrequency(220.f);
+
+        TerrainOsc::Params p;
+        p.pathMode = static_cast<TerrainOsc::PathMode>(mode);
+        p.centerX = 0.5f;
+        p.centerY = 0.5f;
+        p.radiusX = 0.38f;
+        p.radiusY = 0.31f;
+        p.ratioX = 1.0f + 0.25f * (float)mode;
+        p.ratioY = 1.5f;
+        p.spiral = 0.45f;
+        p.drive = 2.0f;
+        p.smoothing = 0.35f;
+        p.morph = 0.25f;
+        p.gain = 0.8f;
+        osc.setParams(p);
+
+        float peak = 0.f;
+        for (int i = 0; i < 4096; ++i)
+        {
+            const float s = osc.processSample();
+            REQUIRE(std::isfinite(s));
+            REQUIRE(std::abs(s) <= 2.f);
+            peak = std::max(peak, std::abs(s));
+        }
+
+        REQUIRE(peak > 0.01f);
+    }
+}
+
+TEST_CASE("TerrainOsc imports brightness heightmap as bipolar terrain", "[terrain]")
+{
+    juce::Image image(juce::Image::RGB, 8, 8, true);
+    for (int y = 0; y < image.getHeight(); ++y)
+    {
+        for (int x = 0; x < image.getWidth(); ++x)
+        {
+            const auto b = (juce::uint8)juce::jlimit(0, 255, x * 32 + y * 8);
+            image.setPixelAt(x, y, juce::Colour(b, b, b));
+        }
+    }
+
+    TerrainOsc osc;
+    osc.prepare(48000.0);
+    REQUIRE(osc.setHeightmapFromImage(image));
+    REQUIRE(osc.getWidth() == 8);
+    REQUIRE(osc.getHeight() == 8);
+    osc.setFrequency(330.f);
+
+    TerrainOsc::Params p;
+    p.pathMode = TerrainOsc::PathMode::Line;
+    p.centerX = 0.5f;
+    p.centerY = 0.5f;
+    p.radiusX = 0.45f;
+    p.radiusY = 0.0f;
+    p.drive = 1.0f;
+    p.gain = 1.0f;
+    osc.setParams(p);
+
+    float minS = 1.f;
+    float maxS = -1.f;
+    for (int i = 0; i < 2048; ++i)
+    {
+        const float s = osc.processSample();
+        REQUIRE(std::isfinite(s));
+        minS = std::min(minS, s);
+        maxS = std::max(maxS, s);
+    }
+
+    REQUIRE(maxS > minS + 0.05f);
+}
+
 TEST_CASE("FMOperator clamps shaping params and wraps high-rate phase", "[fm]")
 {
     FMOperator op;
@@ -877,6 +1347,37 @@ TEST_CASE("FM operators require noteOn and then produce output", "[fm]")
     REQUIRE(activeMax > 0.01f);
 }
 
+TEST_CASE("FMOperator applies key-reset phase offset", "[fm]")
+{
+    FMOperator zero;
+    FMOperator quarter;
+    zero.prepare(48000.0);
+    quarter.prepare(48000.0);
+
+    ADSREnvelope::Params ep;
+    ep.attackSec = 0.001f;
+    ep.decaySec = 0.001f;
+    ep.sustain = 1.f;
+    ep.releaseSec = 0.001f;
+    zero.getEnvelope().setParams(ep);
+    quarter.getEnvelope().setParams(ep);
+
+    FMOperator::Params p;
+    p.level = 1.f;
+    p.fixedFreq = true;
+    p.fixedHz = 0.f;
+    p.phaseOffset = 0.f;
+    zero.setParams(p);
+    p.phaseOffset = 0.25f;
+    quarter.setParams(p);
+
+    zero.noteOn();
+    quarter.noteOn();
+
+    REQUIRE(std::abs(zero.processSample(0.f)) < 1.0e-5f);
+    REQUIRE(std::abs(quarter.processSample(0.f)) > 1.0e-4f);
+}
+
 TEST_CASE("FMAlgorithm processes operators once per sample", "[fm]")
 {
     FMAlgorithm fm;
@@ -899,6 +1400,36 @@ TEST_CASE("FMAlgorithm processes operators once per sample", "[fm]")
 
     REQUIRE(maxAbs > 0.001f);
     REQUIRE(maxAbs <= 1.f);
+}
+
+TEST_CASE("FMAlgorithm algorithm morph remains finite", "[fm]")
+{
+    FMAlgorithm fm;
+    fm.prepare(48000.0);
+    fm.setNoteFrequency(110.f);
+    fm.setAlgorithm(33);
+    fm.setAlgorithmMorph(0.65f);
+
+    for (int i = 0; i < FMAlgorithm::kNumOperators; ++i)
+    {
+        FMOperator::Params p;
+        p.coarse = i + 1;
+        p.level = 0.2f;
+        p.feedback = 0.1f;
+        fm.getOperator(i).setParams(p);
+    }
+
+    fm.noteOn();
+
+    float maxAbs = 0.f;
+    for (int i = 0; i < 1024; ++i)
+    {
+        const float s = fm.processSample();
+        REQUIRE(std::isfinite(s));
+        maxAbs = std::max(maxAbs, std::abs(s));
+    }
+
+    REQUIRE(maxAbs <= 2.f);
 }
 
 //──────────────────────────────────────────────────────────────────────────────

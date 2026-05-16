@@ -6,6 +6,7 @@
 #include "Oscillators/VAOscillator.h"
 #include "Oscillators/KarplusStrong.h"
 #include "Oscillators/GranularOsc.h"
+#include "Oscillators/TerrainOsc.h"
 #include "Envelopes/EnvelopeBank.h"
 #include "LFO/LFOEngine.h"
 #include "Filter/DualFilter.h"
@@ -16,10 +17,11 @@ class SynthVoice
 public:
     static constexpr int kVoiceId      = -1;
     static constexpr int kNum3DOscs    = 8;  // max 3D instances (8 slots, each can be 3D)
-    static constexpr int kNumVAOscs    = 8;  // max VA instances (4 independent param sets + 4 shared)
-    static constexpr int kNumWTOscs    = 4;  // max WT instances (shared params, ensemble)
-    static constexpr int kNumKSOscs    = 4;  // max KS instances (shared params, ensemble)
-    static constexpr int kNumGranOscs  = 8;  // max granular instances (shared params, per-slot grains)
+    static constexpr int kNumVAOscs    = 8;  // max VA instances
+    static constexpr int kNumWTOscs    = 8;  // max WT instances
+    static constexpr int kNumKSOscs    = 8;  // max KS instances
+    static constexpr int kNumGranOscs  = 8;  // max granular instances
+    static constexpr int kNumTerrainOscs = 8; // max terrain instances
 
     void prepare(double sampleRate);
     void reset();
@@ -60,8 +62,15 @@ private:
     int  currentWTCount    = 0;
     int  currentKSCount    = 0;
     int  currentGranCount  = 0;
+    int  currentTerrainCount = 0;
     bool currentBlockAIsFM = false;
     bool currentBlockBIsFM = false;
+    std::array<int, kNum3DOscs>   active3dIndices {};
+    std::array<int, kNumVAOscs>   activeVAIndices {};
+    std::array<int, kNumWTOscs>   activeWTIndices {};
+    std::array<int, kNumKSOscs>   activeKSIndices {};
+    std::array<int, kNumGranOscs> activeGranIndices {};
+    std::array<int, kNumTerrainOscs> activeTerrainIndices {};
 
     std::array<Osc3D,         kNum3DOscs> osc3dArray;
     FMAlgorithm  fm;
@@ -70,7 +79,8 @@ private:
     std::array<VAOscillator,  kNumVAOscs> vaOscs;
     std::array<KarplusStrong, kNumKSOscs> ksOscs;
     std::array<GranularOsc,   kNumGranOscs> granularOscs;
-    KarplusStrong::Params cachedKSParams;
+    std::array<TerrainOsc,    kNumTerrainOscs> terrainOscs;
+    std::array<KarplusStrong::Params, kNumKSOscs> cachedKSParams;
 
     EnvelopeBank envBank;
     LFOEngine    lfo;
@@ -121,6 +131,10 @@ private:
             std::atomic<float>* algorithm = nullptr;
             std::atomic<float>* level     = nullptr;
             std::atomic<float>* octave    = nullptr;
+            std::atomic<float>* detune    = nullptr;
+            std::atomic<float>* phase     = nullptr;
+            std::atomic<float>* algoMorph = nullptr;
+            std::atomic<float>* indexScale = nullptr;
             EnvPtrs env;
         };
         struct WTPtrs {
@@ -194,6 +208,26 @@ private:
             std::atomic<float>* octave      = nullptr;
             EnvPtrs env;
         };
+        struct TerrainPtrs {
+            std::atomic<float>* on          = nullptr;
+            std::atomic<float>* path        = nullptr;
+            std::atomic<float>* centerX     = nullptr;
+            std::atomic<float>* centerY     = nullptr;
+            std::atomic<float>* radiusX     = nullptr;
+            std::atomic<float>* radiusY     = nullptr;
+            std::atomic<float>* ratioX      = nullptr;
+            std::atomic<float>* ratioY      = nullptr;
+            std::atomic<float>* phase       = nullptr;
+            std::atomic<float>* spiral      = nullptr;
+            std::atomic<float>* drive       = nullptr;
+            std::atomic<float>* offset      = nullptr;
+            std::atomic<float>* smoothing   = nullptr;
+            std::atomic<float>* morph       = nullptr;
+            std::atomic<float>* gain        = nullptr;
+            std::atomic<float>* level       = nullptr;
+            std::atomic<float>* octave      = nullptr;
+            EnvPtrs env;
+        };
         struct SlotCfgPtrs {
             std::atomic<float>* blockAMode = nullptr;
             std::atomic<float>* blockBMode = nullptr;
@@ -255,12 +289,15 @@ private:
         std::array<ModSlotPtrs,  32> mods;
         std::array<std::atomic<float>*, 8> macros {};
         MasterPtrs       master;
-        Osc3DPtrs        osc3d;
+        std::array<Osc3DPtrs, kNum3DOscs> osc3d;
         FMPtrs           fm;
-        WTPtrs           wt;
+        FMPtrs           fmB;
+        std::array<OpPtrs, 10> opsB;
+        std::array<WTPtrs, kNumWTOscs> wt;
         std::array<VAPtrs, kNumVAOscs> va;
-        KSPtrs           ks;
-        GranPtrs         grain;
+        std::array<KSPtrs, kNumKSOscs> ks;
+        std::array<GranPtrs, kNumGranOscs> grain;
+        std::array<TerrainPtrs, kNumTerrainOscs> terrain;
         SlotCfgPtrs      slotCfg;
         FilterPtrs       filterA;
         FilterPtrs       filterB;

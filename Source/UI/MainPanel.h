@@ -32,7 +32,7 @@ public:
                    juce::Justification::centred);
         g.setColour(accent.withAlpha(0.5f));
         g.setFont(juce::Font(juce::FontOptions { 10.f }));
-        g.drawText("Shared controls: FM Controls tab",
+        g.drawText("Independent controls: FM A / FM B tabs",
                    getLocalBounds().withY(centre + 6).withHeight(14),
                    juce::Justification::centred);
     }
@@ -49,12 +49,13 @@ public:
 private:
     juce::AudioProcessorValueTreeState& apvts;
 
-    // ── Oscillator panels (all 8 VA + shared panels) ──────────────────────────
-    std::unique_ptr<OscPanel>        osc3dPanel;
-    std::unique_ptr<OscPanel>        oscWTPanel;
-    std::unique_ptr<OscPanel>        ksPanel;
-    std::unique_ptr<OscPanel>        granularPanel;
-    std::array<std::unique_ptr<OscPanel>, 8> vaPanels;  // VA1–8
+    // ── Oscillator panels (one independent parameter set per engine slot) ────
+    std::array<std::unique_ptr<OscPanel>, 8> osc3dPanels;
+    std::array<std::unique_ptr<OscPanel>, 8> oscWTPanels;
+    std::array<std::unique_ptr<OscPanel>, 8> ksPanels;
+    std::array<std::unique_ptr<OscPanel>, 8> granularPanels;
+    std::array<std::unique_ptr<OscPanel>, 8> terrainPanels;
+    std::array<std::unique_ptr<OscPanel>, 8> vaPanels;
     std::array<FMBlockView, 2>       fmBlockViews;      // inline FM placeholders
 
     // ── Engine slot bar ───────────────────────────────────────────────────────

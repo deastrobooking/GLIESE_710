@@ -1,19 +1,21 @@
 # GLIESE 710
 
-**A 3D Function Oscillator Synthesizer Plugin**
+**A hybrid cinematic synthesizer for 3D function, FM, wavetable, granular, terrain, VA, and physical-string synthesis.**
 
-GLIESE 710 is a polyphonic synthesizer plugin built in C++20 and JUCE 8. Its centerpiece is a novel **3D Function Oscillator** — instead of selecting a waveform, you design the mathematical space the waveform travels through. Around it sits a 10-operator FM engine (optionally dual-engine), anti-aliased wavetable oscillator, granular cloud oscillator, virtual analog layers, Karplus-Strong string synthesis, dual multimode filter, 32-slot modulation matrix, 4 LFOs, arpeggiator, and a full preset system.
+GLIESE 710 is a polyphonic C++20 / JUCE 8 synthesizer plugin. Its original center is the **3D Function Oscillator**, where a scan path moves through a mathematical field instead of reading a normal waveform. The current engine expands that idea into a two-page, mix-and-match oscillator system with independent wavetable, granular, wave-terrain, virtual analog, Karplus-Strong, and dual FM engines.
+
+The design goal is direct: every oscillator page should feel playable and modular without the controls leaking across pages. Page 1 and Page 2 can each host a full FM engine, or each page can host four oscillator slots for up to eight independent non-FM oscillators.
 
 ---
 
 ## Formats
 
-| Format     | Platform         |
-|------------|------------------|
-| AU         | macOS            |
-| VST3       | macOS / Windows  |
-| LV2        | Linux            |
-| Standalone | All platforms    |
+| Format | Platform |
+|---|---|
+| AU | macOS |
+| VST3 | macOS / Windows |
+| LV2 | Linux |
+| Standalone | All platforms |
 
 ---
 
@@ -21,41 +23,30 @@ GLIESE 710 is a polyphonic synthesizer plugin built in C++20 and JUCE 8. Its cen
 
 ### Prerequisites
 
-| Tool        | Minimum version |
-|-------------|-----------------|
-| CMake       | 3.22            |
-| C++ compiler| C++20 (Clang 13, GCC 11, MSVC 2022) |
-| Xcode       | 14+ (macOS AU builds only)           |
-| Git         | Any recent version                   |
+| Tool | Minimum version |
+|---|---|
+| CMake | 3.22 |
+| C++ compiler | C++20 (Clang 13, GCC 11, MSVC 2022) |
+| Xcode | 14+ (macOS AU builds only) |
+| Git | Any recent version |
 
-JUCE 8 is fetched automatically by CMake via CPM — no manual download required.
+JUCE 8 is fetched automatically by CMake via CPM.
 
-### Build (macOS / Linux)
+### Build
 
 ```bash
-git clone <repo-url>
-cd GLIESE_710
-
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release --parallel
 ```
 
-### Build (Windows)
-
-```bat
-cmake -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Release
-```
-
-### Run Standalone (fastest iteration)
+### Production Build Folder
 
 ```bash
-# macOS / Linux
-./build/GLIESE_710_artefacts/Release/Standalone/GLIESE\ 710.app/Contents/MacOS/GLIESE\ 710
-
-# or open the .app bundle directly on macOS
-open build/GLIESE_710_artefacts/Release/Standalone/GLIESE\ 710.app
+cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_TESTS=ON -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
+cmake --build build-productions --config Release --parallel
 ```
+
+Set `GLIESE_COPY_PLUGIN_AFTER_BUILD=ON` only when you explicitly want JUCE to copy built plugins into system plugin folders.
 
 ### Run Tests
 
@@ -71,109 +62,125 @@ ctest --test-dir build --output-on-failure
 
 ### Oscillators
 
-| Engine                | Description |
-|-----------------------|-------------|
-| **3D Function**       | 8 musical scalar fields, 5 path types, up to 6-voice ensemble with per-voice detune, domain warping, coordinate folding, field-frequency control, chaos injection, field morphing |
-| **FM (10-op)**        | 10 operators, 40 algorithms (DX7-compatible 0–31 + 8 extended), optional dual-engine mode with independent detune, per-operator ADSR, feedback, fine/detune, FM-X-style spectral operator forms with skirt/resonance |
-| **Karplus-Strong**    | Plucked string synthesis — circular delay loop, LPF brightness, all-pass stiffness, excitation morphing (white noise → glitch burst), pluck position |
-| **Wavetable**         | 2048-sample tables, FFT mipmap bandlimiting, Catmull-Rom interpolation, table morphing, 15-shape factory bank, 15 warp modes including CZ-style phase distortion, 8-voice unison, stereo/position spread, phase/random/retrigger controls |
-| **Granular**          | Preallocated grain cloud engine with 96 grains per instance, fixed source buffer, free-cloud/burst/audio-rate modes, position, size, density, pitch, spray, jitter, pan spread, reverse probability, scan/freeze, 7 window shapes, and optional physical body/modal resonator |
-| **Virtual Analog**    | 4 independent VA layers, continuous shape morph, PolyBLEP saw/square/pulse, reverse saw, triangle, sine, 8-voice unison, stereo spread, ring modulation, wave folding |
+| Engine | Description |
+|---|---|
+| **3D Function** | Eight independent slot instances, 18 scalar fields, five path types, domain warping, coordinate folding, field-frequency control, chaos injection, field morphing, and drive. |
+| **FM A / FM B** | Two fully separate 10-operator FM engines with independent algorithms, operator controls, ADSRs, detune, phase position, algorithm morph, and modulation-index scaling. |
+| **Wavetable** | Eight independent wavetable slots with FFT mipmap bandlimiting, Catmull-Rom interpolation, table morphing, 15 factory tables, 15 warp modes, CZ-style phase distortion, unison, stereo spread, position spread, phase, random phase, and retrigger controls. |
+| **Granular** | Eight independent preallocated grain engines with 96 grains per instance, free-cloud/burst/audio-rate modes, position, size, density, pitch, spray, jitter, pan spread, reverse probability, scan/freeze, seven window shapes, and optional physical body/modal resonator. |
+| **Wave Terrain** | Eight independent 2D terrain oscillators. A phase-driven path scans a procedural or imported heightmap with circle, ellipse, Lissajous, spiral, line, and orbit-noise modes. |
+| **Virtual Analog** | Eight independent VA layers with continuous shape morph, PolyBLEP saw/square/pulse, reverse saw, triangle, sine, 8-voice unison, stereo spread, ring modulation, and wave folding. |
+| **Karplus-Strong** | Eight independent plucked-string slots with circular delay loop, LPF brightness, all-pass stiffness, excitation morphing, pluck position, and per-slot ADSR. |
 
-All engines mix additively. Each engine or layer has an independent level, octave transpose, and ADSR envelope.
+Each oscillator slot has its own enable state, level, octave transpose, and ADSR envelope. Duplicate oscillator types now use separate parameter prefixes, so changing one wavetable, granular, terrain, VA, or KS slot does not change the others.
 
-### Engine Configuration
+### Engine Pages
 
-The oscillators tab exposes a configuration strip for the 3D and FM engines:
+The oscillator tab is divided into two blocks:
 
-| Control       | Range | Effect |
-|---------------|-------|--------|
-| **3D Voices** | 1–6   | How many Osc3D instances run in parallel per voice — loudness-normalized (÷√N) |
-| **3D Detune** | 0–1 st| Semitone spread across the ensemble; instances spread symmetrically around center pitch |
-| **Dual FM**   | on/off| Activates a second FM engine sharing the same algorithm and operator params |
-| **FM Detune** | 0–100 ¢| Cent offset for the second FM engine — creates a detuned chorus effect |
+| Page mode | Behavior |
+|---|---|
+| **FM** | The whole page becomes one FM engine view. Page 1 controls FM A. Page 2 controls FM B. |
+| **Oscillators** | The page shows four oscillator slots. Each slot can be 3D, wavetable, granular, wave terrain, VA, or Karplus-Strong. |
 
-### 3D Oscillator Fields
+This gives two intended layouts:
 
-```
-Harmonic   sin(x·F) + a·sin(2y·F+z) + b·sin(3z·F+x) — harmonic series layering
-Chord      x=root, y=third (major→minor via morphT), z=fifth — chordal axis ratios
-Shell      sin(dist·k·F) — concentric spherical resonance shells
-Gravity    gravity wells at root / fifth / octave positions in 3D space
-Formant    Gaussian envelope functions along each axis — vowel-like formant shaping
-Metallic   blend integer ratios → √2 / φ via chaos param — harmonic vs irrational
-Tension    stable harmonic blend + tense nonlinear product, morphed by morphT
-Body       x=body y=edge z=air — timbral axis model (warpAmt/chaos control blend)
-```
+- **Dual FM layout**: FM A on Page 1 and FM B on Page 2.
+- **Eight oscillator layout**: four mix-and-match oscillator slots per page.
 
-### 3D Path Types
+The slot bar supports these type IDs: `None`, `3D`, `VA`, `WT`, `KS`, `Granular`, and `Terrain`.
+
+### FM Performance Controls
+
+Each FM engine exposes large performance controls for:
 
 ```
-Circle        r·cos(t), r·sin(t), d·sin(t/2)
-Spiral        expanding/contracting orbit
-Lissajous     3:2:5 ratio Lissajous figure
-RandomWalk    damped Brownian motion (chaos-scaled)
-PhysicsOrbit  elliptical orbit with eccentricity
+Master Detune
+Phase Position
+Algorithm Morph
+Mod Index Scale
 ```
 
-Key 3D oscillator controls:
+These sit above the operator grid in the FM pages. They are designed for real-time movement: detuned cinematic drift, phase-position changes between attacks, crossblended algorithms, and single-knob harmonic intensity swells.
 
+### Wave-Terrain Oscillator
+
+The terrain oscillator reads a 2D height surface instead of a 1D waveform:
+
+```text
+phase -> scan path x/y -> heightmap lookup -> output sample
 ```
-Field Freq   harmonic-density multiplier inside the scalar field
-Z Ratio      z-axis path-rate multiplier for stable/evolving motion
-Warp         bends coordinates before field evaluation
-Fold         mirrors coordinates back into the central field region
-Drive        soft-saturation amount after field evaluation
-Morph        crossfades to the next field
+
+Black maps to `-1.0`, middle gray to `0.0`, and white to `+1.0`. If no image is loaded, the oscillator uses a procedural default terrain.
+
+Important controls:
+
+```text
+Path Mode
+Center X/Y
+Radius X/Y
+Path Ratio X/Y
+Phase Offset
+Spiral
+Drive
+Offset
+Smoothing
+Morph
+Gain
 ```
+
+See [docs/terrain-oscillator.md](docs/terrain-oscillator.md).
 
 ### Dual Filter
 
-18 modes per filter slot, two slots in series or parallel:
+Two filter slots can run in series, parallel, A only, or B only. Each slot has smoothed cutoff, resonance, drive, morph, saturation, bass compensation, gain, mix, envelope depth, LFO depth, and optional Off/2x/4x quality for nonlinear models.
 
-```
+Filter modes:
+
+```text
 LP12  LP24  HP12  HP24
-Bandpass  Notch
-Peak  LowShelf  HighShelf
-Comb (feedback comb / metallic)
-AM+  AM- (ring modulation variants)
+Bandpass  Notch  Peak  LowShelf  HighShelf
+Comb  AM+  AM-
 Ladder12  Ladder18  Ladder24
 SEM Morph  MS Dual  Formant
+Juno-106  Juno-60  Jupiter-4  Jupiter-8
+TB-303
+P5 Rev2 SSM  P5 Rev3 CEM  Prophet-600  Prophet-6  Pro-One
 ```
 
-Each slot includes smoothed cutoff, resonance, drive, morph, and mix, plus saturation, bass compensation, output gain, filter envelope/LFO depth, and optional Off/2x/4x quality for the nonlinear character models.
+See [docs/filter.md](docs/filter.md).
 
 ### Modulation Matrix
 
-32 slots. Each slot: **Source → Destination → Amount (−1 to +1) → Bipolar toggle**
+32 slots. Each slot: **Source -> Destination -> Amount (-1 to +1) -> Bipolar toggle**.
 
-**25 sources** including LFO1–4, 7 envelope source groups, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, and 8 macro knobs.
+Sources include LFO1-4, envelope groups, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, and eight macros. Destinations cover 3D controls, FM operator level/ratio controls, wavetable position/warp, granular controls, VA controls, filter controls, LFO controls, master volume/pan, and arp rate/gate.
 
-**91 usable destinations** including 3D oscillator math controls, FM operator levels and ratios, wavetable position/warp, granular position/size/density/pitch/spray/freeze/body/level, all VA layer shape/PW/detune/spread/level/ring/fold controls, both filter cutoffs/resonances/drives, LFO rates/amounts/sync rates, master volume/pan, arp gate/rate.
+Terrain modulation destinations are not exposed yet; terrain currently responds through its direct APVTS parameters and per-slot envelope.
 
 ### Arpeggiator
 
-7 patterns: Up, Down, Up-Down, Down-Up, As Played, Random, Random Latch  
-Host-sync (1/32 to 1 bar), gate (0–100%), swing (0–66%), latch mode, 1–4 octave range.
+Seven patterns: Up, Down, Up-Down, Down-Up, As Played, Random, Random Latch. Host-sync rate, gate, swing, latch, and 1-4 octave range are available.
 
 ### Preset System
 
-Presets save as human-readable XML in `~/Music/GLIESE_710/Presets/` with the `.g710` extension. DAW session recall uses the standard `getStateInformation`/`setStateInformation` path — no extra steps needed.
+Presets save as human-readable XML in `~/Music/GLIESE_710/Presets/` with the `.g710` extension. DAW session recall uses JUCE state serialization through `getStateInformation()` and `setStateInformation()`.
 
 ---
 
 ## Repository Layout
 
-```
+```text
 GLIESE_710/
 ├── CMakeLists.txt
 ├── cmake/CPM.cmake
-├── docs/                        ← Developer documentation
+├── docs/
 │   ├── architecture.md
 │   ├── oscillator-3d.md
-│   ├── 3D_OSC_math.md
+│   ├── terrain-oscillator.md
 │   ├── fm-engine.md
 │   ├── granular-oscillator.md
+│   ├── karplus-strong.md
 │   ├── modulation-matrix.md
 │   ├── filter.md
 │   ├── arpeggiator.md
@@ -184,7 +191,7 @@ GLIESE_710/
 │   ├── PluginProcessor.{h,cpp}
 │   ├── PluginEditor.{h,cpp}
 │   ├── Engine/
-│   │   ├── Oscillators/         ← Osc3D, FMAlgorithm, WavetableOsc, GranularOsc, VAOscillator, KarplusStrong
+│   │   ├── Oscillators/   # Osc3D, FM, WT, Granular, Terrain, VA, KS
 │   │   ├── Envelopes/
 │   │   ├── LFO/
 │   │   ├── Filter/
@@ -200,18 +207,22 @@ GLIESE_710/
 
 ## Roadmap
 
-- [ ] 2×/4× oversampling quality mode for nonlinear 3D oscillator patches (`juce::dsp::Oversampling`)
+- [x] Independent two-page oscillator layout
+- [x] Independent FM A / FM B engines
+- [x] Runtime wavetable import path + FFT-based mipmap generation
+- [x] Granular physical body / modal resonator section
+- [x] Roland, TB-303, and Sequential-style filter character modes
+- [x] Wave-terrain oscillator MVP
+- [ ] Terrain image chooser and waveform/path visualizer in the editor
+- [ ] Terrain mipmaps / anti-aliasing quality modes
 - [ ] FM algorithm graph visualization
-- [ ] 3D field visualizer panel (OpenGL)
-- [ ] KS per-voice stereo width (pair of delay lines with independent detune)
-- [ ] User wavetable import UI (drag-and-drop `.wav`)
-- [x] Runtime wavetable import path + FFT-based mipmap generation (WavetableOsc)
+- [ ] 3D field visualizer panel
 - [ ] MPE support
-- [ ] GitHub Actions CI (macOS AU+VST3, Windows VST3, Linux LV2)
+- [ ] GitHub Actions CI
 - [ ] Factory preset bank
 
 ---
 
 ## License
 
-Personal/indie use under the [JUCE Personal License](https://juce.com/juce-personal-license-restrictions/). For commercial distribution a JUCE commercial license is required.
+Personal/indie use under the [JUCE Personal License](https://juce.com/juce-personal-license-restrictions/). For commercial distribution, a JUCE commercial license is required.

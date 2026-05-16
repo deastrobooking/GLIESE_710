@@ -40,6 +40,13 @@ When enabled, JUCE copies built plugins to:
 - `/Library/Audio/Plug-Ins/VST3/GLIESE 710.vst3`
 - `/Library/Audio/Plug-Ins/Components/GLIESE 710.component`
 
+For local production builds that should stay inside the repository build directory, keep copying disabled:
+
+```bash
+cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_TESTS=ON -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
+cmake --build build-productions --config Release --parallel
+```
+
 After a rebuild, restart Logic Pro or use `auval` to validate:
 
 ```bash
@@ -91,6 +98,7 @@ Individual test filtering:
 ./build/GLIESE_Tests_artefacts/GLIESE_Tests "[envelope]"
 ./build/GLIESE_Tests_artefacts/GLIESE_Tests "[filter]"
 ./build/GLIESE_Tests_artefacts/GLIESE_Tests "[osc3d]"
+./build/GLIESE_Tests_artefacts/GLIESE_Tests "[terrain]"
 ./build/GLIESE_Tests_artefacts/GLIESE_Tests "[arp]"
 ```
 

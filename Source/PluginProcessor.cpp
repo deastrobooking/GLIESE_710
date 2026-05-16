@@ -65,123 +65,194 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("master_pb_range",   "Pitch Bend Range", 0.0f, 24.0f, 2.0f);
     addFloat("master_mw_range",   "Mod Wheel Range",  0.0f, 1.0f,  0.5f);
 
-    // ── 3D Oscillator ─────────────────────────────────────────────────────────
-    addInt  ("osc_3d_field",    "3D Field",    0, 17, 0);
-    addInt  ("osc_3d_path",     "3D Path",     0, 4, 0);
-    addFloat("osc_3d_radius",   "3D Radius",   0.1f, 4.0f, 1.0f);
-    addFloat("osc_3d_depth",    "3D Depth",    0.0f, 4.0f, 1.0f);
-    addFloat("osc_3d_warp",     "3D Warp",     0.0f, 2.0f, 0.25f);
-    addFloat("osc_3d_rotation", "3D Rotation", 0.0f, 1.0f, 0.0f);
-    addFloat("osc_3d_chaos",    "3D Chaos",    0.0f, 1.0f, 0.0f);
-    addFloat("osc_3d_morph",    "3D Morph",    0.0f, 1.0f, 0.0f);
-    addFloat("osc_3d_field_freq", "3D Field Freq", 0.25f, 16.0f, 1.0f, 0.4f);
-    addFloat("osc_3d_z_ratio",    "3D Z Ratio",    0.25f, 4.0f,  1.0f, 0.7f);
-    addFloat("osc_3d_fold",       "3D Fold",       0.0f,  1.0f,  0.0f);
-    addFloat("osc_3d_drive",      "3D Drive",      0.25f, 4.0f,  1.0f, 0.5f);
-    addBool ("osc_3d_on",       "3D Enable",   true);
-    addFloat("osc_3d_level",    "3D Level",    0.0f, 1.0f, 0.8f);
-    addFloat("osc_3d_octave",   "3D Octave",   -3.0f, 3.0f, 0.0f);
-    addEnvTime("osc_3d_adsr_a",   "3D Env Attack",  0.01f);
-    addEnvTime("osc_3d_adsr_d",   "3D Env Decay",   0.2f);
-    addFloat("osc_3d_adsr_s",   "3D Env Sustain", 0.0f,   1.0f,  1.0f);
-    addEnvTime("osc_3d_adsr_r",   "3D Env Release", 0.3f);
+    auto indexedPrefix = [](const juce::String& base, int index)
+    {
+        return index == 0 ? juce::String("osc_") + base + "_"
+                          : juce::String("osc_") + base + juce::String(index + 1) + "_";
+    };
 
-    // ── FM Engine ─────────────────────────────────────────────────────────────
-    addBool ("osc_fm_on",        "FM Enable",    true);
-    addInt  ("osc_fm_algorithm", "FM Algorithm", 0, 39, 0);
-    addFloat("osc_fm_level",     "FM Level",     0.0f, 1.0f, 0.0f);
-    addFloat("osc_fm_octave",    "FM Octave",   -3.0f, 3.0f, 0.0f);
-    addEnvTime("osc_fm_adsr_a",    "FM Env Attack",  0.01f);
-    addEnvTime("osc_fm_adsr_d",    "FM Env Decay",   0.2f);
-    addFloat("osc_fm_adsr_s",    "FM Env Sustain", 0.0f,   1.0f,  1.0f);
-    addEnvTime("osc_fm_adsr_r",    "FM Env Release", 0.3f);
+    // ── 3D Oscillators ────────────────────────────────────────────────────────
+    auto add3DOsc = [&](int index, const juce::String& prefix)
+    {
+        juce::String label = "3D" + juce::String(index + 1);
+        addInt  (prefix + "field",    label + " Field",    0, 17, 0);
+        addInt  (prefix + "path",     label + " Path",     0, 4, 0);
+        addFloat(prefix + "radius",   label + " Radius",   0.1f, 4.0f, 1.0f);
+        addFloat(prefix + "depth",    label + " Depth",    0.0f, 4.0f, 1.0f);
+        addFloat(prefix + "warp",     label + " Warp",     0.0f, 2.0f, 0.25f);
+        addFloat(prefix + "rotation", label + " Rotation", 0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "chaos",    label + " Chaos",    0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "morph",    label + " Morph",    0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "field_freq", label + " Field Freq", 0.25f, 16.0f, 1.0f, 0.4f);
+        addFloat(prefix + "z_ratio",    label + " Z Ratio",    0.25f, 4.0f,  1.0f, 0.7f);
+        addFloat(prefix + "fold",       label + " Fold",       0.0f,  1.0f,  0.0f);
+        addFloat(prefix + "drive",      label + " Drive",      0.25f, 4.0f,  1.0f, 0.5f);
+        addBool (prefix + "on",       label + " Enable",   true);
+        addFloat(prefix + "level",    label + " Level",    0.0f, 1.0f, 0.8f);
+        addFloat(prefix + "octave",   label + " Octave",   -3.0f, 3.0f, 0.0f);
+        addEnvTime(prefix + "adsr_a", label + " Env Attack",  0.01f);
+        addEnvTime(prefix + "adsr_d", label + " Env Decay",   0.2f);
+        addFloat(prefix + "adsr_s",   label + " Env Sustain", 0.0f, 1.0f, 1.0f);
+        addEnvTime(prefix + "adsr_r", label + " Env Release", 0.3f);
+    };
 
+    for (int i = 0; i < 8; ++i)
+        add3DOsc(i, indexedPrefix("3d", i));
+
+    // ── FM Engines ────────────────────────────────────────────────────────────
     juce::StringArray opWaveforms {
         "Sine","Triangle","Saw","Square","Pulse","Noise",
         "All Wide","All Narrow","Odd Wide","Odd Narrow","Res Wide","Res Narrow"
     };
 
-    for (int i = 0; i < 10; ++i)
+    auto addFMEngine = [&](int engineIndex, const juce::String& fmPrefix,
+                           const juce::String& opBase, float defaultLevel)
     {
-        juce::String prefix = "op" + juce::String(i) + "_";
-        addInt   (prefix + "coarse",   "Op" + juce::String(i) + " Coarse",   0,  31, i == 0 ? 1 : 1);
-        addFloat (prefix + "fine",     "Op" + juce::String(i) + " Fine",    -1.0f, 1.0f, 0.0f);
-        addFloat (prefix + "detune",   "Op" + juce::String(i) + " Detune", -15.0f, 15.0f, 0.0f);
-        addFloat (prefix + "level",    "Op" + juce::String(i) + " Level",    0.0f, 1.0f, i == 0 ? 1.0f : 0.5f);
-        addFloat (prefix + "feedback", "Op" + juce::String(i) + " Feedback", 0.0f, 1.0f, 0.0f);
-        addBool  (prefix + "fixed",    "Op" + juce::String(i) + " Fixed Freq", false);
-        addChoice(prefix + "wave",     "Op" + juce::String(i) + " Wave",     opWaveforms, 0);
-        addFloat (prefix + "skirt",    "Op" + juce::String(i) + " Spectral Skirt", 0.0f, 1.0f, 0.35f);
-        addFloat (prefix + "resonance","Op" + juce::String(i) + " Spectral Resonance", 0.0f, 1.0f, 0.25f);
-        addBool  (prefix + "key_reset","Op" + juce::String(i) + " Key On Reset", true);
-        addFloat (prefix + "vel",      "Op" + juce::String(i) + " Vel Depth",   0.0f, 1.0f, 0.0f);
-        addFloat (prefix + "key",      "Op" + juce::String(i) + " Key Scale",  -1.0f, 1.0f, 0.0f);
-        addEnvTime(prefix + "adsr_a",   "Op" + juce::String(i) + " Attack",  0.01f);
-        addEnvTime(prefix + "adsr_d",   "Op" + juce::String(i) + " Decay",   0.5f);
-        addFloat (prefix + "adsr_s",   "Op" + juce::String(i) + " Sustain", 0.0f,   1.0f,  0.8f);
-        addEnvTime(prefix + "adsr_r",   "Op" + juce::String(i) + " Release", 0.3f);
-    }
+        juce::String label = "FM " + juce::String(engineIndex == 0 ? "A" : "B");
+        addBool (fmPrefix + "on",        label + " Enable",    true);
+        addInt  (fmPrefix + "algorithm", label + " Algorithm", 0, 39, 0);
+        addFloat(fmPrefix + "level",     label + " Level",     0.0f, 1.0f, defaultLevel);
+        addFloat(fmPrefix + "octave",    label + " Octave",   -3.0f, 3.0f, 0.0f);
+        addFloat(fmPrefix + "detune",    label + " Master Detune", -100.0f, 100.0f, 0.0f);
+        addFloat(fmPrefix + "phase",     label + " Phase Position", 0.0f, 1.0f, 0.0f);
+        addFloat(fmPrefix + "algo_morph", label + " Algorithm Morph", 0.0f, 1.0f, 0.0f);
+        addFloat(fmPrefix + "index",     label + " Mod Index Scale", 0.0f, 2.0f, 1.0f);
+        addEnvTime(fmPrefix + "adsr_a",  label + " Env Attack",  0.01f);
+        addEnvTime(fmPrefix + "adsr_d",  label + " Env Decay",   0.2f);
+        addFloat(fmPrefix + "adsr_s",    label + " Env Sustain", 0.0f, 1.0f, 1.0f);
+        addEnvTime(fmPrefix + "adsr_r",  label + " Env Release", 0.3f);
 
-    // ── Wavetable Oscillator ──────────────────────────────────────────────────
-    addBool ("osc_wt_on",    "WT Enable",   true);
-    addChoice("osc_wt_table", "WT Table",
-              {"Sine","Triangle","Saw","Square","Pulse","Half Sine","Abs Sine","Sine Cube",
-               "Hollow Odd","Even Glass","Vocal A","Metallic","Sync Saw","Reso Fold","Noisy Digital"}, 0);
-    addChoice("osc_wt_warp_mode", "WT Warp Mode",
-              {"Off","Bend+","Bend-","Bend +/-","Mirror","Sync","Window Sync",
-               "Quantize","Fold","Formant","PD Saw","PD Square","PD Pulse",
-               "PD Resonant","PD Formant"}, 0);
-    addFloat("osc_wt_pos",        "WT Position",       0.0f, 1.0f, 0.0f);
-    addFloat("osc_wt_warp",       "WT Warp Amount",    0.0f, 1.0f, 0.0f);
-    addFloat("osc_wt_pd_break",   "WT PD Breakpoint",  0.0f, 1.0f, 0.75f);
-    addInt  ("osc_wt_unison",     "WT Unison",         1, 8, 1);
-    addFloat("osc_wt_detune",     "WT Detune",         0.0f, 1.0f, 0.0f);
-    addFloat("osc_wt_spread",     "WT Stereo Spread",  0.0f, 1.0f, 0.0f);
-    addFloat("osc_wt_pos_spread", "WT Position Spread",0.0f, 1.0f, 0.0f);
-    addFloat("osc_wt_phase",      "WT Phase Offset",   0.0f, 1.0f, 0.0f);
-    addFloat("osc_wt_random",     "WT Random Phase",   0.0f, 1.0f, 0.0f);
-    addBool ("osc_wt_retrig",     "WT Retrigger",      true);
-    addFloat("osc_wt_level",      "WT Level",          0.0f, 1.0f, 0.0f);
-    addFloat("osc_wt_octave",     "WT Octave",        -3.0f, 3.0f, 0.0f);
-    addEnvTime("osc_wt_adsr_a", "WT Env Attack",  0.01f);
-    addEnvTime("osc_wt_adsr_d", "WT Env Decay",   0.2f);
-    addFloat("osc_wt_adsr_s", "WT Env Sustain", 0.0f,   1.0f,  1.0f);
-    addEnvTime("osc_wt_adsr_r", "WT Env Release", 0.3f);
+        for (int i = 0; i < 10; ++i)
+        {
+            juce::String prefix = opBase + juce::String(i) + "_";
+            juce::String opName = label + " Op" + juce::String(i);
+            addInt   (prefix + "coarse",   opName + " Coarse",   0,  31, 1);
+            addFloat (prefix + "fine",     opName + " Fine",    -1.0f, 1.0f, 0.0f);
+            addFloat (prefix + "detune",   opName + " Detune", -15.0f, 15.0f, 0.0f);
+            addFloat (prefix + "level",    opName + " Level",    0.0f, 1.0f, i == 0 ? 1.0f : 0.5f);
+            addFloat (prefix + "feedback", opName + " Feedback", 0.0f, 1.0f, 0.0f);
+            addBool  (prefix + "fixed",    opName + " Fixed Freq", false);
+            addChoice(prefix + "wave",     opName + " Wave",     opWaveforms, 0);
+            addFloat (prefix + "skirt",    opName + " Spectral Skirt", 0.0f, 1.0f, 0.35f);
+            addFloat (prefix + "resonance",opName + " Spectral Resonance", 0.0f, 1.0f, 0.25f);
+            addBool  (prefix + "key_reset",opName + " Key On Reset", true);
+            addFloat (prefix + "vel",      opName + " Vel Depth",   0.0f, 1.0f, 0.0f);
+            addFloat (prefix + "key",      opName + " Key Scale",  -1.0f, 1.0f, 0.0f);
+            addEnvTime(prefix + "adsr_a",  opName + " Attack",  0.01f);
+            addEnvTime(prefix + "adsr_d",  opName + " Decay",   0.5f);
+            addFloat (prefix + "adsr_s",   opName + " Sustain", 0.0f, 1.0f, 0.8f);
+            addEnvTime(prefix + "adsr_r",  opName + " Release", 0.3f);
+        }
+    };
 
-    // ── Granular Oscillator ──────────────────────────────────────────────────
-    addBool ("osc_grain_on",    "Granular Enable", true);
-    addChoice("osc_grain_trigger_mode", "Granular Trigger Mode",
-              {"Free Cloud","Burst","Audio Rate"}, 0);
-    addChoice("osc_grain_window", "Granular Window",
-              {"Hann","Triangle","Gaussian","Tukey","Rect","Exp Attack","Exp Decay"}, 0);
-    addFloat("osc_grain_position", "Grain Position", 0.0f, 1.0f, 0.5f);
-    addFloat("osc_grain_size",     "Grain Size",     5.0f, 1000.0f, 120.0f, 0.35f);
-    addFloat("osc_grain_density",  "Grain Density",  0.1f, 1200.0f, 35.0f, 0.32f);
-    addFloat("osc_grain_pitch",    "Grain Pitch",   -48.0f, 48.0f, 0.0f);
-    addFloat("osc_grain_spray",    "Grain Spray",    0.0f, 1.0f, 0.18f);
-    addFloat("osc_grain_jitter",   "Grain Jitter",   0.0f, 1.0f, 0.04f);
-    addFloat("osc_grain_pan",      "Grain Pan Spread", 0.0f, 1.0f, 0.7f);
-    addFloat("osc_grain_reverse",  "Grain Reverse",  0.0f, 1.0f, 0.0f);
-    addFloat("osc_grain_scan",     "Grain Scan",    -1.0f, 1.0f, 0.0f);
-    addFloat("osc_grain_freeze",   "Grain Freeze",   0.0f, 1.0f, 0.0f);
-    addChoice("osc_grain_body_type", "Grain Body Type",
-              {"Off","Glass","Metal","Wood","Plate","String","Drum","Pipe","Alien"}, 0);
-    addFloat("osc_grain_body_root",   "Grain Body Root",   -48.0f, 48.0f, 0.0f);
-    addFloat("osc_grain_body_size",   "Grain Body Size",    0.0f, 1.0f, 0.5f);
-    addFloat("osc_grain_body_decay",  "Grain Body Decay",   0.0f, 1.0f, 0.5f);
-    addFloat("osc_grain_body_damp",   "Grain Body Damping", 0.0f, 1.0f, 0.35f);
-    addFloat("osc_grain_body_bright", "Grain Body Bright",  0.0f, 1.0f, 0.6f);
-    addFloat("osc_grain_body_inharm", "Grain Body Inharm",  0.0f, 1.0f, 0.2f);
-    addFloat("osc_grain_body_excite", "Grain Body Excite",  0.0f, 1.0f, 0.7f);
-    addFloat("osc_grain_body_mix",    "Grain Body Mix",     0.0f, 1.0f, 0.0f);
-    addFloat("osc_grain_body_spread", "Grain Body Spread",  0.0f, 1.0f, 0.5f);
-    addInt  ("osc_grain_body_modes",  "Grain Body Modes",   4, 32, 16);
-    addFloat("osc_grain_level",    "Granular Level", 0.0f, 1.0f, 0.0f);
-    addFloat("osc_grain_octave",   "Granular Octave",-3.0f, 3.0f, 0.0f);
-    addEnvTime("osc_grain_adsr_a", "Granular Env Attack",  0.01f);
-    addEnvTime("osc_grain_adsr_d", "Granular Env Decay",   0.2f);
-    addFloat("osc_grain_adsr_s",   "Granular Env Sustain", 0.0f, 1.0f, 1.0f);
-    addEnvTime("osc_grain_adsr_r", "Granular Env Release", 0.4f);
+    addFMEngine(0, "osc_fm_",  "op",   0.75f);
+    addFMEngine(1, "osc_fm2_", "op2_", 0.75f);
+
+    // ── Wavetable Oscillators ────────────────────────────────────────────────
+    auto addWTOsc = [&](int index, const juce::String& prefix)
+    {
+        juce::String label = "WT" + juce::String(index + 1);
+        addBool (prefix + "on",    label + " Enable",   true);
+        addChoice(prefix + "table", label + " Table",
+                  {"Sine","Triangle","Saw","Square","Pulse","Half Sine","Abs Sine","Sine Cube",
+                   "Hollow Odd","Even Glass","Vocal A","Metallic","Sync Saw","Reso Fold","Noisy Digital"}, 0);
+        addChoice(prefix + "warp_mode", label + " Warp Mode",
+                  {"Off","Bend+","Bend-","Bend +/-","Mirror","Sync","Window Sync",
+                   "Quantize","Fold","Formant","PD Saw","PD Square","PD Pulse",
+                   "PD Resonant","PD Formant"}, 0);
+        addFloat(prefix + "pos",        label + " Position",       0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "warp",       label + " Warp Amount",    0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "pd_break",   label + " PD Breakpoint",  0.0f, 1.0f, 0.75f);
+        addInt  (prefix + "unison",     label + " Unison",         1, 8, 1);
+        addFloat(prefix + "detune",     label + " Detune",         0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "spread",     label + " Stereo Spread",  0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "pos_spread", label + " Position Spread",0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "phase",      label + " Phase Offset",   0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "random",     label + " Random Phase",   0.0f, 1.0f, 0.0f);
+        addBool (prefix + "retrig",     label + " Retrigger",      true);
+        addFloat(prefix + "level",      label + " Level",          0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "octave",     label + " Octave",        -3.0f, 3.0f, 0.0f);
+        addEnvTime(prefix + "adsr_a", label + " Env Attack",  0.01f);
+        addEnvTime(prefix + "adsr_d", label + " Env Decay",   0.2f);
+        addFloat(prefix + "adsr_s", label + " Env Sustain", 0.0f, 1.0f, 1.0f);
+        addEnvTime(prefix + "adsr_r", label + " Env Release", 0.3f);
+    };
+
+    for (int i = 0; i < 8; ++i)
+        addWTOsc(i, indexedPrefix("wt", i));
+
+    // ── Granular Oscillators ─────────────────────────────────────────────────
+    auto addGranOsc = [&](int index, const juce::String& prefix)
+    {
+        juce::String label = "Granular" + juce::String(index + 1);
+        addBool (prefix + "on",    label + " Enable", true);
+        addChoice(prefix + "trigger_mode", label + " Trigger Mode",
+                  {"Free Cloud","Burst","Audio Rate"}, 0);
+        addChoice(prefix + "window", label + " Window",
+                  {"Hann","Triangle","Gaussian","Tukey","Rect","Exp Attack","Exp Decay"}, 0);
+        addFloat(prefix + "position", label + " Position", 0.0f, 1.0f, 0.5f);
+        addFloat(prefix + "size",     label + " Size",     5.0f, 1000.0f, 120.0f, 0.35f);
+        addFloat(prefix + "density",  label + " Density",  0.1f, 1200.0f, 35.0f, 0.32f);
+        addFloat(prefix + "pitch",    label + " Pitch",   -48.0f, 48.0f, 0.0f);
+        addFloat(prefix + "spray",    label + " Spray",    0.0f, 1.0f, 0.18f);
+        addFloat(prefix + "jitter",   label + " Jitter",   0.0f, 1.0f, 0.04f);
+        addFloat(prefix + "pan",      label + " Pan Spread", 0.0f, 1.0f, 0.7f);
+        addFloat(prefix + "reverse",  label + " Reverse",  0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "scan",     label + " Scan",    -1.0f, 1.0f, 0.0f);
+        addFloat(prefix + "freeze",   label + " Freeze",   0.0f, 1.0f, 0.0f);
+        addChoice(prefix + "body_type", label + " Body Type",
+                  {"Off","Glass","Metal","Wood","Plate","String","Drum","Pipe","Alien"}, 0);
+        addFloat(prefix + "body_root",   label + " Body Root",   -48.0f, 48.0f, 0.0f);
+        addFloat(prefix + "body_size",   label + " Body Size",    0.0f, 1.0f, 0.5f);
+        addFloat(prefix + "body_decay",  label + " Body Decay",   0.0f, 1.0f, 0.5f);
+        addFloat(prefix + "body_damp",   label + " Body Damping", 0.0f, 1.0f, 0.35f);
+        addFloat(prefix + "body_bright", label + " Body Bright",  0.0f, 1.0f, 0.6f);
+        addFloat(prefix + "body_inharm", label + " Body Inharm",  0.0f, 1.0f, 0.2f);
+        addFloat(prefix + "body_excite", label + " Body Excite",  0.0f, 1.0f, 0.7f);
+        addFloat(prefix + "body_mix",    label + " Body Mix",     0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "body_spread", label + " Body Spread",  0.0f, 1.0f, 0.5f);
+        addInt  (prefix + "body_modes",  label + " Body Modes",   4, 32, 16);
+        addFloat(prefix + "level",    label + " Level", 0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "octave",   label + " Octave",-3.0f, 3.0f, 0.0f);
+        addEnvTime(prefix + "adsr_a", label + " Env Attack",  0.01f);
+        addEnvTime(prefix + "adsr_d", label + " Env Decay",   0.2f);
+        addFloat(prefix + "adsr_s",   label + " Env Sustain", 0.0f, 1.0f, 1.0f);
+        addEnvTime(prefix + "adsr_r", label + " Env Release", 0.4f);
+    };
+
+    for (int i = 0; i < 8; ++i)
+        addGranOsc(i, indexedPrefix("grain", i));
+
+    // ── Wave-Terrain Oscillators ─────────────────────────────────────────────
+    auto addTerrainOsc = [&](int index, const juce::String& prefix)
+    {
+        juce::String label = "Terrain" + juce::String(index + 1);
+        addBool  (prefix + "on",        label + " Enable", true);
+        addChoice(prefix + "path",      label + " Path Mode",
+                  {"Circle","Ellipse","Lissajous","Spiral","Line","Orbit Noise"}, 0);
+        addFloat (prefix + "center_x",  label + " Center X", 0.0f, 1.0f, 0.5f);
+        addFloat (prefix + "center_y",  label + " Center Y", 0.0f, 1.0f, 0.5f);
+        addFloat (prefix + "radius_x",  label + " Radius X", 0.0f, 0.5f, 0.35f);
+        addFloat (prefix + "radius_y",  label + " Radius Y", 0.0f, 0.5f, 0.35f);
+        addFloat (prefix + "ratio_x",   label + " Ratio X",  0.125f, 8.0f, 1.0f, 0.55f);
+        addFloat (prefix + "ratio_y",   label + " Ratio Y",  0.125f, 8.0f, 1.5f, 0.55f);
+        addFloat (prefix + "phase",     label + " Phase",    0.0f, 1.0f, 0.0f);
+        addFloat (prefix + "spiral",    label + " Spiral",   0.0f, 1.0f, 0.0f);
+        addFloat (prefix + "drive",     label + " Drive",    0.1f, 8.0f, 1.5f, 0.45f);
+        addFloat (prefix + "offset",    label + " Offset",  -1.0f, 1.0f, 0.0f);
+        addFloat (prefix + "smoothing", label + " Smoothing",0.0f, 1.0f, 0.0f);
+        addFloat (prefix + "morph",     label + " Morph",    0.0f, 1.0f, 0.0f);
+        addFloat (prefix + "gain",      label + " Gain",     0.0f, 2.0f, 1.0f);
+        addFloat (prefix + "level",     label + " Level",    0.0f, 1.0f, 0.0f);
+        addFloat (prefix + "octave",    label + " Octave",  -3.0f, 3.0f, 0.0f);
+        addEnvTime(prefix + "adsr_a",   label + " Env Attack",  0.01f);
+        addEnvTime(prefix + "adsr_d",   label + " Env Decay",   0.2f);
+        addFloat  (prefix + "adsr_s",   label + " Env Sustain", 0.0f, 1.0f, 1.0f);
+        addEnvTime(prefix + "adsr_r",   label + " Env Release", 0.3f);
+    };
+
+    for (int i = 0; i < 8; ++i)
+        addTerrainOsc(i, indexedPrefix("terrain", i));
 
     // ── Virtual Analog Oscillators ────────────────────────────────────────────
     auto addVAOsc = [&](int index, const juce::String& prefix, bool enabledByDefault)
@@ -204,42 +275,49 @@ static APVTS::ParameterLayout buildLayout()
     };
 
     addVAOsc(1, "osc_va_",  true);
-    addVAOsc(2, "osc_va2_", false);
-    addVAOsc(3, "osc_va3_", false);
-    addVAOsc(4, "osc_va4_", false);
-    addVAOsc(5, "osc_va5_", false);
-    addVAOsc(6, "osc_va6_", false);
-    addVAOsc(7, "osc_va7_", false);
-    addVAOsc(8, "osc_va8_", false);
+    addVAOsc(2, "osc_va2_", true);
+    addVAOsc(3, "osc_va3_", true);
+    addVAOsc(4, "osc_va4_", true);
+    addVAOsc(5, "osc_va5_", true);
+    addVAOsc(6, "osc_va6_", true);
+    addVAOsc(7, "osc_va7_", true);
+    addVAOsc(8, "osc_va8_", true);
 
-    // ── Karplus-Strong Oscillator ─────────────────────────────────────────────
-    addBool  ("osc_ks_on",         "KS Enable",    true);
-    addFloat ("osc_ks_level",      "KS Level",     0.0f, 1.0f, 0.0f);
-    addFloat ("osc_ks_octave",     "KS Octave",   -3.0f, 3.0f, 0.0f);
-    addFloat ("osc_ks_decay",      "KS Decay",     0.0f, 1.0f, 0.6f);
-    addFloat ("osc_ks_brightness", "KS Brightness",0.0f, 1.0f, 0.5f);
-    addFloat ("osc_ks_stiffness",  "KS Stiffness", 0.0f, 0.95f,0.0f);
-    addFloat ("osc_ks_morph",      "KS Morph",     0.0f, 1.0f, 0.0f);
-    addFloat ("osc_ks_position",   "KS Position",  0.05f,0.95f,0.3f);
-    addEnvTime("osc_ks_adsr_a",    "KS Env Attack",  0.001f);
-    addEnvTime("osc_ks_adsr_d",    "KS Env Decay",   0.1f);
-    addFloat  ("osc_ks_adsr_s",    "KS Env Sustain", 0.0f, 1.0f, 0.0f);
-    addEnvTime("osc_ks_adsr_r",    "KS Env Release", 1.0f);
+    // ── Karplus-Strong Oscillators ───────────────────────────────────────────
+    auto addKSOsc = [&](int index, const juce::String& prefix)
+    {
+        juce::String label = "KS" + juce::String(index + 1);
+        addBool  (prefix + "on",         label + " Enable",    true);
+        addFloat (prefix + "level",      label + " Level",     0.0f, 1.0f, 0.0f);
+        addFloat (prefix + "octave",     label + " Octave",   -3.0f, 3.0f, 0.0f);
+        addFloat (prefix + "decay",      label + " Decay",     0.0f, 1.0f, 0.6f);
+        addFloat (prefix + "brightness", label + " Brightness",0.0f, 1.0f, 0.5f);
+        addFloat (prefix + "stiffness",  label + " Stiffness", 0.0f, 0.95f,0.0f);
+        addFloat (prefix + "morph",      label + " Morph",     0.0f, 1.0f, 0.0f);
+        addFloat (prefix + "position",   label + " Position",  0.05f,0.95f,0.3f);
+        addEnvTime(prefix + "adsr_a",    label + " Env Attack",  0.001f);
+        addEnvTime(prefix + "adsr_d",    label + " Env Decay",   0.1f);
+        addFloat  (prefix + "adsr_s",    label + " Env Sustain", 0.0f, 1.0f, 0.0f);
+        addEnvTime(prefix + "adsr_r",    label + " Env Release", 1.0f);
+    };
+
+    for (int i = 0; i < 8; ++i)
+        addKSOsc(i, indexedPrefix("ks", i));
 
     // ── Engine Configuration ──────────────────────────────────────────────────
     // Two engine pages (A=left, B=right), each covers 4 slot units.
     // Mode is treated as a pair: both pages at 1 = dual FM; otherwise both pages are Multi.
     addInt  ("engine_block_a_mode",   "Block A Mode",   0, 1, 0); // default Multi
     addInt  ("engine_block_b_mode",   "Block B Mode",   0, 1, 0); // default Multi
-    // Slot types for Multi mode: 0=None 1=3D 2=VA 3=WT 4=KS 5=Granular
-    addInt  ("engine_block_a_slot_0", "Block A Slot 0", 0, 5, 1); // 3D
-    addInt  ("engine_block_a_slot_1", "Block A Slot 1", 0, 5, 2); // VA
-    addInt  ("engine_block_a_slot_2", "Block A Slot 2", 0, 5, 3); // WT
-    addInt  ("engine_block_a_slot_3", "Block A Slot 3", 0, 5, 4); // KS
-    addInt  ("engine_block_b_slot_0", "Block B Slot 0", 0, 5, 0);
-    addInt  ("engine_block_b_slot_1", "Block B Slot 1", 0, 5, 0);
-    addInt  ("engine_block_b_slot_2", "Block B Slot 2", 0, 5, 0);
-    addInt  ("engine_block_b_slot_3", "Block B Slot 3", 0, 5, 0);
+    // Slot types for Multi mode: 0=None 1=3D 2=VA 3=WT 4=KS 5=Granular 6=Terrain
+    addInt  ("engine_block_a_slot_0", "Block A Slot 0", 0, 6, 1); // 3D
+    addInt  ("engine_block_a_slot_1", "Block A Slot 1", 0, 6, 2); // VA
+    addInt  ("engine_block_a_slot_2", "Block A Slot 2", 0, 6, 3); // WT
+    addInt  ("engine_block_a_slot_3", "Block A Slot 3", 0, 6, 4); // KS
+    addInt  ("engine_block_b_slot_0", "Block B Slot 0", 0, 6, 5); // Granular
+    addInt  ("engine_block_b_slot_1", "Block B Slot 1", 0, 6, 6); // Terrain
+    addInt  ("engine_block_b_slot_2", "Block B Slot 2", 0, 6, 0);
+    addInt  ("engine_block_b_slot_3", "Block B Slot 3", 0, 6, 0);
     addFloat("engine_3d_detune",  "3D Ensemble Detune", 0.0f, 1.0f, 0.0f);
     addFloat("engine_fm_detune",  "FM Dual Detune",     0.0f, 100.0f, 0.0f);
 
@@ -247,7 +325,9 @@ static APVTS::ParameterLayout buildLayout()
     juce::StringArray filterModes {
         "LP12","LP24","HP12","HP24","Bandpass","Notch",
         "Peak","LoShelf","HiShelf","Comb","AM+","AM-",
-        "Ladder12","Ladder18","Ladder24","SEM Morph","MS Dual","Formant"
+        "Ladder12","Ladder18","Ladder24","SEM Morph","MS Dual","Formant",
+        "Juno-106","Juno-60","Jupiter-4","Jupiter-8","TB-303",
+        "P5 Rev2 SSM","P5 Rev3 CEM","Prophet-600","Prophet-6","Pro-One"
     };
     juce::StringArray filterRouting { "Series","Parallel","A Only","B Only" };
     juce::StringArray filterOversampling { "Off", "2x", "4x" };

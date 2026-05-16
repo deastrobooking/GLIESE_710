@@ -38,6 +38,25 @@ The field is evaluated every `kSubRate` (= 4) audio samples and held between eva
 
 All fields are evaluated at the warped/folded coordinate `(x, y, z)`. `F` denotes `osc_3d_field_freq`. Parameters `a`, `b`, and `tension` are remapped from `radius`, `depth`, and `morphT` respectively to give each field musical meaning without adding extra knobs.
 
+### Original Geometric Fields
+
+The first ten fields are the original GLIESE mathematical terrains:
+
+```text
+SinSum
+SinProduct
+SphericalRipple
+Torus
+VortexField
+TurbulenceNoise
+LorenzAttractor
+MagneticDipole
+FoldedSpace
+ChebyshevMorph
+```
+
+They are useful for abstract, animated, and less traditional oscillator colors. The later harmonic fields are tuned toward more musical interval behavior.
+
 ### Harmonic (`HarmonicLattice`)
 ```
 sin(x·F) + a·sin(2y·F + z) + b·sin(3z·F + x)
@@ -138,30 +157,26 @@ z = depth × sin(2t × zRatio)
 ```
 Elliptical orbit. Higher `chaos` increases eccentricity — the point swings closer and further from the field center each cycle, causing amplitude modulation-like effects.
 
-## Ensemble Mode
+## Multi-Instance Slot Model
 
-Up to 6 Osc3D instances run per voice. All share the same field, path, and modulation parameters but receive independent pitch offsets:
+The current UI exposes up to eight independent 3D oscillator slots. They do not share one ensemble parameter set. Each slot has its own field, path, envelope, level, octave, phase state, and parameter prefix:
 
+```text
+osc_3d_   # slot 1
+osc_3d2_  # slot 2
+...
+osc_3d8_  # slot 8
 ```
-instanceHz[i] = baseHz × 2^(offset[i] / 12)
 
-offset[i] = (i / (count−1) × 2 − 1) × (detune / 2)   semitones
-```
-
-Instances spread symmetrically: instance 0 is at `−detune/2` semitones, the last at `+detune/2`. Their outputs are summed then scaled by `1/√count` to preserve loudness.
-
-Engine config params:
-
-| Parameter            | Range | Effect |
-|----------------------|-------|--------|
-| `engine_3d_count`    | 1–6   | Active instances per voice |
-| `engine_3d_detune`   | 0–1 st| Semitone spread across ensemble |
+The legacy `engine_3d_detune` parameter can still be used as a broad detune color when several 3D slots are active, but the primary architecture is now independent slots rather than a fixed six-voice 3D ensemble.
 
 ## Parameters
 
+The table below shows the first slot prefix. Additional 3D slots use `osc_3d2_` through `osc_3d8_`.
+
 | Parameter | Range | Effect |
 |---|---|---|
-| `osc_3d_field` | 0–7 | Which field type (Harmonic, Chord, Shell, Gravity, Formant, Metallic, Tension, Body) |
+| `osc_3d_field` | 0–17 | Which field type |
 | `osc_3d_path` | 0–4 | Which path type |
 | `osc_3d_radius` | 0.1–4.0 | Orbit size / harmonic weight `a` in some fields |
 | `osc_3d_depth` | 0.0–4.0 | Z-axis extent / overtone weight `b` in some fields |
@@ -227,10 +242,10 @@ Automating `morph` allows smooth timbral evolution between adjacent fields.
 
 **Warm harmonic chord pad**
 ```
-field = Chord, path = Circle
+osc_3d_field = Chord, path = Circle
 radius = 1.0, depth = 0.8, morph = 0.3
 field_freq = 1.0, z_ratio = 1.0, drive = 1.0
-engine_3d_count = 4, engine_3d_detune = 0.15
+layer extra 3D slots with slight octave/detune changes for ensemble width
 ```
 
 **Bell/metallic lead**
@@ -238,7 +253,7 @@ engine_3d_count = 4, engine_3d_detune = 0.15
 field = Shell, path = Circle
 radius = 1.2, depth = 0.7, field_freq = 2.5
 z_ratio = 1.0, drive = 1.5, chaos = 0.2
-engine_3d_count = 1
+use one 3D slot for the cleanest attack
 ```
 
 **Organic vowel pad**
@@ -246,7 +261,7 @@ engine_3d_count = 1
 field = Formant, path = RandomWalk
 radius = 1.0, depth = 1.0, warp = 0.3
 chaos = 0.15, morph = 0.5, field_freq = 1.5
-engine_3d_count = 3, engine_3d_detune = 0.08
+duplicate into another 3D slot with different rotation for slow stereo movement
 ```
 
 **Tense digital texture**

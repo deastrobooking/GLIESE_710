@@ -1704,6 +1704,7 @@ CMakeFiles/GLIESE_Tests.dir/Tests/EngineTests.cpp.o: \
   /Users/home/Desktop/VSTS/GLIESE_710/Tests/../Source/Engine/Oscillators/VAOscillator.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Tests/../Source/Engine/Oscillators/WavetableOsc.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Tests/../Source/Engine/Oscillators/GranularOsc.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Tests/../Source/Engine/Oscillators/TerrainOsc.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Tests/../Source/Engine/Oscillators/FMOperator.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Tests/../Source/Engine/Oscillators/../Envelopes/ADSREnvelope.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Tests/../Source/Engine/Oscillators/FMAlgorithm.h \

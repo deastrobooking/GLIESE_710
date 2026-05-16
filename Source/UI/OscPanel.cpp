@@ -70,7 +70,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     setupADSRSlider(adsrS, "Sustain"); attS = std::make_unique<Att>(apvts, pfx + "adsr_s", adsrS);
     setupADSRSlider(adsrR, "Release"); attR = std::make_unique<Att>(apvts, pfx + "adsr_r", adsrR);
 
-    if (oscId == "3d")
+    if (oscId.startsWith("3d"))
     {
         modeBoxA.addItemList({"SinSum","SinProd","Ripple","Torus",
                               "Vortex","Turbulence","Lorenz","Dipole",
@@ -84,32 +84,32 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         IndustrialTheme::styleCombo(modeBoxB, accent);
         addAndMakeVisible(modeBoxA);
         addAndMakeVisible(modeBoxB);
-        modeAttA = std::make_unique<CAtt>(apvts, "osc_3d_field", modeBoxA);
-        modeAttB = std::make_unique<CAtt>(apvts, "osc_3d_path",  modeBoxB);
+        modeAttA = std::make_unique<CAtt>(apvts, pfx + "field", modeBoxA);
+        modeAttB = std::make_unique<CAtt>(apvts, pfx + "path",  modeBoxB);
         numModeBoxes = 2;
 
-        setupExtraSlider(extra1,  "osc_3d_radius",    "3D Radius",       extraAtt1);
-        setupExtraSlider(extra2,  "osc_3d_depth",     "3D Depth",        extraAtt2);
-        setupExtraSlider(extra3,  "osc_3d_warp",      "3D Warp",         extraAtt3);
-        setupExtraSlider(extra4,  "osc_3d_rotation",  "3D Rotation",     extraAtt4);
-        setupExtraSlider(extra5,  "osc_3d_chaos",     "3D Chaos",        extraAtt5);
-        setupExtraSlider(extra6,  "osc_3d_morph",     "3D Morph",        extraAtt6);
-        setupExtraSlider(extra7,  "osc_3d_field_freq","Field Frequency",  extraAtt7);
-        setupExtraSlider(extra8,  "osc_3d_z_ratio",   "Z Ratio",          extraAtt8);
-        setupExtraSlider(extra9,  "osc_3d_fold",      "Coordinate Fold",  extraAtt9);
-        setupExtraSlider(extra10, "osc_3d_drive",     "Field Drive",      extraAtt10);
+        setupExtraSlider(extra1,  pfx + "radius",    "3D Radius",       extraAtt1);
+        setupExtraSlider(extra2,  pfx + "depth",     "3D Depth",        extraAtt2);
+        setupExtraSlider(extra3,  pfx + "warp",      "3D Warp",         extraAtt3);
+        setupExtraSlider(extra4,  pfx + "rotation",  "3D Rotation",     extraAtt4);
+        setupExtraSlider(extra5,  pfx + "chaos",     "3D Chaos",        extraAtt5);
+        setupExtraSlider(extra6,  pfx + "morph",     "3D Morph",        extraAtt6);
+        setupExtraSlider(extra7,  pfx + "field_freq","Field Frequency",  extraAtt7);
+        setupExtraSlider(extra8,  pfx + "z_ratio",   "Z Ratio",          extraAtt8);
+        setupExtraSlider(extra9,  pfx + "fold",      "Coordinate Fold",  extraAtt9);
+        setupExtraSlider(extra10, pfx + "drive",     "Field Drive",      extraAtt10);
         numExtraSliders = 10;
     }
-    else if (oscId == "ks")
+    else if (oscId.startsWith("ks"))
     {
-        setupExtraSlider(extra1, "osc_ks_decay",      "Decay (0=short, 1=long)",         extraAtt1);
-        setupExtraSlider(extra2, "osc_ks_brightness", "Brightness (loop LPF blend)",      extraAtt2);
-        setupExtraSlider(extra3, "osc_ks_stiffness",  "Stiffness (all-pass dispersion)",  extraAtt3);
-        setupExtraSlider(extra4, "osc_ks_morph",      "Excitation morph (noise→glitch)",  extraAtt4);
-        setupExtraSlider(extra5, "osc_ks_position",   "Pluck position",                   extraAtt5);
+        setupExtraSlider(extra1, pfx + "decay",      "Decay (0=short, 1=long)",         extraAtt1);
+        setupExtraSlider(extra2, pfx + "brightness", "Brightness (loop LPF blend)",      extraAtt2);
+        setupExtraSlider(extra3, pfx + "stiffness",  "Stiffness (all-pass dispersion)",  extraAtt3);
+        setupExtraSlider(extra4, pfx + "morph",      "Excitation morph (noise to glitch)", extraAtt4);
+        setupExtraSlider(extra5, pfx + "position",   "Pluck position",                   extraAtt5);
         numExtraSliders = 5;
     }
-    else if (oscId == "grain")
+    else if (oscId.startsWith("grain"))
     {
         modeBoxA.addItemList({"Free Cloud","Burst","Audio Rate"}, 1);
         modeBoxB.addItemList({"Hann","Triangle","Gaussian","Tukey","Rect","Exp Attack","Exp Decay"}, 1);
@@ -123,32 +123,56 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         addAndMakeVisible(modeBoxA);
         addAndMakeVisible(modeBoxB);
         addAndMakeVisible(modeBoxC);
-        modeAttA = std::make_unique<CAtt>(apvts, "osc_grain_trigger_mode", modeBoxA);
-        modeAttB = std::make_unique<CAtt>(apvts, "osc_grain_window", modeBoxB);
-        modeAttC = std::make_unique<CAtt>(apvts, "osc_grain_body_type", modeBoxC);
+        modeAttA = std::make_unique<CAtt>(apvts, pfx + "trigger_mode", modeBoxA);
+        modeAttB = std::make_unique<CAtt>(apvts, pfx + "window", modeBoxB);
+        modeAttC = std::make_unique<CAtt>(apvts, pfx + "body_type", modeBoxC);
         numModeBoxes = 3;
 
-        setupExtraSlider(extra1,  "osc_grain_position", "Grain Position",          extraAtt1);
-        setupExtraSlider(extra2,  "osc_grain_size",     "Grain Size",              extraAtt2);
-        setupExtraSlider(extra3,  "osc_grain_density",  "Grain Density",           extraAtt3);
-        setupExtraSlider(extra4,  "osc_grain_pitch",    "Grain Pitch",             extraAtt4);
-        setupExtraSlider(extra5,  "osc_grain_spray",    "Position Spray",          extraAtt5);
-        setupExtraSlider(extra6,  "osc_grain_jitter",   "Timing / Pitch Jitter",   extraAtt6);
-        setupExtraSlider(extra7,  "osc_grain_pan",      "Pan Spread",              extraAtt7);
-        setupExtraSlider(extra8,  "osc_grain_reverse",  "Reverse Probability",     extraAtt8);
-        setupExtraSlider(extra9,  "osc_grain_scan",     "Position Scan Speed",     extraAtt9);
-        setupExtraSlider(extra10, "osc_grain_freeze",   "Position Freeze Amount",  extraAtt10);
-        setupExtraSlider(extra11, "osc_grain_body_root",   "Body Root Pitch",       extraAtt11);
-        setupExtraSlider(extra12, "osc_grain_body_size",   "Body Size",             extraAtt12);
-        setupExtraSlider(extra13, "osc_grain_body_decay",  "Body Decay",            extraAtt13);
-        setupExtraSlider(extra14, "osc_grain_body_damp",   "Body Damping",          extraAtt14);
-        setupExtraSlider(extra15, "osc_grain_body_bright", "Body Brightness",       extraAtt15);
-        setupExtraSlider(extra16, "osc_grain_body_inharm", "Body Inharmonicity",    extraAtt16);
-        setupExtraSlider(extra17, "osc_grain_body_excite", "Body Excitation",       extraAtt17);
-        setupExtraSlider(extra18, "osc_grain_body_mix",    "Body Mix",              extraAtt18);
-        setupExtraSlider(extra19, "osc_grain_body_spread", "Body Stereo Spread",    extraAtt19);
-        setupExtraSlider(extra20, "osc_grain_body_modes",  "Body Mode Count",       extraAtt20);
+        setupExtraSlider(extra1,  pfx + "position", "Grain Position",          extraAtt1);
+        setupExtraSlider(extra2,  pfx + "size",     "Grain Size",              extraAtt2);
+        setupExtraSlider(extra3,  pfx + "density",  "Grain Density",           extraAtt3);
+        setupExtraSlider(extra4,  pfx + "pitch",    "Grain Pitch",             extraAtt4);
+        setupExtraSlider(extra5,  pfx + "spray",    "Position Spray",          extraAtt5);
+        setupExtraSlider(extra6,  pfx + "jitter",   "Timing / Pitch Jitter",   extraAtt6);
+        setupExtraSlider(extra7,  pfx + "pan",      "Pan Spread",              extraAtt7);
+        setupExtraSlider(extra8,  pfx + "reverse",  "Reverse Probability",     extraAtt8);
+        setupExtraSlider(extra9,  pfx + "scan",     "Position Scan Speed",     extraAtt9);
+        setupExtraSlider(extra10, pfx + "freeze",   "Position Freeze Amount",  extraAtt10);
+        setupExtraSlider(extra11, pfx + "body_root",   "Body Root Pitch",       extraAtt11);
+        setupExtraSlider(extra12, pfx + "body_size",   "Body Size",             extraAtt12);
+        setupExtraSlider(extra13, pfx + "body_decay",  "Body Decay",            extraAtt13);
+        setupExtraSlider(extra14, pfx + "body_damp",   "Body Damping",          extraAtt14);
+        setupExtraSlider(extra15, pfx + "body_bright", "Body Brightness",       extraAtt15);
+        setupExtraSlider(extra16, pfx + "body_inharm", "Body Inharmonicity",    extraAtt16);
+        setupExtraSlider(extra17, pfx + "body_excite", "Body Excitation",       extraAtt17);
+        setupExtraSlider(extra18, pfx + "body_mix",    "Body Mix",              extraAtt18);
+        setupExtraSlider(extra19, pfx + "body_spread", "Body Stereo Spread",    extraAtt19);
+        setupExtraSlider(extra20, pfx + "body_modes",  "Body Mode Count",       extraAtt20);
         numExtraSliders = 20;
+    }
+    else if (oscId.startsWith("terrain"))
+    {
+        modeBoxA.addItemList({"Circle","Ellipse","Lissajous","Spiral","Line","Orbit Noise"}, 1);
+        modeBoxA.setTooltip("Wave-terrain scan path");
+        IndustrialTheme::styleCombo(modeBoxA, accent);
+        addAndMakeVisible(modeBoxA);
+        modeAttA = std::make_unique<CAtt>(apvts, pfx + "path", modeBoxA);
+        numModeBoxes = 1;
+
+        setupExtraSlider(extra1,  pfx + "center_x",  "Terrain Center X",       extraAtt1);
+        setupExtraSlider(extra2,  pfx + "center_y",  "Terrain Center Y",       extraAtt2);
+        setupExtraSlider(extra3,  pfx + "radius_x",  "Terrain Radius X",       extraAtt3);
+        setupExtraSlider(extra4,  pfx + "radius_y",  "Terrain Radius Y",       extraAtt4);
+        setupExtraSlider(extra5,  pfx + "ratio_x",   "Path Ratio X",           extraAtt5);
+        setupExtraSlider(extra6,  pfx + "ratio_y",   "Path Ratio Y",           extraAtt6);
+        setupExtraSlider(extra7,  pfx + "phase",     "Phase Offset",           extraAtt7);
+        setupExtraSlider(extra8,  pfx + "spiral",    "Spiral Amount",          extraAtt8);
+        setupExtraSlider(extra9,  pfx + "drive",     "Terrain Drive",          extraAtt9);
+        setupExtraSlider(extra10, pfx + "offset",    "Terrain Offset",         extraAtt10);
+        setupExtraSlider(extra11, pfx + "smoothing", "Terrain Blur Smoothing", extraAtt11);
+        setupExtraSlider(extra12, pfx + "morph",     "Procedural Morph",       extraAtt12);
+        setupExtraSlider(extra13, pfx + "gain",      "Terrain Gain",           extraAtt13);
+        numExtraSliders = 13;
     }
     else if (oscId.startsWith("va"))
     {
@@ -169,7 +193,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
                 juce::jlimit(extra1.getMinimum(), extra1.getMaximum(), extra1.getValue())));
         };
     }
-    else if (oscId == "wt")
+    else if (oscId.startsWith("wt"))
     {
         modeBoxA.addItemList({"Sine","Triangle","Saw","Square","Pulse",
                               "Half Sine","Abs Sine","Sine Cube",
@@ -184,19 +208,19 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         IndustrialTheme::styleCombo(modeBoxB, accent);
         addAndMakeVisible(modeBoxA);
         addAndMakeVisible(modeBoxB);
-        modeAttA = std::make_unique<CAtt>(apvts, "osc_wt_table", modeBoxA);
-        modeAttB = std::make_unique<CAtt>(apvts, "osc_wt_warp_mode", modeBoxB);
+        modeAttA = std::make_unique<CAtt>(apvts, pfx + "table", modeBoxA);
+        modeAttB = std::make_unique<CAtt>(apvts, pfx + "warp_mode", modeBoxB);
         numModeBoxes = 2;
 
-        setupExtraSlider(extra1, "osc_wt_pos",        "Wavetable Position",        extraAtt1);
-        setupExtraSlider(extra2, "osc_wt_warp",       "Warp Amount",               extraAtt2);
-        setupExtraSlider(extra3, "osc_wt_pd_break",   "Phase Distortion Breakpoint", extraAtt3);
-        setupExtraSlider(extra4, "osc_wt_unison",     "Unison Voices",             extraAtt4);
-        setupExtraSlider(extra5, "osc_wt_detune",     "Unison Detune",             extraAtt5);
-        setupExtraSlider(extra6, "osc_wt_spread",     "Stereo Spread",             extraAtt6);
-        setupExtraSlider(extra7, "osc_wt_pos_spread", "Wavetable Position Spread", extraAtt7);
-        setupExtraSlider(extra8, "osc_wt_phase",      "Phase Offset",              extraAtt8);
-        setupExtraSlider(extra9, "osc_wt_random",     "Random Phase Amount",       extraAtt9);
+        setupExtraSlider(extra1, pfx + "pos",        "Wavetable Position",        extraAtt1);
+        setupExtraSlider(extra2, pfx + "warp",       "Warp Amount",               extraAtt2);
+        setupExtraSlider(extra3, pfx + "pd_break",   "Phase Distortion Breakpoint", extraAtt3);
+        setupExtraSlider(extra4, pfx + "unison",     "Unison Voices",             extraAtt4);
+        setupExtraSlider(extra5, pfx + "detune",     "Unison Detune",             extraAtt5);
+        setupExtraSlider(extra6, pfx + "spread",     "Stereo Spread",             extraAtt6);
+        setupExtraSlider(extra7, pfx + "pos_spread", "Wavetable Position Spread", extraAtt7);
+        setupExtraSlider(extra8, pfx + "phase",      "Phase Offset",              extraAtt8);
+        setupExtraSlider(extra9, pfx + "random",     "Random Phase Amount",       extraAtt9);
         numExtraSliders = 9;
 
         retrigButton.setButtonText("RT");
@@ -205,7 +229,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         retrigButton.setColour(juce::ToggleButton::tickColourId, accent);
         retrigButton.setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(0xff555555));
         addAndMakeVisible(retrigButton);
-        retrigAtt = std::make_unique<BAtt>(apvts, "osc_wt_retrig", retrigButton);
+        retrigAtt = std::make_unique<BAtt>(apvts, pfx + "retrig", retrigButton);
         hasRetrigButton = true;
     }
 
@@ -219,7 +243,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     makeLabel(levelLabel,  "LEVEL");
     makeLabel(octaveLabel, "OCTAVE");
 
-    if (oscId == "3d")
+    if (oscId.startsWith("3d"))
     {
         makeLabel(modeALabel, "FIELD");
         makeLabel(modeBLabel, "PATH");
@@ -234,7 +258,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         makeLabel(extraLabels[8], "FOLD");
         makeLabel(extraLabels[9], "DRIVE");
     }
-    else if (oscId == "ks")
+    else if (oscId.startsWith("ks"))
     {
         makeLabel(extraLabels[0], "DECAY");
         makeLabel(extraLabels[1], "BRIGHT");
@@ -242,7 +266,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         makeLabel(extraLabels[3], "MORPH");
         makeLabel(extraLabels[4], "POS");
     }
-    else if (oscId == "grain")
+    else if (oscId.startsWith("grain"))
     {
         makeLabel(modeALabel, "TRIGGER");
         makeLabel(modeBLabel, "WINDOW");
@@ -268,6 +292,23 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         makeLabel(extraLabels[18], "B-SPR");
         makeLabel(extraLabels[19], "MODES");
     }
+    else if (oscId.startsWith("terrain"))
+    {
+        makeLabel(modeALabel, "PATH");
+        makeLabel(extraLabels[0], "X");
+        makeLabel(extraLabels[1], "Y");
+        makeLabel(extraLabels[2], "RAD-X");
+        makeLabel(extraLabels[3], "RAD-Y");
+        makeLabel(extraLabels[4], "RAT-X");
+        makeLabel(extraLabels[5], "RAT-Y");
+        makeLabel(extraLabels[6], "PHASE");
+        makeLabel(extraLabels[7], "SPIRAL");
+        makeLabel(extraLabels[8], "DRIVE");
+        makeLabel(extraLabels[9], "OFFSET");
+        makeLabel(extraLabels[10], "SMOOTH");
+        makeLabel(extraLabels[11], "MORPH");
+        makeLabel(extraLabels[12], "GAIN");
+    }
     else if (oscId.startsWith("va"))
     {
         makeLabel(extraLabels[0], "SHAPE");
@@ -278,7 +319,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         makeLabel(extraLabels[5], "RING");
         makeLabel(extraLabels[6], "FOLD");
     }
-    else if (oscId == "wt")
+    else if (oscId.startsWith("wt"))
     {
         makeLabel(modeALabel, "SHAPE");
         makeLabel(modeBLabel, "WARP");
@@ -330,7 +371,7 @@ void OscPanel::setupExtraSlider(juce::Slider& slider, const juce::String& paramI
 
 void OscPanel::paint(juce::Graphics& g)
 {
-    IndustrialTheme::paintPanel(g, getLocalBounds(), accent, oscId == "3d");
+    IndustrialTheme::paintPanel(g, getLocalBounds(), accent, oscId.startsWith("3d"));
 }
 
 void OscPanel::resized()

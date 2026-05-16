@@ -11,7 +11,8 @@ const char* EngineSlotBar::typeName(int t) noexcept
         case VA:    return "VA";
         case WT:    return "WT";
         case KS:    return "KS";
-        case Granular: return "GRN";
+        case Granular: return "Granular";
+        case Terrain: return "Terrain";
         default:    return "—";
     }
 }
@@ -24,6 +25,7 @@ juce::Colour EngineSlotBar::accentFor(int t) noexcept
         case WT:    return IndustrialTheme::accentForOsc("wt");
         case KS:    return IndustrialTheme::accentForOsc("ks");
         case Granular: return IndustrialTheme::accentForOsc("grain");
+        case Terrain: return IndustrialTheme::accentForOsc("terrain");
         default:    return juce::Colour(0xff3a3e44);
     }
 }
@@ -194,7 +196,9 @@ void EngineSlotBar::showSlotMenu(int block, int slot)
     menu.addItem(3, "Virtual Analog",   true, cur == VA);
     menu.addItem(4, "Wavetable",        true, cur == WT);
     menu.addItem(5, "Karplus-Strong",   true, cur == KS);
-    menu.addItem(6, "Granular",         true, cur == Granular);
+    menu.addSeparator();
+    menu.addItem(6, "Granular Oscillator",     true, cur == Granular);
+    menu.addItem(7, "Terrain Oscillator",      true, cur == Terrain);
 
     menu.showMenuAsync(
         juce::PopupMenu::Options().withTargetComponent(this),
