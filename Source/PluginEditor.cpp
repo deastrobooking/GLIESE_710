@@ -3,7 +3,9 @@
 
 GLIESE710AudioProcessorEditor::GLIESE710AudioProcessorEditor(GLIESE710AudioProcessor& p)
     : AudioProcessorEditor(&p),
-      mainPanel(p.apvts),
+      mainPanel(p.apvts, [&p](int terrainIndex, const juce::File& file) {
+          return p.importTerrainHeightmap(terrainIndex, file);
+      }),
       presetBrowser(p.presetManager),
       patchBrowser(p.presetManager)
 {

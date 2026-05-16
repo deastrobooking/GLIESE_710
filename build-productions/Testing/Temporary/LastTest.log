@@ -1,0 +1,723 @@
+Start testing: May 16 12:58 EDT
+----------------------------------------------------------
+1/36 Testing: ADSREnvelope basic lifecycle
+1/36 Test: ADSREnvelope basic lifecycle
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "ADSREnvelope basic lifecycle"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"ADSREnvelope basic lifecycle" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "ADSREnvelope basic lifecycle"
+Randomness seeded to: 4004585319
+===============================================================================
+All tests passed (17 assertions in 1 test case)
+
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"ADSREnvelope basic lifecycle" end time: May 16 12:58 EDT
+"ADSREnvelope basic lifecycle" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/36 Testing: Osc3D outputs bounded signal
+2/36 Test: Osc3D outputs bounded signal
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "Osc3D outputs bounded signal"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"Osc3D outputs bounded signal" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "Osc3D outputs bounded signal"
+Randomness seeded to: 663225798
+===============================================================================
+All tests passed (211200 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"Osc3D outputs bounded signal" end time: May 16 12:58 EDT
+"Osc3D outputs bounded signal" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/36 Testing: VAOscillator stereo output bounds
+3/36 Test: VAOscillator stereo output bounds
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "VAOscillator stereo output bounds"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"VAOscillator stereo output bounds" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "VAOscillator stereo output bounds"
+Randomness seeded to: 3111471797
+===============================================================================
+All tests passed (201600 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"VAOscillator stereo output bounds" end time: May 16 12:58 EDT
+"VAOscillator stereo output bounds" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/36 Testing: LFOEngine shape output ranges
+4/36 Test: LFOEngine shape output ranges
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "LFOEngine shape output ranges"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"LFOEngine shape output ranges" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "LFOEngine shape output ranges"
+Randomness seeded to: 3407297774
+===============================================================================
+All tests passed (20 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"LFOEngine shape output ranges" end time: May 16 12:58 EDT
+"LFOEngine shape output ranges" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/36 Testing: ModMatrix accumulates correctly
+5/36 Test: ModMatrix accumulates correctly
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "ModMatrix accumulates correctly"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"ModMatrix accumulates correctly" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "ModMatrix accumulates correctly"
+Randomness seeded to: 2779446931
+===============================================================================
+All tests passed (1 assertion in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"ModMatrix accumulates correctly" end time: May 16 12:58 EDT
+"ModMatrix accumulates correctly" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/36 Testing: ModMatrix bipolar conversion
+6/36 Test: ModMatrix bipolar conversion
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "ModMatrix bipolar conversion"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"ModMatrix bipolar conversion" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "ModMatrix bipolar conversion"
+Randomness seeded to: 3679675415
+===============================================================================
+All tests passed (1 assertion in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"ModMatrix bipolar conversion" end time: May 16 12:58 EDT
+"ModMatrix bipolar conversion" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/36 Testing: ModMatrix leaves naturally bipolar sources unchanged
+7/36 Test: ModMatrix leaves naturally bipolar sources unchanged
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "ModMatrix leaves naturally bipolar sources unchanged"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"ModMatrix leaves naturally bipolar sources unchanged" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "ModMatrix leaves naturally bipolar sources unchanged"
+Randomness seeded to: 1835525969
+===============================================================================
+All tests passed (1 assertion in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"ModMatrix leaves naturally bipolar sources unchanged" end time: May 16 12:58 EDT
+"ModMatrix leaves naturally bipolar sources unchanged" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/36 Testing: ModMatrix None slot is skipped
+8/36 Test: ModMatrix None slot is skipped
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "ModMatrix None slot is skipped"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"ModMatrix None slot is skipped" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "ModMatrix None slot is skipped"
+Randomness seeded to: 3951858946
+===============================================================================
+All tests passed (92 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"ModMatrix None slot is skipped" end time: May 16 12:58 EDT
+"ModMatrix None slot is skipped" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/36 Testing: DualFilter LP12 attenuates high freq
+9/36 Test: DualFilter LP12 attenuates high freq
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "DualFilter LP12 attenuates high freq"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"DualFilter LP12 attenuates high freq" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "DualFilter LP12 attenuates high freq"
+Randomness seeded to: 2672803597
+===============================================================================
+All tests passed (1 assertion in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"DualFilter LP12 attenuates high freq" end time: May 16 12:58 EDT
+"DualFilter LP12 attenuates high freq" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/36 Testing: DualFilter output is finite
+10/36 Test: DualFilter output is finite
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "DualFilter output is finite"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"DualFilter output is finite" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "DualFilter output is finite"
+Randomness seeded to: 2401378644
+===============================================================================
+All tests passed (28672 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"DualFilter output is finite" end time: May 16 12:58 EDT
+"DualFilter output is finite" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/36 Testing: DualFilter advanced models stay finite with oversampling
+11/36 Test: DualFilter advanced models stay finite with oversampling
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "DualFilter advanced models stay finite with oversampling"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"DualFilter advanced models stay finite with oversampling" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "DualFilter advanced models stay finite with oversampling"
+Randomness seeded to: 1310330235
+===============================================================================
+All tests passed (65536 assertions in 1 test case)
+
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"DualFilter advanced models stay finite with oversampling" end time: May 16 12:58 EDT
+"DualFilter advanced models stay finite with oversampling" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/36 Testing: SEM morph behaves as LP notch HP state-variable filter
+12/36 Test: SEM morph behaves as LP notch HP state-variable filter
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "SEM morph behaves as LP notch HP state-variable filter"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"SEM morph behaves as LP notch HP state-variable filter" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "SEM morph behaves as LP notch HP state-variable filter"
+Randomness seeded to: 1380577273
+===============================================================================
+All tests passed (98307 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"SEM morph behaves as LP notch HP state-variable filter" end time: May 16 12:58 EDT
+"SEM morph behaves as LP notch HP state-variable filter" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/36 Testing: Roland filters behave as 24 dB low-pass models
+13/36 Test: Roland filters behave as 24 dB low-pass models
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "Roland filters behave as 24 dB low-pass models"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"Roland filters behave as 24 dB low-pass models" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "Roland filters behave as 24 dB low-pass models"
+Randomness seeded to: 1597530606
+===============================================================================
+All tests passed (163844 assertions in 1 test case)
+
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"Roland filters behave as 24 dB low-pass models" end time: May 16 12:58 EDT
+"Roland filters behave as 24 dB low-pass models" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/36 Testing: TB303 filter behaves as acid 18 dB low-pass
+14/36 Test: TB303 filter behaves as acid 18 dB low-pass
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "TB303 filter behaves as acid 18 dB low-pass"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"TB303 filter behaves as acid 18 dB low-pass" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "TB303 filter behaves as acid 18 dB low-pass"
+Randomness seeded to: 1392975076
+===============================================================================
+All tests passed (81922 assertions in 1 test case)
+
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"TB303 filter behaves as acid 18 dB low-pass" end time: May 16 12:58 EDT
+"TB303 filter behaves as acid 18 dB low-pass" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/36 Testing: Sequential filters behave as SSM and CEM low-pass models
+15/36 Test: Sequential filters behave as SSM and CEM low-pass models
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "Sequential filters behave as SSM and CEM low-pass models"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"Sequential filters behave as SSM and CEM low-pass models" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "Sequential filters behave as SSM and CEM low-pass models"
+Randomness seeded to: 3143874703
+===============================================================================
+All tests passed (270343 assertions in 1 test case)
+
+<end of output>
+Test time =   0.08 sec
+----------------------------------------------------------
+Test Passed.
+"Sequential filters behave as SSM and CEM low-pass models" end time: May 16 12:58 EDT
+"Sequential filters behave as SSM and CEM low-pass models" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/36 Testing: DualFilter wet dry mix can bypass filter output
+16/36 Test: DualFilter wet dry mix can bypass filter output
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "DualFilter wet dry mix can bypass filter output"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"DualFilter wet dry mix can bypass filter output" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "DualFilter wet dry mix can bypass filter output"
+Randomness seeded to: 2147283352
+===============================================================================
+All tests passed (32 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"DualFilter wet dry mix can bypass filter output" end time: May 16 12:58 EDT
+"DualFilter wet dry mix can bypass filter output" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/36 Testing: DualFilter keeps stereo channel state independent
+17/36 Test: DualFilter keeps stereo channel state independent
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "DualFilter keeps stereo channel state independent"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"DualFilter keeps stereo channel state independent" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "DualFilter keeps stereo channel state independent"
+Randomness seeded to: 3926483676
+===============================================================================
+All tests passed (64 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"DualFilter keeps stereo channel state independent" end time: May 16 12:58 EDT
+"DualFilter keeps stereo channel state independent" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/36 Testing: WavetableOsc table index selects base table
+18/36 Test: WavetableOsc table index selects base table
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "WavetableOsc table index selects base table"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"WavetableOsc table index selects base table" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "WavetableOsc table index selects base table"
+Randomness seeded to: 2179398433
+===============================================================================
+All tests passed (4 assertions in 1 test case)
+
+<end of output>
+Test time =   0.11 sec
+----------------------------------------------------------
+Test Passed.
+"WavetableOsc table index selects base table" end time: May 16 12:58 EDT
+"WavetableOsc table index selects base table" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/36 Testing: WavetableOsc warp modes stay finite and bounded
+19/36 Test: WavetableOsc warp modes stay finite and bounded
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "WavetableOsc warp modes stay finite and bounded"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"WavetableOsc warp modes stay finite and bounded" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "WavetableOsc warp modes stay finite and bounded"
+Randomness seeded to: 638662287
+===============================================================================
+All tests passed (368640 assertions in 1 test case)
+
+<end of output>
+Test time =   0.10 sec
+----------------------------------------------------------
+Test Passed.
+"WavetableOsc warp modes stay finite and bounded" end time: May 16 12:58 EDT
+"WavetableOsc warp modes stay finite and bounded" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/36 Testing: WavetableOsc phase offset controls initial phase
+20/36 Test: WavetableOsc phase offset controls initial phase
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "WavetableOsc phase offset controls initial phase"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"WavetableOsc phase offset controls initial phase" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "WavetableOsc phase offset controls initial phase"
+Randomness seeded to: 3874055979
+===============================================================================
+All tests passed (2 assertions in 1 test case)
+
+<end of output>
+Test time =   0.10 sec
+----------------------------------------------------------
+Test Passed.
+"WavetableOsc phase offset controls initial phase" end time: May 16 12:58 EDT
+"WavetableOsc phase offset controls initial phase" time elapsed: 00:00:00
+----------------------------------------------------------
+
+21/36 Testing: GranularOsc cloud produces finite stereo grains
+21/36 Test: GranularOsc cloud produces finite stereo grains
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "GranularOsc cloud produces finite stereo grains"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"GranularOsc cloud produces finite stereo grains" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "GranularOsc cloud produces finite stereo grains"
+Randomness seeded to: 3486806221
+===============================================================================
+All tests passed (8195 assertions in 1 test case)
+
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"GranularOsc cloud produces finite stereo grains" end time: May 16 12:58 EDT
+"GranularOsc cloud produces finite stereo grains" time elapsed: 00:00:00
+----------------------------------------------------------
+
+22/36 Testing: GranularOsc default graintable tracks played pitch
+22/36 Test: GranularOsc default graintable tracks played pitch
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "GranularOsc default graintable tracks played pitch"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"GranularOsc default graintable tracks played pitch" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "GranularOsc default graintable tracks played pitch"
+Randomness seeded to: 2714598415
+===============================================================================
+All tests passed (2 assertions in 1 test case)
+
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"GranularOsc default graintable tracks played pitch" end time: May 16 12:58 EDT
+"GranularOsc default graintable tracks played pitch" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/36 Testing: GranularOsc modes and windows stay finite under heavy density
+23/36 Test: GranularOsc modes and windows stay finite under heavy density
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "GranularOsc modes and windows stay finite under heavy density"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"GranularOsc modes and windows stay finite under heavy density" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "GranularOsc modes and windows stay finite under heavy density"
+Randomness seeded to: 1703775790
+===============================================================================
+All tests passed (172053 assertions in 1 test case)
+
+<end of output>
+Test time =   0.28 sec
+----------------------------------------------------------
+Test Passed.
+"GranularOsc modes and windows stay finite under heavy density" end time: May 16 12:58 EDT
+"GranularOsc modes and windows stay finite under heavy density" time elapsed: 00:00:00
+----------------------------------------------------------
+
+24/36 Testing: GranularOsc physical body bypass preserves pure granular output
+24/36 Test: GranularOsc physical body bypass preserves pure granular output
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "GranularOsc physical body bypass preserves pure granular output"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"GranularOsc physical body bypass preserves pure granular output" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "GranularOsc physical body bypass preserves pure granular output"
+Randomness seeded to: 2403730096
+===============================================================================
+All tests passed (4096 assertions in 1 test case)
+
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"GranularOsc physical body bypass preserves pure granular output" end time: May 16 12:58 EDT
+"GranularOsc physical body bypass preserves pure granular output" time elapsed: 00:00:00
+----------------------------------------------------------
+
+25/36 Testing: GranularOsc physical body types stay finite
+25/36 Test: GranularOsc physical body types stay finite
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "GranularOsc physical body types stay finite"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"GranularOsc physical body types stay finite" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "GranularOsc physical body types stay finite"
+Randomness seeded to: 1243289209
+===============================================================================
+All tests passed (147456 assertions in 1 test case)
+
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"GranularOsc physical body types stay finite" end time: May 16 12:58 EDT
+"GranularOsc physical body types stay finite" time elapsed: 00:00:00
+----------------------------------------------------------
+
+26/36 Testing: TerrainOsc scan paths stay finite and audible
+26/36 Test: TerrainOsc scan paths stay finite and audible
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "TerrainOsc scan paths stay finite and audible"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"TerrainOsc scan paths stay finite and audible" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "TerrainOsc scan paths stay finite and audible"
+Randomness seeded to: 1788580333
+===============================================================================
+All tests passed (49158 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"TerrainOsc scan paths stay finite and audible" end time: May 16 12:58 EDT
+"TerrainOsc scan paths stay finite and audible" time elapsed: 00:00:00
+----------------------------------------------------------
+
+27/36 Testing: TerrainOsc imports brightness heightmap as bipolar terrain
+27/36 Test: TerrainOsc imports brightness heightmap as bipolar terrain
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "TerrainOsc imports brightness heightmap as bipolar terrain"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"TerrainOsc imports brightness heightmap as bipolar terrain" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "TerrainOsc imports brightness heightmap as bipolar terrain"
+Randomness seeded to: 1383647746
+===============================================================================
+All tests passed (2052 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"TerrainOsc imports brightness heightmap as bipolar terrain" end time: May 16 12:58 EDT
+"TerrainOsc imports brightness heightmap as bipolar terrain" time elapsed: 00:00:00
+----------------------------------------------------------
+
+28/36 Testing: FMOperator clamps shaping params and wraps high-rate phase
+28/36 Test: FMOperator clamps shaping params and wraps high-rate phase
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "FMOperator clamps shaping params and wraps high-rate phase"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"FMOperator clamps shaping params and wraps high-rate phase" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "FMOperator clamps shaping params and wraps high-rate phase"
+Randomness seeded to: 3839950129
+===============================================================================
+All tests passed (2049 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"FMOperator clamps shaping params and wraps high-rate phase" end time: May 16 12:58 EDT
+"FMOperator clamps shaping params and wraps high-rate phase" time elapsed: 00:00:00
+----------------------------------------------------------
+
+29/36 Testing: FMOperator spectral waves stay finite
+29/36 Test: FMOperator spectral waves stay finite
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "FMOperator spectral waves stay finite"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"FMOperator spectral waves stay finite" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "FMOperator spectral waves stay finite"
+Randomness seeded to: 2950460779
+===============================================================================
+All tests passed (73728 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"FMOperator spectral waves stay finite" end time: May 16 12:58 EDT
+"FMOperator spectral waves stay finite" time elapsed: 00:00:00
+----------------------------------------------------------
+
+30/36 Testing: FM operators require noteOn and then produce output
+30/36 Test: FM operators require noteOn and then produce output
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "FM operators require noteOn and then produce output"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"FM operators require noteOn and then produce output" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "FM operators require noteOn and then produce output"
+Randomness seeded to: 3732283385
+===============================================================================
+All tests passed (2 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"FM operators require noteOn and then produce output" end time: May 16 12:58 EDT
+"FM operators require noteOn and then produce output" time elapsed: 00:00:00
+----------------------------------------------------------
+
+31/36 Testing: FMOperator applies key-reset phase offset
+31/36 Test: FMOperator applies key-reset phase offset
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "FMOperator applies key-reset phase offset"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"FMOperator applies key-reset phase offset" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "FMOperator applies key-reset phase offset"
+Randomness seeded to: 511111974
+===============================================================================
+All tests passed (2 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"FMOperator applies key-reset phase offset" end time: May 16 12:58 EDT
+"FMOperator applies key-reset phase offset" time elapsed: 00:00:00
+----------------------------------------------------------
+
+32/36 Testing: FMAlgorithm processes operators once per sample
+32/36 Test: FMAlgorithm processes operators once per sample
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "FMAlgorithm processes operators once per sample"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"FMAlgorithm processes operators once per sample" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "FMAlgorithm processes operators once per sample"
+Randomness seeded to: 3221021376
+===============================================================================
+All tests passed (2 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"FMAlgorithm processes operators once per sample" end time: May 16 12:58 EDT
+"FMAlgorithm processes operators once per sample" time elapsed: 00:00:00
+----------------------------------------------------------
+
+33/36 Testing: FMAlgorithm algorithm morph remains finite
+33/36 Test: FMAlgorithm algorithm morph remains finite
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "FMAlgorithm algorithm morph remains finite"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"FMAlgorithm algorithm morph remains finite" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "FMAlgorithm algorithm morph remains finite"
+Randomness seeded to: 3143025750
+===============================================================================
+All tests passed (1025 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"FMAlgorithm algorithm morph remains finite" end time: May 16 12:58 EDT
+"FMAlgorithm algorithm morph remains finite" time elapsed: 00:00:00
+----------------------------------------------------------
+
+34/36 Testing: Arpeggiator honours played order separately from sorted patterns
+34/36 Test: Arpeggiator honours played order separately from sorted patterns
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "Arpeggiator honours played order separately from sorted patterns"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"Arpeggiator honours played order separately from sorted patterns" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "Arpeggiator honours played order separately from sorted patterns"
+Randomness seeded to: 2015879850
+===============================================================================
+All tests passed (8 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"Arpeggiator honours played order separately from sorted patterns" end time: May 16 12:58 EDT
+"Arpeggiator honours played order separately from sorted patterns" time elapsed: 00:00:00
+----------------------------------------------------------
+
+35/36 Testing: Arpeggiator sync toggle chooses host tempo or internal tempo
+35/36 Test: Arpeggiator sync toggle chooses host tempo or internal tempo
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "Arpeggiator sync toggle chooses host tempo or internal tempo"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"Arpeggiator sync toggle chooses host tempo or internal tempo" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "Arpeggiator sync toggle chooses host tempo or internal tempo"
+Randomness seeded to: 4103758101
+===============================================================================
+All tests passed (2 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"Arpeggiator sync toggle chooses host tempo or internal tempo" end time: May 16 12:58 EDT
+"Arpeggiator sync toggle chooses host tempo or internal tempo" time elapsed: 00:00:00
+----------------------------------------------------------
+
+36/36 Testing: Arpeggiator random latch repeats its shuffled order
+36/36 Test: Arpeggiator random latch repeats its shuffled order
+Command: "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests" "Arpeggiator random latch repeats its shuffled order"
+Directory: /Users/home/Desktop/VSTS/GLIESE_710/build-productions
+"Arpeggiator random latch repeats its shuffled order" start time: May 16 12:58 EDT
+Output:
+----------------------------------------------------------
+Filters: "Arpeggiator random latch repeats its shuffled order"
+Randomness seeded to: 1610831302
+===============================================================================
+All tests passed (4 assertions in 1 test case)
+
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"Arpeggiator random latch repeats its shuffled order" end time: May 16 12:58 EDT
+"Arpeggiator random latch repeats its shuffled order" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: May 16 12:58 EDT

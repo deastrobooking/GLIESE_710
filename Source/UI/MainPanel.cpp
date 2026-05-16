@@ -259,8 +259,10 @@ private:
 } // namespace
 
 //──────────────────────────────────────────────────────────────────────────────
-MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a)
-    : apvts(a)
+MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a,
+                     TerrainImportCallback terrainImportCallback)
+    : apvts(a),
+      terrainImport(std::move(terrainImportCallback))
 {
     tabs.setTabBarDepth(28);
     tabs.setOutline(0);
@@ -336,7 +338,8 @@ void MainPanel::buildOscillatorsTab()
         granularPanels[(size_t)i] = std::make_unique<OscPanel>(
             apvts, makeId("grain", i), "GRANULAR " + juce::String(i + 1));
         terrainPanels[(size_t)i] = std::make_unique<OscPanel>(
-            apvts, makeId("terrain", i), "TERRAIN " + juce::String(i + 1));
+            apvts, makeId("terrain", i), "TERRAIN " + juce::String(i + 1),
+            terrainImport, i);
 
         oscillatorsTab->addAndMakeVisible(*osc3dPanels[(size_t)i]);
         oscillatorsTab->addAndMakeVisible(*oscWTPanels[(size_t)i]);
@@ -583,8 +586,10 @@ void MainPanel::layoutOscillatorsTab()
                         if (isActivePage && terrainPanels[(size_t)slotIndex])
                         {
                             terrainPanels[(size_t)slotIndex]->setVisible(true);
-                            addPanel(terrainPanels[(size_t)slotIndex].get());
+                            addPanel(terrainPanels[(size_t)slotIndex].get(), s < 3 ? 2 : 1);
                         }
+                        if (s < 3)
+                            ++s;
                         break;
                     default:
                         if (isActivePage) addGap();

@@ -236,6 +236,7 @@ static APVTS::ParameterLayout buildLayout()
         addFloat (prefix + "radius_y",  label + " Radius Y", 0.0f, 0.5f, 0.35f);
         addFloat (prefix + "ratio_x",   label + " Ratio X",  0.125f, 8.0f, 1.0f, 0.55f);
         addFloat (prefix + "ratio_y",   label + " Ratio Y",  0.125f, 8.0f, 1.5f, 0.55f);
+        addFloat (prefix + "scan_rate", label + " Scan Rate",0.05f, 8.0f, 1.0f, 0.45f);
         addFloat (prefix + "phase",     label + " Phase",    0.0f, 1.0f, 0.0f);
         addFloat (prefix + "spiral",    label + " Spiral",   0.0f, 1.0f, 0.0f);
         addFloat (prefix + "drive",     label + " Drive",    0.1f, 8.0f, 1.5f, 0.45f);
@@ -474,6 +475,21 @@ void GLIESE710AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                 synthEngine.setHostBPM(*bpm);
 
     synthEngine.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+}
+
+bool GLIESE710AudioProcessor::importTerrainHeightmap(int terrainIndex, const juce::File& file)
+{
+    if (!file.existsAsFile())
+        return false;
+
+    auto image = juce::ImageFileFormat::loadFrom(file);
+    if (!image.isValid())
+        return false;
+
+    suspendProcessing(true);
+    const bool ok = synthEngine.setTerrainHeightmap(terrainIndex, image);
+    suspendProcessing(false);
+    return ok;
 }
 
 //==============================================================================

@@ -25,6 +25,7 @@ public:
         float radiusY = 0.35f;
         float ratioX = 1.0f;
         float ratioY = 1.5f;
+        float scanRate = 1.0f;
         float phaseOffset = 0.0f;
         float spiral = 0.0f;
         float drive = 1.5f;

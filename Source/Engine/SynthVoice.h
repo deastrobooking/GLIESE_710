@@ -42,6 +42,7 @@ public:
 
     WavetableOsc& getWavetableOsc() { return wtOscs[0]; }
     void addWavetable(juce::String name, const float* samples, int numSamples);
+    bool setTerrainHeightmap(int index, const juce::Image& image);
     void buildParamCache(juce::AudioProcessorValueTreeState& apvts);
 
 private:
@@ -217,6 +218,7 @@ private:
             std::atomic<float>* radiusY     = nullptr;
             std::atomic<float>* ratioX      = nullptr;
             std::atomic<float>* ratioY      = nullptr;
+            std::atomic<float>* scanRate    = nullptr;
             std::atomic<float>* phase       = nullptr;
             std::atomic<float>* spiral      = nullptr;
             std::atomic<float>* drive       = nullptr;

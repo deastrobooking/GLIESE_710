@@ -33,6 +33,8 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    bool importTerrainHeightmap(int terrainIndex, const juce::File& file);
+
     juce::AudioProcessorValueTreeState apvts;
     PresetManager presetManager;
 

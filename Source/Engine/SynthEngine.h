@@ -20,6 +20,7 @@ public:
                          int numSamples);
 
     void addWavetable(juce::String name, const float* samples, int numSamples);
+    bool setTerrainHeightmap(int index, const juce::Image& image);
 
 private:
     juce::AudioProcessorValueTreeState* apvts = nullptr;

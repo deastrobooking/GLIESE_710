@@ -41,13 +41,17 @@ public:
 class MainPanel : public juce::Component
 {
 public:
-    explicit MainPanel(juce::AudioProcessorValueTreeState& apvts);
+    using TerrainImportCallback = OscPanel::TerrainImportCallback;
+
+    explicit MainPanel(juce::AudioProcessorValueTreeState& apvts,
+                       TerrainImportCallback terrainImport = {});
     ~MainPanel() override;
     void paint(juce::Graphics&) override;
     void resized() override;
 
 private:
     juce::AudioProcessorValueTreeState& apvts;
+    TerrainImportCallback terrainImport;
 
     // ── Oscillator panels (one independent parameter set per engine slot) ────
     std::array<std::unique_ptr<OscPanel>, 8> osc3dPanels;

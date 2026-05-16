@@ -143,11 +143,14 @@ void EngineSlotBar::paint(juce::Graphics& g)
         }
         else
         {
-            // Draw 4 individual slot cells
+            // Draw 4 slot units. Terrain spans two units because it owns a surface viewer.
             for (int s = 0; s < kSlotsPerBlock; ++s)
             {
                 int  type = getSlotType(b, s);
                 auto sr   = slotBounds(b, s);
+                const bool spansTwo = type == Terrain && s < kSlotsPerBlock - 1;
+                if (spansTwo)
+                    sr = sr.getUnion(slotBounds(b, s + 1));
                 auto ac   = accentFor(type);
 
                 g.setColour(type != None ? ac.withAlpha(0.14f) : juce::Colour(0xff0d0f11));
@@ -158,6 +161,9 @@ void EngineSlotBar::paint(juce::Graphics& g)
                 g.setColour(type != None ? ac : IndustrialTheme::mutedText());
                 g.setFont(juce::Font(juce::FontOptions { 11.f, juce::Font::bold }));
                 g.drawText(typeName(type), sr, juce::Justification::centred);
+
+                if (spansTwo)
+                    ++s;
             }
         }
     }
@@ -177,11 +183,19 @@ void EngineSlotBar::mouseDown(const juce::MouseEvent& e)
         {
             for (int s = 0; s < kSlotsPerBlock; ++s)
             {
-                if (slotBounds(b, s).contains(e.position.toInt()))
+                auto target = slotBounds(b, s);
+                const bool spansTwo = getSlotType(b, s) == Terrain && s < kSlotsPerBlock - 1;
+                if (spansTwo)
+                    target = target.getUnion(slotBounds(b, s + 1));
+
+                if (target.contains(e.position.toInt()))
                 {
                     showSlotMenu(b, s);
                     return;
                 }
+
+                if (spansTwo)
+                    ++s;
             }
         }
     }
@@ -226,4 +240,10 @@ void EngineSlotBar::setSlotType(int block, int slot, int t)
 {
     if (auto* param = apvts.getParameter(slotParamId(block, slot)))
         param->setValueNotifyingHost(param->convertTo0to1((float)t));
+
+    if (t == Terrain && slot < kSlotsPerBlock - 1)
+    {
+        if (auto* next = apvts.getParameter(slotParamId(block, slot + 1)))
+            next->setValueNotifyingHost(next->convertTo0to1((float)None));
+    }
 }

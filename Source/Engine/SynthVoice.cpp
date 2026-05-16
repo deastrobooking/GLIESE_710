@@ -210,6 +210,14 @@ void SynthVoice::noteOff()
 
 void SynthVoice::setHostBPM(double bpm)  { lfo.setHostBPM(bpm); }
 
+bool SynthVoice::setTerrainHeightmap(int index, const juce::Image& image)
+{
+    if (index < 0 || index >= kNumTerrainOscs)
+        return false;
+
+    return terrainOscs[(size_t)index].setHeightmapFromImage(image);
+}
+
 void SynthVoice::setMidiCC(ModSource src, float value)
 {
     int idx = (int)src;
@@ -384,6 +392,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.radiusY   = get(pfx + "radius_y");
         c.ratioX    = get(pfx + "ratio_x");
         c.ratioY    = get(pfx + "ratio_y");
+        c.scanRate  = get(pfx + "scan_rate");
         c.phase     = get(pfx + "phase");
         c.spiral    = get(pfx + "spiral");
         c.drive     = get(pfx + "drive");
@@ -524,7 +533,12 @@ void SynthVoice::syncParams()
             else if (t == 3 && currentWTCount < kNumWTOscs) activeWTIndices[(size_t)currentWTCount++] = slotIndex;
             else if (t == 4 && currentKSCount < kNumKSOscs) activeKSIndices[(size_t)currentKSCount++] = slotIndex;
             else if (t == 5 && currentGranCount < kNumGranOscs) activeGranIndices[(size_t)currentGranCount++] = slotIndex;
-            else if (t == 6 && currentTerrainCount < kNumTerrainOscs) activeTerrainIndices[(size_t)currentTerrainCount++] = slotIndex;
+            else if (t == 6 && currentTerrainCount < kNumTerrainOscs)
+            {
+                activeTerrainIndices[(size_t)currentTerrainCount++] = slotIndex;
+                if (s < 3)
+                    ++s;
+            }
         }
     }
 
@@ -759,6 +773,7 @@ void SynthVoice::syncParams()
         tp.radiusY     = pF(ct.radiusY, 0.35f);
         tp.ratioX      = pF(ct.ratioX, 1.f);
         tp.ratioY      = pF(ct.ratioY, 1.5f);
+        tp.scanRate    = pF(ct.scanRate, 1.f);
         tp.phaseOffset = pF(ct.phase);
         tp.spiral      = pF(ct.spiral);
         tp.drive       = pF(ct.drive, 1.5f);

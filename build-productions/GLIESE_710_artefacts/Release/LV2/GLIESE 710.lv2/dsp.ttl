@@ -9928,6 +9928,14 @@ plug:osc_terrain_ratio_y
 	lv2:minimum 0.125 ;
 	lv2:maximum 8 .
 
+plug:osc_terrain_scan_rate
+	a lv2:Parameter ;
+	rdfs:label "Terrain1 Scan Rate" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0.05 ;
+	lv2:maximum 8 .
+
 plug:osc_terrain_phase
 	a lv2:Parameter ;
 	rdfs:label "Terrain1 Phase" ;
@@ -10122,6 +10130,14 @@ plug:osc_terrain2_ratio_y
 	rdfs:range atom:Float ;
 	lv2:default 1.5 ;
 	lv2:minimum 0.125 ;
+	lv2:maximum 8 .
+
+plug:osc_terrain2_scan_rate
+	a lv2:Parameter ;
+	rdfs:label "Terrain2 Scan Rate" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0.05 ;
 	lv2:maximum 8 .
 
 plug:osc_terrain2_phase
@@ -10320,6 +10336,14 @@ plug:osc_terrain3_ratio_y
 	lv2:minimum 0.125 ;
 	lv2:maximum 8 .
 
+plug:osc_terrain3_scan_rate
+	a lv2:Parameter ;
+	rdfs:label "Terrain3 Scan Rate" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0.05 ;
+	lv2:maximum 8 .
+
 plug:osc_terrain3_phase
 	a lv2:Parameter ;
 	rdfs:label "Terrain3 Phase" ;
@@ -10514,6 +10538,14 @@ plug:osc_terrain4_ratio_y
 	rdfs:range atom:Float ;
 	lv2:default 1.5 ;
 	lv2:minimum 0.125 ;
+	lv2:maximum 8 .
+
+plug:osc_terrain4_scan_rate
+	a lv2:Parameter ;
+	rdfs:label "Terrain4 Scan Rate" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0.05 ;
 	lv2:maximum 8 .
 
 plug:osc_terrain4_phase
@@ -10712,6 +10744,14 @@ plug:osc_terrain5_ratio_y
 	lv2:minimum 0.125 ;
 	lv2:maximum 8 .
 
+plug:osc_terrain5_scan_rate
+	a lv2:Parameter ;
+	rdfs:label "Terrain5 Scan Rate" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0.05 ;
+	lv2:maximum 8 .
+
 plug:osc_terrain5_phase
 	a lv2:Parameter ;
 	rdfs:label "Terrain5 Phase" ;
@@ -10906,6 +10946,14 @@ plug:osc_terrain6_ratio_y
 	rdfs:range atom:Float ;
 	lv2:default 1.5 ;
 	lv2:minimum 0.125 ;
+	lv2:maximum 8 .
+
+plug:osc_terrain6_scan_rate
+	a lv2:Parameter ;
+	rdfs:label "Terrain6 Scan Rate" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0.05 ;
 	lv2:maximum 8 .
 
 plug:osc_terrain6_phase
@@ -11104,6 +11152,14 @@ plug:osc_terrain7_ratio_y
 	lv2:minimum 0.125 ;
 	lv2:maximum 8 .
 
+plug:osc_terrain7_scan_rate
+	a lv2:Parameter ;
+	rdfs:label "Terrain7 Scan Rate" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0.05 ;
+	lv2:maximum 8 .
+
 plug:osc_terrain7_phase
 	a lv2:Parameter ;
 	rdfs:label "Terrain7 Phase" ;
@@ -11298,6 +11354,14 @@ plug:osc_terrain8_ratio_y
 	rdfs:range atom:Float ;
 	lv2:default 1.5 ;
 	lv2:minimum 0.125 ;
+	lv2:maximum 8 .
+
+plug:osc_terrain8_scan_rate
+	a lv2:Parameter ;
+	rdfs:label "Terrain8 Scan Rate" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0.05 ;
 	lv2:maximum 8 .
 
 plug:osc_terrain8_phase
@@ -28025,6 +28089,7 @@ plug:output_group_1
 		plug:osc_terrain_radius_y ,
 		plug:osc_terrain_ratio_x ,
 		plug:osc_terrain_ratio_y ,
+		plug:osc_terrain_scan_rate ,
 		plug:osc_terrain_phase ,
 		plug:osc_terrain_spiral ,
 		plug:osc_terrain_drive ,
@@ -28046,6 +28111,7 @@ plug:output_group_1
 		plug:osc_terrain2_radius_y ,
 		plug:osc_terrain2_ratio_x ,
 		plug:osc_terrain2_ratio_y ,
+		plug:osc_terrain2_scan_rate ,
 		plug:osc_terrain2_phase ,
 		plug:osc_terrain2_spiral ,
 		plug:osc_terrain2_drive ,
@@ -28067,6 +28133,7 @@ plug:output_group_1
 		plug:osc_terrain3_radius_y ,
 		plug:osc_terrain3_ratio_x ,
 		plug:osc_terrain3_ratio_y ,
+		plug:osc_terrain3_scan_rate ,
 		plug:osc_terrain3_phase ,
 		plug:osc_terrain3_spiral ,
 		plug:osc_terrain3_drive ,
@@ -28088,6 +28155,7 @@ plug:output_group_1
 		plug:osc_terrain4_radius_y ,
 		plug:osc_terrain4_ratio_x ,
 		plug:osc_terrain4_ratio_y ,
+		plug:osc_terrain4_scan_rate ,
 		plug:osc_terrain4_phase ,
 		plug:osc_terrain4_spiral ,
 		plug:osc_terrain4_drive ,
@@ -28109,6 +28177,7 @@ plug:output_group_1
 		plug:osc_terrain5_radius_y ,
 		plug:osc_terrain5_ratio_x ,
 		plug:osc_terrain5_ratio_y ,
+		plug:osc_terrain5_scan_rate ,
 		plug:osc_terrain5_phase ,
 		plug:osc_terrain5_spiral ,
 		plug:osc_terrain5_drive ,
@@ -28130,6 +28199,7 @@ plug:output_group_1
 		plug:osc_terrain6_radius_y ,
 		plug:osc_terrain6_ratio_x ,
 		plug:osc_terrain6_ratio_y ,
+		plug:osc_terrain6_scan_rate ,
 		plug:osc_terrain6_phase ,
 		plug:osc_terrain6_spiral ,
 		plug:osc_terrain6_drive ,
@@ -28151,6 +28221,7 @@ plug:output_group_1
 		plug:osc_terrain7_radius_y ,
 		plug:osc_terrain7_ratio_x ,
 		plug:osc_terrain7_ratio_y ,
+		plug:osc_terrain7_scan_rate ,
 		plug:osc_terrain7_phase ,
 		plug:osc_terrain7_spiral ,
 		plug:osc_terrain7_drive ,
@@ -28172,6 +28243,7 @@ plug:output_group_1
 		plug:osc_terrain8_radius_y ,
 		plug:osc_terrain8_ratio_x ,
 		plug:osc_terrain8_ratio_y ,
+		plug:osc_terrain8_scan_rate ,
 		plug:osc_terrain8_phase ,
 		plug:osc_terrain8_spiral ,
 		plug:osc_terrain8_drive ,
@@ -29520,6 +29592,7 @@ plug:output_group_1
 		plug:osc_terrain_radius_y ,
 		plug:osc_terrain_ratio_x ,
 		plug:osc_terrain_ratio_y ,
+		plug:osc_terrain_scan_rate ,
 		plug:osc_terrain_phase ,
 		plug:osc_terrain_spiral ,
 		plug:osc_terrain_drive ,
@@ -29541,6 +29614,7 @@ plug:output_group_1
 		plug:osc_terrain2_radius_y ,
 		plug:osc_terrain2_ratio_x ,
 		plug:osc_terrain2_ratio_y ,
+		plug:osc_terrain2_scan_rate ,
 		plug:osc_terrain2_phase ,
 		plug:osc_terrain2_spiral ,
 		plug:osc_terrain2_drive ,
@@ -29562,6 +29636,7 @@ plug:output_group_1
 		plug:osc_terrain3_radius_y ,
 		plug:osc_terrain3_ratio_x ,
 		plug:osc_terrain3_ratio_y ,
+		plug:osc_terrain3_scan_rate ,
 		plug:osc_terrain3_phase ,
 		plug:osc_terrain3_spiral ,
 		plug:osc_terrain3_drive ,
@@ -29583,6 +29658,7 @@ plug:output_group_1
 		plug:osc_terrain4_radius_y ,
 		plug:osc_terrain4_ratio_x ,
 		plug:osc_terrain4_ratio_y ,
+		plug:osc_terrain4_scan_rate ,
 		plug:osc_terrain4_phase ,
 		plug:osc_terrain4_spiral ,
 		plug:osc_terrain4_drive ,
@@ -29604,6 +29680,7 @@ plug:output_group_1
 		plug:osc_terrain5_radius_y ,
 		plug:osc_terrain5_ratio_x ,
 		plug:osc_terrain5_ratio_y ,
+		plug:osc_terrain5_scan_rate ,
 		plug:osc_terrain5_phase ,
 		plug:osc_terrain5_spiral ,
 		plug:osc_terrain5_drive ,
@@ -29625,6 +29702,7 @@ plug:output_group_1
 		plug:osc_terrain6_radius_y ,
 		plug:osc_terrain6_ratio_x ,
 		plug:osc_terrain6_ratio_y ,
+		plug:osc_terrain6_scan_rate ,
 		plug:osc_terrain6_phase ,
 		plug:osc_terrain6_spiral ,
 		plug:osc_terrain6_drive ,
@@ -29646,6 +29724,7 @@ plug:output_group_1
 		plug:osc_terrain7_radius_y ,
 		plug:osc_terrain7_ratio_x ,
 		plug:osc_terrain7_ratio_y ,
+		plug:osc_terrain7_scan_rate ,
 		plug:osc_terrain7_phase ,
 		plug:osc_terrain7_spiral ,
 		plug:osc_terrain7_drive ,
@@ -29667,6 +29746,7 @@ plug:output_group_1
 		plug:osc_terrain8_radius_y ,
 		plug:osc_terrain8_ratio_x ,
 		plug:osc_terrain8_ratio_y ,
+		plug:osc_terrain8_scan_rate ,
 		plug:osc_terrain8_phase ,
 		plug:osc_terrain8_spiral ,
 		plug:osc_terrain8_drive ,
@@ -30121,7 +30201,7 @@ plug:output_group_1
 		lv2:designation <http://lv2plug.in/ns/ext/port-groups#right> ;
 	] , [
 		a lv2:InputPort , atom:AtomPort ;
-		rsz:minimumSize 115760 ;
+		rsz:minimumSize 116336 ;
 		atom:bufferType atom:Sequence ;
 		atom:supports
 			midi:MidiEvent ,
@@ -30133,7 +30213,7 @@ plug:output_group_1
 		lv2:name "In" ;
 	] , [
 		a lv2:OutputPort , atom:AtomPort ;
-		rsz:minimumSize 115760 ;
+		rsz:minimumSize 116336 ;
 		atom:bufferType atom:Sequence ;
 		atom:supports
 			patch:Message ;

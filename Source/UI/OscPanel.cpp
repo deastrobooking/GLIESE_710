@@ -39,10 +39,214 @@ void VAWaveDisplay::paint(juce::Graphics& g)
     g.strokePath(wave, juce::PathStrokeType(1.5f));
 }
 
+// ── TerrainHeightmapDisplay ─────────────────────────────────────────────────
+TerrainHeightmapDisplay::TerrainHeightmapDisplay(juce::Colour accentColour)
+    : accent(accentColour)
+{
+    rebuildProceduralPreview();
+    startTimerHz(24);
+}
+
+void TerrainHeightmapDisplay::setHeightmapImage(const juce::Image& image)
+{
+    if (!image.isValid())
+        return;
+
+    const int maxDim = 192;
+    const float scale = (float)maxDim / (float)juce::jmax(image.getWidth(), image.getHeight());
+    const int w = juce::jmax(2, juce::roundToInt((float)image.getWidth() * juce::jmin(1.0f, scale)));
+    const int h = juce::jmax(2, juce::roundToInt((float)image.getHeight() * juce::jmin(1.0f, scale)));
+    auto source = image.rescaled(w, h, juce::Graphics::mediumResamplingQuality);
+
+    heightmapPreview = juce::Image(juce::Image::RGB, w, h, true);
+    for (int y = 0; y < h; ++y)
+    {
+        for (int x = 0; x < w; ++x)
+        {
+            const auto c = source.getPixelAt(x, y);
+            const float brightness = (c.getFloatRed() + c.getFloatGreen() + c.getFloatBlue()) / 3.f;
+            heightmapPreview.setPixelAt(x, y, juce::Colour::fromFloatRGBA(brightness, brightness, brightness, 1.f));
+        }
+    }
+
+    repaint();
+}
+
+void TerrainHeightmapDisplay::setScanState(const ScanState& newState)
+{
+    state = newState;
+    repaint();
+}
+
+void TerrainHeightmapDisplay::paint(juce::Graphics& g)
+{
+    auto b = getLocalBounds().toFloat().reduced(2.f);
+    g.setColour(juce::Colour(0xff080a0d));
+    g.fillRoundedRectangle(b, 4.f);
+    g.setColour(accent.withAlpha(0.35f));
+    g.drawRoundedRectangle(b, 4.f, 1.f);
+
+    auto map = b.reduced(7.f);
+    auto image = heightmapPreview.isValid() ? heightmapPreview : proceduralPreview;
+    if (image.isValid())
+        g.drawImage(image, map);
+
+    g.setColour(juce::Colours::black.withAlpha(0.22f));
+    for (int i = 1; i < 4; ++i)
+    {
+        const float x = map.getX() + map.getWidth() * (float)i / 4.f;
+        const float y = map.getY() + map.getHeight() * (float)i / 4.f;
+        g.drawVerticalLine(juce::roundToInt(x), map.getY(), map.getBottom());
+        g.drawHorizontalLine(juce::roundToInt(y), map.getX(), map.getRight());
+    }
+
+    juce::Path path;
+    const int steps = 120;
+    for (int i = 0; i <= steps; ++i)
+    {
+        const auto [px, py] = pointFor((float)i / (float)steps);
+        const float x = map.getX() + px * map.getWidth();
+        const float y = map.getY() + py * map.getHeight();
+        if (i == 0) path.startNewSubPath(x, y);
+        else        path.lineTo(x, y);
+    }
+
+    g.setColour(juce::Colours::black.withAlpha(0.55f));
+    g.strokePath(path, juce::PathStrokeType(3.5f));
+    g.setColour(accent);
+    g.strokePath(path, juce::PathStrokeType(1.5f));
+
+    const double now = juce::Time::getMillisecondCounterHiRes() * 0.000035;
+    const auto [dotX, dotY] = pointFor(wrap01((float)(now * (double)state.scanRate)));
+    const float cx = map.getX() + dotX * map.getWidth();
+    const float cy = map.getY() + dotY * map.getHeight();
+    g.setColour(juce::Colours::black.withAlpha(0.7f));
+    g.fillEllipse(cx - 5.f, cy - 5.f, 10.f, 10.f);
+    g.setColour(accent.brighter(0.35f));
+    g.fillEllipse(cx - 3.f, cy - 3.f, 6.f, 6.f);
+
+    const float centerX = map.getX() + wrap01(state.centerX) * map.getWidth();
+    const float centerY = map.getY() + wrap01(state.centerY) * map.getHeight();
+    g.setColour(accent.withAlpha(0.75f));
+    g.drawLine(centerX - 5.f, centerY, centerX + 5.f, centerY, 1.f);
+    g.drawLine(centerX, centerY - 5.f, centerX, centerY + 5.f, 1.f);
+}
+
+void TerrainHeightmapDisplay::timerCallback()
+{
+    repaint();
+}
+
+void TerrainHeightmapDisplay::rebuildProceduralPreview()
+{
+    const int size = 128;
+    proceduralPreview = juce::Image(juce::Image::RGB, size, size, true);
+    for (int y = 0; y < size; ++y)
+    {
+        const float ny = (float)y / (float)(size - 1);
+        for (int x = 0; x < size; ++x)
+        {
+            const float nx = (float)x / (float)(size - 1);
+            const float dx = nx - 0.5f;
+            const float dy = ny - 0.5f;
+            const float r = std::sqrt(dx * dx + dy * dy);
+            float v = 0.52f * std::sin((nx * 5.f + ny * 2.f) * juce::MathConstants<float>::twoPi);
+            v += 0.34f * std::sin((r * 13.f - ny * 1.5f) * juce::MathConstants<float>::twoPi);
+            v += 0.18f * noise(nx * 9.f, ny * 9.f);
+            const float grey = juce::jmap(juce::jlimit(-1.f, 1.f, v), -1.f, 1.f, 0.08f, 0.92f);
+            proceduralPreview.setPixelAt(x, y, juce::Colour::fromFloatRGBA(grey, grey, grey, 1.f));
+        }
+    }
+}
+
+std::pair<float, float> TerrainHeightmapDisplay::pointFor(float t) const noexcept
+{
+    t = wrap01(t + state.phaseOffset);
+    const float twoPi = juce::MathConstants<float>::twoPi;
+    const float aX = twoPi * t * state.ratioX;
+    const float aY = twoPi * t * state.ratioY;
+    float x = wrap01(state.centerX);
+    float y = wrap01(state.centerY);
+
+    switch (state.pathMode)
+    {
+        case 0:
+            x += state.radiusX * std::cos(twoPi * t);
+            y += state.radiusX * std::sin(twoPi * t);
+            break;
+        case 1:
+            x += state.radiusX * std::cos(aX);
+            y += state.radiusY * std::sin(aY);
+            break;
+        case 2:
+            x += state.radiusX * std::sin(aX + twoPi * 0.125f);
+            y += state.radiusY * std::sin(aY);
+            break;
+        case 3:
+        {
+            const float r = 1.f - state.spiral + state.spiral * t;
+            x += state.radiusX * r * std::cos(aX);
+            y += state.radiusY * r * std::sin(aY);
+            break;
+        }
+        case 4:
+            x += state.radiusX * (2.f * t - 1.f);
+            y += state.radiusY * 0.2f * std::sin(aY);
+            break;
+        case 5:
+            x += state.radiusX * (0.72f * std::cos(twoPi * t)
+                 + 0.56f * noise(t * state.ratioX * 4.f + 11.7f, 0.37f));
+            y += state.radiusY * (0.72f * std::sin(twoPi * t * 1.21f)
+                 + 0.56f * noise(t * state.ratioY * 4.f + 23.1f, 0.61f));
+            break;
+        default:
+            break;
+    }
+
+    return { wrap01(x), wrap01(y) };
+}
+
+float TerrainHeightmapDisplay::wrap01(float v) noexcept
+{
+    v -= std::floor(v);
+    return v;
+}
+
+float TerrainHeightmapDisplay::noise(float x, float y) noexcept
+{
+    auto hash = [](int xi, int yi)
+    {
+        uint32_t h = (uint32_t)xi * 374761393u + (uint32_t)yi * 668265263u;
+        h = (h ^ (h >> 13)) * 1274126177u;
+        return (float)((h ^ (h >> 16)) & 0x00ffffffu) / (float)0x00ffffffu;
+    };
+
+    const int x0 = (int)std::floor(x);
+    const int y0 = (int)std::floor(y);
+    const float tx = x - (float)x0;
+    const float ty = y - (float)y0;
+    const float sx = tx * tx * (3.f - 2.f * tx);
+    const float sy = ty * ty * (3.f - 2.f * ty);
+    const float a = hash(x0, y0);
+    const float b = hash(x0 + 1, y0);
+    const float c = hash(x0, y0 + 1);
+    const float d = hash(x0 + 1, y0 + 1);
+    const float ab = a + (b - a) * sx;
+    const float cd = c + (d - c) * sx;
+    return (ab + (cd - ab) * sy) * 2.f - 1.f;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id,
-                   const juce::String& lbl)
-    : apvts(a), oscId(id), label(lbl), accent(IndustrialTheme::accentForOsc(id))
+                   const juce::String& lbl,
+                   TerrainImportCallback terrainImportCallback,
+                   int terrainSlotIndex)
+    : apvts(a),
+      oscId(id),
+      label(lbl),
+      accent(IndustrialTheme::accentForOsc(id)),
+      terrainImport(std::move(terrainImportCallback)),
+      terrainIndex(terrainSlotIndex)
 {
     titleLabel.setText(lbl, juce::dontSendNotification);
     IndustrialTheme::styleTitle(titleLabel, accent, 14.f);
@@ -165,14 +369,36 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         setupExtraSlider(extra4,  pfx + "radius_y",  "Terrain Radius Y",       extraAtt4);
         setupExtraSlider(extra5,  pfx + "ratio_x",   "Path Ratio X",           extraAtt5);
         setupExtraSlider(extra6,  pfx + "ratio_y",   "Path Ratio Y",           extraAtt6);
-        setupExtraSlider(extra7,  pfx + "phase",     "Phase Offset",           extraAtt7);
-        setupExtraSlider(extra8,  pfx + "spiral",    "Spiral Amount",          extraAtt8);
-        setupExtraSlider(extra9,  pfx + "drive",     "Terrain Drive",          extraAtt9);
-        setupExtraSlider(extra10, pfx + "offset",    "Terrain Offset",         extraAtt10);
-        setupExtraSlider(extra11, pfx + "smoothing", "Terrain Blur Smoothing", extraAtt11);
-        setupExtraSlider(extra12, pfx + "morph",     "Procedural Morph",       extraAtt12);
-        setupExtraSlider(extra13, pfx + "gain",      "Terrain Gain",           extraAtt13);
-        numExtraSliders = 13;
+        setupExtraSlider(extra7,  pfx + "scan_rate", "Terrain Scan Rate",      extraAtt7);
+        setupExtraSlider(extra8,  pfx + "phase",     "Phase Offset",           extraAtt8);
+        setupExtraSlider(extra9,  pfx + "spiral",    "Spiral Amount",          extraAtt9);
+        setupExtraSlider(extra10, pfx + "drive",     "Terrain Drive",          extraAtt10);
+        setupExtraSlider(extra11, pfx + "offset",    "Terrain Offset",         extraAtt11);
+        setupExtraSlider(extra12, pfx + "smoothing", "Terrain Blur Smoothing", extraAtt12);
+        setupExtraSlider(extra13, pfx + "morph",     "Procedural Morph",       extraAtt13);
+        setupExtraSlider(extra14, pfx + "gain",      "Terrain Gain",           extraAtt14);
+        numExtraSliders = 14;
+
+        importHeightmapButton.setTooltip("Import a PNG, JPG, or BMP heightmap for this terrain oscillator");
+        IndustrialTheme::styleButton(importHeightmapButton, accent);
+        importHeightmapButton.onClick = [this] { launchTerrainImportChooser(); };
+        addAndMakeVisible(importHeightmapButton);
+        hasTerrainImportButton = true;
+
+        terrainDisplay = std::make_unique<TerrainHeightmapDisplay>(accent);
+        addAndMakeVisible(*terrainDisplay);
+
+        auto updateDisplay = [this] { refreshTerrainDisplay(); };
+        modeBoxA.onChange = updateDisplay;
+        extra1.onValueChange = updateDisplay;
+        extra2.onValueChange = updateDisplay;
+        extra3.onValueChange = updateDisplay;
+        extra4.onValueChange = updateDisplay;
+        extra5.onValueChange = updateDisplay;
+        extra6.onValueChange = updateDisplay;
+        extra7.onValueChange = updateDisplay;
+        extra8.onValueChange = updateDisplay;
+        extra9.onValueChange = updateDisplay;
     }
     else if (oscId.startsWith("va"))
     {
@@ -301,13 +527,14 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         makeLabel(extraLabels[3], "RAD-Y");
         makeLabel(extraLabels[4], "RAT-X");
         makeLabel(extraLabels[5], "RAT-Y");
-        makeLabel(extraLabels[6], "PHASE");
-        makeLabel(extraLabels[7], "SPIRAL");
-        makeLabel(extraLabels[8], "DRIVE");
-        makeLabel(extraLabels[9], "OFFSET");
-        makeLabel(extraLabels[10], "SMOOTH");
-        makeLabel(extraLabels[11], "MORPH");
-        makeLabel(extraLabels[12], "GAIN");
+        makeLabel(extraLabels[6], "SPEED");
+        makeLabel(extraLabels[7], "PHASE");
+        makeLabel(extraLabels[8], "SPIRAL");
+        makeLabel(extraLabels[9], "DRIVE");
+        makeLabel(extraLabels[10], "OFFSET");
+        makeLabel(extraLabels[11], "SMOOTH");
+        makeLabel(extraLabels[12], "MORPH");
+        makeLabel(extraLabels[13], "GAIN");
     }
     else if (oscId.startsWith("va"))
     {
@@ -367,6 +594,55 @@ void OscPanel::setupExtraSlider(juce::Slider& slider, const juce::String& paramI
 {
     setupSlider(slider, tooltip);
     attachment = std::make_unique<Att>(apvts, paramId, slider);
+}
+
+void OscPanel::launchTerrainImportChooser()
+{
+    if (!terrainImport || terrainIndex < 0)
+        return;
+
+    auto chooser = std::make_shared<juce::FileChooser>(
+        "Import Terrain Heightmap",
+        juce::File{},
+        "*.png;*.jpg;*.jpeg;*.bmp");
+
+    terrainChooser = chooser;
+    auto safeThis = juce::Component::SafePointer<OscPanel>(this);
+    chooser->launchAsync(juce::FileBrowserComponent::openMode
+                           | juce::FileBrowserComponent::canSelectFiles,
+        [safeThis, chooser](const juce::FileChooser& fc)
+        {
+            if (safeThis == nullptr)
+                return;
+
+            auto file = fc.getResult();
+            if (!file.existsAsFile())
+                return;
+
+            const bool ok = safeThis->terrainImport(safeThis->terrainIndex, file);
+            safeThis->importHeightmapButton.setButtonText(ok ? "MAP LOADED" : "IMPORT FAILED");
+            if (ok && safeThis->terrainDisplay != nullptr)
+                safeThis->terrainDisplay->setHeightmapImage(juce::ImageFileFormat::loadFrom(file));
+        });
+}
+
+void OscPanel::refreshTerrainDisplay()
+{
+    if (terrainDisplay == nullptr)
+        return;
+
+    TerrainHeightmapDisplay::ScanState s;
+    s.pathMode = modeBoxA.getSelectedItemIndex();
+    s.centerX = (float)extra1.getValue();
+    s.centerY = (float)extra2.getValue();
+    s.radiusX = (float)extra3.getValue();
+    s.radiusY = (float)extra4.getValue();
+    s.ratioX = (float)extra5.getValue();
+    s.ratioY = (float)extra6.getValue();
+    s.scanRate = (float)extra7.getValue();
+    s.phaseOffset = (float)extra8.getValue();
+    s.spiral = (float)extra9.getValue();
+    terrainDisplay->setScanState(s);
 }
 
 void OscPanel::paint(juce::Graphics& g)
@@ -434,6 +710,20 @@ void OscPanel::resized()
         retrigLabel.setBounds(rr.removeFromLeft(58));
         retrigButton.setBounds(rr.removeFromLeft(50));
         area.removeFromTop(4);
+    }
+
+    if (hasTerrainImportButton)
+    {
+        importHeightmapButton.setBounds(area.removeFromTop(24).reduced(2, 0));
+        area.removeFromTop(4);
+    }
+
+    if (terrainDisplay != nullptr)
+    {
+        const int previewH = juce::jlimit(84, 142, area.getHeight() / 3);
+        terrainDisplay->setBounds(area.removeFromTop(previewH).reduced(2));
+        area.removeFromTop(4);
+        refreshTerrainDisplay();
     }
 
     // ── Extra Sliders ─────────────────────────────────────────────────────────

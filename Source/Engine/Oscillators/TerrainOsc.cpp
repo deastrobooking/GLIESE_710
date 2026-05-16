@@ -33,6 +33,7 @@ void TerrainOsc::setParams(const Params& newParams)
     params.radiusY = juce::jlimit(0.f, 0.5f, params.radiusY);
     params.ratioX = juce::jlimit(0.125f, 8.f, params.ratioX);
     params.ratioY = juce::jlimit(0.125f, 8.f, params.ratioY);
+    params.scanRate = juce::jlimit(0.05f, 8.f, params.scanRate);
     params.phaseOffset = wrap01(params.phaseOffset);
     params.spiral = juce::jlimit(0.f, 1.f, params.spiral);
     params.drive = juce::jlimit(0.1f, 8.f, params.drive);
@@ -43,11 +44,13 @@ void TerrainOsc::setParams(const Params& newParams)
 
     if (std::abs(params.smoothing - lastSmoothing) > 0.001f)
         rebuildBlurredTerrain();
+
+    updateDerived();
 }
 
 void TerrainOsc::updateDerived()
 {
-    phaseInc = freq / (float)sr;
+    phaseInc = (freq * params.scanRate) / (float)sr;
 }
 
 float TerrainOsc::processSample()

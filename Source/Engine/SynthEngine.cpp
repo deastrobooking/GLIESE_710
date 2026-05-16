@@ -320,3 +320,11 @@ void SynthEngine::addWavetable(juce::String name, const float* samples, int numS
     for (auto& v : voices)
         v.addWavetable(name, samples, numSamples);
 }
+
+bool SynthEngine::setTerrainHeightmap(int index, const juce::Image& image)
+{
+    bool ok = false;
+    for (auto& v : voices)
+        ok = v.setTerrainHeightmap(index, image) || ok;
+    return ok;
+}
