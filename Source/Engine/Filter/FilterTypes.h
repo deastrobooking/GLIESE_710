@@ -12,6 +12,12 @@ enum class FilterMode
     Comb,
     AM_Plus,   // signal * (1 + mod)
     AM_Minus,  // signal * mod
+    Ladder12,
+    Ladder18,
+    Ladder24,
+    SEMMorph,
+    MSDual,
+    Formant,
     NumModes
 };
 

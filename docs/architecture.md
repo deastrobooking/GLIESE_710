@@ -20,7 +20,8 @@ SynthEngine  (voice pool — 10 voices, oldest-note stealing)
     │       ├── FMAlgorithm ×2  → envFM    ─┤  dual-engine detuned chorus (2nd engine optional)
     │       ├── KarplusStrong   → envKS    ─┤  plucked on noteOn, self-decaying
     │       ├── WavetableOsc    → envWT    ─┤  additive mix
-    │       ├── VAOscillator ×4 → envVA1-4 ─╯
+    │       ├── GranularOsc ×8  → envGRAN  ─┤  preallocated stereo grain cloud
+    │       ├── VAOscillator ×8 → envVA1-4 ─╯
     │       │
     │       ├── DualFilter (Filter A → Filter B  or  parallel)
     │       │       └── per-filter ADSR envelopes
@@ -37,11 +38,12 @@ Stereo Output Buffer (accumulated across all active voices)
 |---|---|---|
 | `GLIESE710AudioProcessor` | `SynthEngine`, `PresetManager`, `APVTS` | PluginProcessor |
 | `SynthEngine` | `SynthVoice[10]`, `Arpeggiator`, master age/feedback effects | Engine/ |
-| `SynthVoice` | `Osc3D[6]`, `FMAlgorithm×2`, `KarplusStrong`, `WavetableOsc`, `VAOscillator[4]`, `EnvelopeBank`, `LFOEngine`, `DualFilter`, `ModMatrix` | Engine/ |
+| `SynthVoice` | `Osc3D[8]`, `FMAlgorithm×2`, `KarplusStrong[4]`, `WavetableOsc[4]`, `GranularOsc[8]`, `VAOscillator[8]`, `EnvelopeBank`, `LFOEngine`, `DualFilter`, `ModMatrix` | Engine/ |
 | `FMAlgorithm` | `FMOperator[10]` | Engine/Oscillators/ |
+| `GranularOsc` | fixed sample buffer, `Grain[96]`, trigger clock, deterministic RNG | Engine/Oscillators/ |
 | `KarplusStrong` | circular delay buffer, LPF state, APF state | Engine/Oscillators/ |
-| `DualFilter` | `SingleFilter × 2`, `ADSREnvelope × 2` | Engine/Filter/ |
-| `EnvelopeBank` | `ADSREnvelope[12]` (master, 3D, FM, WT, VA×4, KS, filterA, filterB) | Engine/Envelopes/ |
+| `DualFilter` | `SingleFilter × 2`, Clean SVF/Ladder/SEM/MS/Formant/Comb model cores, `ADSREnvelope × 2` | Engine/Filter/ |
+| `EnvelopeBank` | `ADSREnvelope[12]` (master, 3D, FM, WT, VA×4, KS, granular, filterA, filterB) | Engine/Envelopes/ |
 
 ## Thread Model
 
@@ -127,11 +129,11 @@ The editor is a `GLIESE710AudioProcessorEditor` (default 1200×780, resizable 90
 │  │  TabbedComponent  (TabsAtTop, depth 28 px)       │   │
 │  │                                                  │   │
 │  │  Tab 1 — OSCILLATORS                                      │   │
-│  │    3D (¼) │ VA tabbed panel (¼) │ WT (¼) │ KS (¼)        │   │
-│  │    VA tabbed panel contains VA 1–4                        │   │
-│  │    Engine config strip (bottom): VOICES DETUNE DUAL FM-DTUNE │ │
+│  │    Slot bar + Page 1 / Page 2 selector                    │   │
+│  │    Each page is either an FM engine view or 4 oscillator slots │ │
+│  │    WT panel: table, warp mode, position, unison, phase controls ││
 │  │                                                  │   │
-│  │  Tab 2 — FM ENGINE                               │   │
+│  │  Tab 2 — FM CONTROLS                             │   │
 │  │    Enable + algorithm + FM level/octave + ADSR   │   │
 │  │    Rows: Op0–Op9 coarse, level, wave, velocity,  │   │
 │  │    and key-scale controls                        │   │

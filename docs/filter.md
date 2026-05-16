@@ -17,7 +17,7 @@ Input
   └── B Only:   Input → Filter B → Output
 ```
 
-Each filter has its own cutoff, resonance, drive, filter envelope, and LFO modulation.
+Each filter has its own cutoff, resonance, drive, morph, saturation, bass compensation, output gain, wet/dry mix, oversampling quality, filter envelope, and LFO modulation.
 
 ## Filter Modes
 
@@ -49,6 +49,22 @@ delay_ms = sampleRate / cutoff_Hz
 feedback = resonance × 0.5
 ```
 Produces metallic, flanger-like, and physical-modeling-adjacent tones.
+
+### Ladder12 / Ladder18 / Ladder24
+
+MVP Moog-style ladder low-pass models with 2, 3, or 4 cascaded nonlinear one-pole stages. The implementation keeps one state set per channel, supports optional sample-level 2x/4x quality, and exposes drive, saturation, bass compensation, output gain, and wet/dry mix. This is an analog-character architecture pass, not a full zero-delay circuit model yet.
+
+### SEM Morph
+
+MVP Oberheim/SEM-style state-variable morph. `morph` moves continuously from low-pass through notch to high-pass while resonance controls the damping of the state-variable core.
+
+### MS Dual
+
+MVP MS-style dirty dual-stage character filter. It runs a high-pass stage into a nonlinear two-stage low-pass path, with `morph` blending low-pass, band-pass-like, and high-pass outputs.
+
+### Formant
+
+Three band-pass resonators tuned to vowel formants. `morph` scans A/E/I/O/U-style vowel positions, cutoff scales the formant bank, and resonance tightens the formant peaks.
 
 ### AM+ (Amplitude Modulation, additive)
 
@@ -95,7 +111,7 @@ Result: bright initial pluck, settles to a darker sustained tone.
 
 ## Drive
 
-The `drive` parameter (0–1) applies a pre-filter saturation:
+The `drive` parameter (0–1) applies pre-filter gain and saturation:
 
 ```cpp
 driven = tanh(input × (1 + drive × 4))
@@ -106,16 +122,24 @@ At `drive = 1`: input amplified 5× before filter, heavily saturated.
 
 Drive before the filter, not after — this means resonance at high drive produces fat, harmonically rich self-oscillation rather than harsh clipping.
 
+`saturation` controls the nonlinear curve amount in the character models, while `drive` controls how hard the signal hits the model. `mix` is smoothed and blends dry input with the processed output.
+
 ## Parameters
 
 ### Shared per filter (slot = `a` or `b`)
 
 | Parameter | Range | Description |
 |---|---|---|
-| `filter_{s}_type` | 0–11 | Mode (see list above) |
+| `filter_{s}_type` | 0–17 | Mode (see list above) |
 | `filter_{s}_cutoff` | 20–20000 Hz | Base cutoff |
 | `filter_{s}_resonance` | 0–1.0 | Resonance / Q |
 | `filter_{s}_drive` | 0–1.0 | Pre-filter saturation |
+| `filter_{s}_morph` | 0–1.0 | Mode-dependent morph, such as SEM LP→Notch→HP or vowel scan |
+| `filter_{s}_saturation` | 0–1.0 | Nonlinear character amount |
+| `filter_{s}_bass_comp` | 0–1.0 | Bass compensation for nonlinear low-pass models |
+| `filter_{s}_gain` | −24 to +24 dB | Output trim after filtering |
+| `filter_{s}_mix` | 0–1.0 | Smoothed wet/dry blend |
+| `filter_{s}_oversample` | Off / 2x / 4x | Per-slot quality setting for nonlinear character models |
 | `filter_{s}_env_amt` | −1 to +1 | Envelope depth (octaves) |
 | `filter_{s}_lfo_amt` | −1 to +1 | LFO depth (octaves) |
 | `filter_{s}_adsr_a` | 0.001–60s | Env attack |
@@ -131,5 +155,6 @@ Drive before the filter, not after — this means resonance at high drive produc
 ## Adding a New Filter Mode
 
 1. Add entry to `FilterMode` enum in [FilterTypes.h](../Source/Engine/Filter/FilterTypes.h)
-2. Add a `case` to `SingleFilter::processSample()` in [DualFilter.cpp](../Source/Engine/Filter/DualFilter.cpp)
-3. Add the mode name to both the APVTS choice parameter in `PluginProcessor.cpp` and the `filterModes` list in `FilterPanel.cpp`
+2. Add or reuse a model core in [FilterModels.h](../Source/Engine/Filter/FilterModels.h)
+3. Add a `case` to `SingleFilter::processSample()` in [DualFilter.cpp](../Source/Engine/Filter/DualFilter.cpp)
+4. Add the mode name to both the APVTS choice parameter in `PluginProcessor.cpp` and the `filterModes` list in `FilterPanel.cpp`

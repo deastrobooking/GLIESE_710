@@ -38,6 +38,31 @@ static void fillPulse(float* buf, int N, float duty)
         buf[i] = i < thresh ? 1.f : -1.f;
 }
 
+static void normaliseTable(float* buf, int N)
+{
+    float peak = 0.f;
+    for (int i = 0; i < N; ++i)
+        peak = std::max(peak, std::abs(buf[i]));
+
+    if (peak > 1.0e-6f)
+        for (int i = 0; i < N; ++i)
+            buf[i] /= peak;
+}
+
+static void fillAdditive(float* buf, int N, const std::initializer_list<std::pair<float, float>>& partials)
+{
+    std::fill(buf, buf + N, 0.f);
+    for (auto [harmonic, level] : partials)
+    {
+        for (int i = 0; i < N; ++i)
+        {
+            float ph = (float)i / (float)N;
+            buf[i] += level * std::sin(juce::MathConstants<float>::twoPi * harmonic * ph);
+        }
+    }
+    normaliseTable(buf, N);
+}
+
 //==============================================================================
 // WavetableOsc
 //==============================================================================
@@ -52,7 +77,17 @@ void WavetableOsc::prepare(double sampleRate)
 
 void WavetableOsc::reset()
 {
-    phase = 0.f;
+    for (auto& phase : phases)
+        phase = wrap01(params.phaseOffset);
+}
+
+void WavetableOsc::noteOn()
+{
+    if (!params.retrigger)
+        return;
+
+    for (auto& phase : phases)
+        phase = wrap01(params.phaseOffset + nextRandom01() * params.randomPhase);
 }
 
 void WavetableOsc::setFrequency(float hz)
@@ -60,6 +95,21 @@ void WavetableOsc::setFrequency(float hz)
     freq = juce::jlimit(20.f, (float)(sr * 0.49), hz);
     phaseInc = freq / (float)sr;
     mipLevel = selectMipLevel(freq);
+}
+
+void WavetableOsc::setParams(const Params& p)
+{
+    params = p;
+    params.warpMode = static_cast<WarpMode>(juce::jlimit(0, (int)WarpMode::NumModes - 1,
+                                                         (int)params.warpMode));
+    params.warpAmount    = juce::jlimit(0.f, 1.f, params.warpAmount);
+    params.unison        = juce::jlimit(1, kMaxUnison, params.unison);
+    params.detune        = juce::jlimit(0.f, 1.f, params.detune);
+    params.spread        = juce::jlimit(0.f, 1.f, params.spread);
+    params.positionSpread = juce::jlimit(0.f, 1.f, params.positionSpread);
+    params.phaseOffset   = wrap01(params.phaseOffset);
+    params.randomPhase   = juce::jlimit(0.f, 1.f, params.randomPhase);
+    params.pdBreakpoint  = juce::jlimit(0.f, 1.f, params.pdBreakpoint);
 }
 
 void WavetableOsc::setTablePosition(int tableIndex, float position)
@@ -70,6 +120,7 @@ void WavetableOsc::setTablePosition(int tableIndex, float position)
     int baseTable = juce::jlimit(0, numTables - 1, tableIndex);
     float scaledPos = (float)baseTable + juce::jlimit(0.f, 1.f, position);
     scaledPos = juce::jlimit(0.f, (float)(numTables - 1), scaledPos);
+    tableScanPosition = scaledPos;
     tableA = juce::jlimit(0, numTables - 1, (int)scaledPos);
     tableB = juce::jlimit(0, numTables - 1, tableA + 1);
     morphT = scaledPos - (float)tableA;
@@ -90,7 +141,7 @@ int WavetableOsc::addSineTable()
 
 //==============================================================================
 // Built-in waveform bank
-// 8 single-cycle waveforms that span the classic synthesis palette.
+// A compact factory bank for wavetable scanning and real-time warp modes.
 // The WT TABLE parameter selects which one, and WT POS morphs to the next.
 //==============================================================================
 void WavetableOsc::buildStandardBank()
@@ -135,10 +186,58 @@ void WavetableOsc::buildStandardBank()
         buf[(size_t)i] = s * s * s;
     }
     addTable("Sine Cube", buf.data(), kTableSize);
+
+    fillAdditive(buf.data(), kTableSize, {
+        { 1.f, 1.0f }, { 2.f, 0.15f }, { 3.f, 0.9f }, { 5.f, 0.6f }, { 7.f, 0.35f }, { 9.f, 0.2f } });
+    addTable("Hollow Odd", buf.data(), kTableSize);
+
+    fillAdditive(buf.data(), kTableSize, {
+        { 1.f, 0.65f }, { 2.f, 1.0f }, { 4.f, 0.55f }, { 8.f, 0.32f }, { 12.f, 0.18f } });
+    addTable("Even Glass", buf.data(), kTableSize);
+
+    fillAdditive(buf.data(), kTableSize, {
+        { 1.f, 0.45f }, { 2.f, 1.0f }, { 3.f, 0.35f }, { 5.f, 0.8f }, { 8.f, 0.25f }, { 13.f, 0.45f } });
+    addTable("Vocal A", buf.data(), kTableSize);
+
+    fillAdditive(buf.data(), kTableSize, {
+        { 1.f, 0.35f }, { 3.f, 0.28f }, { 7.f, 1.0f }, { 11.f, 0.55f }, { 17.f, 0.32f }, { 23.f, 0.2f } });
+    addTable("Metallic", buf.data(), kTableSize);
+
+    for (int i = 0; i < kTableSize; ++i)
+    {
+        float ph = (float)i / (float)kTableSize;
+        float syncPh = std::fmod(ph * 3.0f, 1.f);
+        buf[(size_t)i] = 2.f * syncPh - 1.f;
+    }
+    normaliseTable(buf.data(), kTableSize);
+    addTable("Sync Saw", buf.data(), kTableSize);
+
+    for (int i = 0; i < kTableSize; ++i)
+    {
+        float ph = (float)i / (float)kTableSize;
+        float carrier = std::sin(juce::MathConstants<float>::twoPi * ph);
+        float shaper  = std::sin(juce::MathConstants<float>::twoPi * (ph * 6.f + 0.18f * carrier));
+        buf[(size_t)i] = std::tanh(2.4f * carrier + 0.9f * shaper);
+    }
+    normaliseTable(buf.data(), kTableSize);
+    addTable("Reso Fold", buf.data(), kTableSize);
+
+    juce::Random noise(0x710710);
+    for (int i = 0; i < kTableSize; ++i)
+    {
+        float ph = (float)i / (float)kTableSize;
+        float n  = noise.nextFloat() * 2.f - 1.f;
+        buf[(size_t)i] = 0.55f * n + 0.45f * std::sin(juce::MathConstants<float>::twoPi * 17.f * ph);
+    }
+    normaliseTable(buf.data(), kTableSize);
+    addTable("Noisy Digital", buf.data(), kTableSize);
 }
 
 int WavetableOsc::addTable(juce::String name, const float* samples, int numSamples)
 {
+    if (samples == nullptr || numSamples < 2)
+        return -1;
+
     tables.emplace_back();
     auto& t = tables.back();
     t.name = name;
@@ -233,18 +332,245 @@ float WavetableOsc::cubicInterp(const float* table, float position) const
     return ((a * t + b) * t + c) * t + d;
 }
 
+float WavetableOsc::wrap01(float value) noexcept
+{
+    value -= std::floor(value);
+    return value < 0.f ? value + 1.f : value;
+}
+
+float WavetableOsc::nextRandom01() noexcept
+{
+    rngState = rngState * 1664525u + 1013904223u;
+    return (float)(rngState >> 8) * (1.0f / 16777216.0f);
+}
+
+float WavetableOsc::phaseDistort(float ph, float breakpoint) noexcept
+{
+    breakpoint = juce::jlimit(0.001f, 0.999f, breakpoint);
+    if (ph < breakpoint)
+        return 0.5f * ph / breakpoint;
+
+    return 0.5f + 0.5f * (ph - breakpoint) / (1.f - breakpoint);
+}
+
+float WavetableOsc::warpPhase(float ph) const
+{
+    const float a = params.warpAmount;
+    if (a <= 1.0e-5f)
+        return ph;
+
+    switch (params.warpMode)
+    {
+        case WarpMode::BendPlus:
+            return std::pow(ph, 1.f + a * 8.f);
+
+        case WarpMode::BendMinus:
+            return 1.f - std::pow(1.f - ph, 1.f + a * 8.f);
+
+        case WarpMode::BendBoth:
+        {
+            float power = 1.f + a * 7.f;
+            return ph < 0.5f
+                ? 0.5f * std::pow(ph * 2.f, power)
+                : 1.f - 0.5f * std::pow((1.f - ph) * 2.f, power);
+        }
+
+        case WarpMode::Mirror:
+        {
+            float mirrored = ph < 0.5f ? ph * 2.f : 2.f - ph * 2.f;
+            return ph + a * (mirrored - ph);
+        }
+
+        case WarpMode::Sync:
+        case WarpMode::WindowSync:
+        {
+            float ratio = 1.f + a * 8.f;
+            return wrap01(ph * ratio);
+        }
+
+        case WarpMode::Formant:
+        {
+            float ratio = 1.f + a * 12.f;
+            return wrap01(ph * ratio);
+        }
+
+        case WarpMode::PDSaw:
+        {
+            float bp = 0.5f + (params.pdBreakpoint - 0.5f) * a;
+            return phaseDistort(ph, bp);
+        }
+
+        case WarpMode::PDSquare:
+        {
+            float bp = 0.5f + (params.pdBreakpoint - 0.5f) * a;
+            if (ph < 0.5f)
+                return 0.5f * phaseDistort(ph * 2.f, bp);
+            return 0.5f + 0.5f * phaseDistort((ph - 0.5f) * 2.f, bp);
+        }
+
+        case WarpMode::PDPulse:
+        {
+            float duty = juce::jlimit(0.05f, 0.95f, 0.5f + (params.pdBreakpoint - 0.5f) * a);
+            float bp = juce::jlimit(0.05f, 0.95f, 0.5f + a * 0.45f);
+            if (ph < duty)
+                return 0.5f * phaseDistort(ph / duty, bp);
+            return 0.5f + 0.5f * phaseDistort((ph - duty) / (1.f - duty), 1.f - bp);
+        }
+
+        case WarpMode::PDResonant:
+        {
+            float bp = 0.5f + (params.pdBreakpoint - 0.5f) * a;
+            float resonantPhase = phaseDistort(ph, bp);
+            return wrap01(resonantPhase * (1.f + a * 15.f));
+        }
+
+        case WarpMode::PDFormant:
+        {
+            float bp = 0.5f + (params.pdBreakpoint - 0.5f) * a;
+            float formantPhase = phaseDistort(ph, bp);
+            return wrap01(formantPhase * (1.f + a * 7.f));
+        }
+
+        case WarpMode::Off:
+        case WarpMode::Quantize:
+        case WarpMode::Fold:
+        case WarpMode::NumModes:
+            return ph;
+    }
+
+    return ph;
+}
+
+float WavetableOsc::warpWindow(float carrierPhase, float warpedPhase) const
+{
+    const float a = params.warpAmount;
+    if (a <= 1.0e-5f)
+        return 1.f;
+
+    if (params.warpMode == WarpMode::WindowSync)
+    {
+        float window = std::sin(juce::MathConstants<float>::pi * carrierPhase);
+        return 1.f + a * (window - 1.f);
+    }
+
+    if (params.warpMode == WarpMode::Formant)
+    {
+        float window = std::sin(juce::MathConstants<float>::pi * warpedPhase);
+        return 1.f + a * (window * window - 1.f);
+    }
+
+    if (params.warpMode == WarpMode::PDResonant)
+    {
+        float window = std::sin(juce::MathConstants<float>::pi * carrierPhase);
+        window *= window;
+        return 1.f + a * (window - 1.f);
+    }
+
+    if (params.warpMode == WarpMode::PDFormant)
+    {
+        float window = std::sin(juce::MathConstants<float>::twoPi * carrierPhase);
+        window = 0.5f + 0.5f * window;
+        return 1.f + a * (window - 1.f);
+    }
+
+    return 1.f;
+}
+
+float WavetableOsc::warpSample(float sample) const
+{
+    const float a = params.warpAmount;
+    if (a <= 1.0e-5f)
+        return sample;
+
+    switch (params.warpMode)
+    {
+        case WarpMode::Quantize:
+        {
+            float levels = 64.f + (2.f - 64.f) * a;
+            return std::round(sample * levels) / levels;
+        }
+
+        case WarpMode::Fold:
+        {
+            float drive = 1.f + a * 6.f;
+            float x = std::fmod(sample * drive + 1.f, 4.f);
+            if (x < 0.f) x += 4.f;
+            return x <= 2.f ? x - 1.f : 3.f - x;
+        }
+
+        case WarpMode::Off:
+        case WarpMode::BendPlus:
+        case WarpMode::BendMinus:
+        case WarpMode::BendBoth:
+        case WarpMode::Mirror:
+        case WarpMode::Sync:
+        case WarpMode::WindowSync:
+        case WarpMode::Formant:
+        case WarpMode::PDSaw:
+        case WarpMode::PDSquare:
+        case WarpMode::PDPulse:
+        case WarpMode::PDResonant:
+        case WarpMode::PDFormant:
+        case WarpMode::NumModes:
+            return sample;
+    }
+
+    return sample;
+}
+
+float WavetableOsc::sampleAt(float ph, float scanOffset) const
+{
+    if (tables.empty()) return 0.f;
+
+    const int numTables = (int)tables.size();
+    float scan = juce::jlimit(0.f, (float)(numTables - 1), tableScanPosition + scanOffset);
+    int localA = juce::jlimit(0, numTables - 1, (int)scan);
+    int localB = juce::jlimit(0, numTables - 1, localA + 1);
+    float localT = scan - (float)localA;
+
+    float warped = warpPhase(ph);
+    float pos = warped * (float)kTableSize;
+    float sA = cubicInterp(tables[(size_t)localA].data[mipLevel], pos);
+    float sB = localB != localA ? cubicInterp(tables[(size_t)localB].data[mipLevel], pos) : sA;
+    float s  = sA + localT * (sB - sA);
+
+    s *= warpWindow(ph, warped);
+    return juce::jlimit(-1.2f, 1.2f, warpSample(s));
+}
+
 std::pair<float, float> WavetableOsc::processSample()
 {
     if (tables.empty()) return { 0.f, 0.f };
 
-    float pos      = phase * (float)kTableSize;
+    const int n = juce::jlimit(1, kMaxUnison, params.unison);
+    float outL = 0.f;
+    float outR = 0.f;
 
-    float sA = cubicInterp(tables[(size_t)tableA].data[mipLevel], pos);
-    float sB = (tableB != tableA) ? cubicInterp(tables[(size_t)tableB].data[mipLevel], pos) : sA;
-    float s  = sA + morphT * (sB - sA);
+    for (int i = 0; i < n; ++i)
+    {
+        float pos = n > 1 ? ((float)i / (float)(n - 1)) * 2.f - 1.f : 0.f;
+        float cents = pos * params.detune * 100.f;
+        float inc = phaseInc * std::pow(2.f, cents / 1200.f);
+        float s = sampleAt(phases[(size_t)i], pos * params.positionSpread);
 
-    phase += phaseInc;
-    if (phase >= 1.f) phase -= 1.f;
+        if (n == 1)
+        {
+            outL += s;
+            outR += s;
+        }
+        else
+        {
+            float pan = juce::jlimit(0.f, 1.f, 0.5f + pos * params.spread * 0.5f);
+            float lGain = std::sqrt(1.f - pan) * juce::MathConstants<float>::sqrt2;
+            float rGain = std::sqrt(pan) * juce::MathConstants<float>::sqrt2;
+            outL += s * lGain;
+            outR += s * rGain;
+        }
 
-    return { s, s };
+        phases[(size_t)i] = wrap01(phases[(size_t)i] + inc);
+    }
+
+    float norm = n > 1 ? 1.f / std::sqrt((float)n) : 1.f;
+    return { juce::jlimit(-1.5f, 1.5f, outL * norm),
+             juce::jlimit(-1.5f, 1.5f, outR * norm) };
 }

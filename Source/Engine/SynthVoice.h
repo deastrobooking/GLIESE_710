@@ -5,6 +5,7 @@
 #include "Oscillators/WavetableOsc.h"
 #include "Oscillators/VAOscillator.h"
 #include "Oscillators/KarplusStrong.h"
+#include "Oscillators/GranularOsc.h"
 #include "Envelopes/EnvelopeBank.h"
 #include "LFO/LFOEngine.h"
 #include "Filter/DualFilter.h"
@@ -18,6 +19,7 @@ public:
     static constexpr int kNumVAOscs    = 8;  // max VA instances (4 independent param sets + 4 shared)
     static constexpr int kNumWTOscs    = 4;  // max WT instances (shared params, ensemble)
     static constexpr int kNumKSOscs    = 4;  // max KS instances (shared params, ensemble)
+    static constexpr int kNumGranOscs  = 8;  // max granular instances (shared params, per-slot grains)
 
     void prepare(double sampleRate);
     void reset();
@@ -37,6 +39,7 @@ public:
     float getModDestination(ModDest dest) const { return modDests.dests[(int)dest]; }
 
     WavetableOsc& getWavetableOsc() { return wtOscs[0]; }
+    void addWavetable(juce::String name, const float* samples, int numSamples);
     void buildParamCache(juce::AudioProcessorValueTreeState& apvts);
 
 private:
@@ -56,7 +59,8 @@ private:
     int  currentVACount    = 0;
     int  currentWTCount    = 0;
     int  currentKSCount    = 0;
-    bool currentBlockAIsFM = true;
+    int  currentGranCount  = 0;
+    bool currentBlockAIsFM = false;
     bool currentBlockBIsFM = false;
 
     std::array<Osc3D,         kNum3DOscs> osc3dArray;
@@ -65,6 +69,7 @@ private:
     std::array<WavetableOsc,  kNumWTOscs> wtOscs;
     std::array<VAOscillator,  kNumVAOscs> vaOscs;
     std::array<KarplusStrong, kNumKSOscs> ksOscs;
+    std::array<GranularOsc,   kNumGranOscs> granularOscs;
     KarplusStrong::Params cachedKSParams;
 
     EnvelopeBank envBank;
@@ -122,6 +127,16 @@ private:
             std::atomic<float>* on     = nullptr;
             std::atomic<float>* table  = nullptr;
             std::atomic<float>* pos    = nullptr;
+            std::atomic<float>* warpMode = nullptr;
+            std::atomic<float>* warp   = nullptr;
+            std::atomic<float>* pdBreak = nullptr;
+            std::atomic<float>* unison = nullptr;
+            std::atomic<float>* detune = nullptr;
+            std::atomic<float>* spread = nullptr;
+            std::atomic<float>* posSpread = nullptr;
+            std::atomic<float>* phase  = nullptr;
+            std::atomic<float>* random = nullptr;
+            std::atomic<float>* retrig = nullptr;
             std::atomic<float>* level  = nullptr;
             std::atomic<float>* octave = nullptr;
             EnvPtrs env;
@@ -150,6 +165,35 @@ private:
             std::atomic<float>* position   = nullptr;
             EnvPtrs env;
         };
+        struct GranPtrs {
+            std::atomic<float>* on          = nullptr;
+            std::atomic<float>* triggerMode = nullptr;
+            std::atomic<float>* window      = nullptr;
+            std::atomic<float>* position    = nullptr;
+            std::atomic<float>* size        = nullptr;
+            std::atomic<float>* density     = nullptr;
+            std::atomic<float>* pitch       = nullptr;
+            std::atomic<float>* spray       = nullptr;
+            std::atomic<float>* jitter      = nullptr;
+            std::atomic<float>* pan         = nullptr;
+            std::atomic<float>* reverse     = nullptr;
+            std::atomic<float>* scan        = nullptr;
+            std::atomic<float>* freeze      = nullptr;
+            std::atomic<float>* bodyType    = nullptr;
+            std::atomic<float>* bodyRoot    = nullptr;
+            std::atomic<float>* bodySize    = nullptr;
+            std::atomic<float>* bodyDecay   = nullptr;
+            std::atomic<float>* bodyDamp    = nullptr;
+            std::atomic<float>* bodyBright  = nullptr;
+            std::atomic<float>* bodyInharm  = nullptr;
+            std::atomic<float>* bodyExcite  = nullptr;
+            std::atomic<float>* bodyMix     = nullptr;
+            std::atomic<float>* bodySpread  = nullptr;
+            std::atomic<float>* bodyModes   = nullptr;
+            std::atomic<float>* level       = nullptr;
+            std::atomic<float>* octave      = nullptr;
+            EnvPtrs env;
+        };
         struct SlotCfgPtrs {
             std::atomic<float>* blockAMode = nullptr;
             std::atomic<float>* blockBMode = nullptr;
@@ -162,6 +206,12 @@ private:
             std::atomic<float>* cutoff    = nullptr;
             std::atomic<float>* resonance = nullptr;
             std::atomic<float>* drive     = nullptr;
+            std::atomic<float>* morph     = nullptr;
+            std::atomic<float>* saturation = nullptr;
+            std::atomic<float>* bassComp  = nullptr;
+            std::atomic<float>* gain      = nullptr;
+            std::atomic<float>* mix       = nullptr;
+            std::atomic<float>* oversample = nullptr;
             std::atomic<float>* envAmt    = nullptr;
             std::atomic<float>* lfoAmt    = nullptr;
             EnvPtrs env;
@@ -169,10 +219,14 @@ private:
         struct OpPtrs {
             std::atomic<float>* coarse   = nullptr;
             std::atomic<float>* fine     = nullptr;
+            std::atomic<float>* detune   = nullptr;
             std::atomic<float>* level    = nullptr;
             std::atomic<float>* feedback = nullptr;
             std::atomic<float>* fixed    = nullptr;
             std::atomic<float>* wave     = nullptr;
+            std::atomic<float>* skirt    = nullptr;
+            std::atomic<float>* resonance = nullptr;
+            std::atomic<float>* keyReset = nullptr;
             std::atomic<float>* vel      = nullptr;
             std::atomic<float>* key      = nullptr;
             std::atomic<float>* adsrA    = nullptr;
@@ -206,6 +260,7 @@ private:
         WTPtrs           wt;
         std::array<VAPtrs, kNumVAOscs> va;
         KSPtrs           ks;
+        GranPtrs         grain;
         SlotCfgPtrs      slotCfg;
         FilterPtrs       filterA;
         FilterPtrs       filterB;

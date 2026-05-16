@@ -96,17 +96,24 @@ static APVTS::ParameterLayout buildLayout()
     addFloat("osc_fm_adsr_s",    "FM Env Sustain", 0.0f,   1.0f,  1.0f);
     addEnvTime("osc_fm_adsr_r",    "FM Env Release", 0.3f);
 
-    juce::StringArray opWaveforms { "Sine","Triangle","Saw","Square","Pulse","Noise" };
+    juce::StringArray opWaveforms {
+        "Sine","Triangle","Saw","Square","Pulse","Noise",
+        "All Wide","All Narrow","Odd Wide","Odd Narrow","Res Wide","Res Narrow"
+    };
 
     for (int i = 0; i < 10; ++i)
     {
         juce::String prefix = "op" + juce::String(i) + "_";
         addInt   (prefix + "coarse",   "Op" + juce::String(i) + " Coarse",   0,  31, i == 0 ? 1 : 1);
         addFloat (prefix + "fine",     "Op" + juce::String(i) + " Fine",    -1.0f, 1.0f, 0.0f);
+        addFloat (prefix + "detune",   "Op" + juce::String(i) + " Detune", -15.0f, 15.0f, 0.0f);
         addFloat (prefix + "level",    "Op" + juce::String(i) + " Level",    0.0f, 1.0f, i == 0 ? 1.0f : 0.5f);
         addFloat (prefix + "feedback", "Op" + juce::String(i) + " Feedback", 0.0f, 1.0f, 0.0f);
         addBool  (prefix + "fixed",    "Op" + juce::String(i) + " Fixed Freq", false);
         addChoice(prefix + "wave",     "Op" + juce::String(i) + " Wave",     opWaveforms, 0);
+        addFloat (prefix + "skirt",    "Op" + juce::String(i) + " Spectral Skirt", 0.0f, 1.0f, 0.35f);
+        addFloat (prefix + "resonance","Op" + juce::String(i) + " Spectral Resonance", 0.0f, 1.0f, 0.25f);
+        addBool  (prefix + "key_reset","Op" + juce::String(i) + " Key On Reset", true);
         addFloat (prefix + "vel",      "Op" + juce::String(i) + " Vel Depth",   0.0f, 1.0f, 0.0f);
         addFloat (prefix + "key",      "Op" + juce::String(i) + " Key Scale",  -1.0f, 1.0f, 0.0f);
         addEnvTime(prefix + "adsr_a",   "Op" + juce::String(i) + " Attack",  0.01f);
@@ -118,14 +125,63 @@ static APVTS::ParameterLayout buildLayout()
     // ── Wavetable Oscillator ──────────────────────────────────────────────────
     addBool ("osc_wt_on",    "WT Enable",   true);
     addChoice("osc_wt_table", "WT Table",
-              {"Sine","Triangle","Saw","Square","Pulse","Half Sine","Abs Sine","Sine Cube"}, 0);
-    addFloat("osc_wt_pos",    "WT Position", 0.0f, 1.0f, 0.0f);
-    addFloat("osc_wt_level",  "WT Level",    0.0f, 1.0f, 0.0f);
-    addFloat("osc_wt_octave", "WT Octave",  -3.0f, 3.0f, 0.0f);
+              {"Sine","Triangle","Saw","Square","Pulse","Half Sine","Abs Sine","Sine Cube",
+               "Hollow Odd","Even Glass","Vocal A","Metallic","Sync Saw","Reso Fold","Noisy Digital"}, 0);
+    addChoice("osc_wt_warp_mode", "WT Warp Mode",
+              {"Off","Bend+","Bend-","Bend +/-","Mirror","Sync","Window Sync",
+               "Quantize","Fold","Formant","PD Saw","PD Square","PD Pulse",
+               "PD Resonant","PD Formant"}, 0);
+    addFloat("osc_wt_pos",        "WT Position",       0.0f, 1.0f, 0.0f);
+    addFloat("osc_wt_warp",       "WT Warp Amount",    0.0f, 1.0f, 0.0f);
+    addFloat("osc_wt_pd_break",   "WT PD Breakpoint",  0.0f, 1.0f, 0.75f);
+    addInt  ("osc_wt_unison",     "WT Unison",         1, 8, 1);
+    addFloat("osc_wt_detune",     "WT Detune",         0.0f, 1.0f, 0.0f);
+    addFloat("osc_wt_spread",     "WT Stereo Spread",  0.0f, 1.0f, 0.0f);
+    addFloat("osc_wt_pos_spread", "WT Position Spread",0.0f, 1.0f, 0.0f);
+    addFloat("osc_wt_phase",      "WT Phase Offset",   0.0f, 1.0f, 0.0f);
+    addFloat("osc_wt_random",     "WT Random Phase",   0.0f, 1.0f, 0.0f);
+    addBool ("osc_wt_retrig",     "WT Retrigger",      true);
+    addFloat("osc_wt_level",      "WT Level",          0.0f, 1.0f, 0.0f);
+    addFloat("osc_wt_octave",     "WT Octave",        -3.0f, 3.0f, 0.0f);
     addEnvTime("osc_wt_adsr_a", "WT Env Attack",  0.01f);
     addEnvTime("osc_wt_adsr_d", "WT Env Decay",   0.2f);
     addFloat("osc_wt_adsr_s", "WT Env Sustain", 0.0f,   1.0f,  1.0f);
     addEnvTime("osc_wt_adsr_r", "WT Env Release", 0.3f);
+
+    // ── Granular Oscillator ──────────────────────────────────────────────────
+    addBool ("osc_grain_on",    "Granular Enable", true);
+    addChoice("osc_grain_trigger_mode", "Granular Trigger Mode",
+              {"Free Cloud","Burst","Audio Rate"}, 0);
+    addChoice("osc_grain_window", "Granular Window",
+              {"Hann","Triangle","Gaussian","Tukey","Rect","Exp Attack","Exp Decay"}, 0);
+    addFloat("osc_grain_position", "Grain Position", 0.0f, 1.0f, 0.5f);
+    addFloat("osc_grain_size",     "Grain Size",     5.0f, 1000.0f, 120.0f, 0.35f);
+    addFloat("osc_grain_density",  "Grain Density",  0.1f, 1200.0f, 35.0f, 0.32f);
+    addFloat("osc_grain_pitch",    "Grain Pitch",   -48.0f, 48.0f, 0.0f);
+    addFloat("osc_grain_spray",    "Grain Spray",    0.0f, 1.0f, 0.18f);
+    addFloat("osc_grain_jitter",   "Grain Jitter",   0.0f, 1.0f, 0.04f);
+    addFloat("osc_grain_pan",      "Grain Pan Spread", 0.0f, 1.0f, 0.7f);
+    addFloat("osc_grain_reverse",  "Grain Reverse",  0.0f, 1.0f, 0.0f);
+    addFloat("osc_grain_scan",     "Grain Scan",    -1.0f, 1.0f, 0.0f);
+    addFloat("osc_grain_freeze",   "Grain Freeze",   0.0f, 1.0f, 0.0f);
+    addChoice("osc_grain_body_type", "Grain Body Type",
+              {"Off","Glass","Metal","Wood","Plate","String","Drum","Pipe","Alien"}, 0);
+    addFloat("osc_grain_body_root",   "Grain Body Root",   -48.0f, 48.0f, 0.0f);
+    addFloat("osc_grain_body_size",   "Grain Body Size",    0.0f, 1.0f, 0.5f);
+    addFloat("osc_grain_body_decay",  "Grain Body Decay",   0.0f, 1.0f, 0.5f);
+    addFloat("osc_grain_body_damp",   "Grain Body Damping", 0.0f, 1.0f, 0.35f);
+    addFloat("osc_grain_body_bright", "Grain Body Bright",  0.0f, 1.0f, 0.6f);
+    addFloat("osc_grain_body_inharm", "Grain Body Inharm",  0.0f, 1.0f, 0.2f);
+    addFloat("osc_grain_body_excite", "Grain Body Excite",  0.0f, 1.0f, 0.7f);
+    addFloat("osc_grain_body_mix",    "Grain Body Mix",     0.0f, 1.0f, 0.0f);
+    addFloat("osc_grain_body_spread", "Grain Body Spread",  0.0f, 1.0f, 0.5f);
+    addInt  ("osc_grain_body_modes",  "Grain Body Modes",   4, 32, 16);
+    addFloat("osc_grain_level",    "Granular Level", 0.0f, 1.0f, 0.0f);
+    addFloat("osc_grain_octave",   "Granular Octave",-3.0f, 3.0f, 0.0f);
+    addEnvTime("osc_grain_adsr_a", "Granular Env Attack",  0.01f);
+    addEnvTime("osc_grain_adsr_d", "Granular Env Decay",   0.2f);
+    addFloat("osc_grain_adsr_s",   "Granular Env Sustain", 0.0f, 1.0f, 1.0f);
+    addEnvTime("osc_grain_adsr_r", "Granular Env Release", 0.4f);
 
     // ── Virtual Analog Oscillators ────────────────────────────────────────────
     auto addVAOsc = [&](int index, const juce::String& prefix, bool enabledByDefault)
@@ -171,28 +227,30 @@ static APVTS::ParameterLayout buildLayout()
     addEnvTime("osc_ks_adsr_r",    "KS Env Release", 1.0f);
 
     // ── Engine Configuration ──────────────────────────────────────────────────
-    // Two engine blocks (A=left, B=right), each covers 4 slot units.
-    // Mode 0=Multi (up to 4 individual engines), 1=FM (one FM engine, full block).
-    addInt  ("engine_block_a_mode",   "Block A Mode",   0, 1, 1); // default FM
+    // Two engine pages (A=left, B=right), each covers 4 slot units.
+    // Mode is treated as a pair: both pages at 1 = dual FM; otherwise both pages are Multi.
+    addInt  ("engine_block_a_mode",   "Block A Mode",   0, 1, 0); // default Multi
     addInt  ("engine_block_b_mode",   "Block B Mode",   0, 1, 0); // default Multi
-    // Slot types for Multi mode: 0=None 1=3D 2=VA 3=WT 4=KS
-    addInt  ("engine_block_a_slot_0", "Block A Slot 0", 0, 4, 0);
-    addInt  ("engine_block_a_slot_1", "Block A Slot 1", 0, 4, 0);
-    addInt  ("engine_block_a_slot_2", "Block A Slot 2", 0, 4, 0);
-    addInt  ("engine_block_a_slot_3", "Block A Slot 3", 0, 4, 0);
-    addInt  ("engine_block_b_slot_0", "Block B Slot 0", 0, 4, 1); // 3D
-    addInt  ("engine_block_b_slot_1", "Block B Slot 1", 0, 4, 2); // VA
-    addInt  ("engine_block_b_slot_2", "Block B Slot 2", 0, 4, 3); // WT
-    addInt  ("engine_block_b_slot_3", "Block B Slot 3", 0, 4, 4); // KS
+    // Slot types for Multi mode: 0=None 1=3D 2=VA 3=WT 4=KS 5=Granular
+    addInt  ("engine_block_a_slot_0", "Block A Slot 0", 0, 5, 1); // 3D
+    addInt  ("engine_block_a_slot_1", "Block A Slot 1", 0, 5, 2); // VA
+    addInt  ("engine_block_a_slot_2", "Block A Slot 2", 0, 5, 3); // WT
+    addInt  ("engine_block_a_slot_3", "Block A Slot 3", 0, 5, 4); // KS
+    addInt  ("engine_block_b_slot_0", "Block B Slot 0", 0, 5, 0);
+    addInt  ("engine_block_b_slot_1", "Block B Slot 1", 0, 5, 0);
+    addInt  ("engine_block_b_slot_2", "Block B Slot 2", 0, 5, 0);
+    addInt  ("engine_block_b_slot_3", "Block B Slot 3", 0, 5, 0);
     addFloat("engine_3d_detune",  "3D Ensemble Detune", 0.0f, 1.0f, 0.0f);
     addFloat("engine_fm_detune",  "FM Dual Detune",     0.0f, 100.0f, 0.0f);
 
     // ── Dual Filter ───────────────────────────────────────────────────────────
     juce::StringArray filterModes {
         "LP12","LP24","HP12","HP24","Bandpass","Notch",
-        "Peak","LoShelf","HiShelf","Comb","AM+","AM-"
+        "Peak","LoShelf","HiShelf","Comb","AM+","AM-",
+        "Ladder12","Ladder18","Ladder24","SEM Morph","MS Dual","Formant"
     };
     juce::StringArray filterRouting { "Series","Parallel","A Only","B Only" };
+    juce::StringArray filterOversampling { "Off", "2x", "4x" };
 
     for (auto slot : {"a", "b"})
     {
@@ -202,6 +260,12 @@ static APVTS::ParameterLayout buildLayout()
                   20.0f, 20000.0f, 20000.0f, 0.25f);
         addFloat (s + "resonance", "Filter " + juce::String(slot).toUpperCase() + " Resonance", 0.0f, 1.0f, 0.0f);
         addFloat (s + "drive",     "Filter " + juce::String(slot).toUpperCase() + " Drive",     0.0f, 1.0f, 0.0f);
+        addFloat (s + "morph",     "Filter " + juce::String(slot).toUpperCase() + " Morph",     0.0f, 1.0f, 0.5f);
+        addFloat (s + "saturation","Filter " + juce::String(slot).toUpperCase() + " Saturation",0.0f, 1.0f, 0.35f);
+        addFloat (s + "bass_comp", "Filter " + juce::String(slot).toUpperCase() + " Bass Comp", 0.0f, 1.0f, 0.0f);
+        addFloat (s + "gain",      "Filter " + juce::String(slot).toUpperCase() + " Output Gain",-24.0f, 24.0f, 0.0f);
+        addFloat (s + "mix",       "Filter " + juce::String(slot).toUpperCase() + " Mix",       0.0f, 1.0f, 1.0f);
+        addChoice(s + "oversample","Filter " + juce::String(slot).toUpperCase() + " Oversample", filterOversampling, 0);
         addFloat (s + "env_amt",   "Filter " + juce::String(slot).toUpperCase() + " Env Amt",  -1.0f, 1.0f, 0.0f);
         addFloat (s + "lfo_amt",   "Filter " + juce::String(slot).toUpperCase() + " LFO Amt",  -1.0f, 1.0f, 0.0f);
         addEnvTime(s + "adsr_a",    "Filter " + juce::String(slot).toUpperCase() + " Env A", 0.05f);
@@ -255,7 +319,10 @@ static APVTS::ParameterLayout buildLayout()
         "VA2_Shape","VA2_PW","VA2_Detune","VA2_Spread","VA2_Level","VA2_Ring","VA2_Fold",
         "VA3_Shape","VA3_PW","VA3_Detune","VA3_Spread","VA3_Level","VA3_Ring","VA3_Fold",
         "VA4_Shape","VA4_PW","VA4_Detune","VA4_Spread","VA4_Level","VA4_Ring","VA4_Fold",
-        "LFO1_SyncRate","LFO2_SyncRate","LFO3_SyncRate","LFO4_SyncRate"
+        "LFO1_SyncRate","LFO2_SyncRate","LFO3_SyncRate","LFO4_SyncRate",
+        "WT_Warp","WT_PD_Break",
+        "Gran_Position","Gran_Size","Gran_Density","Gran_Pitch","Gran_Spray","Gran_Freeze","Gran_Level",
+        "Gran_BodyMix","Gran_BodySize","Gran_BodyDamping","Gran_BodyInharm"
     };
 
     for (int i = 0; i < 32; ++i)

@@ -13,9 +13,13 @@ void SingleFilter::prepare(double sampleRate)
     spec.maximumBlockSize = 512;
     spec.numChannels      = 1;
 
-    svf1.prepare(spec);
-    svf2.prepare(spec);
     iirFilter.prepare(spec);
+    cleanSVF.prepare(sampleRate);
+    ladderLP.prepare(sampleRate);
+    semMorph.prepare(sampleRate);
+    msDual.prepare(sampleRate);
+    combFilter.prepare(sampleRate);
+    formantFilter.prepare(sampleRate);
 
     // Initialize IIR to unity-gain low-pass at Nyquist so first processSample is safe
     // if a Peak/Shelf mode is selected before configureIIR() runs.
@@ -24,20 +28,41 @@ void SingleFilter::prepare(double sampleRate)
         static_cast<float>(sampleRate * 0.45),
         juce::MathConstants<float>::sqrt2 * 0.5f);
 
-    shaper.functionToUse = [](float x) { return std::tanh(x); };
-    shaper.prepare(spec);
+    cutoffSmooth.reset(sampleRate, 0.01);
+    resonanceSmooth.reset(sampleRate, 0.01);
+    driveSmooth.reset(sampleRate, 0.01);
+    morphSmooth.reset(sampleRate, 0.01);
+    mixSmooth.reset(sampleRate, 0.01);
 
-    combBuffer.fill(0.f);
+    cutoffSmooth.setCurrentAndTargetValue(juce::jlimit(20.f, (float) sr * 0.49f, params.cutoff));
+    resonanceSmooth.setCurrentAndTargetValue(juce::jlimit(0.f, 1.f, params.resonance));
+    driveSmooth.setCurrentAndTargetValue(juce::jlimit(0.f, 1.f, params.drive));
+    morphSmooth.setCurrentAndTargetValue(juce::jlimit(0.f, 1.f, params.morph));
+    mixSmooth.setCurrentAndTargetValue(juce::jlimit(0.f, 1.f, params.mix));
+    smoothingReady = true;
+
     reset();
 }
 
 void SingleFilter::reset()
 {
-    svf1.reset();
-    svf2.reset();
     iirFilter.reset();
-    combBuffer.fill(0.f);
-    combWritePos = 0;
+    cleanSVF.reset();
+    ladderLP.reset();
+    semMorph.reset();
+    msDual.reset();
+    combFilter.reset();
+    formantFilter.reset();
+
+    if (smoothingReady)
+    {
+        cutoffSmooth.setCurrentAndTargetValue(juce::jlimit(20.f, (float) sr * 0.49f, params.cutoff));
+        resonanceSmooth.setCurrentAndTargetValue(juce::jlimit(0.f, 1.f, params.resonance));
+        driveSmooth.setCurrentAndTargetValue(juce::jlimit(0.f, 1.f, params.drive));
+        morphSmooth.setCurrentAndTargetValue(juce::jlimit(0.f, 1.f, params.morph));
+        mixSmooth.setCurrentAndTargetValue(juce::jlimit(0.f, 1.f, params.mix));
+    }
+
     lastConfiguredCutoff = -1.f;
     lastConfiguredRes = -1.f;
     lastConfiguredDrive = -1.f;
@@ -47,84 +72,55 @@ void SingleFilter::reset()
 void SingleFilter::setParams(const Params& p)
 {
     params = p;
+    params.cutoff       = juce::jlimit(20.f, (float) sr * 0.49f, params.cutoff);
+    params.resonance    = juce::jlimit(0.f, 1.f, params.resonance);
+    params.drive        = juce::jlimit(0.f, 1.f, params.drive);
+    params.morph        = juce::jlimit(0.f, 1.f, params.morph);
+    params.saturation   = juce::jlimit(0.f, 1.f, params.saturation);
+    params.bassComp     = juce::jlimit(0.f, 1.f, params.bassComp);
+    params.outputGainDb = juce::jlimit(-24.f, 24.f, params.outputGainDb);
+    params.mix          = juce::jlimit(0.f, 1.f, params.mix);
+    params.oversample   = juce::jlimit(0, 2, params.oversample);
+
+    if (smoothingReady)
+    {
+        cutoffSmooth.setTargetValue(params.cutoff);
+        resonanceSmooth.setTargetValue(params.resonance);
+        driveSmooth.setTargetValue(params.drive);
+        morphSmooth.setTargetValue(params.morph);
+        mixSmooth.setTargetValue(params.mix);
+    }
 }
 
-float SingleFilter::computeCutoff(float envValue, float lfoValue) const
+float SingleFilter::computeCutoff(float baseCutoff, float envValue, float lfoValue) const
 {
-    float base = params.cutoff;
     // Env: add up to 4 octaves (env amount ×±4 octaves)
     float envOctaves = params.envAmount * 4.f * envValue;
     // LFO: add up to 2 octaves
     float lfoOctaves = params.lfoAmount * 2.f * lfoValue;
-    float modulated  = base * std::pow(2.f, envOctaves + lfoOctaves);
+    float modulated  = baseCutoff * std::pow(2.f, envOctaves + lfoOctaves);
     return juce::jlimit(20.f, (float)(sr * 0.49), modulated);
 }
 
-bool SingleFilter::needsReconfigure(float cutHz, float res, bool includeDrive) const
+bool SingleFilter::needsReconfigure(float cutHz, float res, float drive) const
 {
     return params.mode != lastConfiguredMode
         || std::abs(cutHz - lastConfiguredCutoff) > 0.5f
         || std::abs(res - lastConfiguredRes) > 0.0001f
-        || (includeDrive && std::abs(params.drive - lastConfiguredDrive) > 0.0001f);
+        || std::abs(drive - lastConfiguredDrive) > 0.0001f;
 }
 
-void SingleFilter::markConfigured(float cutHz, float res)
+void SingleFilter::markConfigured(float cutHz, float res, float drive)
 {
     lastConfiguredCutoff = cutHz;
     lastConfiguredRes = res;
-    lastConfiguredDrive = params.drive;
+    lastConfiguredDrive = drive;
     lastConfiguredMode = params.mode;
 }
 
-void SingleFilter::configureSVF(float cutHz, float res)
+void SingleFilter::configureIIR(float cutHz, float res, float drive)
 {
-    if (!needsReconfigure(cutHz, res, false))
-        return;
-
-    using SVFType = juce::dsp::StateVariableTPTFilterType;
-    // Q range 0.5..20: full self-oscillation and screaming resonance available.
-    // Clipping protection comes from inter-stage tanh (LP24/HP24) and the
-    // final output limiter — not from attenuating the input here.
-    float Q = juce::jlimit(0.5f, 20.f, 0.5f + res * 19.5f);
-    svf1.setCutoffFrequency(cutHz);
-    svf1.setResonance(Q);
-    svf2.setCutoffFrequency(cutHz);
-    svf2.setResonance(Q);
-
-    switch (params.mode)
-    {
-        case FilterMode::LP12: case FilterMode::LP24:
-            svf1.setType(SVFType::lowpass);
-            svf2.setType(SVFType::lowpass);
-            break;
-        case FilterMode::HP12: case FilterMode::HP24:
-            svf1.setType(SVFType::highpass);
-            svf2.setType(SVFType::highpass);
-            break;
-        case FilterMode::Bandpass:
-            svf1.setType(SVFType::bandpass);
-            break;
-        case FilterMode::Notch:
-            svf1.setType(SVFType::lowpass);
-            svf2.setType(SVFType::highpass);
-            break;
-        case FilterMode::Peak:
-        case FilterMode::LowShelf:
-        case FilterMode::HighShelf:
-        case FilterMode::Comb:
-        case FilterMode::AM_Plus:
-        case FilterMode::AM_Minus:
-        case FilterMode::NumModes:
-            svf1.setType(SVFType::lowpass);
-            break;
-    }
-
-    markConfigured(cutHz, res);
-}
-
-void SingleFilter::configureIIR(float cutHz, float res)
-{
-    if (!needsReconfigure(cutHz, res, true))
+    if (!needsReconfigure(cutHz, res, drive))
         return;
 
     juce::dsp::IIR::Coefficients<float>::Ptr coeffs;
@@ -134,15 +130,15 @@ void SingleFilter::configureIIR(float cutHz, float res)
     {
         case FilterMode::Peak:
             coeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-                         sr, cutHz, q, 1.f + params.drive * 12.f);
+                         sr, cutHz, q, 1.f + drive * 12.f);
             break;
         case FilterMode::LowShelf:
             coeffs = juce::dsp::IIR::Coefficients<float>::makeLowShelf(
-                         sr, cutHz, q, 1.f + params.drive * 6.f);
+                         sr, cutHz, q, 1.f + drive * 6.f);
             break;
         case FilterMode::HighShelf:
             coeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf(
-                         sr, cutHz, q, 1.f + params.drive * 6.f);
+                         sr, cutHz, q, 1.f + drive * 6.f);
             break;
         case FilterMode::LP12:
         case FilterMode::LP24:
@@ -153,6 +149,12 @@ void SingleFilter::configureIIR(float cutHz, float res)
         case FilterMode::Comb:
         case FilterMode::AM_Plus:
         case FilterMode::AM_Minus:
+        case FilterMode::Ladder12:
+        case FilterMode::Ladder18:
+        case FilterMode::Ladder24:
+        case FilterMode::SEMMorph:
+        case FilterMode::MSDual:
+        case FilterMode::Formant:
         case FilterMode::NumModes:
             break;
     }
@@ -160,15 +162,31 @@ void SingleFilter::configureIIR(float cutHz, float res)
     if (coeffs != nullptr)
         *iirFilter.coefficients = *coeffs;
 
-    markConfigured(cutHz, res);
+    markConfigured(cutHz, res, drive);
 }
 
 float SingleFilter::processSample(float input, float envValue, float lfoValue, float amMod)
 {
-    float cutHz = computeCutoff(envValue, lfoValue);
-    float res   = params.resonance;
+    const float baseCutoff = smoothingReady ? cutoffSmooth.getNextValue() : params.cutoff;
+    const float res        = smoothingReady ? resonanceSmooth.getNextValue() : params.resonance;
+    const float drive      = smoothingReady ? driveSmooth.getNextValue() : params.drive;
+    const float morph      = smoothingReady ? morphSmooth.getNextValue() : params.morph;
+    const float mix        = smoothingReady ? mixSmooth.getNextValue() : params.mix;
 
-    float driven = (params.drive > 0.f) ? std::tanh(input * (1.f + params.drive * 4.f)) : input;
+    float cutHz = computeCutoff(baseCutoff, envValue, lfoValue);
+    FilterProcessParams fp;
+    fp.mode = params.mode;
+    fp.cutoff = cutHz;
+    fp.resonance = res;
+    fp.drive = drive;
+    fp.morph = morph;
+    fp.saturation = params.saturation;
+    fp.bassComp = params.bassComp;
+    fp.outputGainDb = params.outputGainDb;
+    fp.mix = mix;
+    fp.oversample = params.oversample;
+
+    float driven = (drive > 0.f) ? std::tanh(input * (1.f + drive * 4.f)) : input;
 
     float out = driven;
 
@@ -177,56 +195,40 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
         case FilterMode::LP12:
         case FilterMode::HP12:
         case FilterMode::Bandpass:
-            configureSVF(cutHz, res);
-            out = svf1.processSample(0, driven);
-            break;
-
         case FilterMode::LP24:
         case FilterMode::HP24:
-        {
-            configureSVF(cutHz, res);
-            float mid = svf1.processSample(0, driven);
-            // Soft-clip between cascade stages: prevents the second stage amplifying
-            // an already-hot signal from the first stage (series compound gain).
-            mid = std::tanh(mid);
-            out = svf2.processSample(0, mid);
-            break;
-        }
-
         case FilterMode::Notch:
-        {
-            // Notch = LP + HP
-            configureSVF(cutHz, res);
-            using T = juce::dsp::StateVariableTPTFilterType;
-            svf1.setType(T::lowpass);
-            svf2.setType(T::highpass);
-            float lp = svf1.processSample(0, driven);
-            float hp = svf2.processSample(0, driven);
-            out = (lp + hp) * 0.5f;
+            out = cleanSVF.processSample(driven, fp);
             break;
-        }
+
+        case FilterMode::Ladder12:
+        case FilterMode::Ladder18:
+        case FilterMode::Ladder24:
+            out = ladderLP.processSample(input, fp);
+            break;
+
+        case FilterMode::SEMMorph:
+            out = semMorph.processSample(input, fp);
+            break;
+
+        case FilterMode::MSDual:
+            out = msDual.processSample(input, fp);
+            break;
+
+        case FilterMode::Formant:
+            out = formantFilter.processSample(input, fp);
+            break;
 
         case FilterMode::Peak:
         case FilterMode::LowShelf:
         case FilterMode::HighShelf:
-            configureIIR(cutHz, res);
+            configureIIR(cutHz, res, drive);
             out = iirFilter.processSample(driven);
             break;
 
         case FilterMode::Comb:
-        {
-            // Feedback comb — cap feedback strictly below unity to prevent runaway
-            int delaySamples = juce::jlimit(1, kMaxCombDelaySamples - 1,
-                                             (int)(sr / juce::jlimit(20.f, (float)(sr * 0.49), cutHz)));
-            int readPos = (combWritePos - delaySamples + kMaxCombDelaySamples) % kMaxCombDelaySamples;
-            float delayed = combBuffer[(size_t)readPos];
-            float fb = juce::jlimit(0.f, 0.97f, combFeedback * (0.5f + res * 0.5f));
-            float output = driven + fb * delayed;
-            combBuffer[(size_t)combWritePos] = output;
-            combWritePos = (combWritePos + 1) % kMaxCombDelaySamples;
-            out = output;
+            out = combFilter.processSample(input, fp);
             break;
-        }
 
         case FilterMode::AM_Plus:
             out = driven * (1.f + amMod * params.envAmount);
@@ -239,6 +241,9 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
         case FilterMode::NumModes:
             break;
     }
+
+    const float gain = juce::Decibels::decibelsToGain(params.outputGainDb);
+    out = input + (out * gain - input) * mix;
 
     // Hard-clip as final safety net: compensation gain should keep output in
     // range most of the time, but this prevents any stray blow-up from reaching

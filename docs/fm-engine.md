@@ -17,11 +17,15 @@ phase     += frequency / sampleRate
 
 - **Coarse ratio**: integer 0–31 (0 = 0.5×, 1 = 1×, 2 = 2×, ...)
 - **Fine**: ±1 semitone continuous offset
+- **Detune**: ±15 cents for small per-operator beating and FM-X-style pitch offsets
 - **Ratio offset**: additive modulation amount applied before fine tune, currently exposed for operators 0–4 in the modulation matrix
 - **Feedback**: operator feeds its own previous output back into its phase (`feedback × π` radians)
-- **Waveform**: sine, triangle, saw, square, pulse, or noise
+- **Waveform**: sine, triangle, saw, square, pulse, noise, plus FM-X-inspired spectral forms (`All`, `Odd`, `Res`, wide/narrow variants)
+- **Spectral skirt**: controls harmonic rolloff for the spectral operator waveforms
+- **Spectral resonance**: moves the harmonic peak for resonant spectral waveforms
 - **Velocity depth**: scales operator level by note velocity
 - **Key scale depth**: raises or lowers operator level by keyboard position relative to C4
+- **Key-on reset**: resets operator phase and feedback memory at note-on for stable attacks
 - **Fixed freq mode**: operator uses its fixed-frequency path rather than tracking the note. No APVTS knob exposes `fixedHz` yet, so the current UI path uses the operator default.
 
 ## Algorithm Encoding
@@ -116,10 +120,14 @@ Operator envelope parameters: `op{N}_adsr_{a,d,s,r}` where N is 0–9.
 | `osc_fm_adsr_{a,d,s,r}` | — | FM engine-level amplitude envelope |
 | `op{N}_coarse` | 0–31 | Frequency ratio (0=0.5×, 1=1×, ...) |
 | `op{N}_fine` | −1.0–+1.0 | Fine tune in semitones |
+| `op{N}_detune` | −15–+15 cents | Small operator detune trim |
 | `op{N}_level` | 0.0–1.0 | Operator output level |
 | `op{N}_feedback` | 0.0–1.0 | Self-feedback depth |
 | `op{N}_fixed` | bool | Fixed frequency mode |
-| `op{N}_wave` | 0–5 | Sine / Triangle / Saw / Square / Pulse / Noise |
+| `op{N}_wave` | 0–11 | Sine / Triangle / Saw / Square / Pulse / Noise / All Wide / All Narrow / Odd Wide / Odd Narrow / Res Wide / Res Narrow |
+| `op{N}_skirt` | 0.0–1.0 | Harmonic rolloff for spectral waveforms |
+| `op{N}_resonance` | 0.0–1.0 | Resonant harmonic position for Res waveforms |
+| `op{N}_key_reset` | bool | Reset phase and feedback state on note-on |
 | `op{N}_vel` | 0.0–1.0 | Velocity depth |
 | `op{N}_key` | −1.0–+1.0 | Keyboard level scaling around C4 |
 | `op{N}_adsr_{a,d,s,r}` | — | Per-operator envelope |

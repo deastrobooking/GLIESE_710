@@ -318,5 +318,5 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
 void SynthEngine::addWavetable(juce::String name, const float* samples, int numSamples)
 {
     for (auto& v : voices)
-        v.getWavetableOsc().addTable(name, samples, numSamples);
+        v.addWavetable(name, samples, numSamples);
 }

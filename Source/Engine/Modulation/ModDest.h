@@ -22,5 +22,8 @@ enum class ModDest : int
     VA3_Shape, VA3_PW, VA3_Detune, VA3_Spread, VA3_Level, VA3_Ring, VA3_Fold,
     VA4_Shape, VA4_PW, VA4_Detune, VA4_Spread, VA4_Level, VA4_Ring, VA4_Fold,
     LFO1_SyncRate, LFO2_SyncRate, LFO3_SyncRate, LFO4_SyncRate,
+    WT_Warp, WT_PD_Break,
+    Gran_Position, Gran_Size, Gran_Density, Gran_Pitch, Gran_Spray, Gran_Freeze, Gran_Level,
+    Gran_BodyMix, Gran_BodySize, Gran_BodyDamping, Gran_BodyInharm,
     NumDests
 };

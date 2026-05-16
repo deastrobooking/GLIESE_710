@@ -11,6 +11,7 @@ const char* EngineSlotBar::typeName(int t) noexcept
         case VA:    return "VA";
         case WT:    return "WT";
         case KS:    return "KS";
+        case Granular: return "GRN";
         default:    return "—";
     }
 }
@@ -22,6 +23,7 @@ juce::Colour EngineSlotBar::accentFor(int t) noexcept
         case VA:    return IndustrialTheme::accentForOsc("va");
         case WT:    return IndustrialTheme::accentForOsc("wt");
         case KS:    return IndustrialTheme::accentForOsc("ks");
+        case Granular: return IndustrialTheme::accentForOsc("grain");
         default:    return juce::Colour(0xff3a3e44);
     }
 }
@@ -67,8 +69,13 @@ void EngineSlotBar::parameterChanged(const juce::String&, float)
 //──────────────────────────────────────────────────────────────────────────────
 int EngineSlotBar::getBlockMode(int block) const
 {
-    auto* p = modePtr[block];
-    return p ? (int)p->load(std::memory_order_relaxed) : 0;
+    juce::ignoreUnused(block);
+
+    auto* a = modePtr[0];
+    auto* b = modePtr[1];
+    const bool pageAIsFM = a != nullptr && (int)a->load(std::memory_order_relaxed) == 1;
+    const bool pageBIsFM = b != nullptr && (int)b->load(std::memory_order_relaxed) == 1;
+    return pageAIsFM && pageBIsFM ? 1 : 0;
 }
 
 int EngineSlotBar::getSlotType(int block, int slot) const
@@ -119,7 +126,7 @@ void EngineSlotBar::paint(juce::Graphics& g)
         g.setColour(isFM ? fmAccent : juce::Colour(0xff252830));
         g.fillRoundedRectangle(modeBtn.toFloat(), 3.f);
         g.setColour(isFM ? juce::Colour(0xff000000) : IndustrialTheme::mutedText());
-        g.setFont(juce::Font(10.f, juce::Font::bold));
+        g.setFont(juce::Font(juce::FontOptions { 10.f, juce::Font::bold }));
         g.drawText("FM", modeBtn, juce::Justification::centred);
 
         if (isFM)
@@ -128,7 +135,7 @@ void EngineSlotBar::paint(juce::Graphics& g)
             auto labelArea = blockBounds(b).reduced(4);
             labelArea.removeFromRight(50);
             g.setColour(fmAccent);
-            g.setFont(juce::Font(13.f, juce::Font::bold));
+            g.setFont(juce::Font(juce::FontOptions { 13.f, juce::Font::bold }));
             g.drawText("FM ENGINE " + juce::String(b + 1), labelArea,
                        juce::Justification::centred);
         }
@@ -147,7 +154,7 @@ void EngineSlotBar::paint(juce::Graphics& g)
                 g.drawRoundedRectangle(sr.toFloat(), 3.f, 1.f);
 
                 g.setColour(type != None ? ac : IndustrialTheme::mutedText());
-                g.setFont(juce::Font(11.f, juce::Font::bold));
+                g.setFont(juce::Font(juce::FontOptions { 11.f, juce::Font::bold }));
                 g.drawText(typeName(type), sr, juce::Justification::centred);
             }
         }
@@ -187,6 +194,7 @@ void EngineSlotBar::showSlotMenu(int block, int slot)
     menu.addItem(3, "Virtual Analog",   true, cur == VA);
     menu.addItem(4, "Wavetable",        true, cur == WT);
     menu.addItem(5, "Karplus-Strong",   true, cur == KS);
+    menu.addItem(6, "Granular",         true, cur == Granular);
 
     menu.showMenuAsync(
         juce::PopupMenu::Options().withTargetComponent(this),
@@ -197,8 +205,17 @@ void EngineSlotBar::showSlotMenu(int block, int slot)
 
 void EngineSlotBar::setBlockMode(int block, int m)
 {
-    if (auto* param = apvts.getParameter(blockParamId(block)))
-        param->setValueNotifyingHost(param->convertTo0to1((float)m));
+    juce::ignoreUnused(block);
+    setAllBlockModes(m);
+}
+
+void EngineSlotBar::setAllBlockModes(int m)
+{
+    for (int b = 0; b < kNumBlocks; ++b)
+    {
+        if (auto* param = apvts.getParameter(blockParamId(b)))
+            param->setValueNotifyingHost(param->convertTo0to1((float)m));
+    }
 }
 
 void EngineSlotBar::setSlotType(int block, int slot, int t)

@@ -13,6 +13,7 @@ enum EnvIndex
     ENV_VA3,
     ENV_VA4,
     ENV_KS,
+    ENV_GRAN,
     ENV_FILTER_A,
     ENV_FILTER_B,
     ENV_COUNT

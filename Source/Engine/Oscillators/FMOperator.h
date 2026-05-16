@@ -5,12 +5,28 @@
 class FMOperator
 {
 public:
-    enum class Wave { Sine = 0, Triangle, Saw, Square, Pulse, Noise, NumWaves };
+    enum class Wave
+    {
+        Sine = 0,
+        Triangle,
+        Saw,
+        Square,
+        Pulse,
+        Noise,
+        AllWide,
+        AllNarrow,
+        OddWide,
+        OddNarrow,
+        ResWide,
+        ResNarrow,
+        NumWaves
+    };
 
     struct Params
     {
         int   coarse   = 1;       // frequency ratio integer part (0 = 0.5)
         float fine     = 0.f;     // ±1 semitone range
+        float detune   = 0.f;     // cents, Montage-style small detune trim
         float ratioOffset = 0.f;  // additive ratio modulation
         float level    = 1.f;     // output level / modulation depth 0..1
         float feedback = 0.f;     // self-feedback 0..1
@@ -18,8 +34,11 @@ public:
         float fixedHz   = 440.f;
 
         Wave  waveShape     = Wave::Sine;  // operator waveform
+        float spectralSkirt = 0.35f;        // harmonic rolloff for spectral waves
+        float spectralResonance = 0.25f;    // peak position for Res waveforms
         float velocityDepth = 0.f;         // 0 = velocity ignored, 1 = linear vel scaling
         float keyScaleDepth = 0.f;         // level change per octave from C4 (-1..+1)
+        bool  keyOnReset = true;           // reset phase/feedback on note-on
     };
 
     void prepare(double sampleRate);
@@ -31,7 +50,7 @@ public:
     float processSample(float modInput);
     void advanceEnvelope() { env.processSample(); }
 
-    void noteOn()  { env.noteOn(); }
+    void noteOn();
     void noteOff() { env.noteOff(); }
     void reset();
 
@@ -56,5 +75,6 @@ private:
 
     float getFrequency() const;
     float generateWave(float normalizedPhase) noexcept;
+    float generateSpectralWave(float normalizedPhase, bool oddOnly, bool narrow, bool resonant) const noexcept;
     void updateDerived();
 };

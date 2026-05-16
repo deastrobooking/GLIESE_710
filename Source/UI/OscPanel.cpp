@@ -109,6 +109,47 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         setupExtraSlider(extra5, "osc_ks_position",   "Pluck position",                   extraAtt5);
         numExtraSliders = 5;
     }
+    else if (oscId == "grain")
+    {
+        modeBoxA.addItemList({"Free Cloud","Burst","Audio Rate"}, 1);
+        modeBoxB.addItemList({"Hann","Triangle","Gaussian","Tukey","Rect","Exp Attack","Exp Decay"}, 1);
+        modeBoxC.addItemList({"Off","Glass","Metal","Wood","Plate","String","Drum","Pipe","Alien"}, 1);
+        modeBoxA.setTooltip("Grain Trigger Mode");
+        modeBoxB.setTooltip("Grain Window");
+        modeBoxC.setTooltip("Physical Body Type");
+        IndustrialTheme::styleCombo(modeBoxA, accent);
+        IndustrialTheme::styleCombo(modeBoxB, accent);
+        IndustrialTheme::styleCombo(modeBoxC, accent);
+        addAndMakeVisible(modeBoxA);
+        addAndMakeVisible(modeBoxB);
+        addAndMakeVisible(modeBoxC);
+        modeAttA = std::make_unique<CAtt>(apvts, "osc_grain_trigger_mode", modeBoxA);
+        modeAttB = std::make_unique<CAtt>(apvts, "osc_grain_window", modeBoxB);
+        modeAttC = std::make_unique<CAtt>(apvts, "osc_grain_body_type", modeBoxC);
+        numModeBoxes = 3;
+
+        setupExtraSlider(extra1,  "osc_grain_position", "Grain Position",          extraAtt1);
+        setupExtraSlider(extra2,  "osc_grain_size",     "Grain Size",              extraAtt2);
+        setupExtraSlider(extra3,  "osc_grain_density",  "Grain Density",           extraAtt3);
+        setupExtraSlider(extra4,  "osc_grain_pitch",    "Grain Pitch",             extraAtt4);
+        setupExtraSlider(extra5,  "osc_grain_spray",    "Position Spray",          extraAtt5);
+        setupExtraSlider(extra6,  "osc_grain_jitter",   "Timing / Pitch Jitter",   extraAtt6);
+        setupExtraSlider(extra7,  "osc_grain_pan",      "Pan Spread",              extraAtt7);
+        setupExtraSlider(extra8,  "osc_grain_reverse",  "Reverse Probability",     extraAtt8);
+        setupExtraSlider(extra9,  "osc_grain_scan",     "Position Scan Speed",     extraAtt9);
+        setupExtraSlider(extra10, "osc_grain_freeze",   "Position Freeze Amount",  extraAtt10);
+        setupExtraSlider(extra11, "osc_grain_body_root",   "Body Root Pitch",       extraAtt11);
+        setupExtraSlider(extra12, "osc_grain_body_size",   "Body Size",             extraAtt12);
+        setupExtraSlider(extra13, "osc_grain_body_decay",  "Body Decay",            extraAtt13);
+        setupExtraSlider(extra14, "osc_grain_body_damp",   "Body Damping",          extraAtt14);
+        setupExtraSlider(extra15, "osc_grain_body_bright", "Body Brightness",       extraAtt15);
+        setupExtraSlider(extra16, "osc_grain_body_inharm", "Body Inharmonicity",    extraAtt16);
+        setupExtraSlider(extra17, "osc_grain_body_excite", "Body Excitation",       extraAtt17);
+        setupExtraSlider(extra18, "osc_grain_body_mix",    "Body Mix",              extraAtt18);
+        setupExtraSlider(extra19, "osc_grain_body_spread", "Body Stereo Spread",    extraAtt19);
+        setupExtraSlider(extra20, "osc_grain_body_modes",  "Body Mode Count",       extraAtt20);
+        numExtraSliders = 20;
+    }
     else if (oscId.startsWith("va"))
     {
         setupExtraSlider(extra1, pfx + "shape",  "Wave Shape Morph (0=Sine 1=Saw 2=RevSaw 3=Sqr 4=Tri 5=Pulse)", extraAtt1);
@@ -131,15 +172,41 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     else if (oscId == "wt")
     {
         modeBoxA.addItemList({"Sine","Triangle","Saw","Square","Pulse",
-                              "Half Sine","Abs Sine","Sine Cube"}, 1);
+                              "Half Sine","Abs Sine","Sine Cube",
+                              "Hollow Odd","Even Glass","Vocal A","Metallic",
+                              "Sync Saw","Reso Fold","Noisy Digital"}, 1);
+        modeBoxB.addItemList({"Off","Bend+","Bend-","Bend +/-","Mirror",
+                              "Sync","Window Sync","Quantize","Fold","Formant",
+                              "PD Saw","PD Square","PD Pulse","PD Resonant","PD Formant"}, 1);
         modeBoxA.setTooltip("Wavetable Shape");
+        modeBoxB.setTooltip("Wavetable Warp Mode");
         IndustrialTheme::styleCombo(modeBoxA, accent);
+        IndustrialTheme::styleCombo(modeBoxB, accent);
         addAndMakeVisible(modeBoxA);
+        addAndMakeVisible(modeBoxB);
         modeAttA = std::make_unique<CAtt>(apvts, "osc_wt_table", modeBoxA);
-        numModeBoxes = 1;
+        modeAttB = std::make_unique<CAtt>(apvts, "osc_wt_warp_mode", modeBoxB);
+        numModeBoxes = 2;
 
-        setupExtraSlider(extra1, "osc_wt_pos", "Wavetable Position", extraAtt1);
-        numExtraSliders = 1;
+        setupExtraSlider(extra1, "osc_wt_pos",        "Wavetable Position",        extraAtt1);
+        setupExtraSlider(extra2, "osc_wt_warp",       "Warp Amount",               extraAtt2);
+        setupExtraSlider(extra3, "osc_wt_pd_break",   "Phase Distortion Breakpoint", extraAtt3);
+        setupExtraSlider(extra4, "osc_wt_unison",     "Unison Voices",             extraAtt4);
+        setupExtraSlider(extra5, "osc_wt_detune",     "Unison Detune",             extraAtt5);
+        setupExtraSlider(extra6, "osc_wt_spread",     "Stereo Spread",             extraAtt6);
+        setupExtraSlider(extra7, "osc_wt_pos_spread", "Wavetable Position Spread", extraAtt7);
+        setupExtraSlider(extra8, "osc_wt_phase",      "Phase Offset",              extraAtt8);
+        setupExtraSlider(extra9, "osc_wt_random",     "Random Phase Amount",       extraAtt9);
+        numExtraSliders = 9;
+
+        retrigButton.setButtonText("RT");
+        retrigButton.setTooltip("Retrigger WT phase on note-on");
+        retrigButton.setColour(juce::ToggleButton::textColourId, accent);
+        retrigButton.setColour(juce::ToggleButton::tickColourId, accent);
+        retrigButton.setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(0xff555555));
+        addAndMakeVisible(retrigButton);
+        retrigAtt = std::make_unique<BAtt>(apvts, "osc_wt_retrig", retrigButton);
+        hasRetrigButton = true;
     }
 
     // ── Labels ────────────────────────────────────────────────────────────────
@@ -175,6 +242,32 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         makeLabel(extraLabels[3], "MORPH");
         makeLabel(extraLabels[4], "POS");
     }
+    else if (oscId == "grain")
+    {
+        makeLabel(modeALabel, "TRIGGER");
+        makeLabel(modeBLabel, "WINDOW");
+        makeLabel(modeCLabel, "BODY");
+        makeLabel(extraLabels[0], "POS");
+        makeLabel(extraLabels[1], "SIZE");
+        makeLabel(extraLabels[2], "DENS");
+        makeLabel(extraLabels[3], "PITCH");
+        makeLabel(extraLabels[4], "SPRAY");
+        makeLabel(extraLabels[5], "JITTR");
+        makeLabel(extraLabels[6], "PAN");
+        makeLabel(extraLabels[7], "REV");
+        makeLabel(extraLabels[8], "SCAN");
+        makeLabel(extraLabels[9], "FREEZE");
+        makeLabel(extraLabels[10], "ROOT");
+        makeLabel(extraLabels[11], "BODY-SZ");
+        makeLabel(extraLabels[12], "DECAY");
+        makeLabel(extraLabels[13], "DAMP");
+        makeLabel(extraLabels[14], "BRIGHT");
+        makeLabel(extraLabels[15], "INHARM");
+        makeLabel(extraLabels[16], "EXCITE");
+        makeLabel(extraLabels[17], "B-MIX");
+        makeLabel(extraLabels[18], "B-SPR");
+        makeLabel(extraLabels[19], "MODES");
+    }
     else if (oscId.startsWith("va"))
     {
         makeLabel(extraLabels[0], "SHAPE");
@@ -188,7 +281,17 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     else if (oscId == "wt")
     {
         makeLabel(modeALabel, "SHAPE");
+        makeLabel(modeBLabel, "WARP");
         makeLabel(extraLabels[0], "POS");
+        makeLabel(extraLabels[1], "WARP");
+        makeLabel(extraLabels[2], "PD-BRK");
+        makeLabel(extraLabels[3], "UNI");
+        makeLabel(extraLabels[4], "DETUNE");
+        makeLabel(extraLabels[5], "SPREAD");
+        makeLabel(extraLabels[6], "P-SPR");
+        makeLabel(extraLabels[7], "PHASE");
+        makeLabel(extraLabels[8], "RAND");
+        makeLabel(retrigLabel, "RETRIG");
     }
 
     const char* adsrNames[4] = { "A", "D", "S", "R" };
@@ -276,52 +379,50 @@ void OscPanel::resized()
             modeBLabel.setBounds(portion(lr, 1, n));
             modeBoxB  .setBounds(portion(mr, 1, n).reduced(1, 0));
         }
+        if (n > 2)
+        {
+            modeCLabel.setBounds(portion(lr, 2, n));
+            modeBoxC  .setBounds(portion(mr, 2, n).reduced(1, 0));
+        }
+        area.removeFromTop(4);
+    }
+
+    if (hasRetrigButton)
+    {
+        auto rr = area.removeFromTop(22);
+        retrigLabel.setBounds(rr.removeFromLeft(58));
+        retrigButton.setBounds(rr.removeFromLeft(50));
         area.removeFromTop(4);
     }
 
     // ── Extra Sliders ─────────────────────────────────────────────────────────
     if (numExtraSliders > 0)
     {
-        // Row 1: extra1–extra3 (label indices 0–2)
-        int n1 = juce::jmin(3, numExtraSliders);
-        {
-            auto lr = area.removeFromTop(13);
-            auto sr = area.removeFromTop(70);
-            juce::Slider* sl[3] = { &extra1, &extra2, &extra3 };
-            for (int i = 0; i < n1; ++i)
-            {
-                extraLabels[(size_t)i].setBounds(portion(lr, i, n1));
-                sl[i]->setBounds(portion(sr, i, n1));
-            }
-        }
+        std::array<juce::Slider*, 20> sliders {
+            &extra1, &extra2, &extra3, &extra4, &extra5,
+            &extra6, &extra7, &extra8, &extra9, &extra10,
+            &extra11, &extra12, &extra13, &extra14, &extra15,
+            &extra16, &extra17, &extra18, &extra19, &extra20
+        };
 
-        // Row 2: extra4–extra6 (label indices 3–5)
-        if (numExtraSliders > 3)
-        {
-            area.removeFromTop(2);
-            int n2 = juce::jmin(3, numExtraSliders - 3);
-            auto lr = area.removeFromTop(13);
-            auto sr = area.removeFromTop(70);
-            juce::Slider* sl[3] = { &extra4, &extra5, &extra6 };
-            for (int i = 0; i < n2; ++i)
-            {
-                extraLabels[(size_t)(3 + i)].setBounds(portion(lr, i, n2));
-                sl[i]->setBounds(portion(sr, i, n2));
-            }
-        }
+        const int cols = numExtraSliders > 12 ? 4 : 3;
+        const int rows = (numExtraSliders + cols - 1) / cols;
+        const int reservedForAdsr = 58;
+        const int available = juce::jmax(0, area.getHeight() - reservedForAdsr);
+        const int rowSliderH = juce::jlimit(30, 70, (available - rows * 15) / juce::jmax(1, rows));
 
-        // Row 3: extra7–extra10 (label indices 6–9)
-        if (numExtraSliders > 6)
+        for (int row = 0; row < rows; ++row)
         {
-            area.removeFromTop(2);
-            int n3 = numExtraSliders - 6;
+            if (row > 0) area.removeFromTop(2);
+            const int start = row * cols;
+            const int n = juce::jmin(cols, numExtraSliders - start);
             auto lr = area.removeFromTop(13);
-            auto sr = area.removeFromTop(70);
-            juce::Slider* sl[4] = { &extra7, &extra8, &extra9, &extra10 };
-            for (int i = 0; i < n3; ++i)
+            auto sr = area.removeFromTop(rowSliderH);
+            for (int i = 0; i < n; ++i)
             {
-                extraLabels[(size_t)(6 + i)].setBounds(portion(lr, i, n3));
-                sl[i]->setBounds(portion(sr, i, n3));
+                const int index = start + i;
+                extraLabels[(size_t)index].setBounds(portion(lr, i, n));
+                sliders[(size_t)index]->setBounds(portion(sr, i, n));
             }
         }
         area.removeFromTop(4);

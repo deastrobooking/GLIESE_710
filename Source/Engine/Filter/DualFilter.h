@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "FilterTypes.h"
+#include "FilterModels.h"
 #include "../Envelopes/ADSREnvelope.h"
 #include <array>
 
@@ -13,6 +14,12 @@ public:
         float      cutoff    = 20000.f;   // Hz
         float      resonance = 0.f;       // 0..1
         float      drive     = 0.f;       // 0..1
+        float      morph     = 0.5f;      // 0..1
+        float      saturation = 0.35f;    // 0..1
+        float      bassComp  = 0.f;       // 0..1
+        float      outputGainDb = 0.f;    // dB
+        float      mix       = 1.f;       // 0..1 wet
+        int        oversample = 0;        // 0=off, 1=2x, 2=4x
         float      envAmount = 0.f;       // -1..1
         float      lfoAmount = 0.f;       // -1..1
     };
@@ -28,32 +35,32 @@ private:
     double sr = 48000.0;
     Params params;
 
-    // Primary SVF (12 dB)
-    juce::dsp::StateVariableTPTFilter<float> svf1;
-    // Second SVF for 24 dB cascade
-    juce::dsp::StateVariableTPTFilter<float> svf2;
-
     // IIR for shelf/peak (notch built from HP+LP sum)
     juce::dsp::IIR::Filter<float> iirFilter;
 
-    // Comb filter delay line
-    static constexpr int kMaxCombDelaySamples = 4096;
-    std::array<float, kMaxCombDelaySamples> combBuffer{};
-    int  combWritePos = 0;
-    float combFeedback = 0.7f;
+    CleanSVF cleanSVF;
+    LadderLP ladderLP;
+    SEMMorph semMorph;
+    MSDual msDual;
+    CombFilter combFilter;
+    FormantFilter formantFilter;
+
     float lastConfiguredCutoff = -1.f;
     float lastConfiguredRes = -1.f;
     float lastConfiguredDrive = -1.f;
     FilterMode lastConfiguredMode = FilterMode::NumModes;
 
-    // Drive waveshaper
-    juce::dsp::WaveShaper<float> shaper;
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Multiplicative> cutoffSmooth;
+    juce::SmoothedValue<float> resonanceSmooth;
+    juce::SmoothedValue<float> driveSmooth;
+    juce::SmoothedValue<float> morphSmooth;
+    juce::SmoothedValue<float> mixSmooth;
+    bool smoothingReady = false;
 
-    float computeCutoff(float envValue, float lfoValue) const;
-    bool  needsReconfigure(float cutHz, float res, bool includeDrive) const;
-    void  markConfigured(float cutHz, float res);
-    void  configureSVF(float cutHz, float res);
-    void  configureIIR(float cutHz, float res);
+    float computeCutoff(float baseCutoff, float envValue, float lfoValue) const;
+    bool  needsReconfigure(float cutHz, float res, float drive) const;
+    void  markConfigured(float cutHz, float res, float drive);
+    void  configureIIR(float cutHz, float res, float drive);
 };
 
 //==============================================================================

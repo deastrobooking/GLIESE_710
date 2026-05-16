@@ -2,7 +2,7 @@
 
 **A 3D Function Oscillator Synthesizer Plugin**
 
-GLIESE 710 is a polyphonic synthesizer plugin built in C++20 and JUCE 8. Its centerpiece is a novel **3D Function Oscillator** — instead of selecting a waveform, you design the mathematical space the waveform travels through. Around it sits a 10-operator FM engine (optionally dual-engine), anti-aliased wavetable oscillator, four virtual analog oscillator layers, Karplus-Strong string synthesis, dual multimode filter, 32-slot modulation matrix, 4 LFOs, arpeggiator, and a full preset system.
+GLIESE 710 is a polyphonic synthesizer plugin built in C++20 and JUCE 8. Its centerpiece is a novel **3D Function Oscillator** — instead of selecting a waveform, you design the mathematical space the waveform travels through. Around it sits a 10-operator FM engine (optionally dual-engine), anti-aliased wavetable oscillator, granular cloud oscillator, virtual analog layers, Karplus-Strong string synthesis, dual multimode filter, 32-slot modulation matrix, 4 LFOs, arpeggiator, and a full preset system.
 
 ---
 
@@ -74,9 +74,10 @@ ctest --test-dir build --output-on-failure
 | Engine                | Description |
 |-----------------------|-------------|
 | **3D Function**       | 8 musical scalar fields, 5 path types, up to 6-voice ensemble with per-voice detune, domain warping, coordinate folding, field-frequency control, chaos injection, field morphing |
-| **FM (10-op)**        | 10 operators, 40 algorithms (DX7-compatible 0–31 + 8 extended), optional dual-engine mode with independent detune, per-operator ADSR + feedback |
+| **FM (10-op)**        | 10 operators, 40 algorithms (DX7-compatible 0–31 + 8 extended), optional dual-engine mode with independent detune, per-operator ADSR, feedback, fine/detune, FM-X-style spectral operator forms with skirt/resonance |
 | **Karplus-Strong**    | Plucked string synthesis — circular delay loop, LPF brightness, all-pass stiffness, excitation morphing (white noise → glitch burst), pluck position |
-| **Wavetable**         | 2048-sample tables, 10 mipmap levels, Catmull-Rom interpolation, table morphing |
+| **Wavetable**         | 2048-sample tables, FFT mipmap bandlimiting, Catmull-Rom interpolation, table morphing, 15-shape factory bank, 15 warp modes including CZ-style phase distortion, 8-voice unison, stereo/position spread, phase/random/retrigger controls |
+| **Granular**          | Preallocated grain cloud engine with 96 grains per instance, fixed source buffer, free-cloud/burst/audio-rate modes, position, size, density, pitch, spray, jitter, pan spread, reverse probability, scan/freeze, 7 window shapes, and optional physical body/modal resonator |
 | **Virtual Analog**    | 4 independent VA layers, continuous shape morph, PolyBLEP saw/square/pulse, reverse saw, triangle, sine, 8-voice unison, stereo spread, ring modulation, wave folding |
 
 All engines mix additively. Each engine or layer has an independent level, octave transpose, and ADSR envelope.
@@ -128,7 +129,7 @@ Morph        crossfades to the next field
 
 ### Dual Filter
 
-12 modes per filter slot, two slots in series or parallel:
+18 modes per filter slot, two slots in series or parallel:
 
 ```
 LP12  LP24  HP12  HP24
@@ -136,7 +137,11 @@ Bandpass  Notch
 Peak  LowShelf  HighShelf
 Comb (feedback comb / metallic)
 AM+  AM- (ring modulation variants)
+Ladder12  Ladder18  Ladder24
+SEM Morph  MS Dual  Formant
 ```
+
+Each slot includes smoothed cutoff, resonance, drive, morph, and mix, plus saturation, bass compensation, output gain, filter envelope/LFO depth, and optional Off/2x/4x quality for the nonlinear character models.
 
 ### Modulation Matrix
 
@@ -144,7 +149,7 @@ AM+  AM- (ring modulation variants)
 
 **25 sources** including LFO1–4, 7 envelope source groups, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, and 8 macro knobs.
 
-**78 usable destinations** including 3D oscillator math controls, FM operator levels and ratios, wavetable position, all VA layer shape/PW/detune/spread/level/ring/fold controls, both filter cutoffs/resonances/drives, LFO rates/amounts/sync rates, master volume/pan, arp gate/rate.
+**91 usable destinations** including 3D oscillator math controls, FM operator levels and ratios, wavetable position/warp, granular position/size/density/pitch/spray/freeze/body/level, all VA layer shape/PW/detune/spread/level/ring/fold controls, both filter cutoffs/resonances/drives, LFO rates/amounts/sync rates, master volume/pan, arp gate/rate.
 
 ### Arpeggiator
 
@@ -168,6 +173,7 @@ GLIESE_710/
 │   ├── oscillator-3d.md
 │   ├── 3D_OSC_math.md
 │   ├── fm-engine.md
+│   ├── granular-oscillator.md
 │   ├── modulation-matrix.md
 │   ├── filter.md
 │   ├── arpeggiator.md
@@ -178,7 +184,7 @@ GLIESE_710/
 │   ├── PluginProcessor.{h,cpp}
 │   ├── PluginEditor.{h,cpp}
 │   ├── Engine/
-│   │   ├── Oscillators/         ← Osc3D, FMAlgorithm, WavetableOsc, VAOscillator, KarplusStrong
+│   │   ├── Oscillators/         ← Osc3D, FMAlgorithm, WavetableOsc, GranularOsc, VAOscillator, KarplusStrong
 │   │   ├── Envelopes/
 │   │   ├── LFO/
 │   │   ├── Filter/
@@ -198,8 +204,8 @@ GLIESE_710/
 - [ ] FM algorithm graph visualization
 - [ ] 3D field visualizer panel (OpenGL)
 - [ ] KS per-voice stereo width (pair of delay lines with independent detune)
-- [ ] User wavetable import (drag-and-drop `.wav`)
-- [ ] FFT-based mipmap generation (WavetableOsc)
+- [ ] User wavetable import UI (drag-and-drop `.wav`)
+- [x] Runtime wavetable import path + FFT-based mipmap generation (WavetableOsc)
 - [ ] MPE support
 - [ ] GitHub Actions CI (macOS AU+VST3, Windows VST3, Linux LV2)
 - [ ] Factory preset bank

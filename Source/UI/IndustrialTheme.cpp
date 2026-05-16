@@ -78,6 +78,7 @@ juce::Colour accentForOsc(const juce::String& oscId)
     if (oscId == "va4") return juce::Colour(0xffff6a00);
     if (oscId == "wt") return juce::Colour(0xffffb000);
     if (oscId == "ks") return juce::Colour(0xff00ffcc);
+    if (oscId == "grain") return juce::Colour(0xff7dff7a);
     return accentMaster();
 }
 

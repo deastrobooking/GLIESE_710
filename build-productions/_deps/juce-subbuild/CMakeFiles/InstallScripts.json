@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-subbuild/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

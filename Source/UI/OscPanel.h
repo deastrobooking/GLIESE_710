@@ -22,7 +22,7 @@ private:
     juce::Colour accent;
 };
 
-// Panel for one oscillator section (3D, FM, WT, or VA)
+// Panel for one oscillator section (3D, WT, VA, KS, or granular)
 class OscPanel : public juce::Component
 {
 public:
@@ -47,6 +47,9 @@ private:
     // Engine enable / hard shutoff
     juce::ToggleButton enableButton;
     std::unique_ptr<BAtt> enableAtt;
+    juce::ToggleButton retrigButton;
+    std::unique_ptr<BAtt> retrigAtt;
+    bool hasRetrigButton = false;
 
     // Level + octave shared by all osc types
     juce::Slider levelSlider, octaveSlider;
@@ -56,21 +59,25 @@ private:
     juce::Slider adsrA, adsrD, adsrS, adsrR;
     std::unique_ptr<Att> attA, attD, attS, attR;
 
-    juce::ComboBox modeBoxA, modeBoxB;
-    std::unique_ptr<CAtt> modeAttA, modeAttB;
+    juce::ComboBox modeBoxA, modeBoxB, modeBoxC;
+    std::unique_ptr<CAtt> modeAttA, modeAttB, modeAttC;
 
     // Waveform preview — only created for VA panels
     std::unique_ptr<VAWaveDisplay> waveDisplay;
 
     juce::Slider extra1, extra2, extra3, extra4, extra5, extra6, extra7, extra8, extra9, extra10;
+    juce::Slider extra11, extra12, extra13, extra14, extra15, extra16, extra17, extra18, extra19, extra20;
     std::unique_ptr<Att> extraAtt1, extraAtt2, extraAtt3, extraAtt4, extraAtt5,
-                         extraAtt6, extraAtt7, extraAtt8, extraAtt9, extraAtt10;
+                         extraAtt6, extraAtt7, extraAtt8, extraAtt9, extraAtt10,
+                         extraAtt11, extraAtt12, extraAtt13, extraAtt14, extraAtt15,
+                         extraAtt16, extraAtt17, extraAtt18, extraAtt19, extraAtt20;
     int numExtraSliders = 0;
     int numModeBoxes = 0;
 
     juce::Label levelLabel, octaveLabel;
-    juce::Label modeALabel, modeBLabel;
-    std::array<juce::Label, 10> extraLabels;
+    juce::Label retrigLabel;
+    juce::Label modeALabel, modeBLabel, modeCLabel;
+    std::array<juce::Label, 20> extraLabels;
     std::array<juce::Label,  4> adsrLabels;  // A D S R
 
     void setupSlider(juce::Slider& slider, const juce::String& tooltip);

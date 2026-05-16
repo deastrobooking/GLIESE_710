@@ -3,6 +3,7 @@
 #include "../Source/Engine/Oscillators/Osc3D.h"
 #include "../Source/Engine/Oscillators/VAOscillator.h"
 #include "../Source/Engine/Oscillators/WavetableOsc.h"
+#include "../Source/Engine/Oscillators/GranularOsc.h"
 #include "../Source/Engine/Oscillators/FMOperator.h"
 #include "../Source/Engine/Oscillators/FMAlgorithm.h"
 #include "../Source/Engine/Filter/DualFilter.h"
@@ -438,13 +439,16 @@ TEST_CASE("DualFilter output is finite", "[filter]")
     df.prepare(48000.0);
 
     // Test all filter modes produce finite output
-    for (int mode = 0; mode < 12; ++mode)
+    for (int mode = 0; mode < static_cast<int>(FilterMode::NumModes); ++mode)
     {
         SingleFilter::Params p;
         p.mode      = static_cast<FilterMode>(mode);
         p.cutoff    = 1000.f;
         p.resonance = 0.5f;
         p.drive     = 0.3f;
+        p.morph     = 0.5f;
+        p.saturation = 0.6f;
+        p.mix       = 1.f;
         df.setFilterA(p);
         df.setRouting(FilterRouting::AOnly);
         df.noteOn();
@@ -456,6 +460,76 @@ TEST_CASE("DualFilter output is finite", "[filter]")
             REQUIRE(std::isfinite(L));
             REQUIRE(std::isfinite(R));
         }
+    }
+}
+
+TEST_CASE("DualFilter advanced models stay finite with oversampling", "[filter]")
+{
+    DualFilter df;
+    df.prepare(48000.0);
+    df.setRouting(FilterRouting::AOnly);
+    df.noteOn();
+
+    const FilterMode modes[] {
+        FilterMode::Ladder12,
+        FilterMode::Ladder18,
+        FilterMode::Ladder24,
+        FilterMode::SEMMorph,
+        FilterMode::MSDual,
+        FilterMode::Formant
+    };
+
+    for (auto mode : modes)
+    {
+        SingleFilter::Params p;
+        p.mode = mode;
+        p.cutoff = 850.f;
+        p.resonance = 0.78f;
+        p.drive = 0.65f;
+        p.morph = 0.35f;
+        p.saturation = 0.7f;
+        p.bassComp = 0.5f;
+        p.outputGainDb = 3.f;
+        p.mix = 1.f;
+        p.oversample = 2;
+        df.setFilterA(p);
+
+        for (int i = 0; i < 1024; ++i)
+        {
+            float s = (i == 0 ? 1.f : 0.f) + 0.25f * std::sin(2.f * 3.14159f * 220.f * (float)i / 48000.f);
+            auto [L, R] = df.processSample(s, s, 0.1f, -0.2f);
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            REQUIRE(std::abs(L) <= 1.5f);
+            REQUIRE(std::abs(R) <= 1.5f);
+        }
+    }
+}
+
+TEST_CASE("DualFilter wet dry mix can bypass filter output", "[filter]")
+{
+    DualFilter df;
+    df.prepare(48000.0);
+
+    SingleFilter::Params p;
+    p.mode = FilterMode::Ladder24;
+    p.cutoff = 200.f;
+    p.resonance = 0.8f;
+    p.drive = 0.8f;
+    p.mix = 0.f;
+    df.setFilterA(p);
+    df.setRouting(FilterRouting::AOnly);
+    df.noteOn();
+
+    for (int i = 0; i < 1024; ++i)
+        (void) df.processSample(0.f, 0.f, 0.f, 0.f);
+
+    for (int i = 0; i < 16; ++i)
+    {
+        const float s = i == 0 ? 0.75f : 0.f;
+        auto [L, R] = df.processSample(s, -s, 0.f, 0.f);
+        REQUIRE(L == Approx(s).margin(1.0e-5f));
+        REQUIRE(R == Approx(-s).margin(1.0e-5f));
     }
 }
 
@@ -504,6 +578,208 @@ TEST_CASE("WavetableOsc table index selects base table", "[wavetable]")
     REQUIRE(minusR == Approx(-1.f).margin(0.001f));
 }
 
+TEST_CASE("WavetableOsc warp modes stay finite and bounded", "[wavetable]")
+{
+    WavetableOsc wt;
+    wt.prepare(48000.0);
+    wt.setFrequency(880.f);
+    wt.setTablePosition(2, 0.35f);
+
+    for (int mode = 0; mode < (int)WavetableOsc::WarpMode::NumModes; ++mode)
+    {
+        WavetableOsc::Params p;
+        p.warpMode = static_cast<WavetableOsc::WarpMode>(mode);
+        p.warpAmount = 0.85f;
+        p.unison = 3;
+        p.detune = 0.4f;
+        p.spread = 0.75f;
+        p.positionSpread = 0.2f;
+        p.retrigger = true;
+        wt.setParams(p);
+        wt.reset();
+
+        for (int i = 0; i < 4096; ++i)
+        {
+            auto [l, r] = wt.processSample();
+            REQUIRE(std::isfinite(l));
+            REQUIRE(std::isfinite(r));
+            REQUIRE(l >= -1.55f);
+            REQUIRE(l <=  1.55f);
+            REQUIRE(r >= -1.55f);
+            REQUIRE(r <=  1.55f);
+        }
+    }
+}
+
+TEST_CASE("WavetableOsc phase offset controls initial phase", "[wavetable]")
+{
+    WavetableOsc wt;
+    wt.prepare(48000.0);
+    wt.setFrequency(440.f);
+    wt.setTablePosition(0, 0.f);
+
+    WavetableOsc::Params p;
+    p.phaseOffset = 0.25f;
+    wt.setParams(p);
+    wt.reset();
+
+    auto [l, r] = wt.processSample();
+    REQUIRE(l == Approx(1.f).margin(0.01f));
+    REQUIRE(r == Approx(1.f).margin(0.01f));
+}
+
+//──────────────────────────────────────────────────────────────────────────────
+TEST_CASE("GranularOsc cloud produces finite stereo grains", "[granular]")
+{
+    GranularOsc osc;
+    osc.prepare(48000.0);
+    osc.setFrequency(220.f);
+
+    GranularOsc::Params p;
+    p.triggerMode = GranularOsc::TriggerMode::FreeCloud;
+    p.window = GranularOsc::Window::Hann;
+    p.position = 0.42f;
+    p.sizeMs = 80.f;
+    p.density = 180.f;
+    p.pitchSemis = 0.f;
+    p.spray = 0.25f;
+    p.jitter = 0.1f;
+    p.panSpread = 1.f;
+    osc.setParams(p);
+    osc.noteOn(60, 0.8f);
+
+    float sumL = 0.f;
+    float sumR = 0.f;
+    for (int i = 0; i < 4096; ++i)
+    {
+        auto [L, R] = osc.processSample();
+        REQUIRE(std::isfinite(L));
+        REQUIRE(std::isfinite(R));
+        sumL += std::abs(L);
+        sumR += std::abs(R);
+    }
+
+    REQUIRE(sumL > 0.01f);
+    REQUIRE(sumR > 0.01f);
+    REQUIRE(osc.getActiveGrainCount() > 0);
+}
+
+TEST_CASE("GranularOsc modes and windows stay finite under heavy density", "[granular]")
+{
+    for (int mode = 0; mode < static_cast<int>(GranularOsc::TriggerMode::NumModes); ++mode)
+    {
+        for (int win = 0; win < static_cast<int>(GranularOsc::Window::NumWindows); ++win)
+        {
+            GranularOsc osc;
+            osc.prepare(48000.0);
+            osc.setFrequency(440.f);
+
+            GranularOsc::Params p;
+            p.triggerMode = static_cast<GranularOsc::TriggerMode>(mode);
+            p.window = static_cast<GranularOsc::Window>(win);
+            p.sizeMs = 20.f;
+            p.density = 900.f;
+            p.pitchSemis = 7.f;
+            p.spray = 0.8f;
+            p.jitter = 0.5f;
+            p.panSpread = 1.f;
+            p.reverseProb = 0.5f;
+            p.scanSpeed = 0.75f;
+            osc.setParams(p);
+            osc.noteOn(67, 1.f);
+
+            for (int i = 0; i < 2048; ++i)
+            {
+                auto [L, R] = osc.processSample();
+                REQUIRE(std::isfinite(L));
+                REQUIRE(std::isfinite(R));
+                REQUIRE(std::abs(L) <= 4.f);
+                REQUIRE(std::abs(R) <= 4.f);
+            }
+
+            REQUIRE(osc.getActiveGrainCount() <= GranularOsc::kMaxGrains);
+        }
+    }
+}
+
+TEST_CASE("GranularOsc physical body bypass preserves pure granular output", "[granular]")
+{
+    GranularOsc dry;
+    GranularOsc bypassed;
+    dry.prepare(48000.0);
+    bypassed.prepare(48000.0);
+    dry.setFrequency(330.f);
+    bypassed.setFrequency(330.f);
+
+    GranularOsc::Params p;
+    p.triggerMode = GranularOsc::TriggerMode::FreeCloud;
+    p.window = GranularOsc::Window::Gaussian;
+    p.sizeMs = 45.f;
+    p.density = 240.f;
+    p.spray = 0.35f;
+    p.jitter = 0.2f;
+    p.bodyType = GranularOsc::BodyType::Off;
+    p.bodyMix = 0.f;
+    dry.setParams(p);
+
+    p.bodyType = GranularOsc::BodyType::Glass;
+    p.bodyMix = 0.f;
+    bypassed.setParams(p);
+
+    dry.noteOn(64, 0.75f);
+    bypassed.noteOn(64, 0.75f);
+
+    for (int i = 0; i < 2048; ++i)
+    {
+        auto [dL, dR] = dry.processSample();
+        auto [bL, bR] = bypassed.processSample();
+        REQUIRE(bL == Approx(dL).margin(1.0e-6f));
+        REQUIRE(bR == Approx(dR).margin(1.0e-6f));
+    }
+}
+
+TEST_CASE("GranularOsc physical body types stay finite", "[granular]")
+{
+    for (int body = 0; body < static_cast<int>(GranularOsc::BodyType::NumBodyTypes); ++body)
+    {
+        GranularOsc osc;
+        osc.prepare(48000.0);
+        osc.setFrequency(196.f);
+
+        GranularOsc::Params p;
+        p.triggerMode = GranularOsc::TriggerMode::FreeCloud;
+        p.window = GranularOsc::Window::Tukey;
+        p.sizeMs = 35.f;
+        p.density = 420.f;
+        p.pitchSemis = -5.f;
+        p.spray = 0.55f;
+        p.jitter = 0.25f;
+        p.panSpread = 1.f;
+        p.bodyType = static_cast<GranularOsc::BodyType>(body);
+        p.bodyRootSemis = -12.f;
+        p.bodySize = 0.65f;
+        p.bodyDecay = 0.8f;
+        p.bodyDamping = 0.25f;
+        p.bodyBrightness = 0.85f;
+        p.bodyInharm = 0.6f;
+        p.bodyExcite = 0.9f;
+        p.bodyMix = body == 0 ? 0.f : 0.75f;
+        p.bodySpread = 1.f;
+        p.bodyModes = 32;
+        osc.setParams(p);
+        osc.noteOn(55, 1.f);
+
+        for (int i = 0; i < 4096; ++i)
+        {
+            auto [L, R] = osc.processSample();
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            REQUIRE(std::abs(L) <= 4.f);
+            REQUIRE(std::abs(R) <= 4.f);
+        }
+    }
+}
+
 TEST_CASE("FMOperator clamps shaping params and wraps high-rate phase", "[fm]")
 {
     FMOperator op;
@@ -538,6 +814,44 @@ TEST_CASE("FMOperator clamps shaping params and wraps high-rate phase", "[fm]")
     }
 
     REQUIRE(peak <= 2.f);
+}
+
+TEST_CASE("FMOperator spectral waves stay finite", "[fm]")
+{
+    FMOperator op;
+    op.prepare(48000.0);
+    op.setNoteFrequency(220.f);
+    op.setVelocity(1.f);
+    op.setMidiNote(60);
+
+    ADSREnvelope::Params ep;
+    ep.attackSec = 0.001f;
+    ep.decaySec = 0.001f;
+    ep.sustain = 1.f;
+    ep.releaseSec = 0.001f;
+    op.getEnvelope().setParams(ep);
+
+    for (int wave = 0; wave < (int)FMOperator::Wave::NumWaves; ++wave)
+    {
+        FMOperator::Params p;
+        p.waveShape = static_cast<FMOperator::Wave>(wave);
+        p.level = 1.f;
+        p.feedback = 0.35f;
+        p.spectralSkirt = 0.6f;
+        p.spectralResonance = 0.7f;
+        p.detune = 12.f;
+        op.setParams(p);
+        op.reset();
+        op.noteOn();
+
+        for (int i = 0; i < 2048; ++i)
+        {
+            float s = op.processSample(0.2f);
+            REQUIRE(std::isfinite(s));
+            REQUIRE(s >= -1.1f);
+            REQUIRE(s <=  1.1f);
+        }
+    }
 }
 
 TEST_CASE("FM operators require noteOn and then produce output", "[fm]")

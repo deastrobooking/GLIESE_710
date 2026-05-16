@@ -31,7 +31,7 @@ Multiple slots can share the same destination — their contributions accumulate
 | 17 | ChanPressure | 0 to +1 | MIDI channel pressure |
 | 18–25 | Macro1–Macro8 | 0 to +1 | Panel macro knobs |
 
-## Destinations (78 + None)
+## Destinations (91 + None)
 
 | ID | Destination | Base range | Modulation effect |
 |---|---|---|---|
@@ -70,6 +70,9 @@ Multiple slots can share the same destination — their contributions accumulate
 | 61–67 | VA3_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 3 |
 | 68–74 | VA4_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 4 |
 | 75–78 | LFO1–4_SyncRate | 0–10 | Adds to synced LFO rate index, scaled across the sync-rate table |
+| 79–80 | WT_Warp / WT_PD_Break | 0–1.0 | Wavetable warp amount and phase-distortion breakpoint |
+| 81–87 | Gran_Position/Size/Density/Pitch/Spray/Freeze/Level | — | Granular cloud position, timing, pitch, spread, freeze, and output level |
+| 88–91 | Gran_BodyMix/Size/Damping/Inharm | — | Optional granular physical body blend and material controls |
 
 ## Bipolar vs Unipolar
 

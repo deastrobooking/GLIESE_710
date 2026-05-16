@@ -26,13 +26,13 @@ public:
 
         auto centre = getLocalBounds().getCentreY();
         g.setColour(accent);
-        g.setFont(juce::Font(15.f, juce::Font::bold));
+        g.setFont(juce::Font(juce::FontOptions { 15.f, juce::Font::bold }));
         g.drawText("FM ENGINE " + juce::String(engineIndex + 1),
                    getLocalBounds().withY(centre - 20).withHeight(22),
                    juce::Justification::centred);
         g.setColour(accent.withAlpha(0.5f));
-        g.setFont(juce::Font(10.f));
-        g.drawText("Full controls \xe2\x86\x92 FM Engine tab",
+        g.setFont(juce::Font(juce::FontOptions { 10.f }));
+        g.drawText("Shared controls: FM Controls tab",
                    getLocalBounds().withY(centre + 6).withHeight(14),
                    juce::Justification::centred);
     }
@@ -53,11 +53,14 @@ private:
     std::unique_ptr<OscPanel>        osc3dPanel;
     std::unique_ptr<OscPanel>        oscWTPanel;
     std::unique_ptr<OscPanel>        ksPanel;
+    std::unique_ptr<OscPanel>        granularPanel;
     std::array<std::unique_ptr<OscPanel>, 8> vaPanels;  // VA1–8
     std::array<FMBlockView, 2>       fmBlockViews;      // inline FM placeholders
 
     // ── Engine slot bar ───────────────────────────────────────────────────────
     std::unique_ptr<EngineSlotBar>   slotBar;
+    std::array<juce::TextButton, 2>  oscPageButtons;
+    int                              activeOscPage = 0;
 
     // ── Engine config knobs (detune params, always visible) ───────────────────
     juce::Slider    eng3dDetuneSlider, engFMDetuneSlider;
@@ -82,14 +85,20 @@ private:
     juce::Slider    fmLevelSlider, fmOctaveSlider;
     juce::Slider    fmA, fmD, fmS, fmR;
     std::array<juce::Slider,   10> fmOpCoarseSliders;
+    std::array<juce::Slider,   10> fmOpFineSliders;
+    std::array<juce::Slider,   10> fmOpDetuneSliders;
     std::array<juce::Slider,   10> fmOpLevelSliders;
+    std::array<juce::Slider,   10> fmOpFeedbackSliders;
     std::array<juce::ComboBox, 10> fmOpWaveBoxes;
+    std::array<juce::Slider,   10> fmOpSkirtSliders;
+    std::array<juce::Slider,   10> fmOpResSliders;
     std::array<juce::Slider,   10> fmOpVelSliders;
     std::array<juce::Slider,   10> fmOpKeySliders;
     juce::Label     fmAlgoLabel, fmLvlLabel, fmOctLabel;
     std::array<juce::Label, 4>  fmAdsrLabels;
-    juce::Label     fmCoarseHdrLabel, fmLevelHdrLabel, fmWaveHdrLabel;
-    juce::Label     fmVelHdrLabel, fmKeyHdrLabel;
+    juce::Label     fmCoarseHdrLabel, fmFineHdrLabel, fmDetuneHdrLabel;
+    juce::Label     fmLevelHdrLabel, fmFeedbackHdrLabel, fmWaveHdrLabel;
+    juce::Label     fmSkirtHdrLabel, fmResHdrLabel, fmVelHdrLabel, fmKeyHdrLabel;
     std::array<juce::Label, 10> fmOpLabels;
     juce::ToggleButton fmEnableButton;
     juce::Label        fmEnableLabel;
@@ -107,8 +116,13 @@ private:
     std::unique_ptr<Att>  fmAAtt, fmDAtt, fmSAtt, fmRAtt;
     std::unique_ptr<BAtt> fmEnableAtt;
     std::array<std::unique_ptr<Att>,  10> fmOpCoarseAtts;
+    std::array<std::unique_ptr<Att>,  10> fmOpFineAtts;
+    std::array<std::unique_ptr<Att>,  10> fmOpDetuneAtts;
     std::array<std::unique_ptr<Att>,  10> fmOpLevelAtts;
+    std::array<std::unique_ptr<Att>,  10> fmOpFeedbackAtts;
     std::array<std::unique_ptr<CAtt>, 10> fmOpWaveAtts;
+    std::array<std::unique_ptr<Att>,  10> fmOpSkirtAtts;
+    std::array<std::unique_ptr<Att>,  10> fmOpResAtts;
     std::array<std::unique_ptr<Att>,  10> fmOpVelAtts;
     std::array<std::unique_ptr<Att>,  10> fmOpKeyAtts;
     std::unique_ptr<Att>  eng3dDetuneAtt, engFMDetuneAtt;
@@ -124,6 +138,7 @@ private:
     void buildEngineTab();
     void buildEffectsTab();
     void layoutOscillatorsTab();  // called on resize + slot changes
+    void setActiveOscPage(int page);
     void applyLookAndFeel(juce::Component&);
     void clearLookAndFeel(juce::Component&);
     void setupKnob(juce::Slider&, const juce::String& paramId,
