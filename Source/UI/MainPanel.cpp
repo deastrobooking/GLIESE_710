@@ -260,9 +260,11 @@ private:
 
 //──────────────────────────────────────────────────────────────────────────────
 MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a,
-                     TerrainImportCallback terrainImportCallback)
+                     TerrainImportCallback terrainImportCallback,
+                     ModStepSequencerPanel::CurrentStepProvider stepProvider)
     : apvts(a),
-      terrainImport(std::move(terrainImportCallback))
+      terrainImport(std::move(terrainImportCallback)),
+      modStepProvider(std::move(stepProvider))
 {
     tabs.setTabBarDepth(28);
     tabs.setOutline(0);
@@ -278,6 +280,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a,
     buildOscillatorsTab();
     buildEngineTab();
     buildEffectsTab();
+    buildSequencerTab();
 
     // ── Master controls ───────────────────────────────────────────────────────
     masterLabel.setText("MASTER", juce::dontSendNotification);
@@ -423,6 +426,15 @@ void MainPanel::buildEffectsTab()
     effectsTab->addAndMakeVisible(*lfoPanel);
 
     tabs.addTab("FILTER / MOD / ARP", kBg, effectsTab, true);
+}
+
+//──────────────────────────────────────────────────────────────────────────────
+void MainPanel::buildSequencerTab()
+{
+    sequencerTab = new juce::Component();
+    modSequencerPanel = std::make_unique<ModStepSequencerPanel>(apvts, modStepProvider);
+    sequencerTab->addAndMakeVisible(*modSequencerPanel);
+    tabs.addTab("MOD SEQ", kBg, sequencerTab, true);
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -781,4 +793,7 @@ void MainPanel::resized()
         lfoPanel->setBounds(tabArea.removeFromRight(lfoW).reduced(3));
         modPanel->setBounds(tabArea.reduced(3));
     }
+
+    if (sequencerTab && modSequencerPanel)
+        modSequencerPanel->setBounds(sequencerTab->getLocalBounds().reduced(6));
 }

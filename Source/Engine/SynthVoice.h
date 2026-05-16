@@ -34,7 +34,8 @@ public:
     int  getVoiceAge() const { return age; }
 
     void renderBlock(juce::AudioBuffer<float>& buffer, int startSample, int numSamples,
-                     juce::AudioProcessorValueTreeState& apvts);
+                     juce::AudioProcessorValueTreeState& apvts,
+                     const ModValues& globalModDests);
 
     void setMidiCC(ModSource src, float value);
     void setHostBPM(double bpm);

@@ -3,6 +3,7 @@
 #include "OscPanel.h"
 #include "FilterPanel.h"
 #include "ModMatrixPanel.h"
+#include "ModStepSequencerPanel.h"
 #include "ArpPanel.h"
 #include "LFOPanel.h"
 #include "EngineSlotBar.h"
@@ -44,7 +45,8 @@ public:
     using TerrainImportCallback = OscPanel::TerrainImportCallback;
 
     explicit MainPanel(juce::AudioProcessorValueTreeState& apvts,
-                       TerrainImportCallback terrainImport = {});
+                       TerrainImportCallback terrainImport = {},
+                       ModStepSequencerPanel::CurrentStepProvider modStepProvider = {});
     ~MainPanel() override;
     void paint(juce::Graphics&) override;
     void resized() override;
@@ -52,6 +54,7 @@ public:
 private:
     juce::AudioProcessorValueTreeState& apvts;
     TerrainImportCallback terrainImport;
+    ModStepSequencerPanel::CurrentStepProvider modStepProvider;
 
     // ── Oscillator panels (one independent parameter set per engine slot) ────
     std::array<std::unique_ptr<OscPanel>, 8> osc3dPanels;
@@ -74,6 +77,7 @@ private:
     // ── Filter / Mod / Arp panels ─────────────────────────────────────────────
     std::unique_ptr<FilterPanel>     filterPanel;
     std::unique_ptr<ModMatrixPanel>  modPanel;
+    std::unique_ptr<ModStepSequencerPanel> modSequencerPanel;
     std::unique_ptr<ArpPanel>        arpPanel;
     std::unique_ptr<LFOPanel>        lfoPanel;
 
@@ -135,6 +139,7 @@ private:
     juce::Component* oscillatorsTab = nullptr;
     juce::Component* engineTab      = nullptr;
     juce::Component* effectsTab     = nullptr;
+    juce::Component* sequencerTab   = nullptr;
 
     juce::TabbedComponent tabs { juce::TabbedButtonBar::TabsAtTop };
     IndustrialTheme::IndustrialLookAndFeel lookAndFeel;
@@ -142,6 +147,7 @@ private:
     void buildOscillatorsTab();
     void buildEngineTab();
     void buildEffectsTab();
+    void buildSequencerTab();
     void layoutOscillatorsTab();  // called on resize + slot changes
     void setActiveOscPage(int page);
     void applyLookAndFeel(juce::Component&);

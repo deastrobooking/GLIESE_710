@@ -23,6 +23,7 @@ void SynthEngine::prepare(const juce::dsp::ProcessSpec& spec)
 {
     sampleRate = spec.sampleRate;
     for (auto& v : voices) v.prepare(sampleRate);
+    modSequencer.prepare(sampleRate);
     arp.prepare(sampleRate);
     arpMidi.ensureSize(4096);
     renderMidi.ensureSize(4096);
@@ -31,6 +32,7 @@ void SynthEngine::prepare(const juce::dsp::ProcessSpec& spec)
 void SynthEngine::reset()
 {
     for (auto& v : voices) v.reset();
+    modSequencer.reset();
     arp.reset();
     feedbackL = feedbackR = 0.f;
     ageSampleL = ageSampleR = 0.f;
@@ -40,14 +42,21 @@ void SynthEngine::reset()
 void SynthEngine::setAPVTS(juce::AudioProcessorValueTreeState* a)
 {
     apvts = a;
+    modSequencer.setAPVTS(a);
     buildParamCache();
 }
 
 void SynthEngine::setHostBPM(double bpm)
 {
+    modSequencer.setHostBPM(bpm);
     arp.setHostBPM(bpm);
     for (auto& v : voices)
         v.setHostBPM(bpm);
+}
+
+void SynthEngine::setHostPosition(std::optional<double> ppqPosition)
+{
+    modSequencer.setHostPosition(ppqPosition);
 }
 
 void SynthEngine::buildParamCache()
@@ -214,7 +223,7 @@ void SynthEngine::renderVoices(juce::AudioBuffer<float>& buffer, int startSample
 
     for (auto& v : voices)
         if (v.isActive())
-            v.renderBlock(buffer, startSample, numSamples, *apvts);
+            v.renderBlock(buffer, startSample, numSamples, *apvts, modSequencer.getOutput());
 }
 
 void SynthEngine::renderTimedMidi(juce::AudioBuffer<float>& buffer,
@@ -246,6 +255,8 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
     if (!apvts) return;
     if (!arpParams.built)
         buildParamCache();
+
+    modSequencer.processBlock(numSamples);
 
     bool arpOn = pB(arpParams.on);
 

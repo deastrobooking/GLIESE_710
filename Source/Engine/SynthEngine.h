@@ -2,7 +2,9 @@
 #include <JuceHeader.h>
 #include "SynthVoice.h"
 #include "Arpeggiator/Arpeggiator.h"
+#include "Modulation/StepSequencerMod.h"
 #include <array>
+#include <optional>
 
 class SynthEngine
 {
@@ -13,6 +15,8 @@ public:
     void reset();
     void setAPVTS(juce::AudioProcessorValueTreeState* apvts);
     void setHostBPM(double bpm);
+    void setHostPosition(std::optional<double> ppqPosition);
+    int getModSequencerCurrentStep() const noexcept { return modSequencer.getCurrentStep(); }
 
     void renderNextBlock(juce::AudioBuffer<float>& buffer,
                          juce::MidiBuffer& midiMessages,
@@ -57,6 +61,7 @@ private:
     void processMasterEffects(juce::AudioBuffer<float>& buffer, int startSample, int numSamples);
 
     std::array<SynthVoice, kNumVoices> voices;
+    StepSequencerMod modSequencer;
     Arpeggiator arp;
     juce::MidiBuffer arpMidi;
     juce::MidiBuffer renderMidi;

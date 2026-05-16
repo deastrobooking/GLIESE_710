@@ -869,7 +869,8 @@ void SynthVoice::buildModSources()
 
 //──────────────────────────────────────────────────────────────────────────────
 void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, int numSamples,
-                              juce::AudioProcessorValueTreeState& apvts)
+                              juce::AudioProcessorValueTreeState& apvts,
+                              const ModValues& globalModDests)
 {
     if (!isActive()) return;
     static constexpr float kSilent = 1.0e-5f;
@@ -910,6 +911,8 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
 
     buildModSources();
     modMatrix.process(modSources, modDests);
+    for (int i = 0; i < (int) ModDest::NumDests; ++i)
+        modDests.dests[i] = juce::jlimit(-4.0f, 4.0f, modDests.dests[i] + globalModDests.dests[i]);
     syncParams();
 
     // ── Level / enable flags ──────────────────────────────────────────────────

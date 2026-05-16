@@ -60,6 +60,7 @@ PRIVATE
     Source/Engine/LFO/LFOEngine.cpp
     Source/Engine/Filter/DualFilter.cpp
     Source/Engine/Modulation/ModMatrix.cpp
+    Source/Engine/Modulation/StepSequencerMod.cpp
     Source/Engine/Arpeggiator/Arpeggiator.cpp
     Source/Presets/PresetManager.cpp
     Source/UI/MainPanel.cpp
@@ -67,6 +68,7 @@ PRIVATE
     Source/UI/OscPanel.cpp
     Source/UI/FilterPanel.cpp
     Source/UI/ModMatrixPanel.cpp
+    Source/UI/ModStepSequencerPanel.cpp
     Source/UI/ArpPanel.cpp
     Source/UI/LFOPanel.cpp
     Source/UI/EngineSlotBar.cpp

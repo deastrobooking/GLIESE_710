@@ -1,5 +1,9 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "Engine/Modulation/ModNames.h"
+#include "Engine/Modulation/StepSequencerMod.h"
+#include <cmath>
+#include <optional>
 
 using APVTS = juce::AudioProcessorValueTreeState;
 using RAP   = juce::RangedAudioParameter;
@@ -372,39 +376,8 @@ static APVTS::ParameterLayout buildLayout()
     }
 
     // ── Modulation Matrix (32 slots) ──────────────────────────────────────────
-    juce::StringArray modSources {
-        "None",
-        "LFO1","LFO2","LFO3","LFO4",
-        "Env_Master","Env_3D","Env_FM","Env_WT","Env_VA","Env_FilterA","Env_FilterB",
-        "Velocity","Aftertouch","ModWheel","PitchBend","CC74","ChanPressure",
-        "Macro1","Macro2","Macro3","Macro4","Macro5","Macro6","Macro7","Macro8"
-    };
-
-    juce::StringArray modDests {
-        "None",
-        "OscPitch_All",
-        "Osc3D_Radius","Osc3D_Depth","Osc3D_Warp","Osc3D_Chaos","Osc3D_Morph","Osc3D_Level",
-        "FM_Op0_Level","FM_Op1_Level","FM_Op2_Level","FM_Op3_Level","FM_Op4_Level",
-        "FM_Op5_Level","FM_Op6_Level","FM_Op7_Level","FM_Op8_Level","FM_Op9_Level",
-        "FM_Op0_Ratio","FM_Op1_Ratio","FM_Op2_Ratio","FM_Op3_Ratio","FM_Op4_Ratio",
-        "WT_Position","WT_Level",
-        "VA_PW","VA_Detune","VA_Spread","VA_Level",
-        "FilterA_Cutoff","FilterA_Resonance","FilterA_Drive",
-        "FilterB_Cutoff","FilterB_Resonance","FilterB_Drive",
-        "LFO1_Rate","LFO2_Rate","LFO3_Rate","LFO4_Rate",
-        "LFO1_Amount","LFO2_Amount","LFO3_Amount","LFO4_Amount",
-        "Master_Volume","Master_Pan",
-        "Arp_Gate","Arp_Rate",
-        "Osc3D_FieldFreq","Osc3D_ZRatio","Osc3D_Fold","Osc3D_Drive",
-        "VA_Shape","VA_Ring","VA_Fold",
-        "VA2_Shape","VA2_PW","VA2_Detune","VA2_Spread","VA2_Level","VA2_Ring","VA2_Fold",
-        "VA3_Shape","VA3_PW","VA3_Detune","VA3_Spread","VA3_Level","VA3_Ring","VA3_Fold",
-        "VA4_Shape","VA4_PW","VA4_Detune","VA4_Spread","VA4_Level","VA4_Ring","VA4_Fold",
-        "LFO1_SyncRate","LFO2_SyncRate","LFO3_SyncRate","LFO4_SyncRate",
-        "WT_Warp","WT_PD_Break",
-        "Gran_Position","Gran_Size","Gran_Density","Gran_Pitch","Gran_Spray","Gran_Freeze","Gran_Level",
-        "Gran_BodyMix","Gran_BodySize","Gran_BodyDamping","Gran_BodyInharm"
-    };
+    juce::StringArray modSources = ModNames::sourceParameterNames();
+    juce::StringArray modDests = ModNames::destParameterNames();
 
     for (int i = 0; i < 32; ++i)
     {
@@ -418,6 +391,49 @@ static APVTS::ParameterLayout buildLayout()
     // Macros
     for (int i = 1; i <= 8; ++i)
         addFloat("macro" + juce::String(i), "Macro " + juce::String(i), 0.0f, 1.0f, 0.0f);
+
+    // ── Four-lane modulation step sequencer ──────────────────────────────────
+    addFloat(StepSequencerMod::kDepthParamID, "Alien Sequencer", 0.0f, 1.0f, 0.45f);
+    addChoice(StepSequencerMod::kDivisionParamID, "Mod Seq Division",
+              { "1/4", "1/8", "1/16", "1/32", "1/64", "1/8T", "1/16T", "1/8D", "1/16D" }, 2);
+    addChoice(StepSequencerMod::kSubdivisionParamID, "Granular Subdivision",
+              { "x1", "x2", "x4", "x8" }, 2);
+    addChoice(StepSequencerMod::kLengthParamID, "Mod Seq Length",
+              { "8", "16", "24", "32" }, 1);
+
+    const int defaultTargets[] = {
+        (int) ModDest::FilterA_Cutoff,
+        (int) ModDest::FilterA_Resonance,
+        (int) ModDest::WT_Position,
+        (int) ModDest::Gran_Freeze
+    };
+
+    for (int lane = 0; lane < StepSequencerMod::kNumLanes; ++lane)
+    {
+        addChoice(StepSequencerMod::laneTargetParamID(lane),
+                  "SEQ " + juce::String(lane + 1) + " Target",
+                  modDests,
+                  defaultTargets[lane]);
+
+        for (int step = 0; step < StepSequencerMod::kNumSteps; ++step)
+        {
+            float value = 0.0f;
+            if (lane == 0)
+                value = 0.5f + 0.5f * std::sin(((float) step / (float) StepSequencerMod::kNumSteps)
+                                                * juce::MathConstants<float>::twoPi);
+            else if (lane == 1)
+                value = step % 4 == 0 ? 0.9f : 0.18f;
+            else if (lane == 2)
+                value = (float) ((step * 5 + 3) % StepSequencerMod::kNumSteps)
+                      / (float) (StepSequencerMod::kNumSteps - 1);
+            else
+                value = step % 5 == 0 ? 1.0f : 0.1f;
+
+            addFloat(StepSequencerMod::stepParamID(lane, step),
+                     "SEQ " + juce::String(lane + 1) + " Step " + juce::String(step + 1),
+                     0.0f, 1.0f, value);
+        }
+    }
 
     // ── Arpeggiator ───────────────────────────────────────────────────────────
     juce::StringArray arpPatterns { "Up","Down","Up-Down","Down-Up","As Played","Random","Random Latch" };
@@ -469,10 +485,19 @@ void GLIESE710AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     juce::ScopedNoDenormals noDenormals;
     buffer.clear();
 
+    std::optional<double> ppqPosition;
     if (auto* playHead = getPlayHead())
+    {
         if (auto position = playHead->getPosition())
+        {
             if (auto bpm = position->getBpm())
                 synthEngine.setHostBPM(*bpm);
+            if (auto ppq = position->getPpqPosition())
+                ppqPosition = *ppq;
+        }
+    }
+
+    synthEngine.setHostPosition(ppqPosition);
 
     synthEngine.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 }

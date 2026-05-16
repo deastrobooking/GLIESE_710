@@ -1,37 +1,6 @@
 #include "ModMatrixPanel.h"
 #include "IndustrialTheme.h"
-
-static const juce::StringArray kSourceNames {
-    "None",
-    "LFO1","LFO2","LFO3","LFO4",
-    "Env Master","Env 3D","Env FM","Env WT","Env VA","Env Filt A","Env Filt B",
-    "Velocity","Aftertouch","Mod Wheel","Pitch Bend","CC74","Chan Press",
-    "Macro1","Macro2","Macro3","Macro4","Macro5","Macro6","Macro7","Macro8"
-};
-
-static const juce::StringArray kDestNames {
-    "None",
-    "Pitch All",
-    "3D Radius","3D Depth","3D Warp","3D Chaos","3D Morph","3D Level",
-    "FM Op0 Lvl","FM Op1 Lvl","FM Op2 Lvl","FM Op3 Lvl","FM Op4 Lvl",
-    "FM Op5 Lvl","FM Op6 Lvl","FM Op7 Lvl","FM Op8 Lvl","FM Op9 Lvl",
-    "FM Op0 Rat","FM Op1 Rat","FM Op2 Rat","FM Op3 Rat","FM Op4 Rat",
-    "WT Position","WT Level",
-    "VA PW","VA Detune","VA Spread","VA Level",
-    "Filt A Cut","Filt A Res","Filt A Drv",
-    "Filt B Cut","Filt B Res","Filt B Drv",
-    "LFO1 Rate","LFO2 Rate","LFO3 Rate","LFO4 Rate",
-    "LFO1 Amt","LFO2 Amt","LFO3 Amt","LFO4 Amt",
-    "Master Vol","Master Pan",
-    "Arp Gate","Arp Rate",
-    "3D FieldFreq","3D Z Ratio","3D Fold","3D Drive",
-    "VA Shape","VA Ring","VA Fold",
-    "VA2 Shape","VA2 PW","VA2 Detune","VA2 Spread","VA2 Level","VA2 Ring","VA2 Fold",
-    "VA3 Shape","VA3 PW","VA3 Detune","VA3 Spread","VA3 Level","VA3 Ring","VA3 Fold",
-    "VA4 Shape","VA4 PW","VA4 Detune","VA4 Spread","VA4 Level","VA4 Ring","VA4 Fold",
-    "LFO1 SyncRt","LFO2 SyncRt","LFO3 SyncRt","LFO4 SyncRt",
-    "WT Warp","WT PD Brk"
-};
+#include "../Engine/Modulation/ModNames.h"
 
 ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
 {
@@ -45,14 +14,14 @@ ModMatrixPanel::ModMatrixPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
         auto& row = rows[(size_t) i];
         juce::String pfx = "mod" + juce::String(i) + "_";
 
-        row.source.addItemList(kSourceNames, 1);
+        row.source.addItemList(ModNames::sourceDisplayNames(), 1);
         row.source.setSelectedId(1, juce::dontSendNotification);
         IndustrialTheme::styleCombo(row.source, accent);
         rowContainer.addAndMakeVisible(row.source);
         row.srcAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
             apvts, pfx + "source", row.source);
 
-        row.dest.addItemList(kDestNames, 1);
+        row.dest.addItemList(ModNames::destDisplayNames(), 1);
         row.dest.setSelectedId(1, juce::dontSendNotification);
         IndustrialTheme::styleCombo(row.dest, accent);
         rowContainer.addAndMakeVisible(row.dest);

@@ -34,6 +34,7 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     bool importTerrainHeightmap(int terrainIndex, const juce::File& file);
+    int getModSequencerCurrentStep() const noexcept { return synthEngine.getModSequencerCurrentStep(); }
 
     juce::AudioProcessorValueTreeState apvts;
     PresetManager presetManager;
