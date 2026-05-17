@@ -39,6 +39,22 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --config Release --parallel
 ```
 
+### Automated Production Build
+
+For the normal local loop, use the build script instead of manually copying plugin bundles:
+
+```bash
+scripts/build-plugin.zsh
+```
+
+To build, test, install AU/VST3 into the macOS system plugin folders, ad-hoc sign them, and verify the installed bundles:
+
+```bash
+scripts/build-plugin.zsh --install-system
+```
+
+Use `--install-user` to install into `~/Library/Audio/Plug-Ins` instead. See [docs/build-targets.md](docs/build-targets.md).
+
 ### Production Build Folder
 
 ```bash

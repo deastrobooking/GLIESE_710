@@ -1,0 +1,44 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "production",
+      "displayName": "Production Release",
+      "description": "Release build with tests enabled; plugin installation is handled by scripts/build-plugin.zsh.",
+      "binaryDir": "${sourceDir}/build-productions",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "GLIESE_BUILD_TESTS": "ON",
+        "GLIESE_COPY_PLUGIN_AFTER_BUILD": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "plugin",
+      "configurePreset": "production",
+      "description": "Build all GLIESE 710 plugin formats.",
+      "targets": [
+        "GLIESE_710_All"
+      ]
+    },
+    {
+      "name": "tests",
+      "configurePreset": "production",
+      "description": "Build the GLIESE 710 unit test binary.",
+      "targets": [
+        "GLIESE_Tests"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "tests",
+      "configurePreset": "production",
+      "description": "Run all GLIESE 710 tests.",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

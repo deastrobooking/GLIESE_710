@@ -25,6 +25,43 @@ cmake --build build --target GLIESE_710_Standalone --config Release
 
 ## macOS — AU + VST3
 
+Recommended local automation:
+
+```bash
+scripts/build-plugin.zsh --install-system
+```
+
+That command:
+- configures `build-productions` in Release mode with tests enabled
+- builds `GLIESE_710_All`
+- builds and runs `GLIESE_Tests`
+- copies the AU and VST3 into `/Library/Audio/Plug-Ins`
+- ad-hoc signs the installed AU/VST3
+- verifies the installed signatures
+
+For a non-system install:
+
+```bash
+scripts/build-plugin.zsh --install-user
+```
+
+For build/test only:
+
+```bash
+scripts/build-plugin.zsh
+```
+
+The equivalent preset commands are:
+
+```bash
+cmake --preset production
+cmake --build --preset plugin --parallel
+cmake --build --preset tests --parallel
+ctest --preset tests
+```
+
+Manual build path:
+
 ```bash
 cmake -B build -G Xcode
 cmake --build build --config Release
