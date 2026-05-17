@@ -376,9 +376,9 @@ ModStepSequencerPanel::ModStepSequencerPanel(juce::AudioProcessorValueTreeState&
     depthAtt = std::make_unique<Att>(apvts, StepSequencerMod::kDepthParamID, depthSlider);
 
     loopLengthSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-    loopLengthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 42, 14);
+    loopLengthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 48, 16);
     loopLengthSlider.setNumDecimalPlacesToDisplay(0);
-    loopLengthSlider.setTooltip("Active mod sequencer loop length");
+    loopLengthSlider.setTooltip("Performance loop length: active mod sequencer steps");
     IndustrialTheme::styleSlider(loopLengthSlider, accent);
     addAndMakeVisible(loopLengthSlider);
     loopLengthAtt = std::make_unique<Att>(apvts, StepSequencerMod::kLoopLengthParamID, loopLengthSlider);
@@ -405,10 +405,10 @@ ModStepSequencerPanel::ModStepSequencerPanel(juce::AudioProcessorValueTreeState&
     };
 
     makeLabel(depthLabel, "DEPTH", accent);
-    makeLabel(loopLengthLabel, "LOOP", accent);
+    makeLabel(loopLengthLabel, "LOOP LEN", accent);
     makeLabel(divisionLabel, "DIVISION", accent);
     makeLabel(subdivisionLabel, "SUBDIV", accent);
-    makeLabel(lengthLabel, "LENGTH", accent);
+    makeLabel(lengthLabel, "PATTERN LEN", accent);
     makeLabel(segmentLabel, "SEGMENT", accent);
 
     const juce::StringArray lengthNames { "8", "16", "24", "32" };
@@ -482,20 +482,20 @@ void ModStepSequencerPanel::resized()
     titleLabel.setBounds(area.removeFromTop(22));
     area.removeFromTop(5);
 
-    auto controlBand = area.removeFromTop(64);
+    auto controlBand = area.removeFromTop(78);
     auto labelRow = controlBand.removeFromTop(14);
     depthLabel.setBounds(labelRow.removeFromLeft(200));
     labelRow.removeFromLeft(8);
-    loopLengthLabel.setBounds(labelRow.removeFromLeft(58));
+    loopLengthLabel.setBounds(labelRow.removeFromLeft(78));
     labelRow.removeFromLeft(8);
     divisionLabel.setBounds(labelRow.removeFromLeft(104));
     labelRow.removeFromLeft(8);
     subdivisionLabel.setBounds(labelRow.removeFromLeft(84));
 
-    auto controlRow = controlBand.removeFromTop(44);
+    auto controlRow = controlBand.removeFromTop(58);
     depthSlider.setBounds(controlRow.removeFromLeft(200));
     controlRow.removeFromLeft(8);
-    loopLengthSlider.setBounds(controlRow.removeFromLeft(58));
+    loopLengthSlider.setBounds(controlRow.removeFromLeft(78));
     controlRow.removeFromLeft(8);
     divisionBox.setBounds(controlRow.removeFromLeft(104).withHeight(26));
     controlRow.removeFromLeft(8);
