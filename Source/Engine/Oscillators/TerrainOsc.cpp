@@ -31,6 +31,9 @@ void TerrainOsc::setParams(const Params& newParams)
     params.centerY = wrap01(params.centerY);
     params.radiusX = juce::jlimit(0.f, 0.5f, params.radiusX);
     params.radiusY = juce::jlimit(0.f, 0.5f, params.radiusY);
+    params.zoom = juce::jlimit(1.f, 16.f, params.zoom);
+    params.rotation = wrap01(params.rotation);
+    params.pathSize = juce::jlimit(0.f, 2.f, params.pathSize);
     params.ratioX = juce::jlimit(0.125f, 8.f, params.ratioX);
     params.ratioY = juce::jlimit(0.125f, 8.f, params.ratioY);
     params.scanRate = juce::jlimit(0.05f, 8.f, params.scanRate);
@@ -43,7 +46,10 @@ void TerrainOsc::setParams(const Params& newParams)
     params.gain = juce::jlimit(0.f, 2.f, params.gain);
 
     if (std::abs(params.smoothing - lastSmoothing) > 0.001f)
+    {
         rebuildBlurredTerrain();
+        lastSmoothing = params.smoothing;
+    }
 
     updateDerived();
 }
@@ -78,37 +84,39 @@ std::pair<float, float> TerrainOsc::computePath(float t)
     const float twoPi = juce::MathConstants<float>::twoPi;
     const float aX = twoPi * t * params.ratioX;
     const float aY = twoPi * t * params.ratioY;
-    float x = params.centerX;
-    float y = params.centerY;
+    const float radiusX = params.radiusX * params.pathSize;
+    const float radiusY = params.radiusY * params.pathSize;
+    float x = 0.f;
+    float y = 0.f;
 
     switch (params.pathMode)
     {
         case PathMode::Circle:
-            x += params.radiusX * std::cos(twoPi * t);
-            y += params.radiusX * std::sin(twoPi * t);
+            x = radiusX * std::cos(twoPi * t);
+            y = radiusX * std::sin(twoPi * t);
             break;
 
         case PathMode::Ellipse:
-            x += params.radiusX * std::cos(aX);
-            y += params.radiusY * std::sin(aY);
+            x = radiusX * std::cos(aX);
+            y = radiusY * std::sin(aY);
             break;
 
         case PathMode::Lissajous:
-            x += params.radiusX * std::sin(aX + twoPi * 0.125f);
-            y += params.radiusY * std::sin(aY);
+            x = radiusX * std::sin(aX + twoPi * 0.125f);
+            y = radiusY * std::sin(aY);
             break;
 
         case PathMode::Spiral:
         {
             const float r = 1.f - params.spiral + params.spiral * t;
-            x += params.radiusX * r * std::cos(aX);
-            y += params.radiusY * r * std::sin(aY);
+            x = radiusX * r * std::cos(aX);
+            y = radiusY * r * std::sin(aY);
             break;
         }
 
         case PathMode::Line:
-            x += params.radiusX * (2.f * t - 1.f);
-            y += params.radiusY * 0.2f * std::sin(aY);
+            x = radiusX * (2.f * t - 1.f);
+            y = radiusY * 0.2f * std::sin(aY);
             break;
 
         case PathMode::OrbitNoise:
@@ -116,8 +124,8 @@ std::pair<float, float> TerrainOsc::computePath(float t)
             const float nX = valueNoise(t * params.ratioX * 4.f + 11.7f, orbitStateX);
             const float nY = valueNoise(t * params.ratioY * 4.f + 23.1f, orbitStateY);
             const float orbit = twoPi * t;
-            x += params.radiusX * (0.72f * std::cos(orbit) + 0.56f * nX);
-            y += params.radiusY * (0.72f * std::sin(orbit * 1.21f) + 0.56f * nY);
+            x = radiusX * (0.72f * std::cos(orbit) + 0.56f * nX);
+            y = radiusY * (0.72f * std::sin(orbit * 1.21f) + 0.56f * nY);
             orbitStateX = wrap01(orbitStateX + 0.000073f + params.spiral * 0.0002f);
             orbitStateY = wrap01(orbitStateY + 0.000091f + params.spiral * 0.00017f);
             break;
@@ -128,7 +136,14 @@ std::pair<float, float> TerrainOsc::computePath(float t)
             break;
     }
 
-    return { wrap01(x), wrap01(y) };
+    const float angle = params.rotation * twoPi;
+    const float c = std::cos(angle);
+    const float s = std::sin(angle);
+    const float rotatedX = x * c - y * s;
+    const float rotatedY = x * s + y * c;
+
+    return { wrap01(params.centerX + rotatedX / params.zoom),
+             wrap01(params.centerY + rotatedY / params.zoom) };
 }
 
 bool TerrainOsc::setHeightmapFromImage(const juce::Image& image)

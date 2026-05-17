@@ -389,15 +389,15 @@ void MainPanel::buildOscillatorsTab()
     {
         l.setText(text, juce::dontSendNotification);
         IndustrialTheme::styleLabel(l, IndustrialTheme::accentMaster(), 9.f);
-        oscillatorsTab->addAndMakeVisible(l);
+        addAndMakeVisible(l);
     };
     makeEngLabel(engDetuneLabels[0], "3D DTN");
     makeEngLabel(engDetuneLabels[1], "FM DTN");
 
     setupKnob(eng3dDetuneSlider, "engine_3d_detune", "3D Ensemble Detune",
-              eng3dDetuneAtt, *oscillatorsTab, IndustrialTheme::accentMaster());
+              eng3dDetuneAtt, *this, IndustrialTheme::accentMaster());
     setupKnob(engFMDetuneSlider, "engine_fm_detune", "FM Dual Engine Detune (cents)",
-              engFMDetuneAtt, *oscillatorsTab, IndustrialTheme::accentMaster());
+              engFMDetuneAtt, *this, IndustrialTheme::accentMaster());
 
     tabs.addTab("OSCILLATORS", kBg, oscillatorsTab, true);
 }
@@ -501,20 +501,6 @@ void MainPanel::layoutOscillatorsTab()
     {
         oscPageButtons[(size_t)i].setToggleState(i == activeOscPage, juce::dontSendNotification);
         oscPageButtons[(size_t)i].setBounds(pageRow.removeFromLeft(pageButtonW).reduced(2));
-    }
-    tabArea.removeFromTop(4);
-
-    // Detune knobs — small strip below slot bar
-    const int kDetuneH = 72;
-    auto detuneStrip = tabArea.removeFromTop(kDetuneH);
-    {
-        auto labelRow = detuneStrip.removeFromTop(12);
-        engDetuneLabels[0].setBounds(labelRow.removeFromLeft(70));
-        labelRow.removeFromLeft(4);
-        engDetuneLabels[1].setBounds(labelRow.removeFromLeft(70));
-        eng3dDetuneSlider.setBounds(detuneStrip.removeFromLeft(70));
-        detuneStrip.removeFromLeft(4);
-        engFMDetuneSlider.setBounds(detuneStrip.removeFromLeft(70));
     }
     tabArea.removeFromTop(4);
 
@@ -704,6 +690,10 @@ void MainPanel::resized()
     positionMaster(masterLabels[10], masterD, 60);
     positionMaster(masterLabels[11], masterS, 60);
     positionMaster(masterLabels[12], masterR, 60);
+    masterLabelRow.removeFromLeft(10);
+    masterKnobRow .removeFromLeft(10);
+    positionMaster(engDetuneLabels[0], eng3dDetuneSlider, 60);
+    positionMaster(engDetuneLabels[1], engFMDetuneSlider, 60);
 
     tabs.setBounds(area);
 

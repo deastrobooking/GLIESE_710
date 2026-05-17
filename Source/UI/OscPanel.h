@@ -33,6 +33,9 @@ public:
         float centerY = 0.5f;
         float radiusX = 0.35f;
         float radiusY = 0.35f;
+        float zoom = 1.0f;
+        float rotation = 0.0f;
+        float pathSize = 1.0f;
         float ratioX = 1.0f;
         float ratioY = 1.5f;
         float scanRate = 1.0f;

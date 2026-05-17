@@ -391,6 +391,9 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.centerY   = get(pfx + "center_y");
         c.radiusX   = get(pfx + "radius_x");
         c.radiusY   = get(pfx + "radius_y");
+        c.zoom      = get(pfx + "zoom");
+        c.rotation  = get(pfx + "rotation");
+        c.pathSize  = get(pfx + "path_size");
         c.ratioX    = get(pfx + "ratio_x");
         c.ratioY    = get(pfx + "ratio_y");
         c.scanRate  = get(pfx + "scan_rate");
@@ -773,6 +776,9 @@ void SynthVoice::syncParams()
         tp.centerY     = pF(ct.centerY, 0.5f);
         tp.radiusX     = pF(ct.radiusX, 0.35f);
         tp.radiusY     = pF(ct.radiusY, 0.35f);
+        tp.zoom        = pF(ct.zoom, 1.f);
+        tp.rotation    = pF(ct.rotation);
+        tp.pathSize    = pF(ct.pathSize, 1.f);
         tp.ratioX      = pF(ct.ratioX, 1.f);
         tp.ratioY      = pF(ct.ratioY, 1.5f);
         tp.scanRate    = pF(ct.scanRate, 1.f);

@@ -165,45 +165,55 @@ std::pair<float, float> TerrainHeightmapDisplay::pointFor(float t) const noexcep
     const float twoPi = juce::MathConstants<float>::twoPi;
     const float aX = twoPi * t * state.ratioX;
     const float aY = twoPi * t * state.ratioY;
-    float x = wrap01(state.centerX);
-    float y = wrap01(state.centerY);
+    const float radiusX = state.radiusX * state.pathSize;
+    const float radiusY = state.radiusY * state.pathSize;
+    float x = 0.f;
+    float y = 0.f;
 
     switch (state.pathMode)
     {
         case 0:
-            x += state.radiusX * std::cos(twoPi * t);
-            y += state.radiusX * std::sin(twoPi * t);
+            x = radiusX * std::cos(twoPi * t);
+            y = radiusX * std::sin(twoPi * t);
             break;
         case 1:
-            x += state.radiusX * std::cos(aX);
-            y += state.radiusY * std::sin(aY);
+            x = radiusX * std::cos(aX);
+            y = radiusY * std::sin(aY);
             break;
         case 2:
-            x += state.radiusX * std::sin(aX + twoPi * 0.125f);
-            y += state.radiusY * std::sin(aY);
+            x = radiusX * std::sin(aX + twoPi * 0.125f);
+            y = radiusY * std::sin(aY);
             break;
         case 3:
         {
             const float r = 1.f - state.spiral + state.spiral * t;
-            x += state.radiusX * r * std::cos(aX);
-            y += state.radiusY * r * std::sin(aY);
+            x = radiusX * r * std::cos(aX);
+            y = radiusY * r * std::sin(aY);
             break;
         }
         case 4:
-            x += state.radiusX * (2.f * t - 1.f);
-            y += state.radiusY * 0.2f * std::sin(aY);
+            x = radiusX * (2.f * t - 1.f);
+            y = radiusY * 0.2f * std::sin(aY);
             break;
         case 5:
-            x += state.radiusX * (0.72f * std::cos(twoPi * t)
-                 + 0.56f * noise(t * state.ratioX * 4.f + 11.7f, 0.37f));
-            y += state.radiusY * (0.72f * std::sin(twoPi * t * 1.21f)
-                 + 0.56f * noise(t * state.ratioY * 4.f + 23.1f, 0.61f));
+            x = radiusX * (0.72f * std::cos(twoPi * t)
+                + 0.56f * noise(t * state.ratioX * 4.f + 11.7f, 0.37f));
+            y = radiusY * (0.72f * std::sin(twoPi * t * 1.21f)
+                + 0.56f * noise(t * state.ratioY * 4.f + 23.1f, 0.61f));
             break;
         default:
             break;
     }
 
-    return { wrap01(x), wrap01(y) };
+    const float angle = state.rotation * twoPi;
+    const float c = std::cos(angle);
+    const float s = std::sin(angle);
+    const float rotatedX = x * c - y * s;
+    const float rotatedY = x * s + y * c;
+    const float zoom = juce::jlimit(1.f, 16.f, state.zoom);
+
+    return { wrap01(state.centerX + rotatedX / zoom),
+             wrap01(state.centerY + rotatedY / zoom) };
 }
 
 float TerrainHeightmapDisplay::wrap01(float v) noexcept
@@ -367,17 +377,20 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         setupExtraSlider(extra2,  pfx + "center_y",  "Terrain Center Y",       extraAtt2);
         setupExtraSlider(extra3,  pfx + "radius_x",  "Terrain Radius X",       extraAtt3);
         setupExtraSlider(extra4,  pfx + "radius_y",  "Terrain Radius Y",       extraAtt4);
-        setupExtraSlider(extra5,  pfx + "ratio_x",   "Path Ratio X",           extraAtt5);
-        setupExtraSlider(extra6,  pfx + "ratio_y",   "Path Ratio Y",           extraAtt6);
-        setupExtraSlider(extra7,  pfx + "scan_rate", "Terrain Scan Rate",      extraAtt7);
-        setupExtraSlider(extra8,  pfx + "phase",     "Phase Offset",           extraAtt8);
-        setupExtraSlider(extra9,  pfx + "spiral",    "Spiral Amount",          extraAtt9);
-        setupExtraSlider(extra10, pfx + "drive",     "Terrain Drive",          extraAtt10);
-        setupExtraSlider(extra11, pfx + "offset",    "Terrain Offset",         extraAtt11);
-        setupExtraSlider(extra12, pfx + "smoothing", "Terrain Blur Smoothing", extraAtt12);
-        setupExtraSlider(extra13, pfx + "morph",     "Procedural Morph",       extraAtt13);
-        setupExtraSlider(extra14, pfx + "gain",      "Terrain Gain",           extraAtt14);
-        numExtraSliders = 14;
+        setupExtraSlider(extra5,  pfx + "zoom",      "Terrain Zoom",           extraAtt5);
+        setupExtraSlider(extra6,  pfx + "rotation",  "Path Rotation",          extraAtt6);
+        setupExtraSlider(extra7,  pfx + "path_size", "Path Shape Size",        extraAtt7);
+        setupExtraSlider(extra8,  pfx + "ratio_x",   "Path Ratio X",           extraAtt8);
+        setupExtraSlider(extra9,  pfx + "ratio_y",   "Path Ratio Y",           extraAtt9);
+        setupExtraSlider(extra10, pfx + "scan_rate", "Terrain Scan Rate",      extraAtt10);
+        setupExtraSlider(extra11, pfx + "phase",     "Phase Offset",           extraAtt11);
+        setupExtraSlider(extra12, pfx + "spiral",    "Spiral Amount",          extraAtt12);
+        setupExtraSlider(extra13, pfx + "drive",     "Terrain Drive",          extraAtt13);
+        setupExtraSlider(extra14, pfx + "offset",    "Terrain Offset",         extraAtt14);
+        setupExtraSlider(extra15, pfx + "smoothing", "Terrain Blur Smoothing", extraAtt15);
+        setupExtraSlider(extra16, pfx + "morph",     "Procedural Morph",       extraAtt16);
+        setupExtraSlider(extra17, pfx + "gain",      "Terrain Gain",           extraAtt17);
+        numExtraSliders = 17;
 
         importHeightmapButton.setTooltip("Import a PNG, JPG, or BMP heightmap for this terrain oscillator");
         IndustrialTheme::styleButton(importHeightmapButton, accent);
@@ -399,6 +412,9 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         extra7.onValueChange = updateDisplay;
         extra8.onValueChange = updateDisplay;
         extra9.onValueChange = updateDisplay;
+        extra10.onValueChange = updateDisplay;
+        extra11.onValueChange = updateDisplay;
+        extra12.onValueChange = updateDisplay;
     }
     else if (oscId.startsWith("va"))
     {
@@ -532,16 +548,19 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         makeLabel(extraLabels[1], "Y");
         makeLabel(extraLabels[2], "RAD-X");
         makeLabel(extraLabels[3], "RAD-Y");
-        makeLabel(extraLabels[4], "RAT-X");
-        makeLabel(extraLabels[5], "RAT-Y");
-        makeLabel(extraLabels[6], "SPEED");
-        makeLabel(extraLabels[7], "PHASE");
-        makeLabel(extraLabels[8], "SPIRAL");
-        makeLabel(extraLabels[9], "DRIVE");
-        makeLabel(extraLabels[10], "OFFSET");
-        makeLabel(extraLabels[11], "SMOOTH");
-        makeLabel(extraLabels[12], "MORPH");
-        makeLabel(extraLabels[13], "GAIN");
+        makeLabel(extraLabels[4], "ZOOM");
+        makeLabel(extraLabels[5], "ROT");
+        makeLabel(extraLabels[6], "SIZE");
+        makeLabel(extraLabels[7], "RAT-X");
+        makeLabel(extraLabels[8], "RAT-Y");
+        makeLabel(extraLabels[9], "SPEED");
+        makeLabel(extraLabels[10], "PHASE");
+        makeLabel(extraLabels[11], "SPIRAL");
+        makeLabel(extraLabels[12], "DRIVE");
+        makeLabel(extraLabels[13], "OFFSET");
+        makeLabel(extraLabels[14], "SMOOTH");
+        makeLabel(extraLabels[15], "MORPH");
+        makeLabel(extraLabels[16], "GAIN");
     }
     else if (oscId.startsWith("va"))
     {
@@ -582,7 +601,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
 void OscPanel::setupSlider(juce::Slider& s, const juce::String& tooltip)
 {
     s.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-    s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 16);
+    s.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 44, 14);
     s.setTooltip(tooltip);
     IndustrialTheme::styleSlider(s, accent);
     addAndMakeVisible(s);
@@ -645,11 +664,14 @@ void OscPanel::refreshTerrainDisplay()
     s.centerY = (float)extra2.getValue();
     s.radiusX = (float)extra3.getValue();
     s.radiusY = (float)extra4.getValue();
-    s.ratioX = (float)extra5.getValue();
-    s.ratioY = (float)extra6.getValue();
-    s.scanRate = (float)extra7.getValue();
-    s.phaseOffset = (float)extra8.getValue();
-    s.spiral = (float)extra9.getValue();
+    s.zoom = (float)extra5.getValue();
+    s.rotation = (float)extra6.getValue();
+    s.pathSize = (float)extra7.getValue();
+    s.ratioX = (float)extra8.getValue();
+    s.ratioY = (float)extra9.getValue();
+    s.scanRate = (float)extra10.getValue();
+    s.phaseOffset = (float)extra11.getValue();
+    s.spiral = (float)extra12.getValue();
     terrainDisplay->setScanState(s);
 }
 
@@ -677,7 +699,8 @@ void OscPanel::resized()
 
     // ── Level + Octave ────────────────────────────────────────────────────────
     auto lr0 = area.removeFromTop(13);
-    auto sr0 = area.removeFromTop(70);
+    const int topKnobH = juce::jlimit(48, 60, getHeight() / 7);
+    auto sr0 = area.removeFromTop(topKnobH);
     levelLabel  .setBounds(portion(lr0, 0, 2));
     octaveLabel .setBounds(portion(lr0, 1, 2));
     levelSlider .setBounds(portion(sr0, 0, 2));
@@ -744,18 +767,23 @@ void OscPanel::resized()
             &extra16, &extra17, &extra18, &extra19, &extra20
         };
 
-        const int cols = numExtraSliders > 12 ? 4 : 3;
+        const int cols = oscId.startsWith("grain") || oscId.startsWith("terrain") ? 5
+                       : numExtraSliders >= 7 ? 4
+                       : 3;
         const int rows = (numExtraSliders + cols - 1) / cols;
-        const int reservedForAdsr = 58;
+        const int reservedForAdsr = juce::jlimit(76, 118, getHeight() / 4);
         const int available = juce::jmax(0, area.getHeight() - reservedForAdsr);
-        const int rowSliderH = juce::jlimit(30, 70, (available - rows * 15) / juce::jmax(1, rows));
+        const int rowLabelH = 11;
+        const int rowGap = 1;
+        const int rowSliderH = juce::jlimit(26, 52,
+            (available - rows * (rowLabelH + rowGap)) / juce::jmax(1, rows));
 
         for (int row = 0; row < rows; ++row)
         {
-            if (row > 0) area.removeFromTop(2);
+            if (row > 0) area.removeFromTop(rowGap);
             const int start = row * cols;
             const int n = juce::jmin(cols, numExtraSliders - start);
-            auto lr = area.removeFromTop(13);
+            auto lr = area.removeFromTop(rowLabelH);
             auto sr = area.removeFromTop(rowSliderH);
             for (int i = 0; i < n; ++i)
             {

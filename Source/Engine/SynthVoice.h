@@ -218,6 +218,9 @@ private:
             std::atomic<float>* centerY     = nullptr;
             std::atomic<float>* radiusX     = nullptr;
             std::atomic<float>* radiusY     = nullptr;
+            std::atomic<float>* zoom        = nullptr;
+            std::atomic<float>* rotation    = nullptr;
+            std::atomic<float>* pathSize    = nullptr;
             std::atomic<float>* ratioX      = nullptr;
             std::atomic<float>* ratioY      = nullptr;
             std::atomic<float>* scanRate    = nullptr;

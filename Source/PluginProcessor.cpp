@@ -238,6 +238,9 @@ static APVTS::ParameterLayout buildLayout()
         addFloat (prefix + "center_y",  label + " Center Y", 0.0f, 1.0f, 0.5f);
         addFloat (prefix + "radius_x",  label + " Radius X", 0.0f, 0.5f, 0.35f);
         addFloat (prefix + "radius_y",  label + " Radius Y", 0.0f, 0.5f, 0.35f);
+        addFloat (prefix + "zoom",      label + " Zoom",     1.0f, 16.0f, 1.0f, 0.4f);
+        addFloat (prefix + "rotation",  label + " Rotation", 0.0f, 1.0f, 0.0f);
+        addFloat (prefix + "path_size", label + " Path Size",0.0f, 2.0f, 1.0f, 0.7f);
         addFloat (prefix + "ratio_x",   label + " Ratio X",  0.125f, 8.0f, 1.0f, 0.55f);
         addFloat (prefix + "ratio_y",   label + " Ratio Y",  0.125f, 8.0f, 1.5f, 0.55f);
         addFloat (prefix + "scan_rate", label + " Scan Rate",0.05f, 8.0f, 1.0f, 0.45f);
