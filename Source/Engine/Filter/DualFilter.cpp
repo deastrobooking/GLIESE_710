@@ -130,21 +130,27 @@ void SingleFilter::configureIIR(float cutHz, float res, float drive)
         return;
 
     juce::dsp::IIR::Coefficients<float>::Ptr coeffs;
-    float q = 0.707f + res * 10.f;
+
+    const float resonance = juce::jlimit(0.f, 1.f, res);
+    const float resCurve = std::pow(resonance, 1.15f);
+    const float peakQ = 0.707f + resonance * 12.f;
+    const float shelfQ = 0.55f + resonance * 3.5f;
+    const float peakGain = 1.f + drive * 12.f + resCurve * 5.5f;
+    const float shelfGain = 1.f + drive * 6.f + resCurve * 2.2f;
 
     switch (params.mode)
     {
         case FilterMode::Peak:
             coeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
-                         sr, cutHz, q, 1.f + drive * 12.f);
+                         sr, cutHz, peakQ, peakGain);
             break;
         case FilterMode::LowShelf:
             coeffs = juce::dsp::IIR::Coefficients<float>::makeLowShelf(
-                         sr, cutHz, q, 1.f + drive * 6.f);
+                         sr, cutHz, shelfQ, shelfGain);
             break;
         case FilterMode::HighShelf:
             coeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf(
-                         sr, cutHz, q, 1.f + drive * 6.f);
+                         sr, cutHz, shelfQ, shelfGain);
             break;
         case FilterMode::LP12:
         case FilterMode::LP24:
@@ -266,12 +272,24 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
             break;
 
         case FilterMode::AM_Plus:
-            out = driven * (1.f + amMod * params.envAmount);
+        {
+            const float externalDepth = juce::jlimit(0.f, 2.f, std::abs(params.envAmount) + res);
+            const float externalSign = params.envAmount < 0.f ? -1.f : 1.f;
+            const float selfMod = (2.f * std::abs(driven) - 1.f) * res * 0.45f;
+            out = driven * (1.f + amMod * externalDepth * externalSign + selfMod);
+            out = FilterModelDetail::saturate(out, params.saturation * 0.45f + res * 0.20f);
             break;
+        }
 
         case FilterMode::AM_Minus:
-            out = driven * juce::jlimit(-1.f, 1.f, amMod);
+        {
+            const float selfMod = (2.f * std::abs(driven) - 1.f) * res;
+            const float carrier = juce::jlimit(-1.f, 1.f, amMod * (1.f + res) + selfMod);
+            out = driven * carrier;
+            out = FilterModelDetail::saturate(out * (1.f + res * 0.5f),
+                                              params.saturation * 0.45f + res * 0.20f);
             break;
+        }
 
         case FilterMode::NumModes:
             break;

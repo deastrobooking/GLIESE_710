@@ -6,6 +6,7 @@
 |---|---|
 | `GLIESE_710_Standalone` | Standalone application (fastest for DSP iteration) |
 | `GLIESE_710_VST3` | VST3 plugin |
+| `GLIESE_710_CLAP` | CLAP plugin, built through `clap-juce-extensions` when `GLIESE_BUILD_CLAP=ON` |
 | `GLIESE_710_AU` | Audio Unit (macOS only, requires Xcode) |
 | `GLIESE_710_LV2` | LV2 (Linux, requires lv2 dev package) |
 | `GLIESE_Tests` | Catch2 unit tests (requires `-DGLIESE_BUILD_TESTS=ON`) |
@@ -23,7 +24,7 @@ cmake --build build --target GLIESE_710_Standalone --config Release
 | `Release` | `-O2`, no assertions. Profile with Instruments / perf. |
 | `RelWithDebInfo` | `-O2` + symbols. Best for profiling with readable traces. |
 
-## macOS — AU + VST3
+## macOS — AU + VST3 + CLAP
 
 Recommended local automation:
 
@@ -35,8 +36,8 @@ That command:
 - configures `build-productions` in Release mode with tests enabled
 - builds `GLIESE_710_All`
 - builds and runs `GLIESE_Tests`
-- copies the AU and VST3 into `/Library/Audio/Plug-Ins`
-- ad-hoc signs the installed AU/VST3
+- copies the AU, VST3, and CLAP into `/Library/Audio/Plug-Ins`
+- ad-hoc signs the installed AU/VST3/CLAP
 - verifies the installed signatures
 
 For a non-system install:
@@ -73,9 +74,13 @@ By default, builds stay inside the project `build/` directory. To also copy plug
 cmake -B build -G Xcode -DGLIESE_COPY_PLUGIN_AFTER_BUILD=ON
 ```
 
-When enabled, JUCE copies built plugins to:
+When enabled, JUCE copies built AU/VST3 plugins to:
 - `/Library/Audio/Plug-Ins/VST3/GLIESE 710.vst3`
 - `/Library/Audio/Plug-Ins/Components/GLIESE 710.component`
+
+The CLAP wrapper performs its own user-scope copy when `GLIESE_COPY_PLUGIN_AFTER_BUILD=ON`:
+- `~/Library/Audio/Plug-Ins/CLAP/GLIESE 710.clap` on macOS
+- `~/.clap/GLIESE 710.clap` on Linux
 
 For local production builds that should stay inside the repository build directory, keep copying disabled:
 
@@ -92,18 +97,21 @@ auval -v aumu GLSE G710
 
 Expected output: `PASS` with no errors.
 
-## Windows — VST3
+## Windows — VST3 + CLAP
 
 ```bat
 cmake -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release --parallel
 ```
 
-Output: `build\GLIESE_710_artefacts\Release\VST3\GLIESE 710.vst3`
+Outputs:
+- `build\GLIESE_710_artefacts\Release\VST3\GLIESE 710.vst3`
+- `build\GLIESE_710_artefacts\Release\CLAP\GLIESE 710.clap`
 
 Copy to `C:\Program Files\Common Files\VST3\` for DAW discovery.
+Copy CLAP to `C:\Program Files\Common Files\CLAP\`.
 
-## Linux — LV2 + VST3
+## Linux — LV2 + VST3 + CLAP
 
 ```bash
 sudo apt install lv2-dev   # Debian/Ubuntu
@@ -115,6 +123,12 @@ Install LV2:
 ```bash
 mkdir -p ~/.lv2
 cp -r build/GLIESE_710_artefacts/Release/LV2/GLIESE\ 710.lv2 ~/.lv2/
+```
+
+Install CLAP:
+```bash
+mkdir -p ~/.clap
+cp build/GLIESE_710_artefacts/Release/CLAP/GLIESE\ 710.clap ~/.clap/
 ```
 
 Validate with:
@@ -143,7 +157,7 @@ Individual test filtering:
 
 Three matrix jobs:
 
-### macOS (AU + VST3)
+### macOS (AU + VST3 + CLAP)
 ```yaml
 runs-on: macos-14
 steps:
@@ -176,10 +190,12 @@ steps:
   - uses: actions/upload-artifact@v4
     with:
       name: GLIESE710-Windows
-      path: build\GLIESE_710_artefacts\Release\VST3\**
+      path: |
+        build\GLIESE_710_artefacts\Release\VST3\**
+        build\GLIESE_710_artefacts\Release\CLAP\**
 ```
 
-### Linux (LV2 + VST3)
+### Linux (LV2 + VST3 + CLAP)
 ```yaml
 runs-on: ubuntu-24.04
 steps:
@@ -210,7 +226,8 @@ CPM downloads JUCE once and caches it in `~/.cache/CPM`. On CI, cache the CPM di
 | CMake flag | Default | Effect |
 |---|---|---|
 | `GLIESE_BUILD_TESTS` | OFF | Build Catch2 test executable |
-| `GLIESE_COPY_PLUGIN_AFTER_BUILD` | OFF | Copy AU/VST3/LV2 artefacts into system plugin folders after build |
+| `GLIESE_BUILD_CLAP` | ON | Build the CLAP wrapper via `clap-juce-extensions` |
+| `GLIESE_COPY_PLUGIN_AFTER_BUILD` | OFF | Copy plugin artefacts after build; CLAP uses the wrapper's user-scope copy path |
 | `CMAKE_BUILD_TYPE` | — | Release / Debug / RelWithDebInfo |
 | `JUCE_WEB_BROWSER` | 0 (off) | Prevents linking WebKit on macOS |
 | `JUCE_USE_CURL` | 0 (off) | Prevents linking libcurl |

@@ -9,6 +9,7 @@
 #include "../Source/Engine/Oscillators/FMAlgorithm.h"
 #include "../Source/Engine/Filter/DualFilter.h"
 #include "../Source/Engine/Modulation/ModMatrix.h"
+#include "../Source/Engine/Modulation/StepSequencerMod.h"
 #include "../Source/Engine/LFO/LFOEngine.h"
 #include "../Source/Engine/Arpeggiator/Arpeggiator.h"
 #include <vector>
@@ -29,6 +30,86 @@ static std::vector<int> collectArpNoteOns(Arpeggiator& arp, int numSamples)
     }
 
     return notes;
+}
+
+class TestAudioProcessor final : public juce::AudioProcessor
+{
+public:
+    TestAudioProcessor()
+        : juce::AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true))
+    {
+    }
+
+    const juce::String getName() const override { return "Test"; }
+    void prepareToPlay(double, int) override {}
+    void releaseResources() override {}
+    bool isBusesLayoutSupported(const BusesLayout&) const override { return true; }
+    void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override {}
+    juce::AudioProcessorEditor* createEditor() override { return nullptr; }
+    bool hasEditor() const override { return false; }
+    double getTailLengthSeconds() const override { return 0.0; }
+    int getNumPrograms() override { return 1; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram(int) override {}
+    const juce::String getProgramName(int) override { return {}; }
+    void changeProgramName(int, const juce::String&) override {}
+    void getStateInformation(juce::MemoryBlock&) override {}
+    void setStateInformation(const void*, int) override {}
+    bool acceptsMidi() const override { return false; }
+    bool producesMidi() const override { return false; }
+    bool isMidiEffect() const override { return false; }
+};
+
+static juce::StringArray numberedChoices(int count)
+{
+    juce::StringArray choices;
+    for (int i = 0; i < count; ++i)
+        choices.add(juce::String(i));
+
+    return choices;
+}
+
+static juce::AudioProcessorValueTreeState::ParameterLayout makeModSeqTestLayout()
+{
+    using RAP = juce::RangedAudioParameter;
+    std::vector<std::unique_ptr<RAP>> params;
+
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID { StepSequencerMod::kDepthParamID, 1 }, "Depth", 0.0f, 1.0f, 1.0f));
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID { StepSequencerMod::kDivisionParamID, 1 }, "Division",
+        juce::StringArray { "1/4" }, 0));
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID { StepSequencerMod::kSubdivisionParamID, 1 }, "Subdivision",
+        juce::StringArray { "x1" }, 0));
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID { StepSequencerMod::kLengthParamID, 1 }, "Length",
+        juce::StringArray { "8", "16", "24", "32" }, 3));
+    params.push_back(std::make_unique<juce::AudioParameterInt>(
+        juce::ParameterID { StepSequencerMod::kLoopLengthParamID, 1 }, "Loop Length",
+        1, StepSequencerMod::kNumSteps, 3));
+
+    const auto targetChoices = numberedChoices((int) ModDest::NumDests);
+    for (int lane = 0; lane < StepSequencerMod::kNumLanes; ++lane)
+    {
+        const int target = lane == 0 ? (int) ModDest::FilterA_Cutoff : (int) ModDest::None;
+        params.push_back(std::make_unique<juce::AudioParameterChoice>(
+            juce::ParameterID { StepSequencerMod::laneTargetParamID(lane), 1 },
+            "Target", targetChoices, target));
+
+        for (int step = 0; step < StepSequencerMod::kNumSteps; ++step)
+        {
+            float value = 0.0f;
+            if (lane == 0)
+                value = step == 0 ? 0.25f : (step == 1 ? 0.75f : (step == 2 ? 1.0f : 0.0f));
+
+            params.push_back(std::make_unique<juce::AudioParameterFloat>(
+                juce::ParameterID { StepSequencerMod::stepParamID(lane, step), 1 },
+                "Step", 0.0f, 1.0f, value));
+        }
+    }
+
+    return { params.begin(), params.end() };
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -437,6 +518,31 @@ TEST_CASE("ModMatrix None slot is skipped", "[modmatrix]")
         REQUIRE(d == Approx(0.f));
 }
 
+TEST_CASE("StepSequencer loop length trims playback without changing programmed length", "[modseq]")
+{
+    REQUIRE(StepSequencerMod::effectiveSequenceLength(32, 1) == 1);
+    REQUIRE(StepSequencerMod::effectiveSequenceLength(16, 32) == 16);
+    REQUIRE(StepSequencerMod::effectiveSequenceLength(32, 0) == 1);
+
+    TestAudioProcessor processor;
+    juce::AudioProcessorValueTreeState apvts(
+        processor, nullptr, "State", makeModSeqTestLayout());
+
+    StepSequencerMod seq;
+    seq.prepare(48000.0);
+    seq.setAPVTS(&apvts);
+
+    seq.setHostPosition(2.1);
+    seq.processBlock(64);
+    REQUIRE(seq.getCurrentStep() == 2);
+    REQUIRE(seq.getOutput().dests[(int) ModDest::FilterA_Cutoff] == Approx(1.0f));
+
+    seq.setHostPosition(3.1);
+    seq.processBlock(64);
+    REQUIRE(seq.getCurrentStep() == 0);
+    REQUIRE(seq.getOutput().dests[(int) ModDest::FilterA_Cutoff] == Approx(-0.5f));
+}
+
 //──────────────────────────────────────────────────────────────────────────────
 TEST_CASE("DualFilter LP12 attenuates high freq", "[filter]")
 {
@@ -546,6 +652,66 @@ TEST_CASE("DualFilter advanced models stay finite with oversampling", "[filter]"
     }
 }
 
+TEST_CASE("DualFilter resonance changes every filter mode response", "[filter]")
+{
+    auto configure = [](DualFilter& df, FilterMode mode, float resonance)
+    {
+        df.prepare(48000.0);
+
+        SingleFilter::Params p;
+        p.mode = mode;
+        p.cutoff = 950.f;
+        p.resonance = resonance;
+        p.drive = 0.f;
+        p.morph = 0.55f;
+        p.saturation = 0.25f;
+        p.bassComp = 0.25f;
+        p.mix = 1.f;
+        p.oversample = 0;
+        p.envAmount = 0.f;
+
+        df.setFilterA(p);
+        df.setRouting(FilterRouting::AOnly);
+        df.noteOn();
+    };
+
+    for (int modeIndex = 0; modeIndex < static_cast<int>(FilterMode::NumModes); ++modeIndex)
+    {
+        const auto mode = static_cast<FilterMode>(modeIndex);
+        DualFilter lowRes;
+        DualFilter highRes;
+        configure(lowRes, mode, 0.f);
+        configure(highRes, mode, 0.92f);
+
+        float sumDiffSq = 0.f;
+        constexpr int warmup = 2048;
+        constexpr int n = 8192;
+
+        for (int i = 0; i < warmup + n; ++i)
+        {
+            const float t = (float) i / 48000.f;
+            const float sine = 0.42f * std::sin(2.f * juce::MathConstants<float>::pi * 950.f * t);
+            const float body = 0.18f * std::sin(2.f * juce::MathConstants<float>::pi * 180.f * t + 0.35f);
+            const float impulse = (i % 509) == 0 ? 0.25f : 0.f;
+            const float input = sine + body + impulse;
+            const float am = 0.6f * std::sin(2.f * juce::MathConstants<float>::pi * 137.f * t);
+
+            const auto [lowL, lowR] = lowRes.processSample(input, input, 0.f, 0.f, am);
+            const auto [highL, highR] = highRes.processSample(input, input, 0.f, 0.f, am);
+
+            if (i >= warmup)
+            {
+                const float dL = highL - lowL;
+                const float dR = highR - lowR;
+                sumDiffSq += dL * dL + dR * dR;
+            }
+        }
+
+        INFO("mode index: " << modeIndex);
+        REQUIRE(std::sqrt(sumDiffSq / (float) (n * 2)) > 1.0e-5f);
+    }
+}
+
 TEST_CASE("SEM morph behaves as LP notch HP state-variable filter", "[filter]")
 {
     auto measureRms = [](float sineHz, float morph)
@@ -607,15 +773,15 @@ TEST_CASE("Roland filters behave as 24 dB low-pass models", "[filter]")
         FilterMode::RolandJupiter8
     };
 
-    auto measureRms = [](FilterMode mode, float sineHz)
+    auto measureRms = [](FilterMode mode, float sineHz, float resonance)
     {
         DualFilter df;
         df.prepare(48000.0);
 
         SingleFilter::Params p;
         p.mode = mode;
-        p.cutoff = 950.f;
-        p.resonance = 0.25f;
+        p.cutoff = 1100.f;
+        p.resonance = resonance;
         p.drive = 0.1f;
         p.saturation = 0.25f;
         p.mix = 1.f;
@@ -646,9 +812,17 @@ TEST_CASE("Roland filters behave as 24 dB low-pass models", "[filter]")
 
     for (auto mode : modes)
     {
-        const float low = measureRms(mode, 180.f);
-        const float high = measureRms(mode, 6000.f);
+        const float low = measureRms(mode, 180.f, 0.25f);
+        const float high = measureRms(mode, 6000.f, 0.25f);
         REQUIRE(low > high * 6.f);
+    }
+
+    for (auto mode : modes)
+    {
+        const float flat = measureRms(mode, 900.f, 0.f);
+        const float resonant = measureRms(mode, 900.f, 0.86f);
+        INFO("mode index: " << static_cast<int>(mode));
+        REQUIRE(resonant > flat * 1.2f);
     }
 
     for (auto mode : modes)
@@ -729,6 +903,10 @@ TEST_CASE("TB303 filter behaves as acid 18 dB low-pass", "[filter]")
     const float unaccented = measureRms(2200.f, 0.f, 0.65f);
     const float accented = measureRms(2200.f, 1.f, 0.65f);
     REQUIRE(accented > unaccented * 1.2f);
+
+    const float flatCutoff = measureRms(950.f, 0.35f, 0.f);
+    const float resonantCutoff = measureRms(950.f, 0.35f, 0.86f);
+    REQUIRE(resonantCutoff > flatCutoff * 1.25f);
 
     DualFilter df;
     df.prepare(48000.0);

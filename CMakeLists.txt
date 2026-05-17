@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(GLIESE_COPY_PLUGIN_AFTER_BUILD "Copy built plugin artefacts into system plugin folders" OFF)
+option(GLIESE_BUILD_CLAP "Build the CLAP plugin wrapper through clap-juce-extensions" ON)
 
 include(cmake/CPM.cmake)
 
@@ -14,6 +15,17 @@ CPMAddPackage(
     GITHUB_REPOSITORY juce-framework/JUCE
     GIT_TAG 8.0.4
 )
+
+if(GLIESE_BUILD_CLAP)
+    set(CLAP_JUCE_EXTENSIONS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    CPMAddPackage(
+        NAME clap_juce_extensions
+        GITHUB_REPOSITORY free-audio/clap-juce-extensions
+        # Release tags predate the current JUCE 8 wrapper support.
+        GIT_TAG e8de9e8571626633b8541a54c2406fccc4272767
+        GIT_SUBMODULES_RECURSE TRUE
+    )
+endif()
 
 # ── Plugin target ──────────────────────────────────────────────────────────────
 juce_add_plugin(GLIESE_710
@@ -98,6 +110,18 @@ PUBLIC
     juce::juce_recommended_warning_flags
 )
 
+if(GLIESE_BUILD_CLAP)
+    clap_juce_extensions_plugin(TARGET GLIESE_710
+        CLAP_ID "com.gliesestudios.gliese710"
+        CLAP_FEATURES instrument synthesizer stereo
+        CLAP_USE_JUCE_PARAMETER_RANGES ALL
+    )
+
+    if(TARGET GLIESE_710_All AND TARGET GLIESE_710_CLAP)
+        add_dependencies(GLIESE_710_All GLIESE_710_CLAP)
+    endif()
+endif()
+
 # ── Tests (optional, requires Catch2) ─────────────────────────────────────────
 option(GLIESE_BUILD_TESTS "Build unit tests" OFF)
 if(GLIESE_BUILD_TESTS)
@@ -118,6 +142,7 @@ if(GLIESE_BUILD_TESTS)
         Source/Engine/Oscillators/TerrainOsc.cpp
         Source/Engine/Filter/DualFilter.cpp
         Source/Engine/Modulation/ModMatrix.cpp
+        Source/Engine/Modulation/StepSequencerMod.cpp
         Source/Engine/LFO/LFOEngine.cpp
         Source/Engine/Oscillators/VAOscillator.cpp
         Source/Engine/Oscillators/KarplusStrong.cpp

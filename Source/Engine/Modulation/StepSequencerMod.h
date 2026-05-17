@@ -18,6 +18,7 @@ public:
     static constexpr const char* kDivisionParamID    = "modseq_division";
     static constexpr const char* kSubdivisionParamID = "modseq_subdivision";
     static constexpr const char* kLengthParamID      = "modseq_length";
+    static constexpr const char* kLoopLengthParamID  = "modseq_loop_length";
 
     void prepare(double newSampleRate);
     void reset();
@@ -34,6 +35,7 @@ public:
     static double ppqForDivisionIndex(int index);
     static int subdivisionMultiplierForIndex(int index);
     static int sequenceLengthForIndex(int index);
+    static int effectiveSequenceLength(int sequenceLength, int loopLength);
 
 private:
     struct ParamCache
@@ -42,6 +44,7 @@ private:
         std::atomic<float>* division    = nullptr;
         std::atomic<float>* subdivision = nullptr;
         std::atomic<float>* length      = nullptr;
+        std::atomic<float>* loopLength  = nullptr;
         std::array<std::atomic<float>*, kNumLanes * kNumSteps> steps {};
         std::array<std::atomic<float>*, kNumLanes> targets {};
         bool built = false;

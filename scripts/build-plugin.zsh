@@ -24,8 +24,8 @@ Usage: scripts/build-plugin.zsh [options]
 Builds GLIESE 710 using the production CMake preset.
 
 Options:
-  --install-user       Copy AU/VST3 to ~/Library/Audio/Plug-Ins and sign them.
-  --install-system     Copy AU/VST3 to /Library/Audio/Plug-Ins and sign them.
+  --install-user       Copy AU/VST3/CLAP to ~/Library/Audio/Plug-Ins and sign them.
+  --install-system     Copy AU/VST3/CLAP to /Library/Audio/Plug-Ins and sign them.
   --no-install         Build only. This is the default.
   --skip-tests         Build plugins without building/running tests.
   --build-dir PATH     Override build directory. Default: build-productions.
@@ -151,7 +151,7 @@ install_bundle() {
 
 if [[ "${install_scope}" != "none" ]]; then
     if [[ "$(uname -s)" != "Darwin" ]]; then
-        die "AU/VST3 installation automation is currently macOS-only"
+        die "AU/VST3/CLAP installation automation is currently macOS-only"
     fi
 
     artefacts="${build_dir}/GLIESE_710_artefacts/${config}"
@@ -159,13 +159,16 @@ if [[ "${install_scope}" != "none" ]]; then
     if [[ "${install_scope}" == "user" ]]; then
         vst3_dir="${HOME}/Library/Audio/Plug-Ins/VST3"
         au_dir="${HOME}/Library/Audio/Plug-Ins/Components"
+        clap_dir="${HOME}/Library/Audio/Plug-Ins/CLAP"
     else
         vst3_dir="/Library/Audio/Plug-Ins/VST3"
         au_dir="/Library/Audio/Plug-Ins/Components"
+        clap_dir="/Library/Audio/Plug-Ins/CLAP"
     fi
 
     install_bundle "${artefacts}/VST3/GLIESE 710.vst3" "${vst3_dir}/GLIESE 710.vst3"
     install_bundle "${artefacts}/AU/GLIESE 710.component" "${au_dir}/GLIESE 710.component"
+    install_bundle "${artefacts}/CLAP/GLIESE 710.clap" "${clap_dir}/GLIESE 710.clap"
 fi
 
 print -- "[gliese] done"

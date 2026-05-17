@@ -111,6 +111,22 @@ mod{N}_amount   — float -1..1
 mod{N}_bipolar  — bool
 ```
 
+## Mod Step Sequencer
+
+The mod step sequencer is a four-lane performance modulator that writes directly into modulation destinations once per audio block. Each lane has a destination and 32 stored step values.
+
+Timing and length parameters:
+
+```
+modseq_depth        — float 0..1, output depth
+modseq_division     — choice, base note division
+modseq_subdivision  — choice, x1/x2/x4/x8 step multiplier
+modseq_length       — choice, stored pattern length: 8/16/24/32
+modseq_loop_length  — int 1..32, active playback loop length
+```
+
+`modseq_loop_length` is a performance trim. Playback wraps at `min(modseq_length, modseq_loop_length)`, so you can remove steps down to a one-step pulse without erasing or moving the programmed pattern.
+
 ## Design Patterns
 
 ### Velocity → Filter cutoff (velocity sensitivity)

@@ -405,6 +405,8 @@ static APVTS::ParameterLayout buildLayout()
               { "x1", "x2", "x4", "x8" }, 2);
     addChoice(StepSequencerMod::kLengthParamID, "Mod Seq Length",
               { "8", "16", "24", "32" }, 1);
+    addInt(StepSequencerMod::kLoopLengthParamID, "Mod Seq Loop Length",
+           1, StepSequencerMod::kNumSteps, StepSequencerMod::kNumSteps);
 
     const int defaultTargets[] = {
         (int) ModDest::FilterA_Cutoff,

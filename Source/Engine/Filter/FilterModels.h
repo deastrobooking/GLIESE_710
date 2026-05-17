@@ -344,7 +344,8 @@ private:
         const float feedbackHp = z[2] - feedbackLow;
 
         const float res = juce::jlimit(0.f, 1.f, params.resonance);
-        const float resAmount = std::pow(res, 0.72f) * (2.35f + accent * 1.15f);
+        const float resCurve = std::pow(res, 0.58f);
+        const float resAmount = resCurve * (3.25f + accent * 1.65f);
         const float sat = juce::jlimit(0.f, 1.f, params.saturation);
         const float driveGain = 0.85f + params.drive * 5.25f + accent * 1.35f;
 
@@ -365,7 +366,9 @@ private:
             stageIn = asymLimit(y, 0.12f + sat * 0.35f + accent * 0.12f);
         }
 
-        float out = z[2] * (1.0f + res * 0.18f + accent * 0.14f);
+        const float resonantTap = z[1] - z[2];
+        float out = z[2] * (1.0f + res * 0.10f + accent * 0.14f)
+                  + resonantTap * resCurve * (1.65f + accent * 0.80f);
         out *= 1.f + params.bassComp * res * 0.35f;
         out = asymLimit(out, sat * 0.3f + accent * 0.16f);
         return FilterModelDetail::clampAudio(out);
@@ -758,7 +761,8 @@ private:
         const float g = std::tan(juce::MathConstants<float>::pi * cutoff / (float) coreSr);
         const float G = g / (1.f + g);
         const float res = juce::jlimit(0.f, 1.f, params.resonance);
-        const float feedback = std::pow(res, c.resonanceCurve) * c.feedback;
+        const float resCurve = std::pow(res, c.resonanceCurve * 0.78f);
+        const float feedback = resCurve * c.feedback;
         const float sat = juce::jlimit(0.f, 1.f, params.saturation);
 
         const float fb = softLimit(z[3] * feedback, sat * 0.5f + c.stageSaturation);
@@ -780,7 +784,8 @@ private:
                                    : softLimit(y, sat * 0.35f + c.stageSaturation);
         }
 
-        float out = z[3] * c.outputGain;
+        const float resonantTap = (z[2] - z[3]) + (z[1] - z[2]) * 0.35f;
+        float out = (z[3] + resonantTap * resCurve * (0.85f + c.stageSaturation)) * c.outputGain;
         out *= 1.f + params.bassComp * res * c.bassComp;
 
         if (c.compression > 0.f)

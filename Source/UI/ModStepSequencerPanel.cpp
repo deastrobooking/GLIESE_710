@@ -86,6 +86,7 @@ ModStepSequencerPanel::StepGrid::StepGrid(juce::AudioProcessorValueTreeState& a,
       currentStepProvider(std::move(provider))
 {
     lengthValue = apvts.getRawParameterValue(StepSequencerMod::kLengthParamID);
+    loopLengthValue = apvts.getRawParameterValue(StepSequencerMod::kLoopLengthParamID);
 
     for (int lane = 0; lane < StepSequencerMod::kNumLanes; ++lane)
     {
@@ -110,6 +111,7 @@ void ModStepSequencerPanel::StepGrid::paint(juce::Graphics& g)
     const int currentStep = currentStepProvider ? currentStepProvider() : -1;
     const int startStep = segmentStart();
     const int sequenceLength = getSequenceLength();
+    const int activeSequenceLength = getActiveSequenceLength();
 
     for (int lane = 0; lane < StepSequencerMod::kNumLanes; ++lane)
     {
@@ -125,7 +127,8 @@ void ModStepSequencerPanel::StepGrid::paint(juce::Graphics& g)
         for (int visibleStep = 0; visibleStep < StepSequencerMod::kSegmentLength; ++visibleStep)
         {
             const int step = startStep + visibleStep;
-            const bool stepIsActive = step < sequenceLength;
+            const bool stepIsInSequence = step < sequenceLength;
+            const bool stepIsActive = step < activeSequenceLength;
             auto cell = juce::Rectangle<float>(
                 laneRect.getX() + (float) visibleStep * stepW,
                 laneRect.getY(),
@@ -137,9 +140,9 @@ void ModStepSequencerPanel::StepGrid::paint(juce::Graphics& g)
 
             g.setColour(juce::Colour(0xff050708));
             g.fillRoundedRectangle(cell, 2.0f);
-            g.setColour(accent.withAlpha(stepIsActive ? 0.75f : 0.2f));
+            g.setColour(accent.withAlpha(stepIsActive ? 0.75f : (stepIsInSequence ? 0.28f : 0.12f)));
             g.fillRoundedRectangle(fill, 2.0f);
-            g.setColour(accent.withAlpha(stepIsActive ? 0.28f : 0.12f));
+            g.setColour(accent.withAlpha(stepIsActive ? 0.28f : (stepIsInSequence ? 0.18f : 0.08f)));
             g.drawRoundedRectangle(cell, 2.0f, 0.8f);
 
             if (stepIsActive && step == currentStep)
@@ -148,7 +151,7 @@ void ModStepSequencerPanel::StepGrid::paint(juce::Graphics& g)
                 g.drawRoundedRectangle(cell.expanded(0.5f), 2.5f, 1.6f);
             }
 
-            g.setColour((stepIsActive ? IndustrialTheme::mutedText() : IndustrialTheme::panelEdge()).withAlpha(0.7f));
+            g.setColour((stepIsInSequence ? IndustrialTheme::mutedText() : IndustrialTheme::panelEdge()).withAlpha(stepIsActive ? 0.7f : 0.45f));
             g.setFont(juce::Font(juce::FontOptions { 9.0f, juce::Font::bold }));
             g.drawText(juce::String(step + 1), cell.withHeight(12.0f), juce::Justification::centred);
         }
@@ -336,6 +339,15 @@ int ModStepSequencerPanel::StepGrid::getSequenceLength() const noexcept
     return StepSequencerMod::sequenceLengthForIndex(index);
 }
 
+int ModStepSequencerPanel::StepGrid::getActiveSequenceLength() const noexcept
+{
+    const int loopLength = loopLengthValue != nullptr
+        ? (int) loopLengthValue->load(std::memory_order_relaxed)
+        : StepSequencerMod::kNumSteps;
+
+    return StepSequencerMod::effectiveSequenceLength(getSequenceLength(), loopLength);
+}
+
 size_t ModStepSequencerPanel::StepGrid::indexFor(int lane, int step)
 {
     const int safeLane = juce::jlimit(0, StepSequencerMod::kNumLanes - 1, lane);
@@ -363,6 +375,14 @@ ModStepSequencerPanel::ModStepSequencerPanel(juce::AudioProcessorValueTreeState&
     addAndMakeVisible(depthSlider);
     depthAtt = std::make_unique<Att>(apvts, StepSequencerMod::kDepthParamID, depthSlider);
 
+    loopLengthSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+    loopLengthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 42, 14);
+    loopLengthSlider.setNumDecimalPlacesToDisplay(0);
+    loopLengthSlider.setTooltip("Active mod sequencer loop length");
+    IndustrialTheme::styleSlider(loopLengthSlider, accent);
+    addAndMakeVisible(loopLengthSlider);
+    loopLengthAtt = std::make_unique<Att>(apvts, StepSequencerMod::kLoopLengthParamID, loopLengthSlider);
+
     divisionBox.addItemList({ "1/4", "1/8", "1/16", "1/32", "1/64", "1/8T", "1/16T", "1/8D", "1/16D" }, 1);
     divisionBox.setTooltip("Mod sequencer base division");
     IndustrialTheme::styleCombo(divisionBox, accent);
@@ -385,6 +405,7 @@ ModStepSequencerPanel::ModStepSequencerPanel(juce::AudioProcessorValueTreeState&
     };
 
     makeLabel(depthLabel, "DEPTH", accent);
+    makeLabel(loopLengthLabel, "LOOP", accent);
     makeLabel(divisionLabel, "DIVISION", accent);
     makeLabel(subdivisionLabel, "SUBDIV", accent);
     makeLabel(lengthLabel, "LENGTH", accent);
@@ -461,20 +482,24 @@ void ModStepSequencerPanel::resized()
     titleLabel.setBounds(area.removeFromTop(22));
     area.removeFromTop(5);
 
-    auto controlBand = area.removeFromTop(50);
+    auto controlBand = area.removeFromTop(64);
     auto labelRow = controlBand.removeFromTop(14);
-    depthLabel.setBounds(labelRow.removeFromLeft(220));
+    depthLabel.setBounds(labelRow.removeFromLeft(200));
     labelRow.removeFromLeft(8);
-    divisionLabel.setBounds(labelRow.removeFromLeft(112));
+    loopLengthLabel.setBounds(labelRow.removeFromLeft(58));
     labelRow.removeFromLeft(8);
-    subdivisionLabel.setBounds(labelRow.removeFromLeft(92));
+    divisionLabel.setBounds(labelRow.removeFromLeft(104));
+    labelRow.removeFromLeft(8);
+    subdivisionLabel.setBounds(labelRow.removeFromLeft(84));
 
-    auto controlRow = controlBand.removeFromTop(26);
-    depthSlider.setBounds(controlRow.removeFromLeft(220));
+    auto controlRow = controlBand.removeFromTop(44);
+    depthSlider.setBounds(controlRow.removeFromLeft(200));
     controlRow.removeFromLeft(8);
-    divisionBox.setBounds(controlRow.removeFromLeft(112));
+    loopLengthSlider.setBounds(controlRow.removeFromLeft(58));
     controlRow.removeFromLeft(8);
-    subdivisionBox.setBounds(controlRow.removeFromLeft(92));
+    divisionBox.setBounds(controlRow.removeFromLeft(104).withHeight(26));
+    controlRow.removeFromLeft(8);
+    subdivisionBox.setBounds(controlRow.removeFromLeft(84).withHeight(26));
     controlRow.removeFromLeft(12);
     labelRow.removeFromLeft(12);
     lengthLabel.setBounds(labelRow.removeFromLeft(176));

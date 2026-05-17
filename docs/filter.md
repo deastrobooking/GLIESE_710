@@ -71,10 +71,12 @@ The analog-named modes are musical models, not component-perfect circuit clones.
 ### State Variable / EQ Modes
 
 LP12, LP24, HP12, HP24, Bandpass, Notch, Peak, LowShelf, and HighShelf use stable digital filter structures suitable for automation and modulation. They are the clean modes.
+For Peak and Shelf modes, resonance narrows the emphasis and adds resonant boost even when drive is low.
 
 ### Comb And AM Modes
 
 Comb uses a short feedback delay derived from cutoff. AM+ and AM- use the filter modulation signal as an amplitude-control source. These are sound-design utilities rather than traditional filter models.
+In the AM modes, resonance acts as modulation depth plus a small self-AM color, so the resonance control remains audible even without an external AM signal.
 
 ### Ladder Modes
 
@@ -104,10 +106,12 @@ Jupiter-8  brighter and faster
 ```
 
 All four are 24 dB/oct low-pass character models. `drive`, `saturation`, and `morph` influence how strongly the input and feedback paths color the sound.
+`resonance` controls both the feedback amount and a resonant stage tap, so the cutoff peak stays obvious across the vintage Roland variants.
 
 ### TB-303
 
 The TB-303 mode is an acid-style 18 dB/oct character filter. Its resonance path is shaped differently from a standard four-pole ladder, giving the more nasal, liquid, less heavy peak associated with 303-style sweeps.
+High resonance adds a stronger squelchy tap around the cutoff while preserving the high-passed feedback character.
 
 Best with:
 

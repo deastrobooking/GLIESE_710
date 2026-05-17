@@ -60,6 +60,7 @@ private:
         std::array<std::atomic<float>*, StepSequencerMod::kNumLanes * StepSequencerMod::kNumSteps> stepValues {};
         std::array<juce::RangedAudioParameter*, StepSequencerMod::kNumLanes * StepSequencerMod::kNumSteps> stepParams {};
         std::atomic<float>* lengthValue = nullptr;
+        std::atomic<float>* loopLengthValue = nullptr;
         juce::Random rng;
         int activeSegment = 0;
 
@@ -70,6 +71,7 @@ private:
         int stepAtX(float x) const;
         int segmentStart() const noexcept;
         int getSequenceLength() const noexcept;
+        int getActiveSequenceLength() const noexcept;
         static size_t indexFor(int lane, int step);
     };
 
@@ -79,9 +81,10 @@ private:
 
     juce::Label titleLabel;
     juce::Slider depthSlider;
+    juce::Slider loopLengthSlider;
     juce::ComboBox divisionBox;
     juce::ComboBox subdivisionBox;
-    juce::Label depthLabel, divisionLabel, subdivisionLabel, lengthLabel, segmentLabel;
+    juce::Label depthLabel, divisionLabel, subdivisionLabel, loopLengthLabel, lengthLabel, segmentLabel;
     std::array<SolidButton, 4> lengthButtons;
     std::array<SolidButton, StepSequencerMod::kNumSegments> segmentButtons;
 
@@ -94,6 +97,7 @@ private:
     using CAtt = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
     std::unique_ptr<Att> depthAtt;
+    std::unique_ptr<Att> loopLengthAtt;
     std::unique_ptr<CAtt> divisionAtt;
     std::unique_ptr<CAtt> subdivisionAtt;
     std::array<std::unique_ptr<CAtt>, StepSequencerMod::kNumLanes> targetAtts;

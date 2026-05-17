@@ -14,6 +14,7 @@ The design goal is direct: every oscillator page should feel playable and modula
 |---|---|
 | AU | macOS |
 | VST3 | macOS / Windows |
+| CLAP | macOS / Windows / Linux |
 | LV2 | Linux |
 | Standalone | All platforms |
 
@@ -30,7 +31,7 @@ The design goal is direct: every oscillator page should feel playable and modula
 | Xcode | 14+ (macOS AU builds only) |
 | Git | Any recent version |
 
-JUCE 8 is fetched automatically by CMake via CPM.
+JUCE 8 and the optional CLAP wrapper dependency are fetched automatically by CMake via CPM.
 
 ### Build
 
@@ -47,7 +48,7 @@ For the normal local loop, use the build script instead of manually copying plug
 scripts/build-plugin.zsh
 ```
 
-To build, test, install AU/VST3 into the macOS system plugin folders, ad-hoc sign them, and verify the installed bundles:
+To build, test, install AU/VST3/CLAP into the macOS system plugin folders, ad-hoc sign them, and verify the installed bundles:
 
 ```bash
 scripts/build-plugin.zsh --install-system
@@ -174,6 +175,8 @@ See [docs/filter.md](docs/filter.md).
 32 slots. Each slot: **Source -> Destination -> Amount (-1 to +1) -> Bipolar toggle**.
 
 Sources include LFO1-4, envelope groups, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, and eight macros. Destinations cover 3D controls, FM operator level/ratio controls, wavetable position/warp, granular controls, VA controls, filter controls, LFO controls, master volume/pan, and arp rate/gate.
+
+The four-lane mod step sequencer has a performance loop-length knob that can trim playback from the full programmed pattern down to a single step without changing stored step values.
 
 Terrain modulation destinations are not exposed yet; terrain currently responds through its direct APVTS parameters and per-slot envelope.
 

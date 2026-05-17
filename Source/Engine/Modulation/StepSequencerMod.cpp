@@ -56,7 +56,9 @@ void StepSequencerMod::processBlock(int numSamples)
 
     const auto divisionIndex = loadInt(params.division, 2);
     const auto subdivisionIndex = loadInt(params.subdivision, 2);
-    const int sequenceLength = sequenceLengthForIndex(loadInt(params.length, 1));
+    const int sequenceLength = effectiveSequenceLength(
+        sequenceLengthForIndex(loadInt(params.length, 1)),
+        loadInt(params.loopLength, kNumSteps));
     const double ppqPerStep = ppqForDivisionIndex(divisionIndex)
                             / (double) subdivisionMultiplierForIndex(subdivisionIndex);
 
@@ -149,6 +151,13 @@ int StepSequencerMod::sequenceLengthForIndex(int index)
     return lengths[(size_t) juce::jlimit(0, (int) std::size(lengths) - 1, index)];
 }
 
+int StepSequencerMod::effectiveSequenceLength(int sequenceLength, int loopLength)
+{
+    const int safeSequenceLength = juce::jlimit(1, kNumSteps, sequenceLength);
+    const int safeLoopLength = juce::jlimit(1, kNumSteps, loopLength);
+    return juce::jlimit(1, safeSequenceLength, safeLoopLength);
+}
+
 void StepSequencerMod::buildParamCache()
 {
     if (apvts == nullptr)
@@ -158,6 +167,7 @@ void StepSequencerMod::buildParamCache()
     params.division = apvts->getRawParameterValue(kDivisionParamID);
     params.subdivision = apvts->getRawParameterValue(kSubdivisionParamID);
     params.length = apvts->getRawParameterValue(kLengthParamID);
+    params.loopLength = apvts->getRawParameterValue(kLoopLengthParamID);
 
     for (int lane = 0; lane < kNumLanes; ++lane)
     {

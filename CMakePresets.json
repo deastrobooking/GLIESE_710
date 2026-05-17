@@ -17,7 +17,7 @@
     {
       "name": "plugin",
       "configurePreset": "production",
-      "description": "Build all GLIESE 710 plugin formats.",
+      "description": "Build all GLIESE 710 plugin formats, including CLAP when enabled.",
       "targets": [
         "GLIESE_710_All"
       ]
