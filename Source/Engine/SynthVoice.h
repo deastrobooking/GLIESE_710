@@ -159,6 +159,7 @@ private:
         };
         struct VAPtrs {
             std::atomic<float>* on      = nullptr;
+            std::atomic<float>* model   = nullptr;
             std::atomic<float>* shape   = nullptr;
             std::atomic<float>* pw      = nullptr;
             std::atomic<float>* detune  = nullptr;

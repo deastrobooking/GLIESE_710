@@ -320,6 +320,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         juce::String pfx = vaPrefix(i);
         auto& v = pc.va[(size_t)i];
         v.on     = get(pfx + "on");
+        v.model  = get(pfx + "model");
         v.shape  = get(pfx + "shape");
         v.pw     = get(pfx + "pw");
         v.detune = get(pfx + "detune");
@@ -687,6 +688,7 @@ void SynthVoice::syncParams()
         vaOscs[(size_t)i].setFrequency(vaHz);
 
         VAOscillator::Params vap;
+        vap.model       = static_cast<VAOscillator::Model>(pI(cv.model));
         vap.shapeMorph  = juce::jlimit(0.f, 5.f,
                             pF(cv.shape, 1.f) + modDests.dests[(int)vaShapeDest(i)] * 5.f);
         vap.pulseWidth  = juce::jlimit(0.05f, 0.95f,

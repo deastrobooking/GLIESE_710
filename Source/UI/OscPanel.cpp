@@ -402,6 +402,13 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     }
     else if (oscId.startsWith("va"))
     {
+        modeBoxA.addItemList({"Native","Moog","Roland","Oberheim","Sequential"}, 1);
+        modeBoxA.setTooltip("Virtual analog oscillator model");
+        IndustrialTheme::styleCombo(modeBoxA, accent);
+        addAndMakeVisible(modeBoxA);
+        modeAttA = std::make_unique<CAtt>(apvts, pfx + "model", modeBoxA);
+        numModeBoxes = 1;
+
         setupExtraSlider(extra1, pfx + "shape",  "Wave Shape Morph (0=Sine 1=Saw 2=RevSaw 3=Sqr 4=Tri 5=Pulse)", extraAtt1);
         setupExtraSlider(extra2, pfx + "pw",     "Pulse Width",      extraAtt2);
         setupExtraSlider(extra3, pfx + "detune", "Unison Detune",    extraAtt3);
@@ -538,6 +545,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     }
     else if (oscId.startsWith("va"))
     {
+        makeLabel(modeALabel, "MODEL");
         makeLabel(extraLabels[0], "SHAPE");
         makeLabel(extraLabels[1], "PW");
         makeLabel(extraLabels[2], "DETUNE");

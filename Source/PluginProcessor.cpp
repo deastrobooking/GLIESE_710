@@ -263,7 +263,9 @@ static APVTS::ParameterLayout buildLayout()
     auto addVAOsc = [&](int index, const juce::String& prefix, bool enabledByDefault)
     {
         juce::String label = "VA" + juce::String(index);
+        juce::StringArray oscModels { "Native", "Moog", "Roland", "Oberheim", "Sequential" };
         addBool (prefix + "on",      label + " Enable", enabledByDefault);
+        addChoice(prefix + "model",  label + " Oscillator Model", oscModels, 0);
         addFloat(prefix + "shape",   label + " Shape Morph", 0.0f, 5.0f, 1.0f);
         addFloat(prefix + "pw",      label + " Pulse Width", 0.05f, 0.95f, 0.5f);
         addFloat(prefix + "detune",  label + " Detune",      0.0f, 1.0f, 0.0f);

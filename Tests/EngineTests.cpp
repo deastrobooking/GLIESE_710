@@ -292,6 +292,35 @@ TEST_CASE("VAOscillator stereo output bounds", "[vaosc]")
             REQUIRE(R <=  4.f);
         }
     }
+
+    SECTION("all oscillator models stay finite")
+    {
+        for (int model = 0; model < (int)VAOscillator::Model::NumModels; ++model)
+        {
+            VAOscillator::Params p;
+            p.model       = static_cast<VAOscillator::Model>(model);
+            p.shapeMorph  = 1.7f;
+            p.pulseWidth  = 0.42f;
+            p.ringMod     = 0.35f;
+            p.wavefold    = 0.25f;
+            p.unisonCount = 5;
+            p.detune      = 0.7f;
+            p.spread      = 0.8f;
+            va.setParams(p);
+            va.reset();
+
+            for (int i = 0; i < 4800; ++i)
+            {
+                auto [L, R] = va.processSample();
+                REQUIRE(std::isfinite(L));
+                REQUIRE(std::isfinite(R));
+                REQUIRE(L >= -4.f);
+                REQUIRE(L <=  4.f);
+                REQUIRE(R >= -4.f);
+                REQUIRE(R <=  4.f);
+            }
+        }
+    }
 }
 
 //──────────────────────────────────────────────────────────────────────────────
