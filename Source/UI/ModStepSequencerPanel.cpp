@@ -21,6 +21,15 @@ const juce::StringArray kPatternTooltips {
     "Invert values", "Sparse random accents", "Random walk", "Quantize values"
 };
 
+const juce::StringArray kDrawModeLabels { "FREE", "RAMP", "CURVE", "CORNER" };
+
+const juce::StringArray kDrawModeTooltips {
+    "Draw individual sequencer values",
+    "Drag between two points to draw a straight ramp",
+    "Drag between two points, then drag the yellow point to bend the curve",
+    "Drag between two points, then drag the yellow point to set the corner level"
+};
+
 const juce::Colour kPatternColours[] = {
     juce::Colour(0xff00e5ff), juce::Colour(0xffffd23f), juce::Colour(0xffff7a18), juce::Colour(0xffff2bd6),
     juce::Colour(0xff39ff14), juce::Colour(0xff7aa6ff), juce::Colour(0xffb06cff), juce::Colour(0xfffff000),
@@ -77,6 +86,34 @@ void ModStepSequencerPanel::SolidButton::paintButton(juce::Graphics& g, bool hig
                             : IndustrialTheme::mutedText());
     g.setFont(juce::Font(juce::FontOptions { 9.0f, juce::Font::bold }));
     g.drawFittedText(getButtonText(), getLocalBounds().reduced(2), juce::Justification::centred, 1);
+}
+
+void ModStepSequencerPanel::ResetButton::paintButton(juce::Graphics& g, bool highlighted, bool down)
+{
+    auto bounds = getLocalBounds().toFloat().reduced(3.0f);
+    const auto size = juce::jmin(bounds.getWidth(), bounds.getHeight());
+    auto circle = juce::Rectangle<float>(0.0f, 0.0f, size, size).withCentre(bounds.getCentre());
+
+    auto red = juce::Colour(0xffd81718);
+    if (down)
+        red = red.darker(0.22f);
+    else if (highlighted)
+        red = red.brighter(0.16f);
+
+    g.setColour(red.withAlpha(0.18f));
+    g.fillEllipse(circle.expanded(3.0f));
+    g.setColour(red);
+    g.fillEllipse(circle);
+
+    g.setColour(juce::Colour(0xffffd23f));
+    g.drawEllipse(circle.reduced(1.2f), down ? 3.0f : 2.2f);
+
+    g.setColour(juce::Colours::black.withAlpha(0.36f));
+    g.drawEllipse(circle.reduced(4.0f), 1.0f);
+
+    g.setColour(juce::Colours::white);
+    g.setFont(juce::Font(juce::FontOptions { 9.0f, juce::Font::bold }));
+    g.drawFittedText(getButtonText(), circle.toNearestInt().reduced(7), juce::Justification::centred, 1);
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -156,16 +193,58 @@ void ModStepSequencerPanel::StepGrid::paint(juce::Graphics& g)
             g.drawText(juce::String(step + 1), cell.withHeight(12.0f), juce::Justification::centred);
         }
     }
+
+    paintEditableShape(g);
 }
 
 void ModStepSequencerPanel::StepGrid::mouseDown(const juce::MouseEvent& e)
 {
-    updateFromMouse(e.getPosition());
+    if (drawMode == DrawMode::Free)
+    {
+        updateFromMouse(e.getPosition());
+        return;
+    }
+
+    if ((drawMode == DrawMode::Curve || drawMode == DrawMode::Corner)
+        && hitEditableShapeHandle(e.getPosition()))
+    {
+        gesture.active = true;
+        gesture.draggingHandle = true;
+        updateShapeHandle(e.getPosition());
+        return;
+    }
+
+    beginShapeGesture(e.getPosition());
 }
 
 void ModStepSequencerPanel::StepGrid::mouseDrag(const juce::MouseEvent& e)
 {
-    updateFromMouse(e.getPosition());
+    if (drawMode == DrawMode::Free)
+    {
+        updateFromMouse(e.getPosition());
+        return;
+    }
+
+    if (gesture.draggingHandle)
+        updateShapeHandle(e.getPosition());
+    else
+        updateShapeGesture(e.getPosition());
+}
+
+void ModStepSequencerPanel::StepGrid::mouseUp(const juce::MouseEvent&)
+{
+    gesture.active = false;
+    gesture.draggingHandle = false;
+}
+
+void ModStepSequencerPanel::StepGrid::setDrawMode(DrawMode mode)
+{
+    if (drawMode != mode)
+        editableShape.active = false;
+
+    drawMode = mode;
+    gesture = {};
+    repaint();
 }
 
 void ModStepSequencerPanel::StepGrid::randomizeLane(int lane)
@@ -293,18 +372,182 @@ void ModStepSequencerPanel::StepGrid::setStepValue(int lane, int step, float val
 
 void ModStepSequencerPanel::StepGrid::updateFromMouse(juce::Point<int> position)
 {
-    auto laneArea = getLocalBounds().toFloat().reduced(7.0f);
-    const float gap = 7.0f;
-    const float laneH = (laneArea.getHeight() - gap * (float) (StepSequencerMod::kNumLanes - 1))
-                      / (float) StepSequencerMod::kNumLanes;
-    const int lane = juce::jlimit(0, StepSequencerMod::kNumLanes - 1,
-                                  (int) std::floor(((float) position.y - laneArea.getY())
-                                                   / juce::jmax(1.0f, laneH + gap)));
-    auto bounds = laneBounds(lane);
+    const int lane = laneAtY((float) position.y);
     const int step = stepAtX((float) position.x);
-    const float value = 1.0f - ((float) position.y - bounds.getY())
-                              / juce::jmax(1.0f, bounds.getHeight());
-    setStepValue(lane, step, value);
+    setStepValue(lane, step, valueAtY(lane, (float) position.y));
+}
+
+void ModStepSequencerPanel::StepGrid::beginShapeGesture(juce::Point<int> position)
+{
+    gesture.active = true;
+    gesture.draggingHandle = false;
+    gesture.lane = laneAtY((float) position.y);
+    gesture.startStep = stepAtX((float) position.x);
+    gesture.startValue = valueAtY(gesture.lane, (float) position.y);
+
+    editableShape.active = true;
+    editableShape.mode = drawMode;
+    editableShape.lane = gesture.lane;
+    editableShape.startStep = gesture.startStep;
+    editableShape.endStep = gesture.startStep;
+    editableShape.cornerStep = gesture.startStep;
+    editableShape.startValue = gesture.startValue;
+    editableShape.endValue = gesture.startValue;
+    editableShape.cornerValue = gesture.startValue;
+
+    applyEditableShape();
+}
+
+void ModStepSequencerPanel::StepGrid::updateShapeGesture(juce::Point<int> position)
+{
+    if (!gesture.active)
+        beginShapeGesture(position);
+
+    editableShape.mode = drawMode;
+    editableShape.lane = gesture.lane;
+    editableShape.startStep = gesture.startStep;
+    editableShape.endStep = stepAtX((float) position.x);
+    editableShape.startValue = gesture.startValue;
+    editableShape.endValue = valueAtY(gesture.lane, (float) position.y);
+
+    const int minStep = juce::jmin(editableShape.startStep, editableShape.endStep);
+    const int maxStep = juce::jmax(editableShape.startStep, editableShape.endStep);
+    editableShape.cornerStep = (minStep + maxStep) / 2;
+    editableShape.cornerValue = (editableShape.startValue + editableShape.endValue) * 0.5f;
+
+    applyEditableShape();
+}
+
+void ModStepSequencerPanel::StepGrid::updateShapeHandle(juce::Point<int> position)
+{
+    if (!editableShape.active)
+        return;
+
+    const int minStep = juce::jmin(editableShape.startStep, editableShape.endStep);
+    const int maxStep = juce::jmax(editableShape.startStep, editableShape.endStep);
+
+    editableShape.cornerStep = juce::jlimit(minStep, maxStep, stepAtX((float) position.x));
+    editableShape.cornerValue = valueAtY(editableShape.lane, (float) position.y);
+    applyEditableShape();
+}
+
+void ModStepSequencerPanel::StepGrid::applyEditableShape()
+{
+    if (!editableShape.active)
+        return;
+
+    const int start = editableShape.startStep;
+    const int end = editableShape.endStep;
+    const int minStep = juce::jmin(start, end);
+    const int maxStep = juce::jmax(start, end);
+    const int span = juce::jmax(1, maxStep - minStep);
+
+    auto orientedT = [&](int step)
+    {
+        const float raw = (float) (step - minStep) / (float) span;
+        return start <= end ? raw : 1.0f - raw;
+    };
+
+    auto valueForCorner = [&](int step)
+    {
+        if (start == end)
+            return editableShape.startValue;
+
+        const int corner = juce::jlimit(minStep, maxStep, editableShape.cornerStep);
+        if (step == corner)
+            return editableShape.cornerValue;
+
+        if ((start <= end && step < corner) || (start > end && step > corner))
+        {
+            const float denom = (float) juce::jmax(1, std::abs(corner - start));
+            const float t = (float) std::abs(step - start) / denom;
+            return editableShape.startValue + (editableShape.cornerValue - editableShape.startValue) * t;
+        }
+
+        const float denom = (float) juce::jmax(1, std::abs(end - corner));
+        const float t = (float) std::abs(step - corner) / denom;
+        return editableShape.cornerValue + (editableShape.endValue - editableShape.cornerValue) * t;
+    };
+
+    for (int step = minStep; step <= maxStep; ++step)
+    {
+        float value = editableShape.endValue;
+        const float t = orientedT(step);
+
+        switch (editableShape.mode)
+        {
+            case DrawMode::Ramp:
+                value = editableShape.startValue + (editableShape.endValue - editableShape.startValue) * t;
+                break;
+
+            case DrawMode::Curve:
+            {
+                const float oneMinusT = 1.0f - t;
+                value = oneMinusT * oneMinusT * editableShape.startValue
+                      + 2.0f * oneMinusT * t * editableShape.cornerValue
+                      + t * t * editableShape.endValue;
+                break;
+            }
+
+            case DrawMode::Corner:
+                value = valueForCorner(step);
+                break;
+
+            case DrawMode::Free:
+                break;
+        }
+
+        setStepValue(editableShape.lane, step, value);
+    }
+
+    repaint();
+}
+
+void ModStepSequencerPanel::StepGrid::paintEditableShape(juce::Graphics& g) const
+{
+    if (!editableShape.active || editableShape.lane < 0)
+        return;
+
+    const int start = segmentStart();
+    const int end = start + StepSequencerMod::kSegmentLength - 1;
+    if (editableShape.endStep < start || editableShape.startStep > end)
+        return;
+
+    auto drawHandle = [&](int step, float value, juce::Colour colour, float radius)
+    {
+        const auto p = pointForStepValue(editableShape.lane, step, value);
+        g.setColour(juce::Colours::black.withAlpha(0.55f));
+        g.fillEllipse(p.x - radius - 1.0f, p.y - radius - 1.0f, radius * 2.0f + 2.0f, radius * 2.0f + 2.0f);
+        g.setColour(colour);
+        g.fillEllipse(p.x - radius, p.y - radius, radius * 2.0f, radius * 2.0f);
+        g.setColour(juce::Colours::black.withAlpha(0.45f));
+        g.drawEllipse(p.x - radius, p.y - radius, radius * 2.0f, radius * 2.0f, 1.0f);
+    };
+
+    const auto accent = laneAccent(editableShape.lane);
+    drawHandle(editableShape.startStep, editableShape.startValue, accent.brighter(0.3f), 3.5f);
+    drawHandle(editableShape.endStep, editableShape.endValue, accent.brighter(0.3f), 3.5f);
+
+    if (editableShape.mode == DrawMode::Curve || editableShape.mode == DrawMode::Corner)
+        drawHandle(editableShape.cornerStep, editableShape.cornerValue, juce::Colour(0xffffd23f), 5.0f);
+}
+
+bool ModStepSequencerPanel::StepGrid::hitEditableShapeHandle(juce::Point<int> position) const
+{
+    if (!editableShape.active || (editableShape.mode != DrawMode::Curve && editableShape.mode != DrawMode::Corner))
+        return false;
+
+    const auto handle = pointForStepValue(editableShape.lane, editableShape.cornerStep, editableShape.cornerValue);
+    return handle.getDistanceFrom(position.toFloat()) <= 12.0f;
+}
+
+juce::Point<float> ModStepSequencerPanel::StepGrid::pointForStepValue(int lane, int step, float value) const
+{
+    auto laneRect = laneBounds(lane);
+    const float stepW = laneRect.getWidth() / (float) StepSequencerMod::kSegmentLength;
+    const float x = laneRect.getX() + ((float) (step - segmentStart()) + 0.5f) * stepW;
+    const float y = laneRect.getBottom() - laneRect.getHeight() * juce::jlimit(0.0f, 1.0f, value);
+    return { x, y };
 }
 
 juce::Rectangle<float> ModStepSequencerPanel::StepGrid::laneBounds(int lane) const
@@ -319,6 +562,16 @@ juce::Rectangle<float> ModStepSequencerPanel::StepGrid::laneBounds(int lane) con
              laneH };
 }
 
+int ModStepSequencerPanel::StepGrid::laneAtY(float y) const
+{
+    auto laneArea = getLocalBounds().toFloat().reduced(7.0f);
+    const float gap = 7.0f;
+    const float laneH = (laneArea.getHeight() - gap * (float) (StepSequencerMod::kNumLanes - 1))
+                      / (float) StepSequencerMod::kNumLanes;
+    return juce::jlimit(0, StepSequencerMod::kNumLanes - 1,
+                        (int) std::floor((y - laneArea.getY()) / juce::jmax(1.0f, laneH + gap)));
+}
+
 int ModStepSequencerPanel::StepGrid::stepAtX(float x) const
 {
     auto area = getLocalBounds().toFloat().reduced(7.0f);
@@ -326,6 +579,13 @@ int ModStepSequencerPanel::StepGrid::stepAtX(float x) const
     const int visibleStep = juce::jlimit(0, StepSequencerMod::kSegmentLength - 1,
                                          (int) std::floor(normalized * (float) StepSequencerMod::kSegmentLength));
     return juce::jlimit(0, StepSequencerMod::kNumSteps - 1, segmentStart() + visibleStep);
+}
+
+float ModStepSequencerPanel::StepGrid::valueAtY(int lane, float y) const
+{
+    auto bounds = laneBounds(lane);
+    return juce::jlimit(0.0f, 1.0f,
+                        1.0f - (y - bounds.getY()) / juce::jmax(1.0f, bounds.getHeight()));
 }
 
 int ModStepSequencerPanel::StepGrid::segmentStart() const noexcept
@@ -368,6 +628,21 @@ ModStepSequencerPanel::ModStepSequencerPanel(juce::AudioProcessorValueTreeState&
     IndustrialTheme::styleTitle(titleLabel, accent, 13.0f);
     addAndMakeVisible(titleLabel);
 
+    drawModeLabel.setText("DRAW", juce::dontSendNotification);
+    IndustrialTheme::styleLabel(drawModeLabel, accent, 10.0f, juce::Justification::centredLeft);
+    addAndMakeVisible(drawModeLabel);
+
+    for (int i = 0; i < (int) drawModeButtons.size(); ++i)
+    {
+        auto& button = drawModeButtons[(size_t) i];
+        button.setButtonText(kDrawModeLabels[i]);
+        button.setTooltip(kDrawModeTooltips[i]);
+        button.setClickingTogglesState(false);
+        button.setSolidColour(kPatternColours[(i + 5) % kPatternCount]);
+        button.onClick = [this, i] { setDrawMode((StepGrid::DrawMode) i); };
+        addAndMakeVisible(button);
+    }
+
     depthSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     depthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 16);
     depthSlider.setTooltip("Alien Sequencer");
@@ -387,6 +662,11 @@ ModStepSequencerPanel::ModStepSequencerPanel(juce::AudioProcessorValueTreeState&
     };
     IndustrialTheme::styleSlider(sequenceLengthSlider, accent);
     addAndMakeVisible(sequenceLengthSlider);
+
+    sequenceLengthResetButton.setButtonText("RESET");
+    sequenceLengthResetButton.setTooltip("Reset stored mod sequencer length to 8 steps");
+    sequenceLengthResetButton.onClick = [this] { setSequenceLengthIndex(0); };
+    addAndMakeVisible(sequenceLengthResetButton);
 
     loopLengthSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     loopLengthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 48, 16);
@@ -477,6 +757,7 @@ ModStepSequencerPanel::ModStepSequencerPanel(juce::AudioProcessorValueTreeState&
     }
 
     updateLengthAndSegmentButtons();
+    updateDrawModeButtons();
     startTimerHz(30);
 }
 
@@ -493,7 +774,13 @@ void ModStepSequencerPanel::paint(juce::Graphics& g)
 void ModStepSequencerPanel::resized()
 {
     auto area = getLocalBounds().reduced(8);
-    titleLabel.setBounds(area.removeFromTop(22));
+    auto titleRow = area.removeFromTop(22);
+    auto drawModeArea = titleRow.removeFromRight(282);
+    drawModeLabel.setBounds(drawModeArea.removeFromLeft(42));
+    drawModeArea.removeFromLeft(4);
+    for (int i = 0; i < (int) drawModeButtons.size(); ++i)
+        drawModeButtons[(size_t) i].setBounds(portion(drawModeArea, i, (int) drawModeButtons.size()).reduced(2, 1));
+    titleLabel.setBounds(titleRow);
     area.removeFromTop(5);
 
     auto controlBand = area.removeFromTop(80);
@@ -501,6 +788,8 @@ void ModStepSequencerPanel::resized()
     depthLabel.setBounds(labelRow.removeFromLeft(184));
     labelRow.removeFromLeft(8);
     sequenceLengthLabel.setBounds(labelRow.removeFromLeft(84));
+    labelRow.removeFromLeft(8);
+    labelRow.removeFromLeft(52);
     labelRow.removeFromLeft(8);
     loopLengthLabel.setBounds(labelRow.removeFromLeft(84));
     labelRow.removeFromLeft(8);
@@ -512,6 +801,8 @@ void ModStepSequencerPanel::resized()
     depthSlider.setBounds(controlRow.removeFromLeft(184));
     controlRow.removeFromLeft(8);
     sequenceLengthSlider.setBounds(controlRow.removeFromLeft(84));
+    controlRow.removeFromLeft(8);
+    sequenceLengthResetButton.setBounds(controlRow.removeFromLeft(52).withHeight(52));
     controlRow.removeFromLeft(8);
     loopLengthSlider.setBounds(controlRow.removeFromLeft(84));
     controlRow.removeFromLeft(8);
@@ -649,4 +940,17 @@ void ModStepSequencerPanel::updateLengthAndSegmentButtons()
         button.setEnabled(i < enabledSegments);
         button.setToggleState(i == grid.getActiveSegment(), juce::dontSendNotification);
     }
+}
+
+void ModStepSequencerPanel::setDrawMode(StepGrid::DrawMode mode)
+{
+    grid.setDrawMode(mode);
+    updateDrawModeButtons();
+}
+
+void ModStepSequencerPanel::updateDrawModeButtons()
+{
+    const int activeMode = (int) grid.getDrawMode();
+    for (int i = 0; i < (int) drawModeButtons.size(); ++i)
+        drawModeButtons[(size_t) i].setToggleState(i == activeMode, juce::dontSendNotification);
 }

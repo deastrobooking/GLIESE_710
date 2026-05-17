@@ -29,15 +29,33 @@ private:
         juce::Colour solidColour { juce::Colours::white };
     };
 
+    class ResetButton : public juce::TextButton
+    {
+    public:
+        void paintButton(juce::Graphics&, bool highlighted, bool down) override;
+    };
+
     class StepGrid : public juce::Component
     {
     public:
+        enum class DrawMode
+        {
+            Free = 0,
+            Ramp,
+            Curve,
+            Corner
+        };
+
         StepGrid(juce::AudioProcessorValueTreeState& apvts,
                  CurrentStepProvider currentStepProvider);
 
         void paint(juce::Graphics&) override;
         void mouseDown(const juce::MouseEvent&) override;
         void mouseDrag(const juce::MouseEvent&) override;
+        void mouseUp(const juce::MouseEvent&) override;
+
+        void setDrawMode(DrawMode mode);
+        DrawMode getDrawMode() const noexcept { return drawMode; }
 
         void randomizeLane(int lane);
         void mirrorLane(int lane);
@@ -63,12 +81,47 @@ private:
         std::atomic<float>* loopLengthValue = nullptr;
         juce::Random rng;
         int activeSegment = 0;
+        DrawMode drawMode = DrawMode::Free;
+
+        struct DrawGesture
+        {
+            bool active = false;
+            bool draggingHandle = false;
+            int lane = 0;
+            int startStep = 0;
+            float startValue = 0.0f;
+        };
+
+        struct EditableShape
+        {
+            bool active = false;
+            DrawMode mode = DrawMode::Ramp;
+            int lane = 0;
+            int startStep = 0;
+            int endStep = 0;
+            int cornerStep = 0;
+            float startValue = 0.0f;
+            float endValue = 0.0f;
+            float cornerValue = 0.5f;
+        };
+
+        DrawGesture gesture;
+        EditableShape editableShape;
 
         float getStepValue(int lane, int step) const;
         void setStepValue(int lane, int step, float value);
         void updateFromMouse(juce::Point<int> position);
+        void beginShapeGesture(juce::Point<int> position);
+        void updateShapeGesture(juce::Point<int> position);
+        void updateShapeHandle(juce::Point<int> position);
+        void applyEditableShape();
+        void paintEditableShape(juce::Graphics& g) const;
+        bool hitEditableShapeHandle(juce::Point<int> position) const;
+        juce::Point<float> pointForStepValue(int lane, int step, float value) const;
         juce::Rectangle<float> laneBounds(int lane) const;
+        int laneAtY(float y) const;
         int stepAtX(float x) const;
+        float valueAtY(int lane, float y) const;
         int segmentStart() const noexcept;
         int getSequenceLength() const noexcept;
         int getActiveSequenceLength() const noexcept;
@@ -82,10 +135,12 @@ private:
     juce::Label titleLabel;
     juce::Slider depthSlider;
     juce::Slider sequenceLengthSlider;
+    ResetButton sequenceLengthResetButton;
     juce::Slider loopLengthSlider;
     juce::ComboBox divisionBox;
     juce::ComboBox subdivisionBox;
-    juce::Label depthLabel, sequenceLengthLabel, divisionLabel, subdivisionLabel, loopLengthLabel, lengthLabel, segmentLabel;
+    juce::Label depthLabel, sequenceLengthLabel, divisionLabel, subdivisionLabel, loopLengthLabel, lengthLabel, segmentLabel, drawModeLabel;
+    std::array<SolidButton, 4> drawModeButtons;
     std::array<SolidButton, 4> lengthButtons;
     std::array<SolidButton, StepSequencerMod::kNumSegments> segmentButtons;
 
@@ -112,4 +167,6 @@ private:
     int getSequenceLength() const noexcept;
     void setActiveSegment(int segment);
     void updateLengthAndSegmentButtons();
+    void setDrawMode(StepGrid::DrawMode mode);
+    void updateDrawModeButtons();
 };

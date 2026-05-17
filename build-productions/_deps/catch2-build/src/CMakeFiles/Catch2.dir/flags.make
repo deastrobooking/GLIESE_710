@@ -6,7 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/catch2-src/src/catch2/.. -I/Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/catch2-build/generated-includes
 
-CXX_FLAGSarm64 = -O3 -DNDEBUG -std=gnu++20 -arch arm64 -ffile-prefix-map=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/catch2-src/=
-
-CXX_FLAGS = -O3 -DNDEBUG -std=gnu++20 -arch arm64 -ffile-prefix-map=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/catch2-src/=
+CXX_FLAGS = -O3 -DNDEBUG -std=gnu++20 -ffile-prefix-map=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/catch2-src/=
 
