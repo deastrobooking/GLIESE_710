@@ -1012,6 +1012,58 @@ TEST_CASE("GranularOsc cloud produces finite stereo grains", "[granular]")
     REQUIRE(osc.getActiveGrainCount() > 0);
 }
 
+TEST_CASE("GranularOsc position updates held cloud without retrigger", "[granular]")
+{
+    GranularOsc steady;
+    GranularOsc moved;
+    steady.prepare(48000.0);
+    moved.prepare(48000.0);
+    steady.setFrequency(220.f);
+    moved.setFrequency(220.f);
+
+    GranularOsc::Params p;
+    p.triggerMode = GranularOsc::TriggerMode::FreeCloud;
+    p.window = GranularOsc::Window::Hann;
+    p.position = 0.08f;
+    p.sizeMs = 35.f;
+    p.density = 560.f;
+    p.pitchSemis = 0.f;
+    p.spray = 0.f;
+    p.jitter = 0.f;
+    p.panSpread = 0.f;
+    p.scanSpeed = 0.f;
+    p.freeze = 0.f;
+    p.bodyType = GranularOsc::BodyType::Off;
+    p.bodyMix = 0.f;
+
+    steady.setParams(p);
+    moved.setParams(p);
+    steady.noteOn(60, 1.f);
+    moved.noteOn(60, 1.f);
+
+    for (int i = 0; i < 4096; ++i)
+    {
+        auto [sL, sR] = steady.processSample();
+        auto [mL, mR] = moved.processSample();
+        REQUIRE(mL == Approx(sL).margin(1.0e-6f));
+        REQUIRE(mR == Approx(sR).margin(1.0e-6f));
+    }
+
+    auto movedParams = p;
+    movedParams.position = 0.82f;
+    moved.setParams(movedParams);
+
+    float diff = 0.f;
+    for (int i = 0; i < 12000; ++i)
+    {
+        auto [sL, sR] = steady.processSample();
+        auto [mL, mR] = moved.processSample();
+        diff += std::abs(mL - sL) + std::abs(mR - sR);
+    }
+
+    REQUIRE(diff > 0.05f);
+}
+
 TEST_CASE("GranularOsc default graintable tracks played pitch", "[granular]")
 {
     auto estimatePitch = [](float targetHz)

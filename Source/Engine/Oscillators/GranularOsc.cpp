@@ -8,6 +8,17 @@ float wrap01(float x)
     return x;
 }
 
+float wrappedDelta(float to, float from)
+{
+    float delta = to - from;
+    if (delta > 0.5f)
+        delta -= 1.f;
+    else if (delta < -0.5f)
+        delta += 1.f;
+
+    return delta;
+}
+
 float clampFinite(float x)
 {
     return std::isfinite(x) ? juce::jlimit(-4.f, 4.f, x) : 0.f;
@@ -64,6 +75,9 @@ void GranularOsc::setFrequency(float hz)
 
 void GranularOsc::setParams(const Params& newParams)
 {
+    const auto previousTriggerMode = params.triggerMode;
+    const float previousPosition = params.position;
+
     params = newParams;
     if ((int) params.triggerMode < 0 || (int) params.triggerMode >= (int) TriggerMode::NumModes)
         params.triggerMode = TriggerMode::FreeCloud;
@@ -93,8 +107,17 @@ void GranularOsc::setParams(const Params& newParams)
     params.bodyModes = juce::jlimit(4, kMaxBodyModes, params.bodyModes);
     bodyDirty = true;
 
-    if (params.freeze < 0.5f)
-        scanPosition = wrap01(scanPosition);
+    const float positionDelta = wrappedDelta(params.position, previousPosition);
+    if (std::abs(positionDelta) > 0.000001f)
+        scanPosition = wrap01(scanPosition + positionDelta);
+
+    scanPosition = wrap01(scanPosition);
+
+    if (params.triggerMode == TriggerMode::Burst && previousTriggerMode != TriggerMode::Burst)
+    {
+        burstRemaining = juce::jlimit(1, 48, juce::roundToInt(4.f + params.density * 0.06f));
+        triggerPhase = 1.f;
+    }
 }
 
 void GranularOsc::setSample(const float* samples, int numSamples)
@@ -139,10 +162,11 @@ void GranularOsc::setSample(const float* samples, int numSamples)
 
 std::pair<float, float> GranularOsc::processSample()
 {
-    const bool frozen = params.freeze >= 0.5f;
-    if (!frozen)
+    const float freezeAmount = juce::jlimit(0.f, 1.f, params.freeze);
+    if (freezeAmount < 0.999f)
     {
-        const float scanPerSample = params.scanSpeed * 0.15f / (float) sr;
+        const float scanScale = (1.f - freezeAmount) * (1.f - freezeAmount);
+        const float scanPerSample = params.scanSpeed * 0.75f * scanScale / (float) sr;
         scanPosition = wrap01(scanPosition + scanPerSample);
     }
 
@@ -269,7 +293,7 @@ void GranularOsc::triggerGrain()
                 target = &grain;
     }
 
-    const float position = params.freeze >= 0.5f ? params.position : scanPosition;
+    const float position = wrap01(scanPosition + wrappedDelta(params.position, scanPosition) * params.freeze);
     const float frameSpray = params.spray * params.spray * (float) kTableFrames * 0.35f;
     const float framePos = wrap01(position + randomBipolar() * frameSpray / (float) kTableFrames);
     const int frameIndex = juce::jlimit(0, kTableFrames - 1,
