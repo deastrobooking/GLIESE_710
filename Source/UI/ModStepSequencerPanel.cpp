@@ -375,6 +375,19 @@ ModStepSequencerPanel::ModStepSequencerPanel(juce::AudioProcessorValueTreeState&
     addAndMakeVisible(depthSlider);
     depthAtt = std::make_unique<Att>(apvts, StepSequencerMod::kDepthParamID, depthSlider);
 
+    sequenceLengthSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+    sequenceLengthSlider.setRange(8.0, 32.0, 8.0);
+    sequenceLengthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 48, 16);
+    sequenceLengthSlider.setNumDecimalPlacesToDisplay(0);
+    sequenceLengthSlider.setTooltip("Stored mod sequencer pattern length");
+    sequenceLengthSlider.onValueChange = [this]
+    {
+        const int steps = juce::roundToInt(sequenceLengthSlider.getValue());
+        setSequenceLengthIndex(juce::jlimit(0, 3, steps / StepSequencerMod::kSegmentLength - 1));
+    };
+    IndustrialTheme::styleSlider(sequenceLengthSlider, accent);
+    addAndMakeVisible(sequenceLengthSlider);
+
     loopLengthSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     loopLengthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 48, 16);
     loopLengthSlider.setNumDecimalPlacesToDisplay(0);
@@ -405,6 +418,7 @@ ModStepSequencerPanel::ModStepSequencerPanel(juce::AudioProcessorValueTreeState&
     };
 
     makeLabel(depthLabel, "DEPTH", accent);
+    makeLabel(sequenceLengthLabel, "SEQ LENGTH", accent);
     makeLabel(loopLengthLabel, "LOOP LEN", accent);
     makeLabel(divisionLabel, "DIVISION", accent);
     makeLabel(subdivisionLabel, "SUBDIV", accent);
@@ -482,20 +496,24 @@ void ModStepSequencerPanel::resized()
     titleLabel.setBounds(area.removeFromTop(22));
     area.removeFromTop(5);
 
-    auto controlBand = area.removeFromTop(78);
+    auto controlBand = area.removeFromTop(80);
     auto labelRow = controlBand.removeFromTop(14);
-    depthLabel.setBounds(labelRow.removeFromLeft(200));
+    depthLabel.setBounds(labelRow.removeFromLeft(184));
     labelRow.removeFromLeft(8);
-    loopLengthLabel.setBounds(labelRow.removeFromLeft(78));
+    sequenceLengthLabel.setBounds(labelRow.removeFromLeft(84));
+    labelRow.removeFromLeft(8);
+    loopLengthLabel.setBounds(labelRow.removeFromLeft(84));
     labelRow.removeFromLeft(8);
     divisionLabel.setBounds(labelRow.removeFromLeft(104));
     labelRow.removeFromLeft(8);
     subdivisionLabel.setBounds(labelRow.removeFromLeft(84));
 
-    auto controlRow = controlBand.removeFromTop(58);
-    depthSlider.setBounds(controlRow.removeFromLeft(200));
+    auto controlRow = controlBand.removeFromTop(60);
+    depthSlider.setBounds(controlRow.removeFromLeft(184));
     controlRow.removeFromLeft(8);
-    loopLengthSlider.setBounds(controlRow.removeFromLeft(78));
+    sequenceLengthSlider.setBounds(controlRow.removeFromLeft(84));
+    controlRow.removeFromLeft(8);
+    loopLengthSlider.setBounds(controlRow.removeFromLeft(84));
     controlRow.removeFromLeft(8);
     divisionBox.setBounds(controlRow.removeFromLeft(104).withHeight(26));
     controlRow.removeFromLeft(8);
@@ -619,6 +637,8 @@ void ModStepSequencerPanel::updateLengthAndSegmentButtons()
 
     for (int i = 0; i < 4; ++i)
         lengthButtons[(size_t) i].setToggleState(i == lengthIndex, juce::dontSendNotification);
+
+    sequenceLengthSlider.setValue((double) getSequenceLength(), juce::dontSendNotification);
 
     if (activeSegment >= enabledSegments)
         grid.setActiveSegment(enabledSegments - 1);

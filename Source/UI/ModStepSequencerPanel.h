@@ -81,10 +81,11 @@ private:
 
     juce::Label titleLabel;
     juce::Slider depthSlider;
+    juce::Slider sequenceLengthSlider;
     juce::Slider loopLengthSlider;
     juce::ComboBox divisionBox;
     juce::ComboBox subdivisionBox;
-    juce::Label depthLabel, divisionLabel, subdivisionLabel, loopLengthLabel, lengthLabel, segmentLabel;
+    juce::Label depthLabel, sequenceLengthLabel, divisionLabel, subdivisionLabel, loopLengthLabel, lengthLabel, segmentLabel;
     std::array<SolidButton, 4> lengthButtons;
     std::array<SolidButton, StepSequencerMod::kNumSegments> segmentButtons;
 
