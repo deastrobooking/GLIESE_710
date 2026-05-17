@@ -260,6 +260,7 @@ GLIESE_710_artefacts/Release/AU/GLIESE\ 710.component/Contents/MacOS/GLIESE\ 710
 GLIESE_710_artefacts/Release/AU/GLIESE\ 710.component/Contents/MacOS/GLIESE\ 710: CMakeFiles/GLIESE_710_AU.dir/_deps/juce-src/modules/juce_audio_plugin_client/juce_audio_plugin_client_VST3.mm.o
 GLIESE_710_artefacts/Release/AU/GLIESE\ 710.component/Contents/MacOS/GLIESE\ 710: CMakeFiles/GLIESE_710_AU.dir/build.make
 GLIESE_710_artefacts/Release/AU/GLIESE\ 710.component/Contents/MacOS/GLIESE\ 710: GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a
+GLIESE_710_artefacts/Release/AU/GLIESE\ 710.component/Contents/MacOS/GLIESE\ 710: _deps/clap_juce_extensions-build/libclap_juce_extensions.a
 GLIESE_710_artefacts/Release/AU/GLIESE\ 710.component/Contents/MacOS/GLIESE\ 710: CMakeFiles/GLIESE_710_AU.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Linking CXX CFBundle shared module \"GLIESE_710_artefacts/Release/AU/GLIESE 710.component/Contents/MacOS/GLIESE 710\""
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/GLIESE_710_AU.dir/link.txt --verbose=$(VERBOSE)

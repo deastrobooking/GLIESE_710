@@ -6,5 +6,7 @@ CXX_DEFINES =
 
 CXX_INCLUDES = 
 
-CXX_FLAGS = -O3 -DNDEBUG -std=gnu++20
+CXX_FLAGSarm64 = -O3 -DNDEBUG -std=gnu++20 -arch arm64
+
+CXX_FLAGS = -O3 -DNDEBUG -std=gnu++20 -arch arm64
 

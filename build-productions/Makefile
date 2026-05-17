@@ -277,6 +277,19 @@ juce_vst3_helper/fast:
 .PHONY : juce_vst3_helper/fast
 
 #=============================================================================
+# Target rules for targets named GLIESE_710_CLAP
+
+# Build rule for target.
+GLIESE_710_CLAP: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 GLIESE_710_CLAP
+.PHONY : GLIESE_710_CLAP
+
+# fast build rule for target.
+GLIESE_710_CLAP/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710_CLAP.dir/build.make CMakeFiles/GLIESE_710_CLAP.dir/build
+.PHONY : GLIESE_710_CLAP/fast
+
+#=============================================================================
 # Target rules for targets named GLIESE_Tests
 
 # Build rule for target.
@@ -654,6 +667,32 @@ ContinuousSubmit/fast:
 .PHONY : ContinuousSubmit/fast
 
 #=============================================================================
+# Target rules for targets named clap_juce_extensions
+
+# Build rule for target.
+clap_juce_extensions: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 clap_juce_extensions
+.PHONY : clap_juce_extensions
+
+# fast build rule for target.
+clap_juce_extensions/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/clap_juce_extensions-build/CMakeFiles/clap_juce_extensions.dir/build.make _deps/clap_juce_extensions-build/CMakeFiles/clap_juce_extensions.dir/build
+.PHONY : clap_juce_extensions/fast
+
+#=============================================================================
+# Target rules for targets named clap-tests
+
+# Build rule for target.
+clap-tests: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 clap-tests
+.PHONY : clap-tests
+
+# fast build rule for target.
+clap-tests/fast:
+	$(MAKE) $(MAKESILENT) -f _deps/clap_juce_extensions-build/clapjuceext_clap/CMakeFiles/clap-tests.dir/build.make _deps/clap_juce_extensions-build/clapjuceext_clap/CMakeFiles/clap-tests.dir/build
+.PHONY : clap-tests/fast
+
+#=============================================================================
 # Target rules for targets named Catch2
 
 # Build rule for target.
@@ -837,6 +876,33 @@ Source/Engine/Modulation/ModMatrix.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/ModMatrix.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_Tests.dir/build.make CMakeFiles/GLIESE_Tests.dir/Source/Engine/Modulation/ModMatrix.cpp.s
 .PHONY : Source/Engine/Modulation/ModMatrix.cpp.s
+
+Source/Engine/Modulation/StepSequencerMod.o: Source/Engine/Modulation/StepSequencerMod.cpp.o
+.PHONY : Source/Engine/Modulation/StepSequencerMod.o
+
+# target to build an object file
+Source/Engine/Modulation/StepSequencerMod.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_Tests.dir/build.make CMakeFiles/GLIESE_Tests.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o
+.PHONY : Source/Engine/Modulation/StepSequencerMod.cpp.o
+
+Source/Engine/Modulation/StepSequencerMod.i: Source/Engine/Modulation/StepSequencerMod.cpp.i
+.PHONY : Source/Engine/Modulation/StepSequencerMod.i
+
+# target to preprocess a source file
+Source/Engine/Modulation/StepSequencerMod.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_Tests.dir/build.make CMakeFiles/GLIESE_Tests.dir/Source/Engine/Modulation/StepSequencerMod.cpp.i
+.PHONY : Source/Engine/Modulation/StepSequencerMod.cpp.i
+
+Source/Engine/Modulation/StepSequencerMod.s: Source/Engine/Modulation/StepSequencerMod.cpp.s
+.PHONY : Source/Engine/Modulation/StepSequencerMod.s
+
+# target to generate assembly for a file
+Source/Engine/Modulation/StepSequencerMod.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_Tests.dir/build.make CMakeFiles/GLIESE_Tests.dir/Source/Engine/Modulation/StepSequencerMod.cpp.s
+.PHONY : Source/Engine/Modulation/StepSequencerMod.cpp.s
 
 Source/Engine/Oscillators/FMAlgorithm.o: Source/Engine/Oscillators/FMAlgorithm.cpp.o
 .PHONY : Source/Engine/Oscillators/FMAlgorithm.o
@@ -1342,6 +1408,30 @@ Source/UI/ModMatrixPanel.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.s
 .PHONY : Source/UI/ModMatrixPanel.cpp.s
 
+Source/UI/ModStepSequencerPanel.o: Source/UI/ModStepSequencerPanel.cpp.o
+.PHONY : Source/UI/ModStepSequencerPanel.o
+
+# target to build an object file
+Source/UI/ModStepSequencerPanel.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.o
+.PHONY : Source/UI/ModStepSequencerPanel.cpp.o
+
+Source/UI/ModStepSequencerPanel.i: Source/UI/ModStepSequencerPanel.cpp.i
+.PHONY : Source/UI/ModStepSequencerPanel.i
+
+# target to preprocess a source file
+Source/UI/ModStepSequencerPanel.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.i
+.PHONY : Source/UI/ModStepSequencerPanel.cpp.i
+
+Source/UI/ModStepSequencerPanel.s: Source/UI/ModStepSequencerPanel.cpp.s
+.PHONY : Source/UI/ModStepSequencerPanel.s
+
+# target to generate assembly for a file
+Source/UI/ModStepSequencerPanel.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710.dir/build.make CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.s
+.PHONY : Source/UI/ModStepSequencerPanel.cpp.s
+
 Source/UI/OscPanel.o: Source/UI/OscPanel.cpp.o
 .PHONY : Source/UI/OscPanel.o
 
@@ -1437,6 +1527,30 @@ Tests/EngineTests.s: Tests/EngineTests.cpp.s
 Tests/EngineTests.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_Tests.dir/build.make CMakeFiles/GLIESE_Tests.dir/Tests/EngineTests.cpp.s
 .PHONY : Tests/EngineTests.cpp.s
+
+_deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.o: _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.o
+.PHONY : _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.o
+
+# target to build an object file
+_deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710_CLAP.dir/build.make CMakeFiles/GLIESE_710_CLAP.dir/_deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.o
+.PHONY : _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.o
+
+_deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.i: _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.i
+.PHONY : _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.i
+
+# target to preprocess a source file
+_deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710_CLAP.dir/build.make CMakeFiles/GLIESE_710_CLAP.dir/_deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.i
+.PHONY : _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.i
+
+_deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.s: _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.s
+.PHONY : _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.s
+
+# target to generate assembly for a file
+_deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GLIESE_710_CLAP.dir/build.make CMakeFiles/GLIESE_710_CLAP.dir/_deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.s
+.PHONY : _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.mm.s
 
 _deps/juce-src/modules/juce_audio_basics/juce_audio_basics.o: _deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o
 .PHONY : _deps/juce-src/modules/juce_audio_basics/juce_audio_basics.o
@@ -2350,14 +2464,17 @@ help:
 	@echo "... NightlySubmit"
 	@echo "... NightlyTest"
 	@echo "... NightlyUpdate"
+	@echo "... clap-tests"
 	@echo "... Catch2"
 	@echo "... Catch2WithMain"
 	@echo "... GLIESE_710"
 	@echo "... GLIESE_710_AU"
+	@echo "... GLIESE_710_CLAP"
 	@echo "... GLIESE_710_LV2"
 	@echo "... GLIESE_710_Standalone"
 	@echo "... GLIESE_710_VST3"
 	@echo "... GLIESE_Tests"
+	@echo "... clap_juce_extensions"
 	@echo "... juce_lv2_helper"
 	@echo "... juce_vst3_helper"
 	@echo "... Source/Engine/Arpeggiator/Arpeggiator.o"
@@ -2378,6 +2495,9 @@ help:
 	@echo "... Source/Engine/Modulation/ModMatrix.o"
 	@echo "... Source/Engine/Modulation/ModMatrix.i"
 	@echo "... Source/Engine/Modulation/ModMatrix.s"
+	@echo "... Source/Engine/Modulation/StepSequencerMod.o"
+	@echo "... Source/Engine/Modulation/StepSequencerMod.i"
+	@echo "... Source/Engine/Modulation/StepSequencerMod.s"
 	@echo "... Source/Engine/Oscillators/FMAlgorithm.o"
 	@echo "... Source/Engine/Oscillators/FMAlgorithm.i"
 	@echo "... Source/Engine/Oscillators/FMAlgorithm.s"
@@ -2438,6 +2558,9 @@ help:
 	@echo "... Source/UI/ModMatrixPanel.o"
 	@echo "... Source/UI/ModMatrixPanel.i"
 	@echo "... Source/UI/ModMatrixPanel.s"
+	@echo "... Source/UI/ModStepSequencerPanel.o"
+	@echo "... Source/UI/ModStepSequencerPanel.i"
+	@echo "... Source/UI/ModStepSequencerPanel.s"
 	@echo "... Source/UI/OscPanel.o"
 	@echo "... Source/UI/OscPanel.i"
 	@echo "... Source/UI/OscPanel.s"
@@ -2450,6 +2573,9 @@ help:
 	@echo "... Tests/EngineTests.o"
 	@echo "... Tests/EngineTests.i"
 	@echo "... Tests/EngineTests.s"
+	@echo "... _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.o"
+	@echo "... _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.i"
+	@echo "... _deps/clap_juce_extensions-src/src/wrapper/clap-juce-mac.s"
 	@echo "... _deps/juce-src/modules/juce_audio_basics/juce_audio_basics.o"
 	@echo "... _deps/juce-src/modules/juce_audio_basics/juce_audio_basics.i"
 	@echo "... _deps/juce-src/modules/juce_audio_basics/juce_audio_basics.s"

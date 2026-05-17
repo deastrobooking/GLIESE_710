@@ -1505,4 +1505,5 @@ CMakeFiles/GLIESE_710.dir/Source/Engine/SynthEngine.cpp.o: \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/ModMatrix.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/ModSource.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/ModDest.h \
-  /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Arpeggiator/Arpeggiator.h
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Arpeggiator/Arpeggiator.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/StepSequencerMod.h

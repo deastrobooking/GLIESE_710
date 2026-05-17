@@ -9912,6 +9912,30 @@ plug:osc_terrain_radius_y
 	lv2:minimum 0 ;
 	lv2:maximum 0.5 .
 
+plug:osc_terrain_zoom
+	a lv2:Parameter ;
+	rdfs:label "Terrain1 Zoom" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 1 ;
+	lv2:maximum 16 .
+
+plug:osc_terrain_rotation
+	a lv2:Parameter ;
+	rdfs:label "Terrain1 Rotation" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:osc_terrain_path_size
+	a lv2:Parameter ;
+	rdfs:label "Terrain1 Path Size" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 2 .
+
 plug:osc_terrain_ratio_x
 	a lv2:Parameter ;
 	rdfs:label "Terrain1 Ratio X" ;
@@ -10115,6 +10139,30 @@ plug:osc_terrain2_radius_y
 	lv2:default 0.35 ;
 	lv2:minimum 0 ;
 	lv2:maximum 0.5 .
+
+plug:osc_terrain2_zoom
+	a lv2:Parameter ;
+	rdfs:label "Terrain2 Zoom" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 1 ;
+	lv2:maximum 16 .
+
+plug:osc_terrain2_rotation
+	a lv2:Parameter ;
+	rdfs:label "Terrain2 Rotation" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:osc_terrain2_path_size
+	a lv2:Parameter ;
+	rdfs:label "Terrain2 Path Size" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 2 .
 
 plug:osc_terrain2_ratio_x
 	a lv2:Parameter ;
@@ -10320,6 +10368,30 @@ plug:osc_terrain3_radius_y
 	lv2:minimum 0 ;
 	lv2:maximum 0.5 .
 
+plug:osc_terrain3_zoom
+	a lv2:Parameter ;
+	rdfs:label "Terrain3 Zoom" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 1 ;
+	lv2:maximum 16 .
+
+plug:osc_terrain3_rotation
+	a lv2:Parameter ;
+	rdfs:label "Terrain3 Rotation" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:osc_terrain3_path_size
+	a lv2:Parameter ;
+	rdfs:label "Terrain3 Path Size" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 2 .
+
 plug:osc_terrain3_ratio_x
 	a lv2:Parameter ;
 	rdfs:label "Terrain3 Ratio X" ;
@@ -10523,6 +10595,30 @@ plug:osc_terrain4_radius_y
 	lv2:default 0.35 ;
 	lv2:minimum 0 ;
 	lv2:maximum 0.5 .
+
+plug:osc_terrain4_zoom
+	a lv2:Parameter ;
+	rdfs:label "Terrain4 Zoom" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 1 ;
+	lv2:maximum 16 .
+
+plug:osc_terrain4_rotation
+	a lv2:Parameter ;
+	rdfs:label "Terrain4 Rotation" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:osc_terrain4_path_size
+	a lv2:Parameter ;
+	rdfs:label "Terrain4 Path Size" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 2 .
 
 plug:osc_terrain4_ratio_x
 	a lv2:Parameter ;
@@ -10728,6 +10824,30 @@ plug:osc_terrain5_radius_y
 	lv2:minimum 0 ;
 	lv2:maximum 0.5 .
 
+plug:osc_terrain5_zoom
+	a lv2:Parameter ;
+	rdfs:label "Terrain5 Zoom" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 1 ;
+	lv2:maximum 16 .
+
+plug:osc_terrain5_rotation
+	a lv2:Parameter ;
+	rdfs:label "Terrain5 Rotation" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:osc_terrain5_path_size
+	a lv2:Parameter ;
+	rdfs:label "Terrain5 Path Size" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 2 .
+
 plug:osc_terrain5_ratio_x
 	a lv2:Parameter ;
 	rdfs:label "Terrain5 Ratio X" ;
@@ -10931,6 +11051,30 @@ plug:osc_terrain6_radius_y
 	lv2:default 0.35 ;
 	lv2:minimum 0 ;
 	lv2:maximum 0.5 .
+
+plug:osc_terrain6_zoom
+	a lv2:Parameter ;
+	rdfs:label "Terrain6 Zoom" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 1 ;
+	lv2:maximum 16 .
+
+plug:osc_terrain6_rotation
+	a lv2:Parameter ;
+	rdfs:label "Terrain6 Rotation" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:osc_terrain6_path_size
+	a lv2:Parameter ;
+	rdfs:label "Terrain6 Path Size" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 2 .
 
 plug:osc_terrain6_ratio_x
 	a lv2:Parameter ;
@@ -11136,6 +11280,30 @@ plug:osc_terrain7_radius_y
 	lv2:minimum 0 ;
 	lv2:maximum 0.5 .
 
+plug:osc_terrain7_zoom
+	a lv2:Parameter ;
+	rdfs:label "Terrain7 Zoom" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 1 ;
+	lv2:maximum 16 .
+
+plug:osc_terrain7_rotation
+	a lv2:Parameter ;
+	rdfs:label "Terrain7 Rotation" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:osc_terrain7_path_size
+	a lv2:Parameter ;
+	rdfs:label "Terrain7 Path Size" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 2 .
+
 plug:osc_terrain7_ratio_x
 	a lv2:Parameter ;
 	rdfs:label "Terrain7 Ratio X" ;
@@ -11340,6 +11508,30 @@ plug:osc_terrain8_radius_y
 	lv2:minimum 0 ;
 	lv2:maximum 0.5 .
 
+plug:osc_terrain8_zoom
+	a lv2:Parameter ;
+	rdfs:label "Terrain8 Zoom" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 1 ;
+	lv2:maximum 16 .
+
+plug:osc_terrain8_rotation
+	a lv2:Parameter ;
+	rdfs:label "Terrain8 Rotation" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:osc_terrain8_path_size
+	a lv2:Parameter ;
+	rdfs:label "Terrain8 Path Size" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 2 .
+
 plug:osc_terrain8_ratio_x
 	a lv2:Parameter ;
 	rdfs:label "Terrain8 Ratio X" ;
@@ -11484,6 +11676,31 @@ plug:osc_va_on
 		rdf:value 1 ;
 	] .
 
+plug:osc_va_model
+	a lv2:Parameter ;
+	rdfs:label "VA1 Oscillator Model" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 4	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "Native" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "Moog" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Roland" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Oberheim" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Sequential" ;
+		rdf:value 4 ;
+	] .
+
 plug:osc_va_shape
 	a lv2:Parameter ;
 	rdfs:label "VA1 Shape Morph" ;
@@ -11602,6 +11819,31 @@ plug:osc_va2_on
 	], [
 		rdfs:label "On" ;
 		rdf:value 1 ;
+	] .
+
+plug:osc_va2_model
+	a lv2:Parameter ;
+	rdfs:label "VA2 Oscillator Model" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 4	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "Native" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "Moog" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Roland" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Oberheim" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Sequential" ;
+		rdf:value 4 ;
 	] .
 
 plug:osc_va2_shape
@@ -11724,6 +11966,31 @@ plug:osc_va3_on
 		rdf:value 1 ;
 	] .
 
+plug:osc_va3_model
+	a lv2:Parameter ;
+	rdfs:label "VA3 Oscillator Model" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 4	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "Native" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "Moog" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Roland" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Oberheim" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Sequential" ;
+		rdf:value 4 ;
+	] .
+
 plug:osc_va3_shape
 	a lv2:Parameter ;
 	rdfs:label "VA3 Shape Morph" ;
@@ -11842,6 +12109,31 @@ plug:osc_va4_on
 	], [
 		rdfs:label "On" ;
 		rdf:value 1 ;
+	] .
+
+plug:osc_va4_model
+	a lv2:Parameter ;
+	rdfs:label "VA4 Oscillator Model" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 4	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "Native" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "Moog" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Roland" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Oberheim" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Sequential" ;
+		rdf:value 4 ;
 	] .
 
 plug:osc_va4_shape
@@ -11964,6 +12256,31 @@ plug:osc_va5_on
 		rdf:value 1 ;
 	] .
 
+plug:osc_va5_model
+	a lv2:Parameter ;
+	rdfs:label "VA5 Oscillator Model" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 4	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "Native" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "Moog" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Roland" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Oberheim" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Sequential" ;
+		rdf:value 4 ;
+	] .
+
 plug:osc_va5_shape
 	a lv2:Parameter ;
 	rdfs:label "VA5 Shape Morph" ;
@@ -12082,6 +12399,31 @@ plug:osc_va6_on
 	], [
 		rdfs:label "On" ;
 		rdf:value 1 ;
+	] .
+
+plug:osc_va6_model
+	a lv2:Parameter ;
+	rdfs:label "VA6 Oscillator Model" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 4	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "Native" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "Moog" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Roland" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Oberheim" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Sequential" ;
+		rdf:value 4 ;
 	] .
 
 plug:osc_va6_shape
@@ -12204,6 +12546,31 @@ plug:osc_va7_on
 		rdf:value 1 ;
 	] .
 
+plug:osc_va7_model
+	a lv2:Parameter ;
+	rdfs:label "VA7 Oscillator Model" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 4	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "Native" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "Moog" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Roland" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Oberheim" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Sequential" ;
+		rdf:value 4 ;
+	] .
+
 plug:osc_va7_shape
 	a lv2:Parameter ;
 	rdfs:label "VA7 Shape Morph" ;
@@ -12322,6 +12689,31 @@ plug:osc_va8_on
 	], [
 		rdfs:label "On" ;
 		rdf:value 1 ;
+	] .
+
+plug:osc_va8_model
+	a lv2:Parameter ;
+	rdfs:label "VA8 Oscillator Model" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 4	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "Native" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "Moog" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Roland" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Oberheim" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Sequential" ;
+		rdf:value 4 ;
 	] .
 
 plug:osc_va8_shape
@@ -27008,6 +27400,2271 @@ plug:macro8
 	lv2:minimum 0 ;
 	lv2:maximum 1 .
 
+plug:modseq_depth
+	a lv2:Parameter ;
+	rdfs:label "Alien Sequencer" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.45 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_division
+	a lv2:Parameter ;
+	rdfs:label "Mod Seq Division" ;
+	rdfs:range atom:Float ;
+	lv2:default 2 ;
+	lv2:minimum 0 ;
+	lv2:maximum 8	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "1/4" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "1/8" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "1/16" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "1/32" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "1/64" ;
+		rdf:value 4 ;
+	], [
+		rdfs:label "1/8T" ;
+		rdf:value 5 ;
+	], [
+		rdfs:label "1/16T" ;
+		rdf:value 6 ;
+	], [
+		rdfs:label "1/8D" ;
+		rdf:value 7 ;
+	], [
+		rdfs:label "1/16D" ;
+		rdf:value 8 ;
+	] .
+
+plug:modseq_subdivision
+	a lv2:Parameter ;
+	rdfs:label "Granular Subdivision" ;
+	rdfs:range atom:Float ;
+	lv2:default 2 ;
+	lv2:minimum 0 ;
+	lv2:maximum 3	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "x1" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "x2" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "x4" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "x8" ;
+		rdf:value 3 ;
+	] .
+
+plug:modseq_length
+	a lv2:Parameter ;
+	rdfs:label "Mod Seq Length" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 3	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "8" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "16" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "24" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "32" ;
+		rdf:value 3 ;
+	] .
+
+plug:modseq_loop_length
+	a lv2:Parameter ;
+	rdfs:label "Mod Seq Loop Length" ;
+	rdfs:range atom:Float ;
+	lv2:default 32 ;
+	lv2:minimum 1 ;
+	lv2:maximum 32 .
+
+plug:modseq_lane0_target
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Target" ;
+	rdfs:range atom:Float ;
+	lv2:default 29 ;
+	lv2:minimum 0 ;
+	lv2:maximum 91	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "None" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "OscPitch_All" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Osc3D_Radius" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Osc3D_Depth" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Osc3D_Warp" ;
+		rdf:value 4 ;
+	], [
+		rdfs:label "Osc3D_Chaos" ;
+		rdf:value 5 ;
+	], [
+		rdfs:label "Osc3D_Morph" ;
+		rdf:value 6 ;
+	], [
+		rdfs:label "Osc3D_Level" ;
+		rdf:value 7 ;
+	], [
+		rdfs:label "FM_Op0_Level" ;
+		rdf:value 8 ;
+	], [
+		rdfs:label "FM_Op1_Level" ;
+		rdf:value 9 ;
+	], [
+		rdfs:label "FM_Op2_Level" ;
+		rdf:value 10 ;
+	], [
+		rdfs:label "FM_Op3_Level" ;
+		rdf:value 11 ;
+	], [
+		rdfs:label "FM_Op4_Level" ;
+		rdf:value 12 ;
+	], [
+		rdfs:label "FM_Op5_Level" ;
+		rdf:value 13 ;
+	], [
+		rdfs:label "FM_Op6_Level" ;
+		rdf:value 14 ;
+	], [
+		rdfs:label "FM_Op7_Level" ;
+		rdf:value 15 ;
+	], [
+		rdfs:label "FM_Op8_Level" ;
+		rdf:value 16 ;
+	], [
+		rdfs:label "FM_Op9_Level" ;
+		rdf:value 17 ;
+	], [
+		rdfs:label "FM_Op0_Ratio" ;
+		rdf:value 18 ;
+	], [
+		rdfs:label "FM_Op1_Ratio" ;
+		rdf:value 19 ;
+	], [
+		rdfs:label "FM_Op2_Ratio" ;
+		rdf:value 20 ;
+	], [
+		rdfs:label "FM_Op3_Ratio" ;
+		rdf:value 21 ;
+	], [
+		rdfs:label "FM_Op4_Ratio" ;
+		rdf:value 22 ;
+	], [
+		rdfs:label "WT_Position" ;
+		rdf:value 23 ;
+	], [
+		rdfs:label "WT_Level" ;
+		rdf:value 24 ;
+	], [
+		rdfs:label "VA_PW" ;
+		rdf:value 25 ;
+	], [
+		rdfs:label "VA_Detune" ;
+		rdf:value 26 ;
+	], [
+		rdfs:label "VA_Spread" ;
+		rdf:value 27 ;
+	], [
+		rdfs:label "VA_Level" ;
+		rdf:value 28 ;
+	], [
+		rdfs:label "FilterA_Cutoff" ;
+		rdf:value 29 ;
+	], [
+		rdfs:label "FilterA_Resonance" ;
+		rdf:value 30 ;
+	], [
+		rdfs:label "FilterA_Drive" ;
+		rdf:value 31 ;
+	], [
+		rdfs:label "FilterB_Cutoff" ;
+		rdf:value 32 ;
+	], [
+		rdfs:label "FilterB_Resonance" ;
+		rdf:value 33 ;
+	], [
+		rdfs:label "FilterB_Drive" ;
+		rdf:value 34 ;
+	], [
+		rdfs:label "LFO1_Rate" ;
+		rdf:value 35 ;
+	], [
+		rdfs:label "LFO2_Rate" ;
+		rdf:value 36 ;
+	], [
+		rdfs:label "LFO3_Rate" ;
+		rdf:value 37 ;
+	], [
+		rdfs:label "LFO4_Rate" ;
+		rdf:value 38 ;
+	], [
+		rdfs:label "LFO1_Amount" ;
+		rdf:value 39 ;
+	], [
+		rdfs:label "LFO2_Amount" ;
+		rdf:value 40 ;
+	], [
+		rdfs:label "LFO3_Amount" ;
+		rdf:value 41 ;
+	], [
+		rdfs:label "LFO4_Amount" ;
+		rdf:value 42 ;
+	], [
+		rdfs:label "Master_Volume" ;
+		rdf:value 43 ;
+	], [
+		rdfs:label "Master_Pan" ;
+		rdf:value 44 ;
+	], [
+		rdfs:label "Arp_Gate" ;
+		rdf:value 45 ;
+	], [
+		rdfs:label "Arp_Rate" ;
+		rdf:value 46 ;
+	], [
+		rdfs:label "Osc3D_FieldFreq" ;
+		rdf:value 47 ;
+	], [
+		rdfs:label "Osc3D_ZRatio" ;
+		rdf:value 48 ;
+	], [
+		rdfs:label "Osc3D_Fold" ;
+		rdf:value 49 ;
+	], [
+		rdfs:label "Osc3D_Drive" ;
+		rdf:value 50 ;
+	], [
+		rdfs:label "VA_Shape" ;
+		rdf:value 51 ;
+	], [
+		rdfs:label "VA_Ring" ;
+		rdf:value 52 ;
+	], [
+		rdfs:label "VA_Fold" ;
+		rdf:value 53 ;
+	], [
+		rdfs:label "VA2_Shape" ;
+		rdf:value 54 ;
+	], [
+		rdfs:label "VA2_PW" ;
+		rdf:value 55 ;
+	], [
+		rdfs:label "VA2_Detune" ;
+		rdf:value 56 ;
+	], [
+		rdfs:label "VA2_Spread" ;
+		rdf:value 57 ;
+	], [
+		rdfs:label "VA2_Level" ;
+		rdf:value 58 ;
+	], [
+		rdfs:label "VA2_Ring" ;
+		rdf:value 59 ;
+	], [
+		rdfs:label "VA2_Fold" ;
+		rdf:value 60 ;
+	], [
+		rdfs:label "VA3_Shape" ;
+		rdf:value 61 ;
+	], [
+		rdfs:label "VA3_PW" ;
+		rdf:value 62 ;
+	], [
+		rdfs:label "VA3_Detune" ;
+		rdf:value 63 ;
+	], [
+		rdfs:label "VA3_Spread" ;
+		rdf:value 64 ;
+	], [
+		rdfs:label "VA3_Level" ;
+		rdf:value 65 ;
+	], [
+		rdfs:label "VA3_Ring" ;
+		rdf:value 66 ;
+	], [
+		rdfs:label "VA3_Fold" ;
+		rdf:value 67 ;
+	], [
+		rdfs:label "VA4_Shape" ;
+		rdf:value 68 ;
+	], [
+		rdfs:label "VA4_PW" ;
+		rdf:value 69 ;
+	], [
+		rdfs:label "VA4_Detune" ;
+		rdf:value 70 ;
+	], [
+		rdfs:label "VA4_Spread" ;
+		rdf:value 71 ;
+	], [
+		rdfs:label "VA4_Level" ;
+		rdf:value 72 ;
+	], [
+		rdfs:label "VA4_Ring" ;
+		rdf:value 73 ;
+	], [
+		rdfs:label "VA4_Fold" ;
+		rdf:value 74 ;
+	], [
+		rdfs:label "LFO1_SyncRate" ;
+		rdf:value 75 ;
+	], [
+		rdfs:label "LFO2_SyncRate" ;
+		rdf:value 76 ;
+	], [
+		rdfs:label "LFO3_SyncRate" ;
+		rdf:value 77 ;
+	], [
+		rdfs:label "LFO4_SyncRate" ;
+		rdf:value 78 ;
+	], [
+		rdfs:label "WT_Warp" ;
+		rdf:value 79 ;
+	], [
+		rdfs:label "WT_PD_Break" ;
+		rdf:value 80 ;
+	], [
+		rdfs:label "Gran_Position" ;
+		rdf:value 81 ;
+	], [
+		rdfs:label "Gran_Size" ;
+		rdf:value 82 ;
+	], [
+		rdfs:label "Gran_Density" ;
+		rdf:value 83 ;
+	], [
+		rdfs:label "Gran_Pitch" ;
+		rdf:value 84 ;
+	], [
+		rdfs:label "Gran_Spray" ;
+		rdf:value 85 ;
+	], [
+		rdfs:label "Gran_Freeze" ;
+		rdf:value 86 ;
+	], [
+		rdfs:label "Gran_Level" ;
+		rdf:value 87 ;
+	], [
+		rdfs:label "Gran_BodyMix" ;
+		rdf:value 88 ;
+	], [
+		rdfs:label "Gran_BodySize" ;
+		rdf:value 89 ;
+	], [
+		rdfs:label "Gran_BodyDamping" ;
+		rdf:value 90 ;
+	], [
+		rdfs:label "Gran_BodyInharm" ;
+		rdf:value 91 ;
+	] .
+
+plug:modseq_l0_s0
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 1" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.5 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s1
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 2" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.597545 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s2
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 3" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.691342 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s3
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 4" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.777785 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s4
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 5" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.853553 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s5
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 6" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.915735 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s6
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 7" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.96194 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s7
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 8" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.990393 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s8
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 9" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s9
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 10" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.990393 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s10
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 11" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.96194 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s11
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 12" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.915735 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s12
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 13" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.853553 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s13
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 14" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.777785 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s14
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 15" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.691342 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s15
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 16" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.597545 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s16
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 17" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.5 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s17
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 18" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.402455 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s18
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 19" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.308658 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s19
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 20" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.222215 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s20
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 21" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.146447 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s21
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 22" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.0842651 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s22
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 23" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.0380602 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s23
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 24" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.00960737 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s24
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 25" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s25
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 26" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.00960737 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s26
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 27" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.0380603 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s27
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 28" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.0842653 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s28
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 29" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.146447 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s29
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 30" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.222215 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s30
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 31" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.308658 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l0_s31
+	a lv2:Parameter ;
+	rdfs:label "SEQ 1 Step 32" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.402455 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_lane1_target
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Target" ;
+	rdfs:range atom:Float ;
+	lv2:default 30 ;
+	lv2:minimum 0 ;
+	lv2:maximum 91	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "None" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "OscPitch_All" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Osc3D_Radius" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Osc3D_Depth" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Osc3D_Warp" ;
+		rdf:value 4 ;
+	], [
+		rdfs:label "Osc3D_Chaos" ;
+		rdf:value 5 ;
+	], [
+		rdfs:label "Osc3D_Morph" ;
+		rdf:value 6 ;
+	], [
+		rdfs:label "Osc3D_Level" ;
+		rdf:value 7 ;
+	], [
+		rdfs:label "FM_Op0_Level" ;
+		rdf:value 8 ;
+	], [
+		rdfs:label "FM_Op1_Level" ;
+		rdf:value 9 ;
+	], [
+		rdfs:label "FM_Op2_Level" ;
+		rdf:value 10 ;
+	], [
+		rdfs:label "FM_Op3_Level" ;
+		rdf:value 11 ;
+	], [
+		rdfs:label "FM_Op4_Level" ;
+		rdf:value 12 ;
+	], [
+		rdfs:label "FM_Op5_Level" ;
+		rdf:value 13 ;
+	], [
+		rdfs:label "FM_Op6_Level" ;
+		rdf:value 14 ;
+	], [
+		rdfs:label "FM_Op7_Level" ;
+		rdf:value 15 ;
+	], [
+		rdfs:label "FM_Op8_Level" ;
+		rdf:value 16 ;
+	], [
+		rdfs:label "FM_Op9_Level" ;
+		rdf:value 17 ;
+	], [
+		rdfs:label "FM_Op0_Ratio" ;
+		rdf:value 18 ;
+	], [
+		rdfs:label "FM_Op1_Ratio" ;
+		rdf:value 19 ;
+	], [
+		rdfs:label "FM_Op2_Ratio" ;
+		rdf:value 20 ;
+	], [
+		rdfs:label "FM_Op3_Ratio" ;
+		rdf:value 21 ;
+	], [
+		rdfs:label "FM_Op4_Ratio" ;
+		rdf:value 22 ;
+	], [
+		rdfs:label "WT_Position" ;
+		rdf:value 23 ;
+	], [
+		rdfs:label "WT_Level" ;
+		rdf:value 24 ;
+	], [
+		rdfs:label "VA_PW" ;
+		rdf:value 25 ;
+	], [
+		rdfs:label "VA_Detune" ;
+		rdf:value 26 ;
+	], [
+		rdfs:label "VA_Spread" ;
+		rdf:value 27 ;
+	], [
+		rdfs:label "VA_Level" ;
+		rdf:value 28 ;
+	], [
+		rdfs:label "FilterA_Cutoff" ;
+		rdf:value 29 ;
+	], [
+		rdfs:label "FilterA_Resonance" ;
+		rdf:value 30 ;
+	], [
+		rdfs:label "FilterA_Drive" ;
+		rdf:value 31 ;
+	], [
+		rdfs:label "FilterB_Cutoff" ;
+		rdf:value 32 ;
+	], [
+		rdfs:label "FilterB_Resonance" ;
+		rdf:value 33 ;
+	], [
+		rdfs:label "FilterB_Drive" ;
+		rdf:value 34 ;
+	], [
+		rdfs:label "LFO1_Rate" ;
+		rdf:value 35 ;
+	], [
+		rdfs:label "LFO2_Rate" ;
+		rdf:value 36 ;
+	], [
+		rdfs:label "LFO3_Rate" ;
+		rdf:value 37 ;
+	], [
+		rdfs:label "LFO4_Rate" ;
+		rdf:value 38 ;
+	], [
+		rdfs:label "LFO1_Amount" ;
+		rdf:value 39 ;
+	], [
+		rdfs:label "LFO2_Amount" ;
+		rdf:value 40 ;
+	], [
+		rdfs:label "LFO3_Amount" ;
+		rdf:value 41 ;
+	], [
+		rdfs:label "LFO4_Amount" ;
+		rdf:value 42 ;
+	], [
+		rdfs:label "Master_Volume" ;
+		rdf:value 43 ;
+	], [
+		rdfs:label "Master_Pan" ;
+		rdf:value 44 ;
+	], [
+		rdfs:label "Arp_Gate" ;
+		rdf:value 45 ;
+	], [
+		rdfs:label "Arp_Rate" ;
+		rdf:value 46 ;
+	], [
+		rdfs:label "Osc3D_FieldFreq" ;
+		rdf:value 47 ;
+	], [
+		rdfs:label "Osc3D_ZRatio" ;
+		rdf:value 48 ;
+	], [
+		rdfs:label "Osc3D_Fold" ;
+		rdf:value 49 ;
+	], [
+		rdfs:label "Osc3D_Drive" ;
+		rdf:value 50 ;
+	], [
+		rdfs:label "VA_Shape" ;
+		rdf:value 51 ;
+	], [
+		rdfs:label "VA_Ring" ;
+		rdf:value 52 ;
+	], [
+		rdfs:label "VA_Fold" ;
+		rdf:value 53 ;
+	], [
+		rdfs:label "VA2_Shape" ;
+		rdf:value 54 ;
+	], [
+		rdfs:label "VA2_PW" ;
+		rdf:value 55 ;
+	], [
+		rdfs:label "VA2_Detune" ;
+		rdf:value 56 ;
+	], [
+		rdfs:label "VA2_Spread" ;
+		rdf:value 57 ;
+	], [
+		rdfs:label "VA2_Level" ;
+		rdf:value 58 ;
+	], [
+		rdfs:label "VA2_Ring" ;
+		rdf:value 59 ;
+	], [
+		rdfs:label "VA2_Fold" ;
+		rdf:value 60 ;
+	], [
+		rdfs:label "VA3_Shape" ;
+		rdf:value 61 ;
+	], [
+		rdfs:label "VA3_PW" ;
+		rdf:value 62 ;
+	], [
+		rdfs:label "VA3_Detune" ;
+		rdf:value 63 ;
+	], [
+		rdfs:label "VA3_Spread" ;
+		rdf:value 64 ;
+	], [
+		rdfs:label "VA3_Level" ;
+		rdf:value 65 ;
+	], [
+		rdfs:label "VA3_Ring" ;
+		rdf:value 66 ;
+	], [
+		rdfs:label "VA3_Fold" ;
+		rdf:value 67 ;
+	], [
+		rdfs:label "VA4_Shape" ;
+		rdf:value 68 ;
+	], [
+		rdfs:label "VA4_PW" ;
+		rdf:value 69 ;
+	], [
+		rdfs:label "VA4_Detune" ;
+		rdf:value 70 ;
+	], [
+		rdfs:label "VA4_Spread" ;
+		rdf:value 71 ;
+	], [
+		rdfs:label "VA4_Level" ;
+		rdf:value 72 ;
+	], [
+		rdfs:label "VA4_Ring" ;
+		rdf:value 73 ;
+	], [
+		rdfs:label "VA4_Fold" ;
+		rdf:value 74 ;
+	], [
+		rdfs:label "LFO1_SyncRate" ;
+		rdf:value 75 ;
+	], [
+		rdfs:label "LFO2_SyncRate" ;
+		rdf:value 76 ;
+	], [
+		rdfs:label "LFO3_SyncRate" ;
+		rdf:value 77 ;
+	], [
+		rdfs:label "LFO4_SyncRate" ;
+		rdf:value 78 ;
+	], [
+		rdfs:label "WT_Warp" ;
+		rdf:value 79 ;
+	], [
+		rdfs:label "WT_PD_Break" ;
+		rdf:value 80 ;
+	], [
+		rdfs:label "Gran_Position" ;
+		rdf:value 81 ;
+	], [
+		rdfs:label "Gran_Size" ;
+		rdf:value 82 ;
+	], [
+		rdfs:label "Gran_Density" ;
+		rdf:value 83 ;
+	], [
+		rdfs:label "Gran_Pitch" ;
+		rdf:value 84 ;
+	], [
+		rdfs:label "Gran_Spray" ;
+		rdf:value 85 ;
+	], [
+		rdfs:label "Gran_Freeze" ;
+		rdf:value 86 ;
+	], [
+		rdfs:label "Gran_Level" ;
+		rdf:value 87 ;
+	], [
+		rdfs:label "Gran_BodyMix" ;
+		rdf:value 88 ;
+	], [
+		rdfs:label "Gran_BodySize" ;
+		rdf:value 89 ;
+	], [
+		rdfs:label "Gran_BodyDamping" ;
+		rdf:value 90 ;
+	], [
+		rdfs:label "Gran_BodyInharm" ;
+		rdf:value 91 ;
+	] .
+
+plug:modseq_l1_s0
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 1" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.9 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s1
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 2" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s2
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 3" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s3
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 4" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s4
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 5" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.9 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s5
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 6" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s6
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 7" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s7
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 8" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s8
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 9" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.9 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s9
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 10" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s10
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 11" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s11
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 12" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s12
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 13" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.9 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s13
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 14" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s14
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 15" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s15
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 16" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s16
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 17" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.9 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s17
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 18" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s18
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 19" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s19
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 20" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s20
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 21" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.9 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s21
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 22" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s22
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 23" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s23
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 24" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s24
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 25" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.9 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s25
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 26" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s26
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 27" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s27
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 28" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s28
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 29" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.9 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s29
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 30" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s30
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 31" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l1_s31
+	a lv2:Parameter ;
+	rdfs:label "SEQ 2 Step 32" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.18 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_lane2_target
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Target" ;
+	rdfs:range atom:Float ;
+	lv2:default 23 ;
+	lv2:minimum 0 ;
+	lv2:maximum 91	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "None" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "OscPitch_All" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Osc3D_Radius" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Osc3D_Depth" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Osc3D_Warp" ;
+		rdf:value 4 ;
+	], [
+		rdfs:label "Osc3D_Chaos" ;
+		rdf:value 5 ;
+	], [
+		rdfs:label "Osc3D_Morph" ;
+		rdf:value 6 ;
+	], [
+		rdfs:label "Osc3D_Level" ;
+		rdf:value 7 ;
+	], [
+		rdfs:label "FM_Op0_Level" ;
+		rdf:value 8 ;
+	], [
+		rdfs:label "FM_Op1_Level" ;
+		rdf:value 9 ;
+	], [
+		rdfs:label "FM_Op2_Level" ;
+		rdf:value 10 ;
+	], [
+		rdfs:label "FM_Op3_Level" ;
+		rdf:value 11 ;
+	], [
+		rdfs:label "FM_Op4_Level" ;
+		rdf:value 12 ;
+	], [
+		rdfs:label "FM_Op5_Level" ;
+		rdf:value 13 ;
+	], [
+		rdfs:label "FM_Op6_Level" ;
+		rdf:value 14 ;
+	], [
+		rdfs:label "FM_Op7_Level" ;
+		rdf:value 15 ;
+	], [
+		rdfs:label "FM_Op8_Level" ;
+		rdf:value 16 ;
+	], [
+		rdfs:label "FM_Op9_Level" ;
+		rdf:value 17 ;
+	], [
+		rdfs:label "FM_Op0_Ratio" ;
+		rdf:value 18 ;
+	], [
+		rdfs:label "FM_Op1_Ratio" ;
+		rdf:value 19 ;
+	], [
+		rdfs:label "FM_Op2_Ratio" ;
+		rdf:value 20 ;
+	], [
+		rdfs:label "FM_Op3_Ratio" ;
+		rdf:value 21 ;
+	], [
+		rdfs:label "FM_Op4_Ratio" ;
+		rdf:value 22 ;
+	], [
+		rdfs:label "WT_Position" ;
+		rdf:value 23 ;
+	], [
+		rdfs:label "WT_Level" ;
+		rdf:value 24 ;
+	], [
+		rdfs:label "VA_PW" ;
+		rdf:value 25 ;
+	], [
+		rdfs:label "VA_Detune" ;
+		rdf:value 26 ;
+	], [
+		rdfs:label "VA_Spread" ;
+		rdf:value 27 ;
+	], [
+		rdfs:label "VA_Level" ;
+		rdf:value 28 ;
+	], [
+		rdfs:label "FilterA_Cutoff" ;
+		rdf:value 29 ;
+	], [
+		rdfs:label "FilterA_Resonance" ;
+		rdf:value 30 ;
+	], [
+		rdfs:label "FilterA_Drive" ;
+		rdf:value 31 ;
+	], [
+		rdfs:label "FilterB_Cutoff" ;
+		rdf:value 32 ;
+	], [
+		rdfs:label "FilterB_Resonance" ;
+		rdf:value 33 ;
+	], [
+		rdfs:label "FilterB_Drive" ;
+		rdf:value 34 ;
+	], [
+		rdfs:label "LFO1_Rate" ;
+		rdf:value 35 ;
+	], [
+		rdfs:label "LFO2_Rate" ;
+		rdf:value 36 ;
+	], [
+		rdfs:label "LFO3_Rate" ;
+		rdf:value 37 ;
+	], [
+		rdfs:label "LFO4_Rate" ;
+		rdf:value 38 ;
+	], [
+		rdfs:label "LFO1_Amount" ;
+		rdf:value 39 ;
+	], [
+		rdfs:label "LFO2_Amount" ;
+		rdf:value 40 ;
+	], [
+		rdfs:label "LFO3_Amount" ;
+		rdf:value 41 ;
+	], [
+		rdfs:label "LFO4_Amount" ;
+		rdf:value 42 ;
+	], [
+		rdfs:label "Master_Volume" ;
+		rdf:value 43 ;
+	], [
+		rdfs:label "Master_Pan" ;
+		rdf:value 44 ;
+	], [
+		rdfs:label "Arp_Gate" ;
+		rdf:value 45 ;
+	], [
+		rdfs:label "Arp_Rate" ;
+		rdf:value 46 ;
+	], [
+		rdfs:label "Osc3D_FieldFreq" ;
+		rdf:value 47 ;
+	], [
+		rdfs:label "Osc3D_ZRatio" ;
+		rdf:value 48 ;
+	], [
+		rdfs:label "Osc3D_Fold" ;
+		rdf:value 49 ;
+	], [
+		rdfs:label "Osc3D_Drive" ;
+		rdf:value 50 ;
+	], [
+		rdfs:label "VA_Shape" ;
+		rdf:value 51 ;
+	], [
+		rdfs:label "VA_Ring" ;
+		rdf:value 52 ;
+	], [
+		rdfs:label "VA_Fold" ;
+		rdf:value 53 ;
+	], [
+		rdfs:label "VA2_Shape" ;
+		rdf:value 54 ;
+	], [
+		rdfs:label "VA2_PW" ;
+		rdf:value 55 ;
+	], [
+		rdfs:label "VA2_Detune" ;
+		rdf:value 56 ;
+	], [
+		rdfs:label "VA2_Spread" ;
+		rdf:value 57 ;
+	], [
+		rdfs:label "VA2_Level" ;
+		rdf:value 58 ;
+	], [
+		rdfs:label "VA2_Ring" ;
+		rdf:value 59 ;
+	], [
+		rdfs:label "VA2_Fold" ;
+		rdf:value 60 ;
+	], [
+		rdfs:label "VA3_Shape" ;
+		rdf:value 61 ;
+	], [
+		rdfs:label "VA3_PW" ;
+		rdf:value 62 ;
+	], [
+		rdfs:label "VA3_Detune" ;
+		rdf:value 63 ;
+	], [
+		rdfs:label "VA3_Spread" ;
+		rdf:value 64 ;
+	], [
+		rdfs:label "VA3_Level" ;
+		rdf:value 65 ;
+	], [
+		rdfs:label "VA3_Ring" ;
+		rdf:value 66 ;
+	], [
+		rdfs:label "VA3_Fold" ;
+		rdf:value 67 ;
+	], [
+		rdfs:label "VA4_Shape" ;
+		rdf:value 68 ;
+	], [
+		rdfs:label "VA4_PW" ;
+		rdf:value 69 ;
+	], [
+		rdfs:label "VA4_Detune" ;
+		rdf:value 70 ;
+	], [
+		rdfs:label "VA4_Spread" ;
+		rdf:value 71 ;
+	], [
+		rdfs:label "VA4_Level" ;
+		rdf:value 72 ;
+	], [
+		rdfs:label "VA4_Ring" ;
+		rdf:value 73 ;
+	], [
+		rdfs:label "VA4_Fold" ;
+		rdf:value 74 ;
+	], [
+		rdfs:label "LFO1_SyncRate" ;
+		rdf:value 75 ;
+	], [
+		rdfs:label "LFO2_SyncRate" ;
+		rdf:value 76 ;
+	], [
+		rdfs:label "LFO3_SyncRate" ;
+		rdf:value 77 ;
+	], [
+		rdfs:label "LFO4_SyncRate" ;
+		rdf:value 78 ;
+	], [
+		rdfs:label "WT_Warp" ;
+		rdf:value 79 ;
+	], [
+		rdfs:label "WT_PD_Break" ;
+		rdf:value 80 ;
+	], [
+		rdfs:label "Gran_Position" ;
+		rdf:value 81 ;
+	], [
+		rdfs:label "Gran_Size" ;
+		rdf:value 82 ;
+	], [
+		rdfs:label "Gran_Density" ;
+		rdf:value 83 ;
+	], [
+		rdfs:label "Gran_Pitch" ;
+		rdf:value 84 ;
+	], [
+		rdfs:label "Gran_Spray" ;
+		rdf:value 85 ;
+	], [
+		rdfs:label "Gran_Freeze" ;
+		rdf:value 86 ;
+	], [
+		rdfs:label "Gran_Level" ;
+		rdf:value 87 ;
+	], [
+		rdfs:label "Gran_BodyMix" ;
+		rdf:value 88 ;
+	], [
+		rdfs:label "Gran_BodySize" ;
+		rdf:value 89 ;
+	], [
+		rdfs:label "Gran_BodyDamping" ;
+		rdf:value 90 ;
+	], [
+		rdfs:label "Gran_BodyInharm" ;
+		rdf:value 91 ;
+	] .
+
+plug:modseq_l2_s0
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 1" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.0967742 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s1
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 2" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.258065 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s2
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 3" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.419355 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s3
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 4" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.580645 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s4
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 5" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.741935 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s5
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 6" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.903226 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s6
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 7" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.0322581 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s7
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 8" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.193548 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s8
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 9" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.354839 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s9
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 10" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.516129 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s10
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 11" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.677419 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s11
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 12" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.83871 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s12
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 13" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s13
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 14" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.129032 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s14
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 15" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.290323 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s15
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 16" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.451613 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s16
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 17" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.612903 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s17
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 18" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.774194 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s18
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 19" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.935484 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s19
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 20" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.0645161 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s20
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 21" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.225806 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s21
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 22" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.387097 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s22
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 23" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.548387 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s23
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 24" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.709677 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s24
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 25" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.870968 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s25
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 26" ;
+	rdfs:range atom:Float ;
+	lv2:default 0 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s26
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 27" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.16129 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s27
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 28" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.322581 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s28
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 29" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.483871 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s29
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 30" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.645161 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s30
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 31" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.806452 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l2_s31
+	a lv2:Parameter ;
+	rdfs:label "SEQ 3 Step 32" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.967742 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_lane3_target
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Target" ;
+	rdfs:range atom:Float ;
+	lv2:default 86 ;
+	lv2:minimum 0 ;
+	lv2:maximum 91	 ;
+	lv2:portProperty lv2:enumeration ;
+	lv2:scalePoint [
+		rdfs:label "None" ;
+		rdf:value 0 ;
+	], [
+		rdfs:label "OscPitch_All" ;
+		rdf:value 1 ;
+	], [
+		rdfs:label "Osc3D_Radius" ;
+		rdf:value 2 ;
+	], [
+		rdfs:label "Osc3D_Depth" ;
+		rdf:value 3 ;
+	], [
+		rdfs:label "Osc3D_Warp" ;
+		rdf:value 4 ;
+	], [
+		rdfs:label "Osc3D_Chaos" ;
+		rdf:value 5 ;
+	], [
+		rdfs:label "Osc3D_Morph" ;
+		rdf:value 6 ;
+	], [
+		rdfs:label "Osc3D_Level" ;
+		rdf:value 7 ;
+	], [
+		rdfs:label "FM_Op0_Level" ;
+		rdf:value 8 ;
+	], [
+		rdfs:label "FM_Op1_Level" ;
+		rdf:value 9 ;
+	], [
+		rdfs:label "FM_Op2_Level" ;
+		rdf:value 10 ;
+	], [
+		rdfs:label "FM_Op3_Level" ;
+		rdf:value 11 ;
+	], [
+		rdfs:label "FM_Op4_Level" ;
+		rdf:value 12 ;
+	], [
+		rdfs:label "FM_Op5_Level" ;
+		rdf:value 13 ;
+	], [
+		rdfs:label "FM_Op6_Level" ;
+		rdf:value 14 ;
+	], [
+		rdfs:label "FM_Op7_Level" ;
+		rdf:value 15 ;
+	], [
+		rdfs:label "FM_Op8_Level" ;
+		rdf:value 16 ;
+	], [
+		rdfs:label "FM_Op9_Level" ;
+		rdf:value 17 ;
+	], [
+		rdfs:label "FM_Op0_Ratio" ;
+		rdf:value 18 ;
+	], [
+		rdfs:label "FM_Op1_Ratio" ;
+		rdf:value 19 ;
+	], [
+		rdfs:label "FM_Op2_Ratio" ;
+		rdf:value 20 ;
+	], [
+		rdfs:label "FM_Op3_Ratio" ;
+		rdf:value 21 ;
+	], [
+		rdfs:label "FM_Op4_Ratio" ;
+		rdf:value 22 ;
+	], [
+		rdfs:label "WT_Position" ;
+		rdf:value 23 ;
+	], [
+		rdfs:label "WT_Level" ;
+		rdf:value 24 ;
+	], [
+		rdfs:label "VA_PW" ;
+		rdf:value 25 ;
+	], [
+		rdfs:label "VA_Detune" ;
+		rdf:value 26 ;
+	], [
+		rdfs:label "VA_Spread" ;
+		rdf:value 27 ;
+	], [
+		rdfs:label "VA_Level" ;
+		rdf:value 28 ;
+	], [
+		rdfs:label "FilterA_Cutoff" ;
+		rdf:value 29 ;
+	], [
+		rdfs:label "FilterA_Resonance" ;
+		rdf:value 30 ;
+	], [
+		rdfs:label "FilterA_Drive" ;
+		rdf:value 31 ;
+	], [
+		rdfs:label "FilterB_Cutoff" ;
+		rdf:value 32 ;
+	], [
+		rdfs:label "FilterB_Resonance" ;
+		rdf:value 33 ;
+	], [
+		rdfs:label "FilterB_Drive" ;
+		rdf:value 34 ;
+	], [
+		rdfs:label "LFO1_Rate" ;
+		rdf:value 35 ;
+	], [
+		rdfs:label "LFO2_Rate" ;
+		rdf:value 36 ;
+	], [
+		rdfs:label "LFO3_Rate" ;
+		rdf:value 37 ;
+	], [
+		rdfs:label "LFO4_Rate" ;
+		rdf:value 38 ;
+	], [
+		rdfs:label "LFO1_Amount" ;
+		rdf:value 39 ;
+	], [
+		rdfs:label "LFO2_Amount" ;
+		rdf:value 40 ;
+	], [
+		rdfs:label "LFO3_Amount" ;
+		rdf:value 41 ;
+	], [
+		rdfs:label "LFO4_Amount" ;
+		rdf:value 42 ;
+	], [
+		rdfs:label "Master_Volume" ;
+		rdf:value 43 ;
+	], [
+		rdfs:label "Master_Pan" ;
+		rdf:value 44 ;
+	], [
+		rdfs:label "Arp_Gate" ;
+		rdf:value 45 ;
+	], [
+		rdfs:label "Arp_Rate" ;
+		rdf:value 46 ;
+	], [
+		rdfs:label "Osc3D_FieldFreq" ;
+		rdf:value 47 ;
+	], [
+		rdfs:label "Osc3D_ZRatio" ;
+		rdf:value 48 ;
+	], [
+		rdfs:label "Osc3D_Fold" ;
+		rdf:value 49 ;
+	], [
+		rdfs:label "Osc3D_Drive" ;
+		rdf:value 50 ;
+	], [
+		rdfs:label "VA_Shape" ;
+		rdf:value 51 ;
+	], [
+		rdfs:label "VA_Ring" ;
+		rdf:value 52 ;
+	], [
+		rdfs:label "VA_Fold" ;
+		rdf:value 53 ;
+	], [
+		rdfs:label "VA2_Shape" ;
+		rdf:value 54 ;
+	], [
+		rdfs:label "VA2_PW" ;
+		rdf:value 55 ;
+	], [
+		rdfs:label "VA2_Detune" ;
+		rdf:value 56 ;
+	], [
+		rdfs:label "VA2_Spread" ;
+		rdf:value 57 ;
+	], [
+		rdfs:label "VA2_Level" ;
+		rdf:value 58 ;
+	], [
+		rdfs:label "VA2_Ring" ;
+		rdf:value 59 ;
+	], [
+		rdfs:label "VA2_Fold" ;
+		rdf:value 60 ;
+	], [
+		rdfs:label "VA3_Shape" ;
+		rdf:value 61 ;
+	], [
+		rdfs:label "VA3_PW" ;
+		rdf:value 62 ;
+	], [
+		rdfs:label "VA3_Detune" ;
+		rdf:value 63 ;
+	], [
+		rdfs:label "VA3_Spread" ;
+		rdf:value 64 ;
+	], [
+		rdfs:label "VA3_Level" ;
+		rdf:value 65 ;
+	], [
+		rdfs:label "VA3_Ring" ;
+		rdf:value 66 ;
+	], [
+		rdfs:label "VA3_Fold" ;
+		rdf:value 67 ;
+	], [
+		rdfs:label "VA4_Shape" ;
+		rdf:value 68 ;
+	], [
+		rdfs:label "VA4_PW" ;
+		rdf:value 69 ;
+	], [
+		rdfs:label "VA4_Detune" ;
+		rdf:value 70 ;
+	], [
+		rdfs:label "VA4_Spread" ;
+		rdf:value 71 ;
+	], [
+		rdfs:label "VA4_Level" ;
+		rdf:value 72 ;
+	], [
+		rdfs:label "VA4_Ring" ;
+		rdf:value 73 ;
+	], [
+		rdfs:label "VA4_Fold" ;
+		rdf:value 74 ;
+	], [
+		rdfs:label "LFO1_SyncRate" ;
+		rdf:value 75 ;
+	], [
+		rdfs:label "LFO2_SyncRate" ;
+		rdf:value 76 ;
+	], [
+		rdfs:label "LFO3_SyncRate" ;
+		rdf:value 77 ;
+	], [
+		rdfs:label "LFO4_SyncRate" ;
+		rdf:value 78 ;
+	], [
+		rdfs:label "WT_Warp" ;
+		rdf:value 79 ;
+	], [
+		rdfs:label "WT_PD_Break" ;
+		rdf:value 80 ;
+	], [
+		rdfs:label "Gran_Position" ;
+		rdf:value 81 ;
+	], [
+		rdfs:label "Gran_Size" ;
+		rdf:value 82 ;
+	], [
+		rdfs:label "Gran_Density" ;
+		rdf:value 83 ;
+	], [
+		rdfs:label "Gran_Pitch" ;
+		rdf:value 84 ;
+	], [
+		rdfs:label "Gran_Spray" ;
+		rdf:value 85 ;
+	], [
+		rdfs:label "Gran_Freeze" ;
+		rdf:value 86 ;
+	], [
+		rdfs:label "Gran_Level" ;
+		rdf:value 87 ;
+	], [
+		rdfs:label "Gran_BodyMix" ;
+		rdf:value 88 ;
+	], [
+		rdfs:label "Gran_BodySize" ;
+		rdf:value 89 ;
+	], [
+		rdfs:label "Gran_BodyDamping" ;
+		rdf:value 90 ;
+	], [
+		rdfs:label "Gran_BodyInharm" ;
+		rdf:value 91 ;
+	] .
+
+plug:modseq_l3_s0
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 1" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s1
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 2" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s2
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 3" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s3
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 4" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s4
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 5" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s5
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 6" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s6
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 7" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s7
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 8" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s8
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 9" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s9
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 10" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s10
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 11" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s11
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 12" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s12
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 13" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s13
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 14" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s14
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 15" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s15
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 16" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s16
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 17" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s17
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 18" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s18
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 19" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s19
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 20" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s20
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 21" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s21
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 22" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s22
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 23" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s23
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 24" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s24
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 25" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s25
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 26" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s26
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 27" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s27
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 28" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s28
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 29" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s29
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 30" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s30
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 31" ;
+	rdfs:range atom:Float ;
+	lv2:default 1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
+plug:modseq_l3_s31
+	a lv2:Parameter ;
+	rdfs:label "SEQ 4 Step 32" ;
+	rdfs:range atom:Float ;
+	lv2:default 0.1 ;
+	lv2:minimum 0 ;
+	lv2:maximum 1 .
+
 plug:arp_on
 	a lv2:Parameter ;
 	rdfs:label "Arp On" ;
@@ -28087,6 +30744,9 @@ plug:output_group_1
 		plug:osc_terrain_center_y ,
 		plug:osc_terrain_radius_x ,
 		plug:osc_terrain_radius_y ,
+		plug:osc_terrain_zoom ,
+		plug:osc_terrain_rotation ,
+		plug:osc_terrain_path_size ,
 		plug:osc_terrain_ratio_x ,
 		plug:osc_terrain_ratio_y ,
 		plug:osc_terrain_scan_rate ,
@@ -28109,6 +30769,9 @@ plug:output_group_1
 		plug:osc_terrain2_center_y ,
 		plug:osc_terrain2_radius_x ,
 		plug:osc_terrain2_radius_y ,
+		plug:osc_terrain2_zoom ,
+		plug:osc_terrain2_rotation ,
+		plug:osc_terrain2_path_size ,
 		plug:osc_terrain2_ratio_x ,
 		plug:osc_terrain2_ratio_y ,
 		plug:osc_terrain2_scan_rate ,
@@ -28131,6 +30794,9 @@ plug:output_group_1
 		plug:osc_terrain3_center_y ,
 		plug:osc_terrain3_radius_x ,
 		plug:osc_terrain3_radius_y ,
+		plug:osc_terrain3_zoom ,
+		plug:osc_terrain3_rotation ,
+		plug:osc_terrain3_path_size ,
 		plug:osc_terrain3_ratio_x ,
 		plug:osc_terrain3_ratio_y ,
 		plug:osc_terrain3_scan_rate ,
@@ -28153,6 +30819,9 @@ plug:output_group_1
 		plug:osc_terrain4_center_y ,
 		plug:osc_terrain4_radius_x ,
 		plug:osc_terrain4_radius_y ,
+		plug:osc_terrain4_zoom ,
+		plug:osc_terrain4_rotation ,
+		plug:osc_terrain4_path_size ,
 		plug:osc_terrain4_ratio_x ,
 		plug:osc_terrain4_ratio_y ,
 		plug:osc_terrain4_scan_rate ,
@@ -28175,6 +30844,9 @@ plug:output_group_1
 		plug:osc_terrain5_center_y ,
 		plug:osc_terrain5_radius_x ,
 		plug:osc_terrain5_radius_y ,
+		plug:osc_terrain5_zoom ,
+		plug:osc_terrain5_rotation ,
+		plug:osc_terrain5_path_size ,
 		plug:osc_terrain5_ratio_x ,
 		plug:osc_terrain5_ratio_y ,
 		plug:osc_terrain5_scan_rate ,
@@ -28197,6 +30869,9 @@ plug:output_group_1
 		plug:osc_terrain6_center_y ,
 		plug:osc_terrain6_radius_x ,
 		plug:osc_terrain6_radius_y ,
+		plug:osc_terrain6_zoom ,
+		plug:osc_terrain6_rotation ,
+		plug:osc_terrain6_path_size ,
 		plug:osc_terrain6_ratio_x ,
 		plug:osc_terrain6_ratio_y ,
 		plug:osc_terrain6_scan_rate ,
@@ -28219,6 +30894,9 @@ plug:output_group_1
 		plug:osc_terrain7_center_y ,
 		plug:osc_terrain7_radius_x ,
 		plug:osc_terrain7_radius_y ,
+		plug:osc_terrain7_zoom ,
+		plug:osc_terrain7_rotation ,
+		plug:osc_terrain7_path_size ,
 		plug:osc_terrain7_ratio_x ,
 		plug:osc_terrain7_ratio_y ,
 		plug:osc_terrain7_scan_rate ,
@@ -28241,6 +30919,9 @@ plug:output_group_1
 		plug:osc_terrain8_center_y ,
 		plug:osc_terrain8_radius_x ,
 		plug:osc_terrain8_radius_y ,
+		plug:osc_terrain8_zoom ,
+		plug:osc_terrain8_rotation ,
+		plug:osc_terrain8_path_size ,
 		plug:osc_terrain8_ratio_x ,
 		plug:osc_terrain8_ratio_y ,
 		plug:osc_terrain8_scan_rate ,
@@ -28258,6 +30939,7 @@ plug:output_group_1
 		plug:osc_terrain8_adsr_s ,
 		plug:osc_terrain8_adsr_r ,
 		plug:osc_va_on ,
+		plug:osc_va_model ,
 		plug:osc_va_shape ,
 		plug:osc_va_pw ,
 		plug:osc_va_detune ,
@@ -28272,6 +30954,7 @@ plug:output_group_1
 		plug:osc_va_adsr_s ,
 		plug:osc_va_adsr_r ,
 		plug:osc_va2_on ,
+		plug:osc_va2_model ,
 		plug:osc_va2_shape ,
 		plug:osc_va2_pw ,
 		plug:osc_va2_detune ,
@@ -28286,6 +30969,7 @@ plug:output_group_1
 		plug:osc_va2_adsr_s ,
 		plug:osc_va2_adsr_r ,
 		plug:osc_va3_on ,
+		plug:osc_va3_model ,
 		plug:osc_va3_shape ,
 		plug:osc_va3_pw ,
 		plug:osc_va3_detune ,
@@ -28300,6 +30984,7 @@ plug:output_group_1
 		plug:osc_va3_adsr_s ,
 		plug:osc_va3_adsr_r ,
 		plug:osc_va4_on ,
+		plug:osc_va4_model ,
 		plug:osc_va4_shape ,
 		plug:osc_va4_pw ,
 		plug:osc_va4_detune ,
@@ -28314,6 +30999,7 @@ plug:output_group_1
 		plug:osc_va4_adsr_s ,
 		plug:osc_va4_adsr_r ,
 		plug:osc_va5_on ,
+		plug:osc_va5_model ,
 		plug:osc_va5_shape ,
 		plug:osc_va5_pw ,
 		plug:osc_va5_detune ,
@@ -28328,6 +31014,7 @@ plug:output_group_1
 		plug:osc_va5_adsr_s ,
 		plug:osc_va5_adsr_r ,
 		plug:osc_va6_on ,
+		plug:osc_va6_model ,
 		plug:osc_va6_shape ,
 		plug:osc_va6_pw ,
 		plug:osc_va6_detune ,
@@ -28342,6 +31029,7 @@ plug:output_group_1
 		plug:osc_va6_adsr_s ,
 		plug:osc_va6_adsr_r ,
 		plug:osc_va7_on ,
+		plug:osc_va7_model ,
 		plug:osc_va7_shape ,
 		plug:osc_va7_pw ,
 		plug:osc_va7_detune ,
@@ -28356,6 +31044,7 @@ plug:output_group_1
 		plug:osc_va7_adsr_s ,
 		plug:osc_va7_adsr_r ,
 		plug:osc_va8_on ,
+		plug:osc_va8_model ,
 		plug:osc_va8_shape ,
 		plug:osc_va8_pw ,
 		plug:osc_va8_detune ,
@@ -28674,6 +31363,143 @@ plug:output_group_1
 		plug:macro6 ,
 		plug:macro7 ,
 		plug:macro8 ,
+		plug:modseq_depth ,
+		plug:modseq_division ,
+		plug:modseq_subdivision ,
+		plug:modseq_length ,
+		plug:modseq_loop_length ,
+		plug:modseq_lane0_target ,
+		plug:modseq_l0_s0 ,
+		plug:modseq_l0_s1 ,
+		plug:modseq_l0_s2 ,
+		plug:modseq_l0_s3 ,
+		plug:modseq_l0_s4 ,
+		plug:modseq_l0_s5 ,
+		plug:modseq_l0_s6 ,
+		plug:modseq_l0_s7 ,
+		plug:modseq_l0_s8 ,
+		plug:modseq_l0_s9 ,
+		plug:modseq_l0_s10 ,
+		plug:modseq_l0_s11 ,
+		plug:modseq_l0_s12 ,
+		plug:modseq_l0_s13 ,
+		plug:modseq_l0_s14 ,
+		plug:modseq_l0_s15 ,
+		plug:modseq_l0_s16 ,
+		plug:modseq_l0_s17 ,
+		plug:modseq_l0_s18 ,
+		plug:modseq_l0_s19 ,
+		plug:modseq_l0_s20 ,
+		plug:modseq_l0_s21 ,
+		plug:modseq_l0_s22 ,
+		plug:modseq_l0_s23 ,
+		plug:modseq_l0_s24 ,
+		plug:modseq_l0_s25 ,
+		plug:modseq_l0_s26 ,
+		plug:modseq_l0_s27 ,
+		plug:modseq_l0_s28 ,
+		plug:modseq_l0_s29 ,
+		plug:modseq_l0_s30 ,
+		plug:modseq_l0_s31 ,
+		plug:modseq_lane1_target ,
+		plug:modseq_l1_s0 ,
+		plug:modseq_l1_s1 ,
+		plug:modseq_l1_s2 ,
+		plug:modseq_l1_s3 ,
+		plug:modseq_l1_s4 ,
+		plug:modseq_l1_s5 ,
+		plug:modseq_l1_s6 ,
+		plug:modseq_l1_s7 ,
+		plug:modseq_l1_s8 ,
+		plug:modseq_l1_s9 ,
+		plug:modseq_l1_s10 ,
+		plug:modseq_l1_s11 ,
+		plug:modseq_l1_s12 ,
+		plug:modseq_l1_s13 ,
+		plug:modseq_l1_s14 ,
+		plug:modseq_l1_s15 ,
+		plug:modseq_l1_s16 ,
+		plug:modseq_l1_s17 ,
+		plug:modseq_l1_s18 ,
+		plug:modseq_l1_s19 ,
+		plug:modseq_l1_s20 ,
+		plug:modseq_l1_s21 ,
+		plug:modseq_l1_s22 ,
+		plug:modseq_l1_s23 ,
+		plug:modseq_l1_s24 ,
+		plug:modseq_l1_s25 ,
+		plug:modseq_l1_s26 ,
+		plug:modseq_l1_s27 ,
+		plug:modseq_l1_s28 ,
+		plug:modseq_l1_s29 ,
+		plug:modseq_l1_s30 ,
+		plug:modseq_l1_s31 ,
+		plug:modseq_lane2_target ,
+		plug:modseq_l2_s0 ,
+		plug:modseq_l2_s1 ,
+		plug:modseq_l2_s2 ,
+		plug:modseq_l2_s3 ,
+		plug:modseq_l2_s4 ,
+		plug:modseq_l2_s5 ,
+		plug:modseq_l2_s6 ,
+		plug:modseq_l2_s7 ,
+		plug:modseq_l2_s8 ,
+		plug:modseq_l2_s9 ,
+		plug:modseq_l2_s10 ,
+		plug:modseq_l2_s11 ,
+		plug:modseq_l2_s12 ,
+		plug:modseq_l2_s13 ,
+		plug:modseq_l2_s14 ,
+		plug:modseq_l2_s15 ,
+		plug:modseq_l2_s16 ,
+		plug:modseq_l2_s17 ,
+		plug:modseq_l2_s18 ,
+		plug:modseq_l2_s19 ,
+		plug:modseq_l2_s20 ,
+		plug:modseq_l2_s21 ,
+		plug:modseq_l2_s22 ,
+		plug:modseq_l2_s23 ,
+		plug:modseq_l2_s24 ,
+		plug:modseq_l2_s25 ,
+		plug:modseq_l2_s26 ,
+		plug:modseq_l2_s27 ,
+		plug:modseq_l2_s28 ,
+		plug:modseq_l2_s29 ,
+		plug:modseq_l2_s30 ,
+		plug:modseq_l2_s31 ,
+		plug:modseq_lane3_target ,
+		plug:modseq_l3_s0 ,
+		plug:modseq_l3_s1 ,
+		plug:modseq_l3_s2 ,
+		plug:modseq_l3_s3 ,
+		plug:modseq_l3_s4 ,
+		plug:modseq_l3_s5 ,
+		plug:modseq_l3_s6 ,
+		plug:modseq_l3_s7 ,
+		plug:modseq_l3_s8 ,
+		plug:modseq_l3_s9 ,
+		plug:modseq_l3_s10 ,
+		plug:modseq_l3_s11 ,
+		plug:modseq_l3_s12 ,
+		plug:modseq_l3_s13 ,
+		plug:modseq_l3_s14 ,
+		plug:modseq_l3_s15 ,
+		plug:modseq_l3_s16 ,
+		plug:modseq_l3_s17 ,
+		plug:modseq_l3_s18 ,
+		plug:modseq_l3_s19 ,
+		plug:modseq_l3_s20 ,
+		plug:modseq_l3_s21 ,
+		plug:modseq_l3_s22 ,
+		plug:modseq_l3_s23 ,
+		plug:modseq_l3_s24 ,
+		plug:modseq_l3_s25 ,
+		plug:modseq_l3_s26 ,
+		plug:modseq_l3_s27 ,
+		plug:modseq_l3_s28 ,
+		plug:modseq_l3_s29 ,
+		plug:modseq_l3_s30 ,
+		plug:modseq_l3_s31 ,
 		plug:arp_on ,
 		plug:arp_pattern ,
 		plug:arp_rate ,
@@ -29590,6 +32416,9 @@ plug:output_group_1
 		plug:osc_terrain_center_y ,
 		plug:osc_terrain_radius_x ,
 		plug:osc_terrain_radius_y ,
+		plug:osc_terrain_zoom ,
+		plug:osc_terrain_rotation ,
+		plug:osc_terrain_path_size ,
 		plug:osc_terrain_ratio_x ,
 		plug:osc_terrain_ratio_y ,
 		plug:osc_terrain_scan_rate ,
@@ -29612,6 +32441,9 @@ plug:output_group_1
 		plug:osc_terrain2_center_y ,
 		plug:osc_terrain2_radius_x ,
 		plug:osc_terrain2_radius_y ,
+		plug:osc_terrain2_zoom ,
+		plug:osc_terrain2_rotation ,
+		plug:osc_terrain2_path_size ,
 		plug:osc_terrain2_ratio_x ,
 		plug:osc_terrain2_ratio_y ,
 		plug:osc_terrain2_scan_rate ,
@@ -29634,6 +32466,9 @@ plug:output_group_1
 		plug:osc_terrain3_center_y ,
 		plug:osc_terrain3_radius_x ,
 		plug:osc_terrain3_radius_y ,
+		plug:osc_terrain3_zoom ,
+		plug:osc_terrain3_rotation ,
+		plug:osc_terrain3_path_size ,
 		plug:osc_terrain3_ratio_x ,
 		plug:osc_terrain3_ratio_y ,
 		plug:osc_terrain3_scan_rate ,
@@ -29656,6 +32491,9 @@ plug:output_group_1
 		plug:osc_terrain4_center_y ,
 		plug:osc_terrain4_radius_x ,
 		plug:osc_terrain4_radius_y ,
+		plug:osc_terrain4_zoom ,
+		plug:osc_terrain4_rotation ,
+		plug:osc_terrain4_path_size ,
 		plug:osc_terrain4_ratio_x ,
 		plug:osc_terrain4_ratio_y ,
 		plug:osc_terrain4_scan_rate ,
@@ -29678,6 +32516,9 @@ plug:output_group_1
 		plug:osc_terrain5_center_y ,
 		plug:osc_terrain5_radius_x ,
 		plug:osc_terrain5_radius_y ,
+		plug:osc_terrain5_zoom ,
+		plug:osc_terrain5_rotation ,
+		plug:osc_terrain5_path_size ,
 		plug:osc_terrain5_ratio_x ,
 		plug:osc_terrain5_ratio_y ,
 		plug:osc_terrain5_scan_rate ,
@@ -29700,6 +32541,9 @@ plug:output_group_1
 		plug:osc_terrain6_center_y ,
 		plug:osc_terrain6_radius_x ,
 		plug:osc_terrain6_radius_y ,
+		plug:osc_terrain6_zoom ,
+		plug:osc_terrain6_rotation ,
+		plug:osc_terrain6_path_size ,
 		plug:osc_terrain6_ratio_x ,
 		plug:osc_terrain6_ratio_y ,
 		plug:osc_terrain6_scan_rate ,
@@ -29722,6 +32566,9 @@ plug:output_group_1
 		plug:osc_terrain7_center_y ,
 		plug:osc_terrain7_radius_x ,
 		plug:osc_terrain7_radius_y ,
+		plug:osc_terrain7_zoom ,
+		plug:osc_terrain7_rotation ,
+		plug:osc_terrain7_path_size ,
 		plug:osc_terrain7_ratio_x ,
 		plug:osc_terrain7_ratio_y ,
 		plug:osc_terrain7_scan_rate ,
@@ -29744,6 +32591,9 @@ plug:output_group_1
 		plug:osc_terrain8_center_y ,
 		plug:osc_terrain8_radius_x ,
 		plug:osc_terrain8_radius_y ,
+		plug:osc_terrain8_zoom ,
+		plug:osc_terrain8_rotation ,
+		plug:osc_terrain8_path_size ,
 		plug:osc_terrain8_ratio_x ,
 		plug:osc_terrain8_ratio_y ,
 		plug:osc_terrain8_scan_rate ,
@@ -29761,6 +32611,7 @@ plug:output_group_1
 		plug:osc_terrain8_adsr_s ,
 		plug:osc_terrain8_adsr_r ,
 		plug:osc_va_on ,
+		plug:osc_va_model ,
 		plug:osc_va_shape ,
 		plug:osc_va_pw ,
 		plug:osc_va_detune ,
@@ -29775,6 +32626,7 @@ plug:output_group_1
 		plug:osc_va_adsr_s ,
 		plug:osc_va_adsr_r ,
 		plug:osc_va2_on ,
+		plug:osc_va2_model ,
 		plug:osc_va2_shape ,
 		plug:osc_va2_pw ,
 		plug:osc_va2_detune ,
@@ -29789,6 +32641,7 @@ plug:output_group_1
 		plug:osc_va2_adsr_s ,
 		plug:osc_va2_adsr_r ,
 		plug:osc_va3_on ,
+		plug:osc_va3_model ,
 		plug:osc_va3_shape ,
 		plug:osc_va3_pw ,
 		plug:osc_va3_detune ,
@@ -29803,6 +32656,7 @@ plug:output_group_1
 		plug:osc_va3_adsr_s ,
 		plug:osc_va3_adsr_r ,
 		plug:osc_va4_on ,
+		plug:osc_va4_model ,
 		plug:osc_va4_shape ,
 		plug:osc_va4_pw ,
 		plug:osc_va4_detune ,
@@ -29817,6 +32671,7 @@ plug:output_group_1
 		plug:osc_va4_adsr_s ,
 		plug:osc_va4_adsr_r ,
 		plug:osc_va5_on ,
+		plug:osc_va5_model ,
 		plug:osc_va5_shape ,
 		plug:osc_va5_pw ,
 		plug:osc_va5_detune ,
@@ -29831,6 +32686,7 @@ plug:output_group_1
 		plug:osc_va5_adsr_s ,
 		plug:osc_va5_adsr_r ,
 		plug:osc_va6_on ,
+		plug:osc_va6_model ,
 		plug:osc_va6_shape ,
 		plug:osc_va6_pw ,
 		plug:osc_va6_detune ,
@@ -29845,6 +32701,7 @@ plug:output_group_1
 		plug:osc_va6_adsr_s ,
 		plug:osc_va6_adsr_r ,
 		plug:osc_va7_on ,
+		plug:osc_va7_model ,
 		plug:osc_va7_shape ,
 		plug:osc_va7_pw ,
 		plug:osc_va7_detune ,
@@ -29859,6 +32716,7 @@ plug:output_group_1
 		plug:osc_va7_adsr_s ,
 		plug:osc_va7_adsr_r ,
 		plug:osc_va8_on ,
+		plug:osc_va8_model ,
 		plug:osc_va8_shape ,
 		plug:osc_va8_pw ,
 		plug:osc_va8_detune ,
@@ -30177,6 +33035,143 @@ plug:output_group_1
 		plug:macro6 ,
 		plug:macro7 ,
 		plug:macro8 ,
+		plug:modseq_depth ,
+		plug:modseq_division ,
+		plug:modseq_subdivision ,
+		plug:modseq_length ,
+		plug:modseq_loop_length ,
+		plug:modseq_lane0_target ,
+		plug:modseq_l0_s0 ,
+		plug:modseq_l0_s1 ,
+		plug:modseq_l0_s2 ,
+		plug:modseq_l0_s3 ,
+		plug:modseq_l0_s4 ,
+		plug:modseq_l0_s5 ,
+		plug:modseq_l0_s6 ,
+		plug:modseq_l0_s7 ,
+		plug:modseq_l0_s8 ,
+		plug:modseq_l0_s9 ,
+		plug:modseq_l0_s10 ,
+		plug:modseq_l0_s11 ,
+		plug:modseq_l0_s12 ,
+		plug:modseq_l0_s13 ,
+		plug:modseq_l0_s14 ,
+		plug:modseq_l0_s15 ,
+		plug:modseq_l0_s16 ,
+		plug:modseq_l0_s17 ,
+		plug:modseq_l0_s18 ,
+		plug:modseq_l0_s19 ,
+		plug:modseq_l0_s20 ,
+		plug:modseq_l0_s21 ,
+		plug:modseq_l0_s22 ,
+		plug:modseq_l0_s23 ,
+		plug:modseq_l0_s24 ,
+		plug:modseq_l0_s25 ,
+		plug:modseq_l0_s26 ,
+		plug:modseq_l0_s27 ,
+		plug:modseq_l0_s28 ,
+		plug:modseq_l0_s29 ,
+		plug:modseq_l0_s30 ,
+		plug:modseq_l0_s31 ,
+		plug:modseq_lane1_target ,
+		plug:modseq_l1_s0 ,
+		plug:modseq_l1_s1 ,
+		plug:modseq_l1_s2 ,
+		plug:modseq_l1_s3 ,
+		plug:modseq_l1_s4 ,
+		plug:modseq_l1_s5 ,
+		plug:modseq_l1_s6 ,
+		plug:modseq_l1_s7 ,
+		plug:modseq_l1_s8 ,
+		plug:modseq_l1_s9 ,
+		plug:modseq_l1_s10 ,
+		plug:modseq_l1_s11 ,
+		plug:modseq_l1_s12 ,
+		plug:modseq_l1_s13 ,
+		plug:modseq_l1_s14 ,
+		plug:modseq_l1_s15 ,
+		plug:modseq_l1_s16 ,
+		plug:modseq_l1_s17 ,
+		plug:modseq_l1_s18 ,
+		plug:modseq_l1_s19 ,
+		plug:modseq_l1_s20 ,
+		plug:modseq_l1_s21 ,
+		plug:modseq_l1_s22 ,
+		plug:modseq_l1_s23 ,
+		plug:modseq_l1_s24 ,
+		plug:modseq_l1_s25 ,
+		plug:modseq_l1_s26 ,
+		plug:modseq_l1_s27 ,
+		plug:modseq_l1_s28 ,
+		plug:modseq_l1_s29 ,
+		plug:modseq_l1_s30 ,
+		plug:modseq_l1_s31 ,
+		plug:modseq_lane2_target ,
+		plug:modseq_l2_s0 ,
+		plug:modseq_l2_s1 ,
+		plug:modseq_l2_s2 ,
+		plug:modseq_l2_s3 ,
+		plug:modseq_l2_s4 ,
+		plug:modseq_l2_s5 ,
+		plug:modseq_l2_s6 ,
+		plug:modseq_l2_s7 ,
+		plug:modseq_l2_s8 ,
+		plug:modseq_l2_s9 ,
+		plug:modseq_l2_s10 ,
+		plug:modseq_l2_s11 ,
+		plug:modseq_l2_s12 ,
+		plug:modseq_l2_s13 ,
+		plug:modseq_l2_s14 ,
+		plug:modseq_l2_s15 ,
+		plug:modseq_l2_s16 ,
+		plug:modseq_l2_s17 ,
+		plug:modseq_l2_s18 ,
+		plug:modseq_l2_s19 ,
+		plug:modseq_l2_s20 ,
+		plug:modseq_l2_s21 ,
+		plug:modseq_l2_s22 ,
+		plug:modseq_l2_s23 ,
+		plug:modseq_l2_s24 ,
+		plug:modseq_l2_s25 ,
+		plug:modseq_l2_s26 ,
+		plug:modseq_l2_s27 ,
+		plug:modseq_l2_s28 ,
+		plug:modseq_l2_s29 ,
+		plug:modseq_l2_s30 ,
+		plug:modseq_l2_s31 ,
+		plug:modseq_lane3_target ,
+		plug:modseq_l3_s0 ,
+		plug:modseq_l3_s1 ,
+		plug:modseq_l3_s2 ,
+		plug:modseq_l3_s3 ,
+		plug:modseq_l3_s4 ,
+		plug:modseq_l3_s5 ,
+		plug:modseq_l3_s6 ,
+		plug:modseq_l3_s7 ,
+		plug:modseq_l3_s8 ,
+		plug:modseq_l3_s9 ,
+		plug:modseq_l3_s10 ,
+		plug:modseq_l3_s11 ,
+		plug:modseq_l3_s12 ,
+		plug:modseq_l3_s13 ,
+		plug:modseq_l3_s14 ,
+		plug:modseq_l3_s15 ,
+		plug:modseq_l3_s16 ,
+		plug:modseq_l3_s17 ,
+		plug:modseq_l3_s18 ,
+		plug:modseq_l3_s19 ,
+		plug:modseq_l3_s20 ,
+		plug:modseq_l3_s21 ,
+		plug:modseq_l3_s22 ,
+		plug:modseq_l3_s23 ,
+		plug:modseq_l3_s24 ,
+		plug:modseq_l3_s25 ,
+		plug:modseq_l3_s26 ,
+		plug:modseq_l3_s27 ,
+		plug:modseq_l3_s28 ,
+		plug:modseq_l3_s29 ,
+		plug:modseq_l3_s30 ,
+		plug:modseq_l3_s31 ,
 		plug:arp_on ,
 		plug:arp_pattern ,
 		plug:arp_rate ,
@@ -30201,7 +33196,7 @@ plug:output_group_1
 		lv2:designation <http://lv2plug.in/ns/ext/port-groups#right> ;
 	] , [
 		a lv2:InputPort , atom:AtomPort ;
-		rsz:minimumSize 116336 ;
+		rsz:minimumSize 128504 ;
 		atom:bufferType atom:Sequence ;
 		atom:supports
 			midi:MidiEvent ,
@@ -30213,7 +33208,7 @@ plug:output_group_1
 		lv2:name "In" ;
 	] , [
 		a lv2:OutputPort , atom:AtomPort ;
-		rsz:minimumSize 116336 ;
+		rsz:minimumSize 128504 ;
 		atom:bufferType atom:Sequence ;
 		atom:supports
 			patch:Message ;

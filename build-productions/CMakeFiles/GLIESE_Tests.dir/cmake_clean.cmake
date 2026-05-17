@@ -9,6 +9,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/LFO/LFOEngine.cpp.o.d"
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Modulation/ModMatrix.cpp.o"
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Modulation/ModMatrix.cpp.o.d"
+  "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o"
+  "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o.d"
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/FMAlgorithm.cpp.o"
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/FMAlgorithm.cpp.o.d"
   "CMakeFiles/GLIESE_Tests.dir/Source/Engine/Oscillators/FMOperator.cpp.o"

@@ -314,10 +314,24 @@ CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/ModMatrix.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/ModMatrix.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/ModMatrix.cpp -o CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/ModMatrix.cpp.s
 
+CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
+CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/StepSequencerMod.cpp
+CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/StepSequencerMod.cpp
+
+CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/StepSequencerMod.cpp > CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.i
+
+CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/StepSequencerMod.cpp -o CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.s
+
 CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Arpeggiator/Arpeggiator.cpp
 CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Arpeggiator/Arpeggiator.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.i: cmake_force
@@ -331,7 +345,7 @@ CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.s: cmake_for
 CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/Presets/PresetManager.cpp
 CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/Presets/PresetManager.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.i: cmake_force
@@ -345,7 +359,7 @@ CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.s: cmake_force
 CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/MainPanel.cpp
 CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/MainPanel.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.i: cmake_force
@@ -359,7 +373,7 @@ CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.s: cmake_force
 CMakeFiles/GLIESE_710.dir/Source/UI/IndustrialTheme.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/UI/IndustrialTheme.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/IndustrialTheme.cpp
 CMakeFiles/GLIESE_710.dir/Source/UI/IndustrialTheme.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/IndustrialTheme.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/IndustrialTheme.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/IndustrialTheme.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/IndustrialTheme.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/IndustrialTheme.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/IndustrialTheme.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/UI/IndustrialTheme.cpp.i: cmake_force
@@ -373,7 +387,7 @@ CMakeFiles/GLIESE_710.dir/Source/UI/IndustrialTheme.cpp.s: cmake_force
 CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/OscPanel.cpp
 CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/OscPanel.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.i: cmake_force
@@ -387,7 +401,7 @@ CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.s: cmake_force
 CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/FilterPanel.cpp
 CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/FilterPanel.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.i: cmake_force
@@ -401,7 +415,7 @@ CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.s: cmake_force
 CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModMatrixPanel.cpp
 CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModMatrixPanel.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.i: cmake_force
@@ -412,10 +426,24 @@ CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModMatrixPanel.cpp -o CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.s
 
+CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
+CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModStepSequencerPanel.cpp
+CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModStepSequencerPanel.cpp
+
+CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModStepSequencerPanel.cpp > CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.i
+
+CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModStepSequencerPanel.cpp -o CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.s
+
 CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ArpPanel.cpp
 CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ArpPanel.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.i: cmake_force
@@ -429,7 +457,7 @@ CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.s: cmake_force
 CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/LFOPanel.cpp
 CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/LFOPanel.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.i: cmake_force
@@ -443,7 +471,7 @@ CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.s: cmake_force
 CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/EngineSlotBar.cpp
 CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/EngineSlotBar.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.i: cmake_force
@@ -457,7 +485,7 @@ CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.s: cmake_force
 CMakeFiles/GLIESE_710.dir/Source/UI/PresetBrowser.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/UI/PresetBrowser.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/PresetBrowser.cpp
 CMakeFiles/GLIESE_710.dir/Source/UI/PresetBrowser.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/PresetBrowser.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/PresetBrowser.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/PresetBrowser.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/PresetBrowser.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/PresetBrowser.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/PresetBrowser.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/UI/PresetBrowser.cpp.i: cmake_force
@@ -471,7 +499,7 @@ CMakeFiles/GLIESE_710.dir/Source/UI/PresetBrowser.cpp.s: cmake_force
 CMakeFiles/GLIESE_710.dir/Source/UI/PatchBrowserPanel.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/Source/UI/PatchBrowserPanel.cpp.o: /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/PatchBrowserPanel.cpp
 CMakeFiles/GLIESE_710.dir/Source/UI/PatchBrowserPanel.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/PatchBrowserPanel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building CXX object CMakeFiles/GLIESE_710.dir/Source/UI/PatchBrowserPanel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/Source/UI/PatchBrowserPanel.cpp.o -MF CMakeFiles/GLIESE_710.dir/Source/UI/PatchBrowserPanel.cpp.o.d -o CMakeFiles/GLIESE_710.dir/Source/UI/PatchBrowserPanel.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/PatchBrowserPanel.cpp
 
 CMakeFiles/GLIESE_710.dir/Source/UI/PatchBrowserPanel.cpp.i: cmake_force
@@ -485,7 +513,7 @@ CMakeFiles/GLIESE_710.dir/Source/UI/PatchBrowserPanel.cpp.s: cmake_force
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o: _deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_ara.cpp.i: cmake_force
@@ -499,7 +527,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audi
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o: _deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors_lv2_libs.cpp.i: cmake_force
@@ -513,7 +541,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audi
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o: _deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.i: cmake_force
@@ -527,7 +555,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_processors/juce_audi
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o: _deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.i: cmake_force
@@ -541,7 +569,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_extra/juce_gui_extra.m
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o: _deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.i: cmake_force
@@ -555,7 +583,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_gui_basics/juce_gui_basics
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o: _deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.i: cmake_force
@@ -569,7 +597,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Har
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o: _deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building C object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building C object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.i: cmake_force
@@ -583,7 +611,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics_She
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o: _deps/juce-src/modules/juce_graphics/juce_graphics.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_graphics/juce_graphics.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.i: cmake_force
@@ -597,7 +625,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_graphics/juce_graphics.mm.
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o: _deps/juce-src/modules/juce_events/juce_events.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_events/juce_events.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_events/juce_events.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_events/juce_events.mm.i: cmake_force
@@ -611,7 +639,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_events/juce_events.mm.s: c
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o: _deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.i: cmake_force
@@ -625,7 +653,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core_Compilation
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o: _deps/juce-src/modules/juce_core/juce_core.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_core/juce_core.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core.mm.i: cmake_force
@@ -639,7 +667,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_core/juce_core.mm.s: cmake
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o: _deps/juce-src/modules/juce_data_structures/juce_data_structures.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.i: cmake_force
@@ -653,7 +681,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_data_structures/juce_data_
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o: _deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.i: cmake_force
@@ -667,7 +695,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_basics/juce_audio_ba
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o: _deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.i: cmake_force
@@ -681,7 +709,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_utils/juce_audio_uti
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o: _deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.i: cmake_force
@@ -695,7 +723,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_formats/juce_audio_f
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o: _deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.i: cmake_force
@@ -709,7 +737,7 @@ CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_audio_devices/juce_audio_d
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o: CMakeFiles/GLIESE_710.dir/flags.make
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o: _deps/juce-src/modules/juce_dsp/juce_dsp.mm
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o: CMakeFiles/GLIESE_710.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Building CXX object CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o -MF CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o.d -o CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o -c /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_dsp/juce_dsp.mm
 
 CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.i: cmake_force
@@ -739,6 +767,7 @@ GLIESE_710_OBJECTS = \
 "CMakeFiles/GLIESE_710.dir/Source/Engine/LFO/LFOEngine.cpp.o" \
 "CMakeFiles/GLIESE_710.dir/Source/Engine/Filter/DualFilter.cpp.o" \
 "CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/ModMatrix.cpp.o" \
+"CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o" \
 "CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.o" \
 "CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.o" \
 "CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o" \
@@ -746,6 +775,7 @@ GLIESE_710_OBJECTS = \
 "CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.o" \
 "CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.o" \
 "CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o" \
+"CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.o" \
 "CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.o" \
 "CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.o" \
 "CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.o" \
@@ -789,6 +819,7 @@ GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/Engine/LFO/LFOEngine.cpp.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/Engine/Filter/DualFilter.cpp.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/ModMatrix.cpp.o
+GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/Engine/Modulation/StepSequencerMod.cpp.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/Engine/Arpeggiator/Arpeggiator.cpp.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/Presets/PresetManager.cpp.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o
@@ -796,6 +827,7 @@ GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/UI/OscPanel.cpp.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/UI/FilterPanel.cpp.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o
+GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/UI/ModStepSequencerPanel.cpp.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/UI/ArpPanel.cpp.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/UI/LFOPanel.cpp.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/Source/UI/EngineSlotBar.cpp.o
@@ -820,7 +852,7 @@ GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/_deps/juce-src/modules/juce_dsp/juce_dsp.mm.o
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/build.make
 GLIESE_710_artefacts/Release/libGLIESE\ 710_SharedCode.a: CMakeFiles/GLIESE_710.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Linking CXX static library \"GLIESE_710_artefacts/Release/libGLIESE 710_SharedCode.a\""
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Linking CXX static library \"GLIESE_710_artefacts/Release/libGLIESE 710_SharedCode.a\""
 	$(CMAKE_COMMAND) -P CMakeFiles/GLIESE_710.dir/cmake_clean_target.cmake
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/GLIESE_710.dir/link.txt --verbose=$(VERBOSE)
 

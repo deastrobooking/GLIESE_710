@@ -1486,4 +1486,7 @@ CMakeFiles/GLIESE_710.dir/Source/UI/ModMatrixPanel.cpp.o: \
   /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_dsp/widgets/juce_Limiter.h \
   /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_dsp/widgets/juce_Phaser.h \
   /Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src/modules/juce_dsp/widgets/juce_Chorus.h \
-  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/IndustrialTheme.h
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/IndustrialTheme.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/../Engine/Modulation/ModNames.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/../Engine/Modulation/ModDest.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/../Engine/Modulation/ModSource.h

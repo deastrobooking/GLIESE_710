@@ -1490,6 +1490,11 @@ CMakeFiles/GLIESE_710.dir/Source/UI/MainPanel.cpp.o: \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/IndustrialTheme.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/FilterPanel.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModMatrixPanel.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModStepSequencerPanel.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/../Engine/Modulation/StepSequencerMod.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/../Engine/Modulation/ModMatrix.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/../Engine/Modulation/ModSource.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/../Engine/Modulation/ModDest.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ArpPanel.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/LFOPanel.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/EngineSlotBar.h

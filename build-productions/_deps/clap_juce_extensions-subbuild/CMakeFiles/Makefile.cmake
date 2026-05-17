@@ -10,10 +10,8 @@ set(CMAKE_MAKEFILE_DEPENDS
   "CMakeFiles/4.3.2/CMakeSystem.cmake"
   "CMakeLists.txt"
   "clap_juce_extensions-populate-prefix/tmp/clap_juce_extensions-populate-mkdirs.cmake"
-  "/opt/homebrew/share/cmake/Modules/CMakeDetermineSystem.cmake"
   "/opt/homebrew/share/cmake/Modules/CMakeGenericSystem.cmake"
   "/opt/homebrew/share/cmake/Modules/CMakeInitializeConfigs.cmake"
-  "/opt/homebrew/share/cmake/Modules/CMakeSystem.cmake.in"
   "/opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInformation.cmake"
   "/opt/homebrew/share/cmake/Modules/CMakeSystemSpecificInitialize.cmake"
   "/opt/homebrew/share/cmake/Modules/ExternalProject.cmake"
@@ -38,7 +36,6 @@ set(CMAKE_MAKEFILE_OUTPUTS
 
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
-  "CMakeFiles/4.3.2/CMakeSystem.cmake"
   "clap_juce_extensions-populate-prefix/tmp/clap_juce_extensions-populate-mkdirs.cmake"
   "clap_juce_extensions-populate-prefix/tmp/clap_juce_extensions-populate-gitclone.cmake"
   "clap_juce_extensions-populate-prefix/src/clap_juce_extensions-populate-stamp/clap_juce_extensions-populate-gitinfo.txt"

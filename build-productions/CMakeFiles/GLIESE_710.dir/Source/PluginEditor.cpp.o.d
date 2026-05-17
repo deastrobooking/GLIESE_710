@@ -1508,12 +1508,15 @@ CMakeFiles/GLIESE_710.dir/Source/PluginEditor.cpp.o: \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/ModSource.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/ModDest.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Arpeggiator/Arpeggiator.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/Engine/Modulation/StepSequencerMod.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/Presets/PresetManager.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/MainPanel.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/OscPanel.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/IndustrialTheme.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/FilterPanel.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModMatrixPanel.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ModStepSequencerPanel.h \
+  /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/../Engine/Modulation/StepSequencerMod.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/ArpPanel.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/LFOPanel.h \
   /Users/home/Desktop/VSTS/GLIESE_710/Source/UI/EngineSlotBar.h \
