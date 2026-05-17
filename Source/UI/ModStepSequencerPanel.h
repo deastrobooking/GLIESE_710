@@ -56,6 +56,9 @@ private:
 
         void setDrawMode(DrawMode mode);
         DrawMode getDrawMode() const noexcept { return drawMode; }
+        void setHardShapeSteps(bool shouldUseHardSteps);
+        bool getHardShapeSteps() const noexcept { return hardShapeSteps; }
+        void applyMasterShape(int shapeIndex);
 
         void randomizeLane(int lane);
         void mirrorLane(int lane);
@@ -82,6 +85,7 @@ private:
         juce::Random rng;
         int activeSegment = 0;
         DrawMode drawMode = DrawMode::Free;
+        bool hardShapeSteps = false;
 
         struct DrawGesture
         {
@@ -117,6 +121,8 @@ private:
         void applyEditableShape();
         void paintEditableShape(juce::Graphics& g) const;
         bool hitEditableShapeHandle(juce::Point<int> position) const;
+        float valueForEditableShapeAtStep(int step) const;
+        float defaultStepValue(int lane, int step) const;
         juce::Point<float> pointForStepValue(int lane, int step, float value) const;
         juce::Rectangle<float> laneBounds(int lane) const;
         int laneAtY(float y) const;
@@ -135,12 +141,14 @@ private:
     juce::Label titleLabel;
     juce::Slider depthSlider;
     juce::Slider sequenceLengthSlider;
-    ResetButton sequenceLengthResetButton;
+    ResetButton loopLengthResetButton;
     juce::Slider loopLengthSlider;
     juce::ComboBox divisionBox;
     juce::ComboBox subdivisionBox;
-    juce::Label depthLabel, sequenceLengthLabel, divisionLabel, subdivisionLabel, loopLengthLabel, lengthLabel, segmentLabel, drawModeLabel;
+    juce::Label depthLabel, sequenceLengthLabel, divisionLabel, subdivisionLabel, loopLengthLabel, lengthLabel, segmentLabel, drawModeLabel, masterShapeLabel;
+    SolidButton hardStepButton;
     std::array<SolidButton, 4> drawModeButtons;
+    std::array<SolidButton, 4> masterShapeButtons;
     std::array<SolidButton, 4> lengthButtons;
     std::array<SolidButton, StepSequencerMod::kNumSegments> segmentButtons;
 
@@ -169,4 +177,7 @@ private:
     void updateLengthAndSegmentButtons();
     void setDrawMode(StepGrid::DrawMode mode);
     void updateDrawModeButtons();
+    void setHardShapeSteps(bool shouldUseHardSteps);
+    void updateHardStepButton();
+    void applyMasterShape(int shapeIndex);
 };

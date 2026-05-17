@@ -323,7 +323,11 @@ MainPanel::~MainPanel()
 //──────────────────────────────────────────────────────────────────────────────
 void MainPanel::buildOscillatorsTab()
 {
-    oscillatorsTab = new juce::Component();
+    for (auto& tab : oscillatorTabs)
+    {
+        tab = new OscillatorPageComponent();
+        tab->onPageResized = [this] { layoutOscillatorsTab(); };
+    }
 
     auto makeId = [](const juce::String& base, int index)
     {
@@ -344,11 +348,12 @@ void MainPanel::buildOscillatorsTab()
             apvts, makeId("terrain", i), "TERRAIN " + juce::String(i + 1),
             terrainImport, i);
 
-        oscillatorsTab->addAndMakeVisible(*osc3dPanels[(size_t)i]);
-        oscillatorsTab->addAndMakeVisible(*oscWTPanels[(size_t)i]);
-        oscillatorsTab->addAndMakeVisible(*ksPanels[(size_t)i]);
-        oscillatorsTab->addAndMakeVisible(*granularPanels[(size_t)i]);
-        oscillatorsTab->addAndMakeVisible(*terrainPanels[(size_t)i]);
+        auto* parent = oscillatorTabs[(size_t) (i / 4)];
+        parent->addAndMakeVisible(*osc3dPanels[(size_t)i]);
+        parent->addAndMakeVisible(*oscWTPanels[(size_t)i]);
+        parent->addAndMakeVisible(*ksPanels[(size_t)i]);
+        parent->addAndMakeVisible(*granularPanels[(size_t)i]);
+        parent->addAndMakeVisible(*terrainPanels[(size_t)i]);
     }
 
     static const juce::StringArray vaIds {
@@ -357,31 +362,21 @@ void MainPanel::buildOscillatorsTab()
     {
         vaPanels[(size_t)i] = std::make_unique<OscPanel>(
             apvts, vaIds[i], "VIRTUAL ANALOG " + juce::String(i + 1));
-        oscillatorsTab->addAndMakeVisible(*vaPanels[(size_t)i]);
+        oscillatorTabs[(size_t) (i / 4)]->addAndMakeVisible(*vaPanels[(size_t)i]);
     }
 
     for (int i = 0; i < 2; ++i)
     {
         fmBlockViews[(size_t)i].engineIndex = i;
-        oscillatorsTab->addAndMakeVisible(fmBlockViews[(size_t)i]);
+        oscillatorTabs[(size_t)i]->addAndMakeVisible(fmBlockViews[(size_t)i]);
     }
 
     // Engine slot bar — drives the layout
-    slotBar = std::make_unique<EngineSlotBar>(apvts, [this] { layoutOscillatorsTab(); });
-    oscillatorsTab->addAndMakeVisible(*slotBar);
-
     for (int i = 0; i < 2; ++i)
     {
-        auto& b = oscPageButtons[(size_t)i];
-        b.setButtonText("PAGE " + juce::String(i + 1));
-        b.setTooltip("Show engine page " + juce::String(i + 1));
-        b.setClickingTogglesState(false);
-        b.onClick = [this, i] { setActiveOscPage(i); };
-        b.setColour(juce::TextButton::buttonColourId,    juce::Colour(0xff15181d));
-        b.setColour(juce::TextButton::buttonOnColourId,  IndustrialTheme::accentMaster().withAlpha(0.32f));
-        b.setColour(juce::TextButton::textColourOffId,   IndustrialTheme::mutedText());
-        b.setColour(juce::TextButton::textColourOnId,    IndustrialTheme::text());
-        oscillatorsTab->addAndMakeVisible(b);
+        slotBars[(size_t)i] = std::make_unique<EngineSlotBar>(
+            apvts, [this] { layoutOscillatorsTab(); }, i);
+        oscillatorTabs[(size_t)i]->addAndMakeVisible(*slotBars[(size_t)i]);
     }
 
     // Detune knobs (always shown — relevant whenever >1 3D or dual FM)
@@ -399,7 +394,8 @@ void MainPanel::buildOscillatorsTab()
     setupKnob(engFMDetuneSlider, "engine_fm_detune", "FM Dual Engine Detune (cents)",
               engFMDetuneAtt, *this, IndustrialTheme::accentMaster());
 
-    tabs.addTab("OSCILLATORS", kBg, oscillatorsTab, true);
+    tabs.addTab("OSC 1", kBg, oscillatorTabs[0], true);
+    tabs.addTab("OSC 2", kBg, oscillatorTabs[1], true);
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -464,16 +460,6 @@ void MainPanel::setupKnob(juce::Slider& s, const juce::String& paramId,
     att = std::make_unique<Att>(apvts, paramId, s);
 }
 
-void MainPanel::setActiveOscPage(int page)
-{
-    activeOscPage = juce::jlimit(0, 1, page);
-    for (int i = 0; i < 2; ++i)
-        oscPageButtons[(size_t)i].setToggleState(i == activeOscPage, juce::dontSendNotification);
-
-    layoutOscillatorsTab();
-    if (oscillatorsTab) oscillatorsTab->repaint();
-}
-
 //──────────────────────────────────────────────────────────────────────────────
 void MainPanel::paint(juce::Graphics& g)
 {
@@ -485,24 +471,7 @@ void MainPanel::paint(juce::Graphics& g)
 // Called both from resized() and whenever the slot bar changes.
 void MainPanel::layoutOscillatorsTab()
 {
-    if (!oscillatorsTab || !slotBar) return;
-
-    auto tabArea = oscillatorsTab->getLocalBounds().reduced(6);
-
-    // Slot bar — top strip
-    const int kSlotBarH  = 34;
-    slotBar->setBounds(tabArea.removeFromTop(kSlotBarH));
-    tabArea.removeFromTop(4);
-
-    // Page selector: each page maps to exactly one 4-slot engine block.
-    auto pageRow = tabArea.removeFromTop(26);
-    const int pageButtonW = juce::jmin(118, pageRow.getWidth() / 2);
-    for (int i = 0; i < 2; ++i)
-    {
-        oscPageButtons[(size_t)i].setToggleState(i == activeOscPage, juce::dontSendNotification);
-        oscPageButtons[(size_t)i].setBounds(pageRow.removeFromLeft(pageButtonW).reduced(2));
-    }
-    tabArea.removeFromTop(4);
+    if (!oscillatorTabs[0] || !oscillatorTabs[1]) return;
 
     // Hide all engine panels first
     for (auto& p : osc3dPanels) if (p) p->setVisible(false);
@@ -513,75 +482,80 @@ void MainPanel::layoutOscillatorsTab()
     for (auto& p : vaPanels) if (p) p->setVisible(false);
     for (auto& v : fmBlockViews) v.setVisible(false);
 
-    // Build a list of {component, unitWidth} for the active page.
-    // Each "unit" = one of the current page's four slot columns.
-    struct PanelSlot { juce::Component* comp; int units; };
-    std::vector<PanelSlot> panels;
-
-    auto addPanel = [&](juce::Component* comp, int units = 1)
+    auto layoutPage = [&](int page)
     {
-        panels.push_back({comp, units});
-    };
+        auto* tab = oscillatorTabs[(size_t) page];
+        auto* pageSlotBar = slotBars[(size_t) page].get();
+        if (tab == nullptr || pageSlotBar == nullptr)
+            return;
 
-    auto addGap = [&] { panels.push_back({nullptr, 1}); };
+        auto tabArea = tab->getLocalBounds().reduced(6);
 
-    for (int b = 0; b < 2; ++b)
-    {
-        const bool isActivePage = b == activeOscPage;
+        const int kSlotBarH = 34;
+        pageSlotBar->setBounds(tabArea.removeFromTop(kSlotBarH));
+        tabArea.removeFromTop(8);
 
-        if (slotBar->getBlockMode(b) == 1) // FM block
+        struct PanelSlot { juce::Component* comp; int units; };
+        std::vector<PanelSlot> panels;
+
+        auto addPanel = [&](juce::Component* comp, int units = 1)
         {
-            if (isActivePage)
-            {
-                fmBlockViews[(size_t)b].setVisible(true);
-                addPanel(&fmBlockViews[(size_t)b], 4);
-            }
+            panels.push_back({comp, units});
+        };
+
+        auto addGap = [&] { panels.push_back({nullptr, 1}); };
+
+        if (pageSlotBar->getBlockMode(page) == 1) // FM block
+        {
+            fmBlockViews[(size_t) page].setVisible(true);
+            addPanel(&fmBlockViews[(size_t) page], 4);
         }
-        else // Multi block — scan 4 slots
+        else // Multi block — scan 4 slots for this OSC tab
         {
+            const int block = page;
             for (int s = 0; s < 4; ++s)
             {
-                int type = slotBar->getSlotType(b, s);
-                const int slotIndex = b * 4 + s;
+                int type = pageSlotBar->getSlotType(block, s);
+                const int slotIndex = block * 4 + s;
                 switch (type)
                 {
                     case 1: // 3D
-                        if (isActivePage && osc3dPanels[(size_t)slotIndex])
+                        if (osc3dPanels[(size_t)slotIndex])
                         {
                             osc3dPanels[(size_t)slotIndex]->setVisible(true);
                             addPanel(osc3dPanels[(size_t)slotIndex].get());
                         }
                         break;
                     case 2: // VA
-                        if (isActivePage && vaPanels[(size_t)slotIndex])
+                        if (vaPanels[(size_t)slotIndex])
                         {
                             vaPanels[(size_t)slotIndex]->setVisible(true);
                             addPanel(vaPanels[(size_t)slotIndex].get());
                         }
                         break;
                     case 3: // WT
-                        if (isActivePage && oscWTPanels[(size_t)slotIndex])
+                        if (oscWTPanels[(size_t)slotIndex])
                         {
                             oscWTPanels[(size_t)slotIndex]->setVisible(true);
                             addPanel(oscWTPanels[(size_t)slotIndex].get());
                         }
                         break;
                     case 4: // KS
-                        if (isActivePage && ksPanels[(size_t)slotIndex])
+                        if (ksPanels[(size_t)slotIndex])
                         {
                             ksPanels[(size_t)slotIndex]->setVisible(true);
                             addPanel(ksPanels[(size_t)slotIndex].get());
                         }
                         break;
                     case 5: // Granular
-                        if (isActivePage && granularPanels[(size_t)slotIndex])
+                        if (granularPanels[(size_t)slotIndex])
                         {
                             granularPanels[(size_t)slotIndex]->setVisible(true);
                             addPanel(granularPanels[(size_t)slotIndex].get());
                         }
                         break;
                     case 6: // Terrain
-                        if (isActivePage && terrainPanels[(size_t)slotIndex])
+                        if (terrainPanels[(size_t)slotIndex])
                         {
                             terrainPanels[(size_t)slotIndex]->setVisible(true);
                             addPanel(terrainPanels[(size_t)slotIndex].get(), s < 3 ? 2 : 1);
@@ -590,71 +564,74 @@ void MainPanel::layoutOscillatorsTab()
                             ++s;
                         break;
                     default:
-                        if (isActivePage) addGap();
+                        addGap();
                         break;
                 }
             }
         }
-    }
 
-    auto layoutWide = [&]
-    {
-        const float unitW = (float)tabArea.getWidth() / 4.f;
-        float x = (float)tabArea.getX();
-        for (auto& p : panels)
+        auto layoutWide = [&]
         {
-            int w = juce::roundToInt((float)p.units * unitW);
-            if (p.comp != nullptr)
-                p.comp->setBounds(juce::roundToInt(x), tabArea.getY(), w, tabArea.getHeight());
-            x += (float)p.units * unitW;
-        }
-    };
-
-    auto layoutCompact = [&]
-    {
-        const int gap = 4;
-        const int columns = 2;
-        const int cellW = (tabArea.getWidth() - gap) / columns;
-        const int rowH  = (tabArea.getHeight() - gap) / 2;
-        int row = 0;
-        int col = 0;
-
-        auto advance = [&](int span)
-        {
-            col += span;
-            if (col >= columns)
+            const float unitW = (float)tabArea.getWidth() / 4.f;
+            float x = (float)tabArea.getX();
+            for (auto& p : panels)
             {
-                ++row;
-                col = 0;
+                int w = juce::roundToInt((float)p.units * unitW);
+                if (p.comp != nullptr)
+                    p.comp->setBounds(juce::roundToInt(x), tabArea.getY(), w, tabArea.getHeight());
+                x += (float)p.units * unitW;
             }
         };
 
-        for (auto& p : panels)
+        auto layoutCompact = [&]
         {
-            int span = juce::jlimit(1, columns, p.units);
-            if (col + span > columns)
-            {
-                ++row;
-                col = 0;
-            }
+            const int gap = 4;
+            const int columns = 2;
+            const int cellW = (tabArea.getWidth() - gap) / columns;
+            const int rowH  = (tabArea.getHeight() - gap) / 2;
+            int row = 0;
+            int col = 0;
 
-            if (p.comp != nullptr)
+            auto advance = [&](int span)
             {
-                auto r = juce::Rectangle<int>(
-                    tabArea.getX() + col * (cellW + gap),
-                    tabArea.getY() + row * (rowH + gap),
-                    cellW * span + gap * (span - 1),
-                    rowH);
-                p.comp->setBounds(r);
-            }
+                col += span;
+                if (col >= columns)
+                {
+                    ++row;
+                    col = 0;
+                }
+            };
 
-            advance(span);
-        }
+            for (auto& p : panels)
+            {
+                int span = juce::jlimit(1, columns, p.units);
+                if (col + span > columns)
+                {
+                    ++row;
+                    col = 0;
+                }
+
+                if (p.comp != nullptr)
+                {
+                    auto r = juce::Rectangle<int>(
+                        tabArea.getX() + col * (cellW + gap),
+                        tabArea.getY() + row * (rowH + gap),
+                        cellW * span + gap * (span - 1),
+                        rowH);
+                    p.comp->setBounds(r);
+                }
+
+                advance(span);
+            }
+        };
+
+        const bool compact = tabArea.getWidth() < 980 && panels.size() > 2
+                             && pageSlotBar->getBlockMode(page) == 0;
+        compact ? layoutCompact() : layoutWide();
     };
 
-    const bool compact = tabArea.getWidth() < 980 && panels.size() > 2
-                         && slotBar->getBlockMode(activeOscPage) == 0;
-    compact ? layoutCompact() : layoutWide();
+    layoutPage(0);
+    layoutPage(1);
 }
 
 //──────────────────────────────────────────────────────────────────────────────

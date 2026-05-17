@@ -27,7 +27,8 @@ public:
     static juce::Colour   accentFor (int t) noexcept;
 
     EngineSlotBar(juce::AudioProcessorValueTreeState& apvts,
-                  std::function<void()> onChanged);
+                  std::function<void()> onChanged,
+                  int focusedBlock = -1);
     ~EngineSlotBar() override;
 
     void paint   (juce::Graphics&)           override;
@@ -40,6 +41,7 @@ public:
 private:
     juce::AudioProcessorValueTreeState& apvts;
     std::function<void()>               onChanged;
+    int                                 focusedBlock = -1;
 
     std::atomic<float>* modePtr[kNumBlocks]                       {};
     std::atomic<float>* slotPtr[kNumBlocks][kSlotsPerBlock]       {};

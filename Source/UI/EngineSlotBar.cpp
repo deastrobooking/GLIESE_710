@@ -32,8 +32,9 @@ juce::Colour EngineSlotBar::accentFor(int t) noexcept
 
 //──────────────────────────────────────────────────────────────────────────────
 EngineSlotBar::EngineSlotBar(juce::AudioProcessorValueTreeState& a,
-                             std::function<void()> cb)
-    : apvts(a), onChanged(std::move(cb))
+                             std::function<void()> cb,
+                             int focused)
+    : apvts(a), onChanged(std::move(cb)), focusedBlock(focused)
 {
     for (int b = 0; b < kNumBlocks; ++b)
     {
@@ -89,6 +90,9 @@ int EngineSlotBar::getSlotType(int block, int slot) const
 //──────────────────────────────────────────────────────────────────────────────
 juce::Rectangle<int> EngineSlotBar::blockBounds(int block) const
 {
+    if (focusedBlock >= 0)
+        return block == focusedBlock ? getLocalBounds() : juce::Rectangle<int>();
+
     auto b = getLocalBounds();
     int  w = b.getWidth() / 2;
     return block == 0 ? b.removeFromLeft(w) : b.removeFromRight(w);
@@ -114,6 +118,9 @@ void EngineSlotBar::paint(juce::Graphics& g)
 
     for (int b = 0; b < kNumBlocks; ++b)
     {
+        if (focusedBlock >= 0 && b != focusedBlock)
+            continue;
+
         bool isFM = getBlockMode(b) == 1;
         auto br   = blockBounds(b).reduced(2);
 
@@ -174,6 +181,9 @@ void EngineSlotBar::mouseDown(const juce::MouseEvent& e)
 {
     for (int b = 0; b < kNumBlocks; ++b)
     {
+        if (focusedBlock >= 0 && b != focusedBlock)
+            continue;
+
         if (modeBtnBounds(b).contains(e.position.toInt()))
         {
             setBlockMode(b, getBlockMode(b) == 1 ? 0 : 1);

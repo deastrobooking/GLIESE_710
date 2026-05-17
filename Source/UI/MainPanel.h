@@ -39,6 +39,18 @@ public:
     }
 };
 
+class OscillatorPageComponent : public juce::Component
+{
+public:
+    std::function<void()> onPageResized;
+
+    void resized() override
+    {
+        if (onPageResized)
+            onPageResized();
+    }
+};
+
 class MainPanel : public juce::Component
 {
 public:
@@ -66,9 +78,7 @@ private:
     std::array<FMBlockView, 2>       fmBlockViews;      // inline FM placeholders
 
     // ── Engine slot bar ───────────────────────────────────────────────────────
-    std::unique_ptr<EngineSlotBar>   slotBar;
-    std::array<juce::TextButton, 2>  oscPageButtons;
-    int                              activeOscPage = 0;
+    std::array<std::unique_ptr<EngineSlotBar>, 2> slotBars;
 
     // ── Engine config knobs (detune params, always visible) ───────────────────
     juce::Slider    eng3dDetuneSlider, engFMDetuneSlider;
@@ -136,7 +146,7 @@ private:
     std::array<std::unique_ptr<Att>,  10> fmOpKeyAtts;
     std::unique_ptr<Att>  eng3dDetuneAtt, engFMDetuneAtt;
 
-    juce::Component* oscillatorsTab = nullptr;
+    std::array<OscillatorPageComponent*, 2> oscillatorTabs {};
     juce::Component* engineTab      = nullptr;
     juce::Component* effectsTab     = nullptr;
     juce::Component* sequencerTab   = nullptr;
@@ -149,7 +159,6 @@ private:
     void buildEffectsTab();
     void buildSequencerTab();
     void layoutOscillatorsTab();  // called on resize + slot changes
-    void setActiveOscPage(int page);
     void applyLookAndFeel(juce::Component&);
     void clearLookAndFeel(juce::Component&);
     void setupKnob(juce::Slider&, const juce::String& paramId,
