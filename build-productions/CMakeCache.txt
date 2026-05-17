@@ -184,6 +184,8 @@ CATCH_INSTALL_DOCS:BOOL=ON
 //Install extras (CMake scripts, debugger helpers) alongside library
 CATCH_INSTALL_EXTRAS:BOOL=ON
 
+CLAP_JUCE_EXTENSIONS_BUILD_EXAMPLES:BOOL=OFF
+
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=CMAKE_ADDR2LINE-NOTFOUND
 
@@ -520,6 +522,10 @@ FETCHCONTENT_QUIET:BOOL=ON
 FETCHCONTENT_SOURCE_DIR_CATCH2:PATH=
 
 //When not empty, overrides where to find pre-populated content
+// for clap_juce_extensions
+FETCHCONTENT_SOURCE_DIR_CLAP_JUCE_EXTENSIONS:PATH=
+
+//When not empty, overrides where to find pre-populated content
 // for JUCE
 FETCHCONTENT_SOURCE_DIR_JUCE:PATH=
 
@@ -528,6 +534,9 @@ FETCHCONTENT_UPDATES_DISCONNECTED:BOOL=OFF
 
 //Enables UPDATE_DISCONNECTED behavior just for population of Catch2
 FETCHCONTENT_UPDATES_DISCONNECTED_CATCH2:BOOL=OFF
+
+//Enables UPDATE_DISCONNECTED behavior just for population of clap_juce_extensions
+FETCHCONTENT_UPDATES_DISCONNECTED_CLAP_JUCE_EXTENSIONS:BOOL=OFF
 
 //Enables UPDATE_DISCONNECTED behavior just for population of JUCE
 FETCHCONTENT_UPDATES_DISCONNECTED_JUCE:BOOL=OFF
@@ -547,8 +556,11 @@ GLIESE_710_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 GLIESE_710_SOURCE_DIR:STATIC=/Users/home/Desktop/VSTS/GLIESE_710
 
-//Build unit tests
-GLIESE_BUILD_TESTS:BOOL=ON
+//Build the CLAP plugin wrapper through clap-juce-extensions
+GLIESE_BUILD_CLAP:BOOL=ON
+
+//No help, variable specified on the command line.
+GLIESE_BUILD_TESTS:UNINITIALIZED=ON
 
 //Copy built plugin artefacts into system plugin folders
 GLIESE_COPY_PLUGIN_AFTER_BUILD:BOOL=OFF
@@ -778,8 +790,6 @@ CMAKE_COLOR_MAKEFILE-ADVANCED:INTERNAL=1
 CMAKE_COMMAND:INTERNAL=/opt/homebrew/bin/cmake
 //Path to cpack program executable.
 CMAKE_CPACK_COMMAND:INTERNAL=/opt/homebrew/bin/cpack
-//ADVANCED property for variable: CMAKE_CTEST_COMMAND
-CMAKE_CTEST_COMMAND-ADVANCED:INTERNAL=1
 //Path to ctest program executable.
 CMAKE_CTEST_COMMAND:INTERNAL=/opt/homebrew/bin/ctest
 //ADVANCED property for variable: CMAKE_CXX_COMPILER
@@ -892,7 +902,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=7
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=5
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
@@ -947,7 +957,7 @@ CPM_DRY_RUN:INTERNAL=OFF
 CPM_FILE:INTERNAL=/Users/home/Desktop/VSTS/GLIESE_710/cmake/CPM.cmake
 CPM_INDENT:INTERNAL=CPM:
 CPM_MODULE_PATH:INTERNAL=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/CPM_modules
-CPM_PACKAGES:INTERNAL=JUCE;Catch2
+CPM_PACKAGES:INTERNAL=JUCE;clap_juce_extensions
 CPM_PACKAGE_Catch2_BINARY_DIR:INTERNAL=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/catch2-build
 CPM_PACKAGE_Catch2_SOURCE_DIR:INTERNAL=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/catch2-src
 CPM_PACKAGE_Catch2_VERSION:INTERNAL=3.6.0
@@ -955,6 +965,7 @@ CPM_PACKAGE_JUCE_BINARY_DIR:INTERNAL=/Users/home/Desktop/VSTS/GLIESE_710/build-p
 CPM_PACKAGE_JUCE_SOURCE_DIR:INTERNAL=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/juce-src
 CPM_PACKAGE_JUCE_VERSION:INTERNAL=8.0.4
 CPM_PACKAGE_LOCK_FILE:INTERNAL=/Users/home/Desktop/VSTS/GLIESE_710/build-productions/cpm-package-lock.cmake
+CPM_PACKAGE_clap_juce_extensions_VERSION:INTERNAL=0
 CPM_VERSION:INTERNAL=0.40.2
 //ADVANCED property for variable: CTEST_SUBMIT_RETRY_COUNT
 CTEST_SUBMIT_RETRY_COUNT-ADVANCED:INTERNAL=1
