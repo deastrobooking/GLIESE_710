@@ -127,6 +127,8 @@ modseq_loop_length  — int 1..32, active playback loop length
 
 `modseq_loop_length` is a performance trim. Playback wraps at `min(modseq_length, modseq_loop_length)`, so you can remove steps down to a one-step pulse without erasing or moving the programmed pattern.
 
+In the editor, steps beyond the active loop length are dimmed but remain editable. This makes it possible to shorten a phrase during performance, edit the parked steps, and bring the full stored pattern back without reprogramming it.
+
 ## Design Patterns
 
 ### Velocity → Filter cutoff (velocity sensitivity)

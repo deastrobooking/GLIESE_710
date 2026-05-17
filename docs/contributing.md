@@ -99,6 +99,11 @@ The Standalone target links everything and runs as a normal app. Use it for:
 - Profiling with Instruments (macOS) or perf (Linux)
 - Quick iteration before loading in a DAW
 
+### Plugin wrappers
+Use `GLIESE_710_All` when a change touches plugin metadata, build flags, binary compatibility, or the processor/editor boundary. That target builds AU, VST3, LV2, Standalone, and CLAP when `GLIESE_BUILD_CLAP=ON`.
+
+CLAP is not a native JUCE 8 wrapper in this project. It is added by `clap-juce-extensions`, so build-system changes should be checked with CLAP enabled and, when relevant, with `-DGLIESE_BUILD_CLAP=OFF` to keep the non-CLAP path healthy.
+
 ### JUCE Logger
 ```cpp
 DBG("phase = " << phase);          // prints to Output window / stdout
@@ -139,4 +144,4 @@ If a filter produces NaN or Inf: add `juce::FloatVectorOperations::disableDenorm
 | Arp patterns/params | `Arpeggiator.h` (enum) + `Arpeggiator.cpp` (nextNote switch) + [docs/arpeggiator.md](arpeggiator.md) |
 | LFO shapes | `LFOEngine.h` (enum) + `LFOEngine.cpp` (generateShape switch) |
 | UI layout | `MainPanel.cpp` → `resized()` |
-| Build system | `CMakeLists.txt` |
+| Build system / plugin formats | `CMakeLists.txt` + [docs/build-targets.md](build-targets.md) |

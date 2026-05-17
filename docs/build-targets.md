@@ -97,6 +97,23 @@ auval -v aumu GLSE G710
 
 Expected output: `PASS` with no errors.
 
+## CLAP Support
+
+JUCE 8 does not provide a native `CLAP` entry in `juce_add_plugin(FORMATS ...)`, so GLIESE builds CLAP through `free-audio/clap-juce-extensions`. The dependency is fetched by CPM when `GLIESE_BUILD_CLAP=ON`, which is the default.
+
+The wrapper is pinned to a known commit in `CMakeLists.txt` because the published release tags predate the current JUCE 8 wrapper support. Disable CLAP for an offline or minimal build with:
+
+```bash
+cmake -B build -DGLIESE_BUILD_CLAP=OFF
+```
+
+CLAP outputs are placed beside the JUCE wrapper artefacts:
+
+```text
+build/GLIESE_710_artefacts/Release/CLAP/GLIESE 710.clap
+build-productions/GLIESE_710_artefacts/Release/CLAP/GLIESE 710.clap
+```
+
 ## Windows — VST3 + CLAP
 
 ```bat
@@ -176,7 +193,7 @@ steps:
       path: build/GLIESE_710_artefacts/Release/**
 ```
 
-### Windows (VST3)
+### Windows (VST3 + CLAP)
 ```yaml
 runs-on: windows-latest
 steps:

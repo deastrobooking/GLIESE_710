@@ -63,7 +63,7 @@ cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_TESTS=
 cmake --build build-productions --config Release --parallel
 ```
 
-Set `GLIESE_COPY_PLUGIN_AFTER_BUILD=ON` only when you explicitly want JUCE to copy built plugins into system plugin folders.
+Set `GLIESE_COPY_PLUGIN_AFTER_BUILD=ON` only when you explicitly want build-time plugin copying. JUCE handles AU/VST3/LV2 copy steps; the CLAP wrapper uses its own user-scope copy path. The build script is preferred for normal macOS installs because it copies AU, VST3, and CLAP consistently and verifies the installed bundles.
 
 ### Run Tests
 
