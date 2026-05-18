@@ -23,6 +23,14 @@
       ]
     },
     {
+      "name": "vst3",
+      "configurePreset": "production",
+      "description": "Build only the VST3 plugin bundle.",
+      "targets": [
+        "GLIESE_710_VST3"
+      ]
+    },
+    {
       "name": "tests",
       "configurePreset": "production",
       "description": "Build the GLIESE 710 unit test binary.",

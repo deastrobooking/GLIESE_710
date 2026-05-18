@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG -Wl,-search_paths_first -Wl,-headerpad_max_install_names "CMakeFiles/juce_lv2_helper.dir/_deps/juce-src/modules/juce_audio_plugin_client/LV2/juce_LV2ManifestHelper.cpp.o" -o juce_lv2_helper

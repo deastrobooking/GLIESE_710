@@ -13,7 +13,7 @@
 
 Build a single target:
 ```bash
-cmake --build build --target GLIESE_710_Standalone --config Release
+cmake --build build-productions --target GLIESE_710_Standalone --config Release
 ```
 
 ## Build Configurations
@@ -61,17 +61,29 @@ cmake --build --preset tests --parallel
 ctest --preset tests
 ```
 
-Manual build path:
+VST3-only local build:
 
 ```bash
-cmake -B build -G Xcode
-cmake --build build --config Release
+cmake --preset production
+cmake --build --preset vst3 --parallel
 ```
 
-By default, builds stay inside the project `build/` directory. To also copy plugins into the system plugin folders, configure with:
+The canonical local output directory is `build-productions/`. The VST3 bundle is:
+
+```text
+build-productions/GLIESE_710_artefacts/Release/VST3/GLIESE 710.vst3
+```
+
+If the DAW shows an older editor after copying from the build folder, verify that you did not copy from stale local directories such as `build/` or `build-production/`. Force a clean VST3 wrapper rebuild with:
 
 ```bash
-cmake -B build -G Xcode -DGLIESE_COPY_PLUGIN_AFTER_BUILD=ON
+cmake --build build-productions --target GLIESE_710_VST3 --config Release --clean-first
+```
+
+By default, production builds stay inside `build-productions/`. To also copy plugins into the system plugin folders, configure with:
+
+```bash
+cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_COPY_PLUGIN_AFTER_BUILD=ON
 ```
 
 When enabled, JUCE copies built AU/VST3 plugins to:
@@ -86,7 +98,7 @@ For local production builds that should stay inside the repository build directo
 
 ```bash
 cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_TESTS=ON -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
-cmake --build build-productions --config Release --parallel
+cmake --build build-productions --target GLIESE_710_All --config Release --parallel
 ```
 
 After a rebuild, restart Logic Pro or use `auval` to validate:
@@ -104,13 +116,12 @@ JUCE 8 does not provide a native `CLAP` entry in `juce_add_plugin(FORMATS ...)`,
 The wrapper is pinned to a known commit in `CMakeLists.txt` because the published release tags predate the current JUCE 8 wrapper support. Disable CLAP for an offline or minimal build with:
 
 ```bash
-cmake -B build -DGLIESE_BUILD_CLAP=OFF
+cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_CLAP=OFF
 ```
 
 CLAP outputs are placed beside the JUCE wrapper artefacts:
 
 ```text
-build/GLIESE_710_artefacts/Release/CLAP/GLIESE 710.clap
 build-productions/GLIESE_710_artefacts/Release/CLAP/GLIESE 710.clap
 ```
 
@@ -132,20 +143,20 @@ Copy CLAP to `C:\Program Files\Common Files\CLAP\`.
 
 ```bash
 sudo apt install lv2-dev   # Debian/Ubuntu
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel
+cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release
+cmake --build build-productions --parallel
 ```
 
 Install LV2:
 ```bash
 mkdir -p ~/.lv2
-cp -r build/GLIESE_710_artefacts/Release/LV2/GLIESE\ 710.lv2 ~/.lv2/
+cp -r build-productions/GLIESE_710_artefacts/Release/LV2/GLIESE\ 710.lv2 ~/.lv2/
 ```
 
 Install CLAP:
 ```bash
 mkdir -p ~/.clap
-cp build/GLIESE_710_artefacts/Release/CLAP/GLIESE\ 710.clap ~/.clap/
+cp build-productions/GLIESE_710_artefacts/Release/CLAP/GLIESE\ 710.clap ~/.clap/
 ```
 
 Validate with:
@@ -156,18 +167,18 @@ lv2lint urn:com:gliesestudios:gliese710
 ## Running Tests
 
 ```bash
-cmake -B build -DGLIESE_BUILD_TESTS=ON
-cmake --build build --target GLIESE_Tests
-ctest --test-dir build --output-on-failure
+cmake --preset production
+cmake --build --preset tests --parallel
+ctest --preset tests
 ```
 
 Individual test filtering:
 ```bash
-./build/GLIESE_Tests_artefacts/GLIESE_Tests "[envelope]"
-./build/GLIESE_Tests_artefacts/GLIESE_Tests "[filter]"
-./build/GLIESE_Tests_artefacts/GLIESE_Tests "[osc3d]"
-./build/GLIESE_Tests_artefacts/GLIESE_Tests "[terrain]"
-./build/GLIESE_Tests_artefacts/GLIESE_Tests "[arp]"
+./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[envelope]"
+./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[filter]"
+./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[osc3d]"
+./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[terrain]"
+./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[arp]"
 ```
 
 ## GitHub Actions CI (Planned — Phase 6)

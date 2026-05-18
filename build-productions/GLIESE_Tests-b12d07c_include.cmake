@@ -1,5 +1,0 @@
-if(EXISTS "/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests-b12d07c_tests.cmake")
-  include("/Users/home/Desktop/VSTS/GLIESE_710/build-productions/GLIESE_Tests-b12d07c_tests.cmake")
-else()
-  add_test(GLIESE_Tests_NOT_BUILT-b12d07c GLIESE_Tests_NOT_BUILT-b12d07c)
-endif()

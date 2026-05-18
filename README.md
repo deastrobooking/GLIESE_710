@@ -36,9 +36,13 @@ JUCE 8 and the optional CLAP wrapper dependency are fetched automatically by CMa
 ### Build
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release --parallel
+cmake --preset production
+cmake --build --preset vst3 --parallel
 ```
+
+The canonical local build folder is `build-productions/`. Older local folders named
+`build/` or `build-production/` may contain stale plugin bundles; do not copy VST3s
+from them unless you intentionally configured those folders yourself.
 
 ### Automated Production Build
 
@@ -60,17 +64,29 @@ Use `--install-user` to install into `~/Library/Audio/Plug-Ins` instead. See [do
 
 ```bash
 cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_TESTS=ON -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
-cmake --build build-productions --config Release --parallel
+cmake --build build-productions --target GLIESE_710_VST3 --config Release --parallel
 ```
 
 Set `GLIESE_COPY_PLUGIN_AFTER_BUILD=ON` only when you explicitly want build-time plugin copying. JUCE handles AU/VST3/LV2 copy steps; the CLAP wrapper uses its own user-scope copy path. The build script is preferred for normal macOS installs because it copies AU, VST3, and CLAP consistently and verifies the installed bundles.
 
+The current VST3 bundle path is:
+
+```text
+build-productions/GLIESE_710_artefacts/Release/VST3/GLIESE 710.vst3
+```
+
+If a newly added editor page does not appear in the DAW, force a clean wrapper rebuild:
+
+```bash
+cmake --build build-productions --target GLIESE_710_VST3 --config Release --clean-first
+```
+
 ### Run Tests
 
 ```bash
-cmake -B build -DGLIESE_BUILD_TESTS=ON
-cmake --build build
-ctest --test-dir build --output-on-failure
+cmake --preset production
+cmake --build --preset tests --parallel
+ctest --preset tests
 ```
 
 ---

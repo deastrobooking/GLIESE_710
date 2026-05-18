@@ -1,2 +1,0 @@
-/usr/bin/ar qc libclap_juce_extensions.a "CMakeFiles/clap_juce_extensions.dir/src/extensions/clap-juce-extensions.cpp.o"
-/usr/bin/ranlib libclap_juce_extensions.a

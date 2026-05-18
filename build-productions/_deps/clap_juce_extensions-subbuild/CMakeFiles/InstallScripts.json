@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/Users/home/Desktop/VSTS/GLIESE_710/build-productions/_deps/clap_juce_extensions-subbuild/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
