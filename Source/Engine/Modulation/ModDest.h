@@ -25,5 +25,12 @@ enum class ModDest : int
     WT_Warp, WT_PD_Break,
     Gran_Position, Gran_Size, Gran_Density, Gran_Pitch, Gran_Spray, Gran_Freeze, Gran_Level,
     Gran_BodyMix, Gran_BodySize, Gran_BodyDamping, Gran_BodyInharm,
+    EngFilt3D_Cutoff, EngFilt3D_Resonance, EngFilt3D_Drive, EngFilt3D_Morph, EngFilt3D_Mix,
+    EngFiltFM_Cutoff, EngFiltFM_Resonance, EngFiltFM_Drive, EngFiltFM_Morph, EngFiltFM_Mix,
+    EngFiltWT_Cutoff, EngFiltWT_Resonance, EngFiltWT_Drive, EngFiltWT_Morph, EngFiltWT_Mix,
+    EngFiltVA_Cutoff, EngFiltVA_Resonance, EngFiltVA_Drive, EngFiltVA_Morph, EngFiltVA_Mix,
+    EngFiltKS_Cutoff, EngFiltKS_Resonance, EngFiltKS_Drive, EngFiltKS_Morph, EngFiltKS_Mix,
+    EngFiltGran_Cutoff, EngFiltGran_Resonance, EngFiltGran_Drive, EngFiltGran_Morph, EngFiltGran_Mix,
+    EngFiltTerrain_Cutoff, EngFiltTerrain_Resonance, EngFiltTerrain_Drive, EngFiltTerrain_Morph, EngFiltTerrain_Mix,
     NumDests
 };

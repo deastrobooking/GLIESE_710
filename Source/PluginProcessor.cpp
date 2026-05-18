@@ -337,10 +337,37 @@ static APVTS::ParameterLayout buildLayout()
         "Peak","LoShelf","HiShelf","Comb","AM+","AM-",
         "Ladder12","Ladder18","Ladder24","SEM Morph","MS Dual","Formant",
         "Juno-106","Juno-60","Jupiter-4","Jupiter-8","TB-303",
-        "P5 Rev2 SSM","P5 Rev3 CEM","Prophet-600","Prophet-6","Pro-One"
+        "P5 Rev2 SSM","P5 Rev3 CEM","Prophet-600","Prophet-6","Pro-One",
+        "GLIESE Prism","Alt Ladder","Phys Ladder"
     };
     juce::StringArray filterRouting { "Series","Parallel","A Only","B Only" };
     juce::StringArray filterOversampling { "Off", "2x", "4x" };
+
+    auto addEngineFilter = [&](const juce::String& id, const juce::String& label)
+    {
+        const juce::String p = "engine_filter_" + id + "_";
+        addBool  (p + "on",        label + " Filter Enable", false);
+        addChoice(p + "type",      label + " Filter Type", filterModes, (int) FilterMode::AltLadder);
+        addFloat (p + "cutoff",    label + " Filter Cutoff",
+                  20.0f, 20000.0f, 20000.0f, 0.25f);
+        addFloat (p + "resonance", label + " Filter Resonance", 0.0f, 1.0f, 0.0f);
+        addFloat (p + "drive",     label + " Filter Drive",     0.0f, 1.0f, 0.0f);
+        addFloat (p + "morph",     label + " Filter Morph",     0.0f, 1.0f, 0.5f);
+        addFloat (p + "saturation",label + " Filter Saturation",0.0f, 1.0f, 0.35f);
+        addFloat (p + "bass_comp", label + " Filter Bass Comp", 0.0f, 1.0f, 0.0f);
+        addFloat (p + "mix",       label + " Filter Mix",       0.0f, 1.0f, 1.0f);
+        addChoice(p + "oversample",label + " Filter Oversample", filterOversampling, 0);
+        addFloat (p + "env_amt",   label + " Filter Env Amt",  -1.0f, 1.0f, 0.0f);
+        addFloat (p + "lfo_amt",   label + " Filter LFO Amt",  -1.0f, 1.0f, 0.0f);
+    };
+
+    addEngineFilter("3d",      "3D");
+    addEngineFilter("fm",      "FM");
+    addEngineFilter("wt",      "WT");
+    addEngineFilter("va",      "VA");
+    addEngineFilter("ks",      "KS");
+    addEngineFilter("gran",    "Granular");
+    addEngineFilter("terrain", "Terrain");
 
     for (auto slot : {"a", "b"})
     {

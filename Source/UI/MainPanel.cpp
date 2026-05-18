@@ -256,6 +256,174 @@ private:
     std::array<std::unique_ptr<CAtt>, 10> waveAtts;
     std::array<std::unique_ptr<Att>, 10> skirtAtts, resAtts, velAtts, keyAtts;
 };
+
+class EngineFilterPage : public juce::Component
+{
+public:
+    using APVTS = juce::AudioProcessorValueTreeState;
+    using Att   = APVTS::SliderAttachment;
+    using CAtt  = APVTS::ComboBoxAttachment;
+    using BAtt  = APVTS::ButtonAttachment;
+
+    explicit EngineFilterPage(APVTS& state) : apvts(state)
+    {
+        auto accent = IndustrialTheme::accentFilter();
+        title.setText("ENGINE FILTERS", juce::dontSendNotification);
+        IndustrialTheme::styleTitle(title, accent, 13.f);
+        addAndMakeVisible(title);
+
+        static const juce::StringArray filterModes {
+            "LP12","LP24","HP12","HP24","Bandpass","Notch",
+            "Peak","LoShelf","HiShelf","Comb","AM+","AM-",
+            "Ladder12","Ladder18","Ladder24","SEM Morph","MS Dual","Formant",
+            "Juno-106","Juno-60","Jupiter-4","Jupiter-8","TB-303",
+            "P5 Rev2 SSM","P5 Rev3 CEM","Prophet-600","Prophet-6","Pro-One",
+            "GLIESE Prism","Alt Ladder","Phys Ladder"
+        };
+        static const juce::StringArray oversampling { "Off", "2x", "4x" };
+        static const juce::String names[] { "3D", "FM", "WT", "VA", "KS", "GRAN", "TERRAIN" };
+        static const juce::String ids[] { "3d", "fm", "wt", "va", "ks", "gran", "terrain" };
+
+        for (int i = 0; i < kRows; ++i)
+        {
+            auto& row = rows[(size_t) i];
+            row.name.setText(names[(size_t) i], juce::dontSendNotification);
+            IndustrialTheme::styleLabel(row.name, accent, 10.f, juce::Justification::centredLeft);
+            addAndMakeVisible(row.name);
+
+            const juce::String pfx = "engine_filter_" + ids[(size_t) i] + "_";
+            row.on.setButtonText("ON");
+            IndustrialTheme::styleButton(row.on, accent);
+            addAndMakeVisible(row.on);
+            row.onAtt = std::make_unique<BAtt>(apvts, pfx + "on", row.on);
+
+            row.type.addItemList(filterModes, 1);
+            IndustrialTheme::styleCombo(row.type, accent);
+            addAndMakeVisible(row.type);
+            row.typeAtt = std::make_unique<CAtt>(apvts, pfx + "type", row.type);
+
+            row.os.addItemList(oversampling, 1);
+            IndustrialTheme::styleCombo(row.os, accent);
+            addAndMakeVisible(row.os);
+            row.osAtt = std::make_unique<CAtt>(apvts, pfx + "oversample", row.os);
+
+            setupSlider(row.cutoff, pfx + "cutoff", "Cutoff", row.cutoffAtt, 50);
+            setupSlider(row.res,    pfx + "resonance", "Resonance", row.resAtt, 42);
+            setupSlider(row.drive,  pfx + "drive", "Drive", row.driveAtt, 42);
+            setupSlider(row.morph,  pfx + "morph", "Morph", row.morphAtt, 42);
+            setupSlider(row.sat,    pfx + "saturation", "Saturation", row.satAtt, 42);
+            setupSlider(row.bass,   pfx + "bass_comp", "Bass Comp", row.bassAtt, 42);
+            setupSlider(row.mix,    pfx + "mix", "Mix", row.mixAtt, 42);
+            setupSlider(row.env,    pfx + "env_amt", "Envelope Amount", row.envAtt, 42);
+            setupSlider(row.lfo,    pfx + "lfo_amt", "LFO Amount", row.lfoAtt, 42);
+        }
+
+        static const juce::String headers[] {
+            "ENGINE", "ON", "TYPE", "CUT", "RES", "DRV", "MOR", "SAT", "BASS", "MIX", "ENV", "LFO", "OS"
+        };
+        for (int i = 0; i < kCols; ++i)
+        {
+            header[(size_t) i].setText(headers[(size_t) i], juce::dontSendNotification);
+            IndustrialTheme::styleLabel(header[(size_t) i], accent, 10.f, juce::Justification::centredLeft);
+            addAndMakeVisible(header[(size_t) i]);
+        }
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        IndustrialTheme::paintPanel(g, getLocalBounds(), IndustrialTheme::accentFilter(), true);
+    }
+
+    void resized() override
+    {
+        auto area = getLocalBounds().reduced(8);
+        title.setBounds(area.removeFromTop(22));
+        area.removeFromTop(4);
+
+        auto headerRow = area.removeFromTop(15);
+        layoutRow(headerRow, nullptr, true);
+        area.removeFromTop(4);
+
+        const int rowH = juce::jmax(42, area.getHeight() / kRows);
+        for (int i = 0; i < kRows; ++i)
+        {
+            auto rowArea = area.removeFromTop(rowH).reduced(0, 2);
+            layoutRow(rowArea, &rows[(size_t) i], false);
+        }
+    }
+
+private:
+    static constexpr int kRows = 7;
+    static constexpr int kCols = 13;
+
+    struct Row
+    {
+        juce::Label name;
+        juce::ToggleButton on;
+        juce::ComboBox type, os;
+        juce::Slider cutoff, res, drive, morph, sat, bass, mix, env, lfo;
+        std::unique_ptr<BAtt> onAtt;
+        std::unique_ptr<CAtt> typeAtt, osAtt;
+        std::unique_ptr<Att> cutoffAtt, resAtt, driveAtt, morphAtt, satAtt, bassAtt, mixAtt, envAtt, lfoAtt;
+    };
+
+    void setupSlider(juce::Slider& slider, const juce::String& paramId,
+                     const juce::String& tooltip, std::unique_ptr<Att>& attachment, int textWidth)
+    {
+        slider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, textWidth, 13);
+        slider.setTooltip(tooltip);
+        IndustrialTheme::styleSlider(slider, IndustrialTheme::accentFilter());
+        addAndMakeVisible(slider);
+        attachment = std::make_unique<Att>(apvts, paramId, slider);
+    }
+
+    void layoutRow(juce::Rectangle<int> rowArea, Row* row, bool isHeader)
+    {
+        const int nameW = 72;
+        const int onW = 42;
+        const int typeW = juce::jlimit(118, 180, rowArea.getWidth() / 5);
+        const int osW = 58;
+        const int remaining = rowArea.getWidth() - nameW - onW - typeW - osW;
+        const int knobW = juce::jmax(42, remaining / 9);
+
+        auto setHeader = [&](int idx, juce::Rectangle<int> r)
+        {
+            header[(size_t) idx].setBounds(r);
+        };
+
+        if (isHeader)
+        {
+            setHeader(0, rowArea.removeFromLeft(nameW));
+            setHeader(1, rowArea.removeFromLeft(onW));
+            setHeader(2, rowArea.removeFromLeft(typeW));
+            for (int i = 3; i <= 11; ++i)
+                setHeader(i, rowArea.removeFromLeft(knobW));
+            setHeader(12, rowArea.removeFromLeft(osW));
+            return;
+        }
+
+        row->name.setBounds(rowArea.removeFromLeft(nameW));
+        row->on.setBounds(rowArea.removeFromLeft(onW).reduced(2, 8));
+        auto typeBounds = rowArea.removeFromLeft(typeW);
+        row->type.setBounds(typeBounds.withHeight(24).withCentre(typeBounds.getCentre()));
+
+        juce::Slider* knobs[] {
+            &row->cutoff, &row->res, &row->drive, &row->morph, &row->sat,
+            &row->bass, &row->mix, &row->env, &row->lfo
+        };
+        for (auto* knob : knobs)
+            knob->setBounds(rowArea.removeFromLeft(knobW).reduced(1));
+
+        auto osBounds = rowArea.removeFromLeft(osW);
+        row->os.setBounds(osBounds.withHeight(24).withCentre(osBounds.getCentre()));
+    }
+
+    APVTS& apvts;
+    juce::Label title;
+    std::array<juce::Label, kCols> header;
+    std::array<Row, kRows> rows;
+};
 } // namespace
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -279,6 +447,7 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a,
 
     buildOscillatorsTab();
     buildEngineTab();
+    buildEngineFiltersTab();
     buildEffectsTab();
     buildSequencerTab();
 
@@ -404,6 +573,12 @@ void MainPanel::buildEngineTab()
     tabs.addTab("FM A", kBg, new FMEngineEditor(apvts, 0), true);
     tabs.addTab("FM B", kBg, new FMEngineEditor(apvts, 1), true);
     engineTab = nullptr;
+}
+
+//──────────────────────────────────────────────────────────────────────────────
+void MainPanel::buildEngineFiltersTab()
+{
+    tabs.addTab("ENGINE FILTERS", kBg, new EngineFilterPage(apvts), true);
 }
 
 //──────────────────────────────────────────────────────────────────────────────

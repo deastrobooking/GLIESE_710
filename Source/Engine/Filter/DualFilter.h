@@ -40,6 +40,7 @@ private:
 
     CleanSVF cleanSVF;
     LadderLP ladderLP;
+    AlternateLadderLP alternateLadderLP;
     TB303LP tb303LP;
     SequentialLP sequentialLP;
     RolandLP rolandLP;
@@ -47,6 +48,7 @@ private:
     MSDual msDual;
     CombFilter combFilter;
     FormantFilter formantFilter;
+    GliesePrismFilter gliesePrismFilter;
 
     float lastConfiguredCutoff = -1.f;
     float lastConfiguredRes = -1.f;

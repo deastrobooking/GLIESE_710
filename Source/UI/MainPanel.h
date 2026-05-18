@@ -156,6 +156,7 @@ private:
 
     void buildOscillatorsTab();
     void buildEngineTab();
+    void buildEngineFiltersTab();
     void buildEffectsTab();
     void buildSequencerTab();
     void layoutOscillatorsTab();  // called on resize + slot changes

@@ -17,6 +17,17 @@ bool pB(std::atomic<float>* p, bool def = true) noexcept
     return p ? p->load(std::memory_order_relaxed) > 0.5f : def;
 }
 
+enum EngineFilterIndex
+{
+    EngineFilter3D = 0,
+    EngineFilterFM,
+    EngineFilterWT,
+    EngineFilterVA,
+    EngineFilterKS,
+    EngineFilterGran,
+    EngineFilterTerrain
+};
+
 // VA param prefix: index 0 → "osc_va_", 1 → "osc_va2_", 4 → "osc_va5_", etc.
 juce::String vaPrefix(int index)
 {
@@ -102,6 +113,51 @@ ModDest vaFoldDest(int index)
         ModDest::VA_Fold, ModDest::VA2_Fold, ModDest::VA3_Fold, ModDest::VA4_Fold };
     return d[juce::jlimit(0, 3, index)];
 }
+
+ModDest engineFilterCutoffDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::EngFilt3D_Cutoff, ModDest::EngFiltFM_Cutoff, ModDest::EngFiltWT_Cutoff,
+        ModDest::EngFiltVA_Cutoff, ModDest::EngFiltKS_Cutoff, ModDest::EngFiltGran_Cutoff,
+        ModDest::EngFiltTerrain_Cutoff };
+    return d[juce::jlimit(0, SynthVoice::kNumEngineFilters - 1, index)];
+}
+
+ModDest engineFilterResDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::EngFilt3D_Resonance, ModDest::EngFiltFM_Resonance, ModDest::EngFiltWT_Resonance,
+        ModDest::EngFiltVA_Resonance, ModDest::EngFiltKS_Resonance, ModDest::EngFiltGran_Resonance,
+        ModDest::EngFiltTerrain_Resonance };
+    return d[juce::jlimit(0, SynthVoice::kNumEngineFilters - 1, index)];
+}
+
+ModDest engineFilterDriveDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::EngFilt3D_Drive, ModDest::EngFiltFM_Drive, ModDest::EngFiltWT_Drive,
+        ModDest::EngFiltVA_Drive, ModDest::EngFiltKS_Drive, ModDest::EngFiltGran_Drive,
+        ModDest::EngFiltTerrain_Drive };
+    return d[juce::jlimit(0, SynthVoice::kNumEngineFilters - 1, index)];
+}
+
+ModDest engineFilterMorphDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::EngFilt3D_Morph, ModDest::EngFiltFM_Morph, ModDest::EngFiltWT_Morph,
+        ModDest::EngFiltVA_Morph, ModDest::EngFiltKS_Morph, ModDest::EngFiltGran_Morph,
+        ModDest::EngFiltTerrain_Morph };
+    return d[juce::jlimit(0, SynthVoice::kNumEngineFilters - 1, index)];
+}
+
+ModDest engineFilterMixDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::EngFilt3D_Mix, ModDest::EngFiltFM_Mix, ModDest::EngFiltWT_Mix,
+        ModDest::EngFiltVA_Mix, ModDest::EngFiltKS_Mix, ModDest::EngFiltGran_Mix,
+        ModDest::EngFiltTerrain_Mix };
+    return d[juce::jlimit(0, SynthVoice::kNumEngineFilters - 1, index)];
+}
 } // namespace
 
 float SynthVoice::midiToHz(int note, float pitchBendSemitones)
@@ -122,6 +178,8 @@ void SynthVoice::prepare(double sr)
     for (auto& terrain : terrainOscs) terrain.prepare(sr);
     envBank.prepare(sr);
     lfo.prepare(sr);
+    for (auto& filter : engineFilterL) filter.prepare(sr);
+    for (auto& filter : engineFilterR) filter.prepare(sr);
     dualFilter.prepare(sr);
 }
 
@@ -139,6 +197,8 @@ void SynthVoice::reset()
     for (auto& terrain : terrainOscs) terrain.reset();
     envBank.reset();
     lfo.reset();
+    for (auto& filter : engineFilterL) filter.reset();
+    for (auto& filter : engineFilterR) filter.reset();
     dualFilter.reset();
 }
 
@@ -422,6 +482,29 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
                               + "_slot_" + juce::String(s);
             pc.slotCfg.slotTypes[b][s] = get(id);
         }
+    }
+
+    static const juce::String engineFilterPrefixes[] {
+        "engine_filter_3d_", "engine_filter_fm_", "engine_filter_wt_",
+        "engine_filter_va_", "engine_filter_ks_", "engine_filter_gran_",
+        "engine_filter_terrain_"
+    };
+    for (int i = 0; i < kNumEngineFilters; ++i)
+    {
+        auto& f = pc.engineFilters[(size_t) i];
+        const auto& pfx = engineFilterPrefixes[(size_t) i];
+        f.on         = get(pfx + "on");
+        f.type       = get(pfx + "type");
+        f.cutoff     = get(pfx + "cutoff");
+        f.resonance  = get(pfx + "resonance");
+        f.drive      = get(pfx + "drive");
+        f.morph      = get(pfx + "morph");
+        f.saturation = get(pfx + "saturation");
+        f.bassComp   = get(pfx + "bass_comp");
+        f.mix        = get(pfx + "mix");
+        f.oversample = get(pfx + "oversample");
+        f.envAmt     = get(pfx + "env_amt");
+        f.lfoAmt     = get(pfx + "lfo_amt");
     }
 
     auto cacheFilter = [&](ParamCache::FilterPtrs& f, const juce::String& pfx) {
@@ -796,6 +879,34 @@ void SynthVoice::syncParams()
         envBank.get(terrainEnvIndex(i)).setParams(envParams(ct.env, 0.01f, 0.2f, 1.f, 0.3f));
     }
 
+    // ── Per-engine pre-master filters ────────────────────────────────────────
+    for (int i = 0; i < kNumEngineFilters; ++i)
+    {
+        const auto& cef = pc.engineFilters[(size_t) i];
+        SingleFilter::Params efp;
+        const int modeIndex = juce::jlimit(0, (int) FilterMode::NumModes - 1,
+                                           pI(cef.type, (int) FilterMode::AltLadder));
+        efp.mode      = static_cast<FilterMode>(modeIndex);
+        efp.cutoff    = juce::jlimit(20.f, (float)(sampleRate * 0.49),
+            pF(cef.cutoff, 20000.f) * std::pow(2.f,
+                modDests.dests[(int) engineFilterCutoffDest(i)] * 4.f));
+        efp.resonance = juce::jlimit(0.f, 1.f,
+            pF(cef.resonance) + modDests.dests[(int) engineFilterResDest(i)]);
+        efp.drive     = juce::jlimit(0.f, 1.f,
+            pF(cef.drive) + modDests.dests[(int) engineFilterDriveDest(i)]);
+        efp.morph     = juce::jlimit(0.f, 1.f,
+            pF(cef.morph, 0.5f) + modDests.dests[(int) engineFilterMorphDest(i)]);
+        efp.saturation = juce::jlimit(0.f, 1.f, pF(cef.saturation, 0.35f));
+        efp.bassComp  = juce::jlimit(0.f, 1.f, pF(cef.bassComp));
+        efp.mix       = juce::jlimit(0.f, 1.f,
+            pF(cef.mix, 1.f) + modDests.dests[(int) engineFilterMixDest(i)]);
+        efp.oversample = pI(cef.oversample, 0);
+        efp.envAmount = pF(cef.envAmt);
+        efp.lfoAmount = pF(cef.lfoAmt);
+        engineFilterL[(size_t) i].setParams(efp);
+        engineFilterR[(size_t) i].setParams(efp);
+    }
+
     // ── Filters ───────────────────────────────────────────────────────────────
     const auto& cfa = pc.filterA;
     SingleFilter::Params fpA;
@@ -1026,6 +1137,10 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
     const float terrainNorm = currentTerrainCount > 0
         ? 1.f / std::sqrt((float)currentTerrainCount) : 1.f;
 
+    std::array<bool, kNumEngineFilters> engineFilterOn {};
+    for (int i = 0; i < kNumEngineFilters; ++i)
+        engineFilterOn[(size_t) i] = pB(pc.engineFilters[(size_t) i].on, false);
+
     auto* leftCh  = buffer.getWritePointer(0, startSample);
     auto* rightCh = buffer.getWritePointer(1, startSample);
 
@@ -1083,7 +1198,20 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
         envBank.processAndGet(ENV_FILTER_A);
         envBank.processAndGet(ENV_FILTER_B);
 
-        float monoSig = 0.f;
+        float sig3D = 0.f;
+        float sigFM = 0.f;
+        float sigKS = 0.f;
+        float sigWTL = 0.f, sigWTR = 0.f;
+        float sigGranL = 0.f, sigGranR = 0.f;
+        float sigTerrain = 0.f;
+        float sigVAL = 0.f, sigVAR = 0.f;
+        float env3DGroup = 0.f;
+        float envFMGroup = 0.f;
+        float envKSGroup = 0.f;
+        float envWTGroup = 0.f;
+        float envGranGroup = 0.f;
+        float envTerrainGroup = 0.f;
+        float envVAGroup = 0.f;
 
         // 3D instances
         if (current3dCount > 0)
@@ -1093,9 +1221,12 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             {
                 const int i = active3dIndices[(size_t)n];
                 if (use3D[(size_t)i] && env3D[i] > kSilent)
+                {
                     sum += osc3dArray[(size_t)i].processSample() * env3D[i] * osc3dLevels[(size_t)i];
+                    env3DGroup = juce::jmax(env3DGroup, env3D[i]);
+                }
             }
-            monoSig += sum * osc3dNorm;
+            sig3D = sum * osc3dNorm;
         }
 
         // FM engines
@@ -1104,7 +1235,10 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             if (useFMA)
             {
                 if (envFMA > kSilent)
-                    monoSig += fm.processSample() * fmScale * envFMA * fmLevelA;
+                {
+                    sigFM += fm.processSample() * fmScale * envFMA * fmLevelA;
+                    envFMGroup = juce::jmax(envFMGroup, envFMA);
+                }
                 else
                     fm.advanceEnvelopes();
             }
@@ -1112,7 +1246,10 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             if (useFMB)
             {
                 if (envFMB > kSilent)
-                    monoSig += fm2.processSample() * fmScale * envFMB * fmLevelB;
+                {
+                    sigFM += fm2.processSample() * fmScale * envFMB * fmLevelB;
+                    envFMGroup = juce::jmax(envFMGroup, envFMB);
+                }
                 else
                     fm2.advanceEnvelopes();
             }
@@ -1123,12 +1260,12 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
         {
             const int i = activeKSIndices[(size_t)n];
             if (useKS[(size_t)i] && (ksOscs[(size_t)i].isActive() || envKS[i] > kSilent))
-                monoSig += ksOscs[(size_t)i].processSample(cachedKSParams[(size_t)i])
-                           * envKS[i] * ksLevels[(size_t)i] * ksNorm;
+            {
+                sigKS += ksOscs[(size_t)i].processSample(cachedKSParams[(size_t)i])
+                       * envKS[i] * ksLevels[(size_t)i] * ksNorm;
+                envKSGroup = juce::jmax(envKSGroup, envKS[i]);
+            }
         }
-
-        float sigL = monoSig;
-        float sigR = monoSig;
 
         // WT pool (stereo)
         if (currentWTCount > 0)
@@ -1139,8 +1276,9 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
                 if (useWT[(size_t)i] && envWT[i] > kSilent)
                 {
                     auto [wtL, wtR] = wtOscs[(size_t)i].processSample();
-                    sigL += wtL * envWT[i] * wtLevels[(size_t)i] * wtNorm;
-                    sigR += wtR * envWT[i] * wtLevels[(size_t)i] * wtNorm;
+                    sigWTL += wtL * envWT[i] * wtLevels[(size_t)i] * wtNorm;
+                    sigWTR += wtR * envWT[i] * wtLevels[(size_t)i] * wtNorm;
+                    envWTGroup = juce::jmax(envWTGroup, envWT[i]);
                 }
             }
         }
@@ -1154,8 +1292,9 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
                 if (useGran[(size_t)i] && envGran[i] > kSilent)
                 {
                     auto [gL, gR] = granularOscs[(size_t)i].processSample();
-                    sigL += gL * envGran[i] * grainLevels[(size_t)i] * grainNorm;
-                    sigR += gR * envGran[i] * grainLevels[(size_t)i] * grainNorm;
+                    sigGranL += gL * envGran[i] * grainLevels[(size_t)i] * grainNorm;
+                    sigGranR += gR * envGran[i] * grainLevels[(size_t)i] * grainNorm;
+                    envGranGroup = juce::jmax(envGranGroup, envGran[i]);
                 }
             }
         }
@@ -1168,8 +1307,8 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             {
                 const float t = terrainOscs[(size_t)i].processSample()
                               * envTerrain[i] * terrainLevels[(size_t)i] * terrainNorm;
-                sigL += t;
-                sigR += t;
+                sigTerrain += t;
+                envTerrainGroup = juce::jmax(envTerrainGroup, envTerrain[i]);
             }
         }
 
@@ -1180,10 +1319,37 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             if (useVA[(size_t)i] && envVA[i] > kSilent)
             {
                 auto [vaL, vaR] = vaOscs[(size_t)i].processSample();
-                sigL += vaL * envVA[i] * vaLevels[(size_t)i];
-                sigR += vaR * envVA[i] * vaLevels[(size_t)i];
+                sigVAL += vaL * envVA[i] * vaLevels[(size_t)i];
+                sigVAR += vaR * envVA[i] * vaLevels[(size_t)i];
+                envVAGroup = juce::jmax(envVAGroup, envVA[i]);
             }
         }
+
+        auto processEngineFilter = [&](int filterIndex, float& left, float& right,
+                                       float envValue, float lfoValue)
+        {
+            if (!engineFilterOn[(size_t) filterIndex])
+                return;
+
+            left = engineFilterL[(size_t) filterIndex].processSample(left, envValue, lfoValue);
+            right = engineFilterR[(size_t) filterIndex].processSample(right, envValue, lfoValue);
+        };
+
+        float sig3DL = sig3D, sig3DR = sig3D;
+        float sigFML = sigFM, sigFMR = sigFM;
+        float sigKSL = sigKS, sigKSR = sigKS;
+        float sigTerrainL = sigTerrain, sigTerrainR = sigTerrain;
+
+        processEngineFilter(EngineFilter3D, sig3DL, sig3DR, env3DGroup, lfoA);
+        processEngineFilter(EngineFilterFM, sigFML, sigFMR, envFMGroup, lfoA);
+        processEngineFilter(EngineFilterWT, sigWTL, sigWTR, envWTGroup, lfoA);
+        processEngineFilter(EngineFilterVA, sigVAL, sigVAR, envVAGroup, lfoA);
+        processEngineFilter(EngineFilterKS, sigKSL, sigKSR, envKSGroup, lfoB);
+        processEngineFilter(EngineFilterGran, sigGranL, sigGranR, envGranGroup, lfoB);
+        processEngineFilter(EngineFilterTerrain, sigTerrainL, sigTerrainR, envTerrainGroup, lfoB);
+
+        float sigL = sig3DL + sigFML + sigKSL + sigWTL + sigGranL + sigTerrainL + sigVAL;
+        float sigR = sig3DR + sigFMR + sigKSR + sigWTR + sigGranR + sigTerrainR + sigVAR;
 
         auto [fL, fR] = dualFilter.processSample(sigL, sigR, lfoA, lfoB);
 

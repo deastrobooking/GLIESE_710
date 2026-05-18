@@ -46,7 +46,14 @@ inline constexpr std::array<const char*, (int) ModDest::NumDests> kDestDisplayNa
     "LFO1 SyncRt", "LFO2 SyncRt", "LFO3 SyncRt", "LFO4 SyncRt",
     "WT Warp", "WT PD Brk",
     "Gran Pos", "Gran Size", "Gran Density", "Gran Pitch", "Gran Spray", "Gran Freeze", "Gran Level",
-    "Gran BodyMix", "Gran BodySize", "Gran Damping", "Gran Inharm"
+    "Gran BodyMix", "Gran BodySize", "Gran Damping", "Gran Inharm",
+    "3D Filt Cut", "3D Filt Res", "3D Filt Drv", "3D Filt Morph", "3D Filt Mix",
+    "FM Filt Cut", "FM Filt Res", "FM Filt Drv", "FM Filt Morph", "FM Filt Mix",
+    "WT Filt Cut", "WT Filt Res", "WT Filt Drv", "WT Filt Morph", "WT Filt Mix",
+    "VA Filt Cut", "VA Filt Res", "VA Filt Drv", "VA Filt Morph", "VA Filt Mix",
+    "KS Filt Cut", "KS Filt Res", "KS Filt Drv", "KS Filt Morph", "KS Filt Mix",
+    "Gran Filt Cut", "Gran Filt Res", "Gran Filt Drv", "Gran Filt Morph", "Gran Filt Mix",
+    "Terrain Filt Cut", "Terrain Filt Res", "Terrain Filt Drv", "Terrain Filt Morph", "Terrain Filt Mix"
 };
 
 inline constexpr std::array<const char*, (int) ModDest::NumDests> kDestParameterNames {
@@ -72,7 +79,14 @@ inline constexpr std::array<const char*, (int) ModDest::NumDests> kDestParameter
     "LFO1_SyncRate", "LFO2_SyncRate", "LFO3_SyncRate", "LFO4_SyncRate",
     "WT_Warp", "WT_PD_Break",
     "Gran_Position", "Gran_Size", "Gran_Density", "Gran_Pitch", "Gran_Spray", "Gran_Freeze", "Gran_Level",
-    "Gran_BodyMix", "Gran_BodySize", "Gran_BodyDamping", "Gran_BodyInharm"
+    "Gran_BodyMix", "Gran_BodySize", "Gran_BodyDamping", "Gran_BodyInharm",
+    "EngFilt3D_Cutoff", "EngFilt3D_Resonance", "EngFilt3D_Drive", "EngFilt3D_Morph", "EngFilt3D_Mix",
+    "EngFiltFM_Cutoff", "EngFiltFM_Resonance", "EngFiltFM_Drive", "EngFiltFM_Morph", "EngFiltFM_Mix",
+    "EngFiltWT_Cutoff", "EngFiltWT_Resonance", "EngFiltWT_Drive", "EngFiltWT_Morph", "EngFiltWT_Mix",
+    "EngFiltVA_Cutoff", "EngFiltVA_Resonance", "EngFiltVA_Drive", "EngFiltVA_Morph", "EngFiltVA_Mix",
+    "EngFiltKS_Cutoff", "EngFiltKS_Resonance", "EngFiltKS_Drive", "EngFiltKS_Morph", "EngFiltKS_Mix",
+    "EngFiltGran_Cutoff", "EngFiltGran_Resonance", "EngFiltGran_Drive", "EngFiltGran_Morph", "EngFiltGran_Mix",
+    "EngFiltTerrain_Cutoff", "EngFiltTerrain_Resonance", "EngFiltTerrain_Drive", "EngFiltTerrain_Morph", "EngFiltTerrain_Mix"
 };
 
 inline juce::StringArray toStringArray(const auto& names)

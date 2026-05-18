@@ -166,19 +166,24 @@ SEM Morph  MS Dual  Formant
 Juno-106  Juno-60  Jupiter-4  Jupiter-8
 TB-303
 P5 Rev2 SSM  P5 Rev3 CEM  Prophet-600  Prophet-6  Pro-One
+GLIESE Prism  Alt Ladder  Phys Ladder
 ```
 
 See [docs/filter.md](docs/filter.md).
+
+### Engine Filters
+
+The **ENGINE FILTERS** page adds one per-voice filter for each oscillator family before the master dual filter: 3D, FM, WT, VA, KS, GRAN, and TERRAIN. Each uses the full filter mode list with cutoff, resonance, drive, morph, saturation, bass compensation, mix, quality, envelope depth, and LFO depth.
 
 ### Modulation Matrix
 
 32 slots. Each slot: **Source -> Destination -> Amount (-1 to +1) -> Bipolar toggle**.
 
-Sources include LFO1-4, envelope groups, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, and eight macros. Destinations cover 3D controls, FM operator level/ratio controls, wavetable position/warp, granular controls, VA controls, filter controls, LFO controls, master volume/pan, and arp rate/gate.
+Sources include LFO1-4, envelope groups, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, and eight macros. Destinations cover 3D controls, FM operator level/ratio controls, wavetable position/warp, granular controls, VA controls, master filter controls, per-engine filter controls, LFO controls, master volume/pan, and arp rate/gate.
 
 The four-lane mod step sequencer has a performance loop-length knob that can trim playback from the full programmed pattern down to a single step without changing stored step values.
 
-Terrain modulation destinations are not exposed yet; terrain currently responds through its direct APVTS parameters and per-slot envelope.
+Terrain pre-filter modulation is available through the engine filter destinations; direct terrain path modulation is still a later expansion.
 
 ### Arpeggiator
 
@@ -233,7 +238,8 @@ GLIESE_710/
 - [x] Independent FM A / FM B engines
 - [x] Runtime wavetable import path + FFT-based mipmap generation
 - [x] Granular physical body / modal resonator section
-- [x] Roland, TB-303, and Sequential-style filter character modes
+- [x] Roland, TB-303, Sequential-style, GLIESE, alternate ladder, and physical ladder filter character modes
+- [x] Per-voice oscillator engine filters before the master dual filter
 - [x] Wave-terrain oscillator MVP
 - [ ] Terrain image chooser and waveform/path visualizer in the editor
 - [ ] Terrain mipmaps / anti-aliasing quality modes

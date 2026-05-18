@@ -18,7 +18,8 @@ FilterPanel::FilterPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
         "Peak","LoShelf","HiShelf","Comb","AM+","AM-",
         "Ladder12","Ladder18","Ladder24","SEM Morph","MS Dual","Formant",
         "Juno-106","Juno-60","Jupiter-4","Jupiter-8","TB-303",
-        "P5 Rev2 SSM","P5 Rev3 CEM","Prophet-600","Prophet-6","Pro-One"
+        "P5 Rev2 SSM","P5 Rev3 CEM","Prophet-600","Prophet-6","Pro-One",
+        "GLIESE Prism","Alt Ladder","Phys Ladder"
     };
     const juce::StringArray routings { "Series","Parallel","A Only","B Only" };
     const juce::StringArray oversampling { "Off", "2x", "4x" };

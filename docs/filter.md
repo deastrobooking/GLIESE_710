@@ -31,7 +31,7 @@ ADSR envelope
 
 ## Mode List
 
-`filter_{a,b}_type` is a choice from 28 modes:
+`filter_{a,b}_type` is a choice from 31 modes:
 
 | ID | Mode | Notes |
 |---:|---|---|
@@ -63,6 +63,9 @@ ADSR envelope
 | 25 | Prophet-600 | darker/slower CEM 3320 variant |
 | 26 | Prophet-6 | modern smooth Sequential-style low-pass |
 | 27 | Pro-One | aggressive CEM monosynth low-pass |
+| 28 | GLIESE Prism | original dual-SVF prism filter with split resonant color |
+| 29 | Alt Ladder | alternate GLIESE ladder with native-style drive and morphable taps |
+| 30 | Phys Ladder | physical modeled ladder with lossy stages, cutoff inertia, and feedback memory |
 
 The analog-named modes are musical models, not component-perfect circuit clones. Their purpose is to give distinct response, saturation, and resonance character inside the existing GLIESE filter slot.
 
@@ -81,6 +84,10 @@ In the AM modes, resonance acts as modulation depth plus a small self-AM color, 
 ### Ladder Modes
 
 Ladder12, Ladder18, and Ladder24 are nonlinear low-pass models with selectable slope. Drive and saturation control how hard the signal hits the cascade; bass compensation restores low end that resonance can thin out.
+
+Alt Ladder keeps the familiar GLIESE ladder feel but uses a different feedback tap, stronger internal gain staging, and a continuous `morph` blend from rounded 12 dB weight through 18 dB bite into the full 24 dB output.
+
+Phys Ladder is the more physical modeled option. It adds per-stage cutoff spread, lossy integrator leakage, asymmetric saturation, cutoff inertia, and a memory term in the resonance path. It is a little less polite under high resonance and drive, which makes it useful before the master dual filter when an oscillator engine needs its own animated color.
 
 ### SEM Morph
 
@@ -108,10 +115,13 @@ Jupiter-8  brighter and faster
 All four are 24 dB/oct low-pass character models. `drive`, `saturation`, and `morph` influence how strongly the input and feedback paths color the sound.
 `resonance` controls both the feedback amount and a resonant stage tap, so the cutoff peak stays obvious across the vintage Roland variants.
 
+The Juno models now use separate OTA-card calibrations for the 80017A/Juno-106 and IR3109/Juno-60 behaviors. The Jupiter models add a more physical voice-card response: input coupling, lossy stage leakage, skewed feedback taps, and per-stage cutoff spread. Jupiter-4 is darker and more driven; Jupiter-8 is faster, cleaner, and brighter.
+
 ### TB-303
 
 The TB-303 mode is an acid-style 18 dB/oct character filter. Its resonance path is shaped differently from a standard four-pole ladder, giving the more nasal, liquid, less heavy peak associated with 303-style sweeps.
 High resonance adds a stronger squelchy tap around the cutoff while preserving the high-passed feedback character.
+`morph` behaves like an accent/sweep macro: higher values push the cutoff, shorten the internal slew, add self-FM from the previous output, and make the diode feedback path bite harder.
 
 Best with:
 
@@ -137,6 +147,45 @@ Pro-One         aggressive monosynth bite
 
 `morph` is available as a mode-dependent color control. In Prophet-6 style patches it can be used like a modern slope/color control; in other Sequential modes it acts as extra character shaping.
 
+### GLIESE Prism
+
+GLIESE Prism is an original filter, not a clone. It runs two resonant TPT state-variable cores at split cutoff frequencies, cross-excites their band outputs, and folds the result through a soft energy limiter. `morph` widens the split and moves the sound from rounded low-pass mass toward glassy, animated resonant color. `bass_comp` restores body under high resonance.
+
+## Engine Oscillator Filters
+
+Each oscillator engine can now run through its own per-voice stereo filter before the master dual filter:
+
+```text
+3D      -> Engine Filter 3D      \
+FM      -> Engine Filter FM       \
+WT      -> Engine Filter WT        \
+VA      -> Engine Filter VA         -> voice sum -> Filter A/B
+KS      -> Engine Filter KS        /
+GRAN    -> Engine Filter GRAN     /
+TERRAIN -> Engine Filter TERRAIN /
+```
+
+The engine filters are mixed into the voice before Filter A/B. They use the same filter model list as the master dual filter, so the native filters, the analog character models, Alt Ladder, Phys Ladder, and GLIESE Prism can all be used per oscillator family.
+
+Each engine filter has:
+
+```text
+on
+type
+cutoff
+resonance
+drive
+morph
+saturation
+bass compensation
+wet/dry mix
+oversampling quality
+engine envelope amount
+engine LFO amount
+```
+
+The editor exposes these on the **ENGINE FILTERS** page. They are intended for source-level shaping: for example, filtering FM harshness before it hits the master filter, putting a Phys Ladder only on the VA stack, or giving granular/terrain layers their own darker pre-filter.
+
 ## Cutoff Modulation
 
 Cutoff modulation is applied in octaves:
@@ -157,7 +206,7 @@ For slot `s` (`a` or `b`):
 
 | Parameter | Range | Description |
 |---|---|---|
-| `filter_{s}_type` | 0-27 | Filter mode. |
+| `filter_{s}_type` | 0-30 | Filter mode. |
 | `filter_{s}_cutoff` | 20-20000 Hz | Base cutoff. |
 | `filter_{s}_resonance` | 0-1 | Resonance / Q / feedback. |
 | `filter_{s}_drive` | 0-1 | Pre-filter input drive. |
@@ -176,6 +225,23 @@ Global:
 | Parameter | Range | Description |
 |---|---|---|
 | `filter_routing` | 0-3 | Series / Parallel / A Only / B Only. |
+
+Per engine filter, where `e` is `3d`, `fm`, `wt`, `va`, `ks`, `gran`, or `terrain`:
+
+| Parameter | Range | Description |
+|---|---|---|
+| `engine_filter_{e}_on` | off/on | Enable the oscillator-family filter. |
+| `engine_filter_{e}_type` | 0-30 | Filter mode. |
+| `engine_filter_{e}_cutoff` | 20-20000 Hz | Base cutoff. |
+| `engine_filter_{e}_resonance` | 0-1 | Resonance / Q / feedback. |
+| `engine_filter_{e}_drive` | 0-1 | Pre-filter input drive. |
+| `engine_filter_{e}_morph` | 0-1 | Mode-dependent morph/color. |
+| `engine_filter_{e}_saturation` | 0-1 | Nonlinear shaping amount. |
+| `engine_filter_{e}_bass_comp` | 0-1 | Bass compensation for nonlinear low-pass models. |
+| `engine_filter_{e}_mix` | 0-1 | Wet/dry blend. |
+| `engine_filter_{e}_oversample` | Off / 2x / 4x | Quality mode for nonlinear models. |
+| `engine_filter_{e}_env_amt` | -1 to +1 | Engine-envelope cutoff depth. |
+| `engine_filter_{e}_lfo_amt` | -1 to +1 | Engine LFO cutoff depth. |
 
 ## Adding A New Filter Mode
 

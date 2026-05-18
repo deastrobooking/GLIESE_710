@@ -622,7 +622,10 @@ TEST_CASE("DualFilter advanced models stay finite with oversampling", "[filter]"
         FilterMode::SequentialP5Rev3,
         FilterMode::SequentialP600,
         FilterMode::SequentialP6,
-        FilterMode::SequentialProOne
+        FilterMode::SequentialProOne,
+        FilterMode::GliesePrism,
+        FilterMode::AltLadder,
+        FilterMode::PhysicalLadder
     };
 
     for (auto mode : modes)
@@ -934,6 +937,113 @@ TEST_CASE("TB303 filter behaves as acid 18 dB low-pass", "[filter]")
         REQUIRE(std::isfinite(R));
         REQUIRE(std::abs(L) <= 1.5f);
         REQUIRE(std::abs(R) <= 1.5f);
+    }
+}
+
+TEST_CASE("GLIESE Prism filter morphs split resonant color", "[filter]")
+{
+    auto measureRms = [](float sineHz, float morph, float resonance)
+    {
+        DualFilter df;
+        df.prepare(48000.0);
+
+        SingleFilter::Params p;
+        p.mode = FilterMode::GliesePrism;
+        p.cutoff = 1200.f;
+        p.resonance = resonance;
+        p.drive = 0.25f;
+        p.morph = morph;
+        p.saturation = 0.45f;
+        p.bassComp = 0.25f;
+        p.mix = 1.f;
+        p.oversample = 1;
+        df.setFilterA(p);
+        df.setRouting(FilterRouting::AOnly);
+        df.noteOn();
+
+        for (int i = 0; i < 4096; ++i)
+        {
+            const float s = 0.45f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            (void) df.processSample(s, s, 0.f, 0.f);
+        }
+
+        float sumSq = 0.f;
+        constexpr int n = 8192;
+        for (int i = 0; i < n; ++i)
+        {
+            const float s = 0.45f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            auto [L, R] = df.processSample(s, s, 0.f, 0.f);
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            sumSq += L * L;
+        }
+
+        return std::sqrt(sumSq / (float) n);
+    };
+
+    const float low = measureRms(220.f, 0.15f, 0.35f);
+    const float high = measureRms(7000.f, 0.15f, 0.35f);
+    REQUIRE(low > high * 2.5f);
+
+    const float closedPrism = measureRms(1800.f, 0.05f, 0.72f);
+    const float openPrism = measureRms(3000.f, 0.95f, 0.72f);
+    REQUIRE(std::abs(openPrism - closedPrism) > 0.01f);
+
+    const float flat = measureRms(1200.f, 0.65f, 0.f);
+    const float resonant = measureRms(1200.f, 0.65f, 0.88f);
+    REQUIRE(resonant > flat * 1.08f);
+}
+
+TEST_CASE("Alternate ladder filters behave as nonlinear low-pass models", "[filter]")
+{
+    auto measureRms = [](FilterMode mode, float sineHz, float morph, float resonance)
+    {
+        DualFilter df;
+        df.prepare(48000.0);
+
+        SingleFilter::Params p;
+        p.mode = mode;
+        p.cutoff = 1100.f;
+        p.resonance = resonance;
+        p.drive = 0.45f;
+        p.morph = morph;
+        p.saturation = 0.50f;
+        p.bassComp = 0.25f;
+        p.mix = 1.f;
+        p.oversample = 1;
+        df.setFilterA(p);
+        df.setRouting(FilterRouting::AOnly);
+        df.noteOn();
+
+        for (int i = 0; i < 4096; ++i)
+        {
+            const float s = 0.42f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            (void) df.processSample(s, s, 0.f, 0.f);
+        }
+
+        float sumSq = 0.f;
+        constexpr int n = 8192;
+        for (int i = 0; i < n; ++i)
+        {
+            const float s = 0.42f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * (float) i / 48000.f);
+            auto [L, R] = df.processSample(s, s, 0.f, 0.f);
+            REQUIRE(std::isfinite(L));
+            REQUIRE(std::isfinite(R));
+            sumSq += L * L;
+        }
+
+        return std::sqrt(sumSq / (float) n);
+    };
+
+    for (auto mode : { FilterMode::AltLadder, FilterMode::PhysicalLadder })
+    {
+        const float low = measureRms(mode, 180.f, 0.70f, 0.45f);
+        const float high = measureRms(mode, 6500.f, 0.70f, 0.45f);
+        REQUIRE(low > high * 2.25f);
+
+        const float flat = measureRms(mode, 1100.f, 0.75f, 0.05f);
+        const float resonant = measureRms(mode, 1100.f, 0.75f, 0.88f);
+        REQUIRE(std::abs(resonant - flat) > 0.01f);
     }
 }
 

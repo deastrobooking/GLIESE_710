@@ -22,6 +22,7 @@ public:
     static constexpr int kNumKSOscs    = 8;  // max KS instances
     static constexpr int kNumGranOscs  = 8;  // max granular instances
     static constexpr int kNumTerrainOscs = 8; // max terrain instances
+    static constexpr int kNumEngineFilters = 7;
 
     void prepare(double sampleRate);
     void reset();
@@ -86,6 +87,8 @@ private:
 
     EnvelopeBank envBank;
     LFOEngine    lfo;
+    std::array<SingleFilter, kNumEngineFilters> engineFilterL;
+    std::array<SingleFilter, kNumEngineFilters> engineFilterR;
     DualFilter   dualFilter;
     ModMatrix    modMatrix;
 
@@ -257,6 +260,20 @@ private:
             std::atomic<float>* lfoAmt    = nullptr;
             EnvPtrs env;
         };
+        struct EngineFilterPtrs {
+            std::atomic<float>* on        = nullptr;
+            std::atomic<float>* type      = nullptr;
+            std::atomic<float>* cutoff    = nullptr;
+            std::atomic<float>* resonance = nullptr;
+            std::atomic<float>* drive     = nullptr;
+            std::atomic<float>* morph     = nullptr;
+            std::atomic<float>* saturation = nullptr;
+            std::atomic<float>* bassComp  = nullptr;
+            std::atomic<float>* mix       = nullptr;
+            std::atomic<float>* oversample = nullptr;
+            std::atomic<float>* envAmt    = nullptr;
+            std::atomic<float>* lfoAmt    = nullptr;
+        };
         struct OpPtrs {
             std::atomic<float>* coarse   = nullptr;
             std::atomic<float>* fine     = nullptr;
@@ -306,6 +323,7 @@ private:
         std::array<GranPtrs, kNumGranOscs> grain;
         std::array<TerrainPtrs, kNumTerrainOscs> terrain;
         SlotCfgPtrs      slotCfg;
+        std::array<EngineFilterPtrs, kNumEngineFilters> engineFilters;
         FilterPtrs       filterA;
         FilterPtrs       filterB;
         std::atomic<float>* filterRouting = nullptr;

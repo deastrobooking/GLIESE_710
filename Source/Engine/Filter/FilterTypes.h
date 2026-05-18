@@ -28,6 +28,9 @@ enum class FilterMode
     SequentialP600,
     SequentialP6,
     SequentialProOne,
+    GliesePrism,
+    AltLadder,
+    PhysicalLadder,
     NumModes
 };
 

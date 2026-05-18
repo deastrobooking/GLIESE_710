@@ -16,6 +16,7 @@ void SingleFilter::prepare(double sampleRate)
     iirFilter.prepare(spec);
     cleanSVF.prepare(sampleRate);
     ladderLP.prepare(sampleRate);
+    alternateLadderLP.prepare(sampleRate);
     tb303LP.prepare(sampleRate);
     sequentialLP.prepare(sampleRate);
     rolandLP.prepare(sampleRate);
@@ -23,6 +24,7 @@ void SingleFilter::prepare(double sampleRate)
     msDual.prepare(sampleRate);
     combFilter.prepare(sampleRate);
     formantFilter.prepare(sampleRate);
+    gliesePrismFilter.prepare(sampleRate);
 
     // Initialize IIR to unity-gain low-pass at Nyquist so first processSample is safe
     // if a Peak/Shelf mode is selected before configureIIR() runs.
@@ -52,6 +54,7 @@ void SingleFilter::reset()
     iirFilter.reset();
     cleanSVF.reset();
     ladderLP.reset();
+    alternateLadderLP.reset();
     tb303LP.reset();
     sequentialLP.reset();
     rolandLP.reset();
@@ -59,6 +62,7 @@ void SingleFilter::reset()
     msDual.reset();
     combFilter.reset();
     formantFilter.reset();
+    gliesePrismFilter.reset();
 
     if (smoothingReady)
     {
@@ -177,6 +181,9 @@ void SingleFilter::configureIIR(float cutHz, float res, float drive)
         case FilterMode::SequentialP600:
         case FilterMode::SequentialP6:
         case FilterMode::SequentialProOne:
+        case FilterMode::GliesePrism:
+        case FilterMode::AltLadder:
+        case FilterMode::PhysicalLadder:
         case FilterMode::NumModes:
             break;
     }
@@ -229,6 +236,11 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
             out = ladderLP.processSample(input, fp);
             break;
 
+        case FilterMode::AltLadder:
+        case FilterMode::PhysicalLadder:
+            out = alternateLadderLP.processSample(input, fp);
+            break;
+
         case FilterMode::TB303:
             out = tb303LP.processSample(input, fp);
             break;
@@ -258,6 +270,10 @@ float SingleFilter::processSample(float input, float envValue, float lfoValue, f
 
         case FilterMode::Formant:
             out = formantFilter.processSample(input, fp);
+            break;
+
+        case FilterMode::GliesePrism:
+            out = gliesePrismFilter.processSample(input, fp);
             break;
 
         case FilterMode::Peak:

@@ -125,6 +125,9 @@ public:
             case FilterMode::SequentialP600:
             case FilterMode::SequentialP6:
             case FilterMode::SequentialProOne:
+            case FilterMode::GliesePrism:
+            case FilterMode::AltLadder:
+            case FilterMode::PhysicalLadder:
             case FilterMode::NumModes:
                 return input;
         }
@@ -195,6 +198,9 @@ private:
             case FilterMode::SequentialP600:
             case FilterMode::SequentialP6:
             case FilterMode::SequentialProOne:
+            case FilterMode::GliesePrism:
+            case FilterMode::AltLadder:
+            case FilterMode::PhysicalLadder:
             case FilterMode::NumModes:
                 break;
         }
@@ -260,6 +266,146 @@ private:
     }
 };
 
+class AlternateLadderLP final : public IFilter
+{
+public:
+    void prepare(double sampleRate) override
+    {
+        sr = sampleRate;
+        reset();
+    }
+
+    void reset() override
+    {
+        z.fill(0.f);
+        feedbackMemory = 0.f;
+        cutoffMemory = 1000.f;
+        energyMemory = 0.f;
+        lastOutput = 0.f;
+    }
+
+    float processSample(float input, const FilterProcessParams& params) override
+    {
+        const int factor = FilterModelDetail::oversampleFactor(params.oversample);
+        const double coreSr = sr * (double) factor;
+        float out = 0.f;
+
+        for (int i = 0; i < factor; ++i)
+            out = processCore(input, params, coreSr);
+
+        return out;
+    }
+
+private:
+    double sr = 48000.0;
+    std::array<float, 4> z {};
+    float feedbackMemory = 0.f;
+    float cutoffMemory = 1000.f;
+    float energyMemory = 0.f;
+    float lastOutput = 0.f;
+
+    static float onePoleG(float cutoff, double sampleRate)
+    {
+        const float g = std::tan(juce::MathConstants<float>::pi * cutoff / (float) sampleRate);
+        return g / (1.f + g);
+    }
+
+    static float onePoleExp(float cutoff, double sampleRate)
+    {
+        return juce::jlimit(0.0001f, 0.995f,
+            1.f - std::exp(-2.f * juce::MathConstants<float>::pi * cutoff / (float) sampleRate));
+    }
+
+    static float shapedLimit(float x, float amount, float bias)
+    {
+        amount = juce::jlimit(0.f, 1.f, amount);
+        if (amount <= 0.0001f)
+            return x;
+
+        const float b = bias * amount;
+        const float drive = 1.f + amount * 4.75f;
+        return std::tanh((x + b) * drive) / drive - b * 0.55f;
+    }
+
+    float processCore(float input, const FilterProcessParams& params, double coreSr)
+    {
+        const bool physical = params.mode == FilterMode::PhysicalLadder;
+        const float res = juce::jlimit(0.f, 1.f, params.resonance);
+        const float morph = juce::jlimit(0.f, 1.f, params.morph);
+        const float sat = juce::jlimit(0.f, 1.f, params.saturation);
+        const float cutoffLimit = physical ? 0.40f : 0.43f;
+        const float targetCutoff = juce::jlimit(20.f,
+                                                (float) coreSr * cutoffLimit,
+                                                params.cutoff * (physical ? 0.96f : 1.f));
+
+        if (physical)
+            cutoffMemory += (targetCutoff - cutoffMemory) * (0.12f + morph * 0.42f);
+        else
+            cutoffMemory = targetCutoff;
+
+        const float baseCutoff = juce::jlimit(20.f, (float) coreSr * cutoffLimit, cutoffMemory);
+        const float feedbackTap = physical ? z[3] * 0.82f + z[2] * 0.18f : z[3];
+        feedbackMemory += (feedbackTap - feedbackMemory) * (physical ? 0.38f + morph * 0.36f : 1.f);
+
+        float feedback = std::pow(res, physical ? 0.72f : 0.82f) * (physical ? 4.18f : 3.92f);
+        feedback += morph * res * (physical ? 0.60f : 0.28f);
+
+        const float driveGain = (physical ? 0.88f : 0.95f)
+                              + params.drive * (physical ? 6.8f : 5.1f)
+                              + morph * (physical ? 0.55f : 0.20f);
+        float stageIn = input * driveGain - shapedLimit(feedbackMemory * feedback,
+                                                        sat * 0.42f + res * 0.10f,
+                                                        physical ? 0.055f : 0.f);
+        stageIn = shapedLimit(stageIn, sat * (physical ? 0.75f : 0.55f) + params.drive * 0.12f,
+                              physical ? 0.045f : 0.f);
+
+        static constexpr float spread[4] { -0.34f, -0.08f, 0.16f, 0.31f };
+        for (int i = 0; i < 4; ++i)
+        {
+            const float stageOffset = physical
+                ? 1.f + spread[(size_t) i] * (0.08f + morph * 0.22f)
+                : 1.f + spread[(size_t) i] * morph * 0.08f;
+            const float stageCutoff = juce::jlimit(20.f,
+                                                   (float) coreSr * cutoffLimit,
+                                                   baseCutoff * stageOffset);
+            const float G = onePoleG(stageCutoff, coreSr);
+            const float v = (stageIn - z[(size_t) i]) * G;
+            const float y = v + z[(size_t) i];
+            z[(size_t) i] = (y + v) * (physical ? 0.9991f - morph * 0.00035f : 0.99985f);
+
+            if (std::abs(z[(size_t) i]) < 1.0e-20f)
+                z[(size_t) i] = 0.f;
+
+            stageIn = shapedLimit(y,
+                                  sat * (physical ? 0.34f : 0.24f) + res * 0.03f,
+                                  physical ? 0.018f * ((float) i + 1.f) : 0.f);
+        }
+
+        const float lp12 = z[1];
+        const float lp18 = z[2];
+        const float lp24 = z[3];
+        float out = morph < 0.5f
+            ? FilterModelDetail::lerp(lp12, lp18, morph * 2.f)
+            : FilterModelDetail::lerp(lp18, lp24, (morph - 0.5f) * 2.f);
+
+        const float biteTap = (z[1] - z[3]) * res * (physical ? 0.34f : 0.20f);
+        out += biteTap;
+
+        const float bassG = onePoleExp(55.f + params.bassComp * 180.f, coreSr);
+        energyMemory += bassG * (z[3] - energyMemory);
+        out += energyMemory * params.bassComp * res * (physical ? 0.82f : 0.55f);
+
+        if (physical)
+            out += (out - lastOutput) * (0.012f + morph * 0.020f);
+
+        lastOutput = out;
+        out = shapedLimit(out * (1.f + res * 0.10f),
+                          sat * (physical ? 0.42f : 0.30f) + morph * (physical ? 0.10f : 0.04f),
+                          physical ? 0.020f : 0.f);
+        return FilterModelDetail::clampAudio(out);
+    }
+};
+
 class TB303LP final : public IFilter
 {
 public:
@@ -274,6 +420,8 @@ public:
         z.fill(0.f);
         feedbackLow = 0.f;
         cutoffMemory = 900.f;
+        lastOutput = 0.f;
+        bassState = 0.f;
     }
 
     float processSample(float input, const FilterProcessParams& params) override
@@ -293,6 +441,8 @@ private:
     std::array<float, 3> z {};
     float feedbackLow = 0.f;
     float cutoffMemory = 900.f;
+    float lastOutput = 0.f;
+    float bassState = 0.f;
 
     static float softLimit(float x, float amount)
     {
@@ -310,6 +460,19 @@ private:
         return softLimit(x + bias, amount) - bias * 0.55f;
     }
 
+    static float diodeLimit(float x, float amount, float asymmetry)
+    {
+        amount = juce::jlimit(0.f, 1.f, amount);
+        asymmetry = juce::jlimit(0.f, 1.f, asymmetry);
+
+        if (amount <= 0.0001f)
+            return x;
+
+        const float bias = amount * asymmetry * 0.075f;
+        const float drive = 1.f + amount * 5.75f;
+        return std::tanh((x + bias) * drive) / drive - bias * 0.45f;
+    }
+
     static float logNormaliseCutoff(float cutoff)
     {
         const float hz = juce::jlimit(20.f, 20000.f, cutoff);
@@ -322,55 +485,80 @@ private:
         return g / (1.f + g);
     }
 
+    static float onePoleExp(float cutoff, double sampleRate)
+    {
+        return juce::jlimit(0.0001f, 0.995f,
+            1.f - std::exp(-2.f * juce::MathConstants<float>::pi * cutoff / (float) sampleRate));
+    }
+
     float processCore(float input, const FilterProcessParams& params, double coreSr)
     {
         const float accent = juce::jlimit(0.f, 1.f, params.morph);
+        const float res = juce::jlimit(0.f, 1.f, params.resonance);
+        const float resCurve = std::pow(res, 0.54f);
+        const float sat = juce::jlimit(0.f, 1.f, params.saturation);
         const float cutoffNorm = logNormaliseCutoff(params.cutoff);
-        const float acidRangeHz = 55.f * std::pow(210.f, cutoffNorm);
+        const float acidRangeHz = 48.f * std::pow(230.f, std::pow(cutoffNorm, 0.92f));
+        const float selfFmHz = lastOutput * (180.f + params.drive * 720.f + accent * 880.f)
+                             * (0.20f + res * 0.80f);
         const float targetCutoff = juce::jlimit(25.f,
                                                 juce::jmin(15500.f, (float) coreSr * 0.36f),
-                                                acidRangeHz * std::pow(2.f, accent * 0.85f));
-        cutoffMemory += (targetCutoff - cutoffMemory) * (0.18f + accent * 0.45f);
+                                                acidRangeHz * std::pow(2.f, accent * 0.95f)
+                                                    + selfFmHz);
+        cutoffMemory += (targetCutoff - cutoffMemory) * (0.10f + accent * 0.42f + params.drive * 0.08f);
 
         const float cutoff = juce::jlimit(25.f,
                                           juce::jmin(15500.f, (float) coreSr * 0.36f),
                                           cutoffMemory);
-        const float G = onePoleG(cutoff, coreSr);
-        const float brightG = onePoleG(juce::jmin(cutoff * 2.05f, (float) coreSr * 0.42f), coreSr);
 
-        const float hpHz = 140.f + accent * 520.f;
-        const float hpG = 1.f - std::exp(-2.f * juce::MathConstants<float>::pi * hpHz / (float) coreSr);
-        feedbackLow += hpG * (z[2] - feedbackLow);
-        const float feedbackHp = z[2] - feedbackLow;
+        const float feedbackSource = z[2] * 0.72f + lastOutput * 0.28f;
+        const float hpHz = 110.f + accent * 760.f + params.drive * 140.f;
+        const float hpG = onePoleExp(hpHz, coreSr);
+        feedbackLow += hpG * (feedbackSource - feedbackLow);
+        const float feedbackHp = feedbackSource - feedbackLow;
 
-        const float res = juce::jlimit(0.f, 1.f, params.resonance);
-        const float resCurve = std::pow(res, 0.58f);
-        const float resAmount = resCurve * (3.25f + accent * 1.65f);
-        const float sat = juce::jlimit(0.f, 1.f, params.saturation);
-        const float driveGain = 0.85f + params.drive * 5.25f + accent * 1.35f;
+        float resAmount = resCurve * (3.40f + accent * 1.45f + params.drive * 0.30f);
+        if (res > 0.92f)
+            resAmount += (res - 0.92f) * (1.40f + accent * 1.20f);
 
-        float stageIn = input * driveGain - softLimit(feedbackHp * resAmount,
-                                                      0.18f + sat * 0.35f + accent * 0.25f);
-        stageIn = asymLimit(stageIn, 0.25f + sat * 0.55f + accent * 0.25f);
+        const float driveGain = 0.82f + params.drive * 5.80f + accent * 1.55f;
+        const float biteFeedback = (z[1] - z[2]) * resCurve * (0.65f + accent * 0.55f);
+        const float feedback = diodeLimit(feedbackHp * resAmount + biteFeedback,
+                                          0.20f + sat * 0.38f + accent * 0.22f,
+                                          0.85f);
+
+        float stageIn = input * driveGain - feedback;
+        stageIn = diodeLimit(stageIn, 0.30f + sat * 0.55f + accent * 0.26f, 0.72f);
 
         for (int i = 0; i < 3; ++i)
         {
-            const float stageG = i == 2 ? brightG : G;
+            const float stageTilt = i == 0 ? 0.88f
+                                  : i == 1 ? 1.0f + accent * 0.04f
+                                           : 1.16f + accent * 0.34f;
+            const float stageCutoff = juce::jlimit(25.f,
+                                                   (float) coreSr * 0.42f,
+                                                   cutoff * stageTilt * (1.f + sat * ((float) i - 1.f) * 0.035f));
+            const float stageG = onePoleG(stageCutoff, coreSr);
             const float v = (stageIn - z[(size_t) i]) * stageG;
             const float y = v + z[(size_t) i];
-            z[(size_t) i] = y + v;
+            z[(size_t) i] = (y + v) * 0.99965f;
 
             if (std::abs(z[(size_t) i]) < 1.0e-20f)
                 z[(size_t) i] = 0.f;
 
-            stageIn = asymLimit(y, 0.12f + sat * 0.35f + accent * 0.12f);
+            stageIn = diodeLimit(y, 0.13f + sat * 0.33f + accent * 0.13f, 0.45f);
         }
 
-        const float resonantTap = z[1] - z[2];
+        const float resonantTap = (z[1] - z[2]) + (z[0] - z[2]) * 0.10f;
         float out = z[2] * (1.0f + res * 0.10f + accent * 0.14f)
-                  + resonantTap * resCurve * (1.65f + accent * 0.80f);
-        out *= 1.f + params.bassComp * res * 0.35f;
-        out = asymLimit(out, sat * 0.3f + accent * 0.16f);
+                  + resonantTap * resCurve * (1.80f + accent * 0.92f);
+
+        const float bassG = onePoleExp(70.f + params.bassComp * 130.f, coreSr);
+        bassState += bassG * (z[2] - bassState);
+        out += bassState * params.bassComp * (0.38f + res * 0.42f);
+
+        out = diodeLimit(out, sat * 0.30f + accent * 0.18f, 0.52f);
+        lastOutput = out;
         return FilterModelDetail::clampAudio(out);
     }
 };
@@ -504,6 +692,9 @@ private:
             case FilterMode::RolandJupiter4:
             case FilterMode::RolandJupiter8:
             case FilterMode::TB303:
+            case FilterMode::GliesePrism:
+            case FilterMode::AltLadder:
+            case FilterMode::PhysicalLadder:
             case FilterMode::NumModes:
                 return {};
         }
@@ -630,6 +821,9 @@ public:
         z.fill(0.f);
         cutoffMemory = 1000.f;
         outputMemory = 0.f;
+        feedbackMemory = 0.f;
+        inputCouplingState = 0.f;
+        previousOutput = 0.f;
     }
 
     float processSample(float input, const FilterProcessParams& params) override
@@ -661,44 +855,61 @@ private:
         float bassComp = 0.45f;
         float compression = 0.f;
         float slew = 1.f;
+        float stageSpread = 0.f;
+        float feedbackSlew = 1.f;
+        float inputCouplingHz = 18.f;
+        float inputCouplingDepth = 0.f;
+        float resonantTap = 0.9f;
+        float highLift = 0.f;
+        float morphCutoffOctaves = 0.f;
+        float otaSkew = 0.f;
         bool asymmetric = false;
+        bool physicalJupiter = false;
     };
 
     double sr = 48000.0;
     std::array<float, 4> z {};
     float cutoffMemory = 1000.f;
     float outputMemory = 0.f;
+    float feedbackMemory = 0.f;
+    float inputCouplingState = 0.f;
+    float previousOutput = 0.f;
 
     static Character getCharacter(FilterMode mode)
     {
         switch (mode)
         {
             case FilterMode::RolandJuno106:
-                // 80017A-inspired: smooth, lightly compressed and a bit less
-                // aggressive than the discrete IR3109 voices.
-                return { 0.92f, 18000.f, 3.45f, 1.08f, 0.80f, 3.15f,
-                         0.30f, 0.16f, 0.9994f, 0.98f, 0.06f, 0.34f,
-                         0.18f, 1.f, false };
+                // 80017A voice chip: smoother OTA drive, a little card-to-card
+                // smoothing, and restrained feedback gain.
+                return { 0.94f, 18500.f, 3.52f, 1.06f, 0.78f, 3.05f,
+                         0.26f, 0.135f, 0.9995f, 0.99f, 0.035f, 0.38f,
+                         0.16f, 0.92f, 0.030f, 0.54f, 18.f, 0.07f,
+                         0.90f, 0.006f, 0.10f, 0.08f, false, false };
 
             case FilterMode::RolandJuno60:
-                // IR3109 with warmer surrounding gain staging and gentler
-                // movement, so sweeps feel a little rounded.
-                return { 0.84f, 17000.f, 3.68f, 1.0f, 0.88f, 3.35f,
-                         0.28f, 0.15f, 0.9991f, 0.95f, 0.09f, 0.45f,
-                         0.08f, 0.18f, false };
+                // Discrete IR3109 support circuit: warmer coupling, slower
+                // cutoff movement and slightly imperfect OTA stage matching.
+                return { 0.86f, 17200.f, 3.74f, 0.98f, 0.88f, 3.45f,
+                         0.30f, 0.17f, 0.9991f, 0.96f, 0.075f, 0.50f,
+                         0.09f, 0.24f, 0.070f, 0.30f, 24.f, 0.11f,
+                         1.02f, 0.0f, 0.18f, 0.17f, false, false };
 
             case FilterMode::RolandJupiter4:
-                // Darker, dirtier early-Roland flavor with more drive and a
-                // limited top end.
-                return { 0.68f, 12000.f, 3.82f, 0.92f, 1.10f, 4.80f,
-                         0.48f, 0.28f, 0.9975f, 0.88f, 0.13f, 0.55f,
-                         0.05f, 0.10f, true };
+                // Earlier, darker voice card. The "physical" part here is the
+                // stronger input coupling, lossy stages and skewed feedback tap.
+                return { 0.70f, 12500.f, 4.04f, 0.88f, 1.05f, 5.05f,
+                         0.52f, 0.30f, 0.9972f, 0.88f, 0.14f, 0.64f,
+                         0.055f, 0.12f, 0.115f, 0.20f, 42.f, 0.19f,
+                         1.24f, -0.020f, 0.30f, 0.34f, true, true };
 
             case FilterMode::RolandJupiter8:
-                // Cleaner, brighter and faster IR3109 response.
-                return { 1.0f, 20000.f, 3.90f, 0.98f, 0.82f, 2.65f,
-                         0.20f, 0.10f, 0.9998f, 1.02f, 0.015f, 0.35f,
-                         0.02f, 1.f, false };
+                // Brighter IR3109 card with faster settling and less lossy
+                // coupling than the Jupiter-4 model.
+                return { 1.04f, 21000.f, 3.92f, 0.95f, 0.82f, 2.85f,
+                         0.20f, 0.105f, 0.99975f, 1.04f, 0.018f, 0.40f,
+                         0.025f, 0.92f, 0.040f, 0.74f, 14.f, 0.045f,
+                         0.88f, 0.020f, 0.08f, 0.06f, false, true };
 
             case FilterMode::LP12:
             case FilterMode::LP24:
@@ -724,6 +935,9 @@ private:
             case FilterMode::SequentialP600:
             case FilterMode::SequentialP6:
             case FilterMode::SequentialProOne:
+            case FilterMode::GliesePrism:
+            case FilterMode::AltLadder:
+            case FilterMode::PhysicalLadder:
             case FilterMode::NumModes:
                 return {};
         }
@@ -747,34 +961,66 @@ private:
         return shaped - amount * 0.025f;
     }
 
+    static float onePoleG(float cutoff, double sampleRate)
+    {
+        const float g = std::tan(juce::MathConstants<float>::pi * cutoff / (float) sampleRate);
+        return g / (1.f + g);
+    }
+
+    static float onePoleExp(float cutoff, double sampleRate)
+    {
+        return juce::jlimit(0.0001f, 0.995f,
+            1.f - std::exp(-2.f * juce::MathConstants<float>::pi * cutoff / (float) sampleRate));
+    }
+
     float processCore(float input, const FilterProcessParams& params, double coreSr)
     {
         const Character c = getCharacter(params.mode);
+        const float morph = juce::jlimit(0.f, 1.f, params.morph);
+        const float morphBipolar = morph * 2.f - 1.f;
         const float targetCutoff = juce::jlimit(20.f,
                                                 juce::jmin(c.maxCutoff, (float) coreSr * 0.42f),
-                                                params.cutoff * c.cutoffScale);
+                                                params.cutoff * c.cutoffScale
+                                                    * std::pow(2.f, morphBipolar * c.morphCutoffOctaves));
         cutoffMemory += (targetCutoff - cutoffMemory) * c.slew;
 
         const float cutoff = juce::jlimit(20.f,
                                           juce::jmin(c.maxCutoff, (float) coreSr * 0.42f),
                                           cutoffMemory);
-        const float g = std::tan(juce::MathConstants<float>::pi * cutoff / (float) coreSr);
-        const float G = g / (1.f + g);
         const float res = juce::jlimit(0.f, 1.f, params.resonance);
         const float resCurve = std::pow(res, c.resonanceCurve * 0.78f);
-        const float feedback = resCurve * c.feedback;
+        const float physicalMorph = c.physicalJupiter ? morphBipolar * 0.22f : 0.f;
+        const float feedback = resCurve * (c.feedback + physicalMorph);
         const float sat = juce::jlimit(0.f, 1.f, params.saturation);
 
-        const float fb = softLimit(z[3] * feedback, sat * 0.5f + c.stageSaturation);
+        const float couplingG = onePoleExp(c.inputCouplingHz, coreSr);
+        inputCouplingState += couplingG * (input - inputCouplingState);
+        const float coupledInput = input - inputCouplingState * c.inputCouplingDepth;
+
+        const float feedbackSource = z[3] + (z[2] - z[3]) * c.resonantTap * 0.45f;
+        feedbackMemory += (feedbackSource - feedbackMemory) * c.feedbackSlew;
+        const float fb = softLimit(feedbackMemory * feedback, sat * 0.5f + c.stageSaturation);
         const float driveGain = c.inputBase + params.drive * c.inputRange;
-        float stageIn = input * driveGain - fb;
+        float stageIn = coupledInput * driveGain - fb;
         stageIn = c.asymmetric ? asymmetricClip(stageIn, sat * 0.75f + c.inputSaturation)
                                : softLimit(stageIn, sat * 0.65f + c.inputSaturation);
 
+        static constexpr float trim[4] { -0.55f, 0.22f, -0.12f, 0.45f };
+        const float tolerance = morphBipolar * c.stageSpread;
         for (int i = 0; i < 4; ++i)
         {
+            float stageOffset = 1.f + c.stageSpread * 0.06f * trim[(size_t) i]
+                                  + tolerance * (((float) i - 1.5f) * 0.18f);
+            if (c.physicalJupiter)
+                stageOffset *= 1.f + res * 0.018f * ((float) i - 1.5f);
+
+            const float stageCutoff = juce::jlimit(20.f,
+                                                   (float) coreSr * 0.42f,
+                                                   cutoff * stageOffset);
+            const float G = onePoleG(stageCutoff, coreSr);
+            const float otaInput = stageIn + c.otaSkew * z[(size_t) i] * z[(size_t) i];
             const float v = (stageIn - z[(size_t) i]) * G;
-            const float y = v + z[(size_t) i];
+            const float y = v + z[(size_t) i] + (otaInput - stageIn) * G * 0.20f;
             z[(size_t) i] = (y + v) * c.leakage;
 
             if (std::abs(z[(size_t) i]) < 1.0e-20f)
@@ -784,8 +1030,12 @@ private:
                                    : softLimit(y, sat * 0.35f + c.stageSaturation);
         }
 
-        const float resonantTap = (z[2] - z[3]) + (z[1] - z[2]) * 0.35f;
-        float out = (z[3] + resonantTap * resCurve * (0.85f + c.stageSaturation)) * c.outputGain;
+        const float resonantTap = (z[2] - z[3]) * c.resonantTap + (z[1] - z[2]) * 0.30f;
+        float out = (z[3] + resonantTap * resCurve * (0.80f + c.stageSaturation)) * c.outputGain;
+
+        if (c.highLift != 0.f)
+            out += (out - previousOutput) * c.highLift;
+
         out *= 1.f + params.bassComp * res * c.bassComp;
 
         if (c.compression > 0.f)
@@ -797,6 +1047,9 @@ private:
             outputMemory = out;
         }
 
+        previousOutput = out;
+        out = c.asymmetric ? asymmetricClip(out, sat * 0.24f + c.stageSaturation * 0.55f)
+                           : softLimit(out, sat * 0.20f + c.stageSaturation * 0.50f);
         return FilterModelDetail::clampAudio(out);
     }
 };
@@ -1058,4 +1311,129 @@ private:
 
     double sr = 48000.0;
     std::array<Biquad, 3> bands {};
+};
+
+class GliesePrismFilter final : public IFilter
+{
+public:
+    void prepare(double sampleRate) override
+    {
+        sr = sampleRate;
+        reset();
+    }
+
+    void reset() override
+    {
+        coreA = {};
+        coreB = {};
+        bodyState = 0.f;
+        energyState = 0.f;
+        lastOutput = 0.f;
+    }
+
+    float processSample(float input, const FilterProcessParams& params) override
+    {
+        const int factor = FilterModelDetail::oversampleFactor(params.oversample);
+        const double coreSr = sr * (double) factor;
+        float out = 0.f;
+
+        for (int i = 0; i < factor; ++i)
+            out = processCore(input, params, coreSr);
+
+        return out;
+    }
+
+private:
+    struct SvfCore
+    {
+        float ic1eq = 0.f;
+        float ic2eq = 0.f;
+    };
+
+    struct SvfOut
+    {
+        float low = 0.f;
+        float band = 0.f;
+        float high = 0.f;
+    };
+
+    double sr = 48000.0;
+    SvfCore coreA;
+    SvfCore coreB;
+    float bodyState = 0.f;
+    float energyState = 0.f;
+    float lastOutput = 0.f;
+
+    static float onePoleExp(float cutoff, double sampleRate)
+    {
+        return juce::jlimit(0.0001f, 0.995f,
+            1.f - std::exp(-2.f * juce::MathConstants<float>::pi * cutoff / (float) sampleRate));
+    }
+
+    static SvfOut processSvf(SvfCore& core, float input, float cutoff, float damping, double sampleRate)
+    {
+        cutoff = juce::jlimit(20.f, (float) sampleRate * 0.43f, cutoff);
+        damping = juce::jlimit(0.035f, 2.0f, damping);
+
+        const float g = std::tan(juce::MathConstants<float>::pi * cutoff / (float) sampleRate);
+        const float a1 = 1.f / (1.f + g * (g + damping));
+        const float a2 = g * a1;
+        const float a3 = g * a2;
+
+        const float v3 = input - core.ic2eq;
+        const float band = a1 * core.ic1eq + a2 * v3;
+        const float low = core.ic2eq + a2 * core.ic1eq + a3 * v3;
+        const float high = input - damping * band - low;
+
+        core.ic1eq = 2.f * band - core.ic1eq;
+        core.ic2eq = 2.f * low - core.ic2eq;
+
+        if (std::abs(core.ic1eq) < 1.0e-20f) core.ic1eq = 0.f;
+        if (std::abs(core.ic2eq) < 1.0e-20f) core.ic2eq = 0.f;
+
+        return { low, band, high };
+    }
+
+    float processCore(float input, const FilterProcessParams& params, double coreSr)
+    {
+        const float morph = juce::jlimit(0.f, 1.f, params.morph);
+        const float res = juce::jlimit(0.f, 1.f, params.resonance);
+        const float sat = juce::jlimit(0.f, 1.f, params.saturation);
+        const float baseCutoff = juce::jlimit(20.f, (float) coreSr * 0.40f, params.cutoff);
+
+        const float prismSpread = std::pow(2.f, 0.35f + morph * 1.75f);
+        const float cutA = baseCutoff * std::pow(2.f, -0.18f - morph * 0.34f);
+        const float cutB = juce::jmin(baseCutoff * prismSpread, (float) coreSr * 0.42f);
+        const float dampingA = 1.52f - res * 1.43f;
+        const float dampingB = 1.28f - res * 1.16f + (0.5f - morph) * 0.22f;
+
+        float x = input + lastOutput * res * (0.06f + morph * 0.10f);
+        x = FilterModelDetail::saturate(x * (0.92f + params.drive * 5.6f),
+                                        sat * 0.70f + params.drive * 0.18f);
+
+        const auto a = processSvf(coreA, x, cutA, dampingA, coreSr);
+        const float crossExcite = a.band * res * (0.24f + morph * 0.38f);
+        const auto b = processSvf(coreB,
+                                  FilterModelDetail::saturate(x + crossExcite, sat * 0.35f),
+                                  cutB,
+                                  dampingB,
+                                  coreSr);
+
+        const float lowMass = FilterModelDetail::lerp(a.low, (a.low + b.low) * 0.5f, morph * 0.65f);
+        const float prismBand = (a.band - b.band) * (0.28f + morph * 0.78f);
+        const float glassTap = (b.low - a.low + b.high * 0.18f) * morph;
+        float out = lowMass + prismBand * res + glassTap * res * 0.55f;
+
+        const float bodyG = onePoleExp(42.f + params.bassComp * 160.f, coreSr);
+        bodyState += bodyG * (lowMass - bodyState);
+        out += bodyState * params.bassComp * (0.45f + res * 0.30f);
+
+        const float energyG = onePoleExp(850.f + baseCutoff * 0.18f, coreSr);
+        energyState += energyG * (std::abs(out) - energyState);
+        out /= 1.f + energyState * (sat * 0.40f + params.drive * 0.18f);
+
+        out = FilterModelDetail::saturate(out * (1.f + res * 0.16f), sat * 0.42f + morph * 0.10f);
+        lastOutput = out;
+        return FilterModelDetail::clampAudio(out);
+    }
 };
