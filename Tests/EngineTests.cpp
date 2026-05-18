@@ -1043,7 +1043,12 @@ TEST_CASE("Alternate ladder filters behave as nonlinear low-pass models", "[filt
 
         const float flat = measureRms(mode, 1100.f, 0.75f, 0.05f);
         const float resonant = measureRms(mode, 1100.f, 0.75f, 0.88f);
-        REQUIRE(std::abs(resonant - flat) > 0.01f);
+
+        INFO("mode: " << static_cast<int>(mode));
+        if (mode == FilterMode::AltLadder)
+            REQUIRE(resonant > flat * 1.12f);
+        else
+            REQUIRE(std::abs(resonant - flat) > 0.01f);
     }
 }
 

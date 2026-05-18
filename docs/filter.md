@@ -85,7 +85,7 @@ In the AM modes, resonance acts as modulation depth plus a small self-AM color, 
 
 Ladder12, Ladder18, and Ladder24 are nonlinear low-pass models with selectable slope. Drive and saturation control how hard the signal hits the cascade; bass compensation restores low end that resonance can thin out.
 
-Alt Ladder keeps the familiar GLIESE ladder feel but uses a different feedback tap, stronger internal gain staging, and a continuous `morph` blend from rounded 12 dB weight through 18 dB bite into the full 24 dB output.
+Alt Ladder keeps the familiar GLIESE ladder feel but uses a different feedback tap, stronger internal gain staging, and a continuous `morph` blend from rounded 12 dB weight through 18 dB bite into the full 24 dB output. Its resonance path includes an explicit cutoff-region pole-spread tap, so resonance should sound like a clear peak rather than only a level or drive change.
 
 Phys Ladder is the more physical modeled option. It adds per-stage cutoff spread, lossy integrator leakage, asymmetric saturation, cutoff inertia, and a memory term in the resonance path. It is a little less polite under high resonance and drive, which makes it useful before the master dual filter when an oscillator engine needs its own animated color.
 

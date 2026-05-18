@@ -344,17 +344,21 @@ private:
             cutoffMemory = targetCutoff;
 
         const float baseCutoff = juce::jlimit(20.f, (float) coreSr * cutoffLimit, cutoffMemory);
-        const float feedbackTap = physical ? z[3] * 0.82f + z[2] * 0.18f : z[3];
+        const float feedbackTap = physical ? z[3] * 0.82f + z[2] * 0.18f
+                                           : z[3] * 0.70f + z[2] * 0.30f;
         feedbackMemory += (feedbackTap - feedbackMemory) * (physical ? 0.38f + morph * 0.36f : 1.f);
 
-        float feedback = std::pow(res, physical ? 0.72f : 0.82f) * (physical ? 4.18f : 3.92f);
-        feedback += morph * res * (physical ? 0.60f : 0.28f);
+        const float resCurve = std::pow(res, physical ? 0.72f : 0.58f);
+        float feedback = resCurve * (physical ? 4.18f : 4.45f);
+        feedback += morph * res * (physical ? 0.60f : 0.42f);
 
         const float driveGain = (physical ? 0.88f : 0.95f)
                               + params.drive * (physical ? 6.8f : 5.1f)
                               + morph * (physical ? 0.55f : 0.20f);
+        const float feedbackShape = physical ? sat * 0.42f + res * 0.10f
+                                             : sat * 0.16f + res * 0.035f;
         float stageIn = input * driveGain - shapedLimit(feedbackMemory * feedback,
-                                                        sat * 0.42f + res * 0.10f,
+                                                        feedbackShape,
                                                         physical ? 0.055f : 0.f);
         stageIn = shapedLimit(stageIn, sat * (physical ? 0.75f : 0.55f) + params.drive * 0.12f,
                               physical ? 0.045f : 0.f);
@@ -388,7 +392,12 @@ private:
             ? FilterModelDetail::lerp(lp12, lp18, morph * 2.f)
             : FilterModelDetail::lerp(lp18, lp24, (morph - 0.5f) * 2.f);
 
-        const float biteTap = (z[1] - z[3]) * res * (physical ? 0.34f : 0.20f);
+        const float poleSpread = (z[0] - z[1]) * 0.20f
+                               + (z[1] - z[2]) * (0.52f + morph * 0.20f)
+                               + (z[2] - z[3]) * (0.32f + morph * 0.28f);
+        const float biteTap = physical
+            ? (z[1] - z[3]) * res * 0.34f
+            : poleSpread * resCurve * (0.82f + morph * 0.46f);
         out += biteTap;
 
         const float bassG = onePoleExp(55.f + params.bassComp * 180.f, coreSr);
@@ -399,7 +408,7 @@ private:
             out += (out - lastOutput) * (0.012f + morph * 0.020f);
 
         lastOutput = out;
-        out = shapedLimit(out * (1.f + res * 0.10f),
+        out = shapedLimit(out * (1.f + res * (physical ? 0.10f : 0.18f)),
                           sat * (physical ? 0.42f : 0.30f) + morph * (physical ? 0.10f : 0.04f),
                           physical ? 0.020f : 0.f);
         return FilterModelDetail::clampAudio(out);
