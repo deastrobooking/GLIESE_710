@@ -57,3 +57,4 @@ Important: `GLIESE_710` is the shared code target. It does not refresh the VST3 
 - Per-engine filters use `engine_filter_{3d,fm,wt,va,ks,gran,terrain}_*` APVTS parameter prefixes.
 - Per-engine filter modulation destinations are named `EngFilt{3D,FM,WT,VA,KS,Gran,Terrain}_{Cutoff,Resonance,Drive,Morph,Mix}`.
 - The master filter mode list includes `Alt Ladder` and `Phys Ladder`.
+- Filter model changes should run `GLIESE_Tests "[filter]"`; that suite includes a multi-frequency resonance signature check for every `FilterMode`, plus focused character checks for Alt Ladder, Phys Ladder, TB-303, Roland, Sequential, and GLIESE Prism modes.

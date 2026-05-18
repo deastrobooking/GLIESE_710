@@ -12,6 +12,7 @@
 #include "../Source/Engine/Modulation/StepSequencerMod.h"
 #include "../Source/Engine/LFO/LFOEngine.h"
 #include "../Source/Engine/Arpeggiator/Arpeggiator.h"
+#include <array>
 #include <vector>
 
 using Catch::Approx;
@@ -655,17 +656,26 @@ TEST_CASE("DualFilter advanced models stay finite with oversampling", "[filter]"
     }
 }
 
-TEST_CASE("DualFilter resonance changes every filter mode response", "[filter]")
+TEST_CASE("DualFilter resonance creates an audible response signature for every filter mode", "[filter]")
 {
-    auto configure = [](DualFilter& df, FilterMode mode, float resonance)
+    constexpr double sampleRate = 48000.0;
+    constexpr float cutoff = 950.f;
+    constexpr int warmup = 2048;
+    constexpr int n = 4096;
+    constexpr std::array<float, 6> probeFrequencies {
+        120.f, 360.f, 760.f, cutoff, 1500.f, 3600.f
+    };
+
+    auto measureRms = [](FilterMode mode, float resonance, float sineHz)
     {
+        DualFilter df;
         df.prepare(48000.0);
 
         SingleFilter::Params p;
         p.mode = mode;
-        p.cutoff = 950.f;
+        p.cutoff = cutoff;
         p.resonance = resonance;
-        p.drive = 0.f;
+        p.drive = 0.08f;
         p.morph = 0.55f;
         p.saturation = 0.25f;
         p.bassComp = 0.25f;
@@ -676,42 +686,48 @@ TEST_CASE("DualFilter resonance changes every filter mode response", "[filter]")
         df.setFilterA(p);
         df.setRouting(FilterRouting::AOnly);
         df.noteOn();
+
+        float sumSq = 0.f;
+
+        for (int i = 0; i < warmup + n; ++i)
+        {
+            const float t = (float) i / (float) sampleRate;
+            const float input = 0.42f * std::sin(2.f * juce::MathConstants<float>::pi * sineHz * t);
+            const float am = 0.55f * std::sin(2.f * juce::MathConstants<float>::pi * 137.f * t + 0.2f);
+
+            const auto [left, right] = df.processSample(input, input, 0.f, 0.f, am);
+            REQUIRE(std::isfinite(left));
+            REQUIRE(std::isfinite(right));
+
+            if (i >= warmup)
+                sumSq += 0.5f * (left * left + right * right);
+        }
+
+        return std::sqrt(sumSq / (float) n);
     };
 
     for (int modeIndex = 0; modeIndex < static_cast<int>(FilterMode::NumModes); ++modeIndex)
     {
         const auto mode = static_cast<FilterMode>(modeIndex);
-        DualFilter lowRes;
-        DualFilter highRes;
-        configure(lowRes, mode, 0.f);
-        configure(highRes, mode, 0.92f);
 
-        float sumDiffSq = 0.f;
-        constexpr int warmup = 2048;
-        constexpr int n = 8192;
+        float maxAbsDelta = 0.f;
+        float maxRelativeDelta = 0.f;
 
-        for (int i = 0; i < warmup + n; ++i)
+        for (const float probeHz : probeFrequencies)
         {
-            const float t = (float) i / 48000.f;
-            const float sine = 0.42f * std::sin(2.f * juce::MathConstants<float>::pi * 950.f * t);
-            const float body = 0.18f * std::sin(2.f * juce::MathConstants<float>::pi * 180.f * t + 0.35f);
-            const float impulse = (i % 509) == 0 ? 0.25f : 0.f;
-            const float input = sine + body + impulse;
-            const float am = 0.6f * std::sin(2.f * juce::MathConstants<float>::pi * 137.f * t);
+            const float lowRes = measureRms(mode, 0.02f, probeHz);
+            const float highRes = measureRms(mode, 0.92f, probeHz);
+            const float delta = std::abs(highRes - lowRes);
+            const float reference = std::max({ lowRes, highRes, 0.0005f });
 
-            const auto [lowL, lowR] = lowRes.processSample(input, input, 0.f, 0.f, am);
-            const auto [highL, highR] = highRes.processSample(input, input, 0.f, 0.f, am);
-
-            if (i >= warmup)
-            {
-                const float dL = highL - lowL;
-                const float dR = highR - lowR;
-                sumDiffSq += dL * dL + dR * dR;
-            }
+            maxAbsDelta = std::max(maxAbsDelta, delta);
+            maxRelativeDelta = std::max(maxRelativeDelta, delta / reference);
         }
 
         INFO("mode index: " << modeIndex);
-        REQUIRE(std::sqrt(sumDiffSq / (float) (n * 2)) > 1.0e-5f);
+        INFO("max absolute resonance delta: " << maxAbsDelta);
+        INFO("max relative resonance delta: " << maxRelativeDelta);
+        REQUIRE((maxAbsDelta > 0.0035f || maxRelativeDelta > 0.025f));
     }
 }
 

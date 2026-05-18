@@ -251,3 +251,5 @@ Per engine filter, where `e` is `3d`, `fm`, `wt`, `va`, `ks`, `gran`, or `terrai
 4. Add the display name to the APVTS choice list in `PluginProcessor.cpp`.
 5. Add the same display name to `FilterPanel.cpp`.
 6. Add a focused audio test in [EngineTests.cpp](../Tests/EngineTests.cpp).
+
+The filter test suite also runs a multi-frequency low/high resonance response probe against every mode. Keep that broad signature check passing whenever a mode changes, then add focused tests for the character-specific behavior that should be audible in the new model.
