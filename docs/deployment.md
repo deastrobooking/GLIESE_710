@@ -301,7 +301,7 @@ Update these values in `ci.yml` (if needed):
 
 1. Build directory (default here is `build-productions`).
 2. CMake options (`GLIESE_BUILD_TESTS`, `GLIESE_COPY_PLUGIN_AFTER_BUILD`, or equivalent project flags).
-3. Required Linux packages for your plugin dependencies.
+3. Required Linux packages for your plugin dependencies. JUCE plugin CI should install the freetype, fontconfig, GL, GTK, ALSA, and X11 development packages before configure so `juceaide` can build cleanly.
 
 ### C) Validate in target repo
 

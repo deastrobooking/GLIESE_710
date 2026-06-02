@@ -152,10 +152,26 @@ Copy CLAP to `C:\Program Files\Common Files\CLAP\`.
 ## Linux — LV2 + VST3 + CLAP
 
 ```bash
-sudo apt install lv2-dev   # Debian/Ubuntu
+sudo apt install \
+  ninja-build \
+  lv2-dev \
+  libasound2-dev \
+  libx11-dev \
+  libxrandr-dev \
+  libxinerama-dev \
+  libxcursor-dev \
+  libxext-dev \
+  libxcomposite-dev \
+  libxrender-dev \
+  libfreetype-dev \
+  libfontconfig1-dev \
+  libgl1-mesa-dev \
+  libgtk-3-dev
 cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release
 cmake --build build-productions --parallel
 ```
+
+JUCE's CMake helper (`juceaide`) is built during configure, so Linux machines need the freetype, fontconfig, GL, GTK, ALSA, and X11 development packages before running CMake.
 
 Install LV2:
 ```bash
@@ -245,7 +261,7 @@ runs-on: ubuntu-24.04
 steps:
   - uses: actions/checkout@v4
   - name: Install deps
-    run: sudo apt-get install -y lv2-dev libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libfreetype6-dev
+    run: sudo apt-get install -y ninja-build lv2-dev libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libxcomposite-dev libxrender-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev libgtk-3-dev
   - name: Configure
     run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_TESTS=ON
   - name: Build
@@ -256,13 +272,15 @@ steps:
 
 ## CPM Cache
 
-CPM downloads JUCE once and caches it in `~/.cache/CPM`. On CI, cache the CPM directory to avoid re-downloading on every run:
+CPM downloads JUCE from the pinned JUCE release archive and caches it in `~/.cache/CPM`. On CI, cache the CPM directory to avoid re-downloading on every run:
 
 ```yaml
 - uses: actions/cache@v4
   with:
     path: ~/.cache/CPM
     key: ${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt') }}
+    restore-keys: |
+      ${{ runner.os }}-cpm-
 ```
 
 ## Compile-Time Switches

@@ -20,6 +20,9 @@ jobs:
         with:
           path: ${{ github.workspace }}/.cpm-cache
           key: release-${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+          restore-keys: |
+            release-${{ runner.os }}-cpm-
+            ${{ runner.os }}-cpm-
 
       - name: Install dependencies
         run: |
@@ -35,7 +38,10 @@ jobs:
             libxext-dev \
             libxcomposite-dev \
             libxrender-dev \
-            libfreetype6-dev
+            libfreetype-dev \
+            libfontconfig1-dev \
+            libgl1-mesa-dev \
+            libgtk-3-dev
 
       - name: Configure
         run: |
@@ -76,6 +82,9 @@ jobs:
         with:
           path: ${{ github.workspace }}/.cpm-cache
           key: release-${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+          restore-keys: |
+            release-${{ runner.os }}-cpm-
+            ${{ runner.os }}-cpm-
 
       - name: Configure
         run: |
@@ -113,11 +122,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Configure git for dependency fetches
+        run: git config --global core.longpaths true
+
       - name: Cache CPM
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.cpm-cache
           key: release-${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+          restore-keys: |
+            release-${{ runner.os }}-cpm-
+            ${{ runner.os }}-cpm-
 
       - name: Configure
         run: |

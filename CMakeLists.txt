@@ -12,8 +12,7 @@ include(cmake/CPM.cmake)
 
 CPMAddPackage(
     NAME JUCE
-    GITHUB_REPOSITORY juce-framework/JUCE
-    GIT_TAG 8.0.4
+    URL https://github.com/juce-framework/JUCE/archive/refs/tags/8.0.4.tar.gz
 )
 
 if(GLIESE_BUILD_CLAP)

@@ -36,7 +36,7 @@ Host/plugin scanner vendor metadata is `ECOSYSTEM`.
 | Xcode | 14+ (macOS AU builds only) |
 | Git | Any recent version |
 
-JUCE 8 and the optional CLAP wrapper dependency are fetched automatically by CMake via CPM.
+JUCE 8 is fetched automatically by CMake via CPM from the pinned release archive. The optional CLAP wrapper dependency is also fetched by CPM when CLAP support is enabled.
 
 ### Build
 
