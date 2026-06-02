@@ -1,6 +1,15 @@
 #include "OscPanel.h"
 #include <cmath>
 
+namespace
+{
+bool isSupportedTerrainHeightmapFile(const juce::File& file)
+{
+    const auto ext = file.getFileExtension().toLowerCase();
+    return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp";
+}
+}
+
 // ── VAWaveDisplay ─────────────────────────────────────────────────────────────
 // Shape indices match VA combo order: Sine=0 Saw=1 RevSaw=2 Square=3 Triangle=4 Pulse=5
 void VAWaveDisplay::paint(juce::Graphics& g)
@@ -646,11 +655,24 @@ void OscPanel::launchTerrainImportChooser()
             if (!file.existsAsFile())
                 return;
 
-            const bool ok = safeThis->terrainImport(safeThis->terrainIndex, file);
-            safeThis->importHeightmapButton.setButtonText(ok ? "MAP LOADED" : "IMPORT FAILED");
-            if (ok && safeThis->terrainDisplay != nullptr)
-                safeThis->terrainDisplay->setHeightmapImage(juce::ImageFileFormat::loadFrom(file));
+            safeThis->importTerrainHeightmapFile(file);
         });
+}
+
+void OscPanel::importTerrainHeightmapFile(const juce::File& file)
+{
+    if (!terrainImport || terrainIndex < 0 || !file.existsAsFile())
+        return;
+
+    const bool ok = terrainImport(terrainIndex, file);
+    importHeightmapButton.setButtonText(ok ? "MAP LOADED" : "IMPORT FAILED");
+
+    if (ok && terrainDisplay != nullptr)
+    {
+        const auto image = juce::ImageFileFormat::loadFrom(file);
+        if (image.isValid())
+            terrainDisplay->setHeightmapImage(image);
+    }
 }
 
 void OscPanel::refreshTerrainDisplay()
@@ -678,6 +700,68 @@ void OscPanel::refreshTerrainDisplay()
 void OscPanel::paint(juce::Graphics& g)
 {
     IndustrialTheme::paintPanel(g, getLocalBounds(), accent, oscId.startsWith("3d"));
+}
+
+void OscPanel::paintOverChildren(juce::Graphics& g)
+{
+    if (!terrainDropActive || terrainDisplay == nullptr)
+        return;
+
+    const auto b = terrainDisplay->getBounds().toFloat().expanded(3.f);
+    g.setColour(accent.withAlpha(0.16f));
+    g.fillRoundedRectangle(b, 5.f);
+    g.setColour(accent.brighter(0.45f).withAlpha(0.92f));
+    g.drawRoundedRectangle(b, 5.f, 1.5f);
+}
+
+bool OscPanel::isInterestedInFileDrag(const juce::StringArray& files)
+{
+    if (!hasTerrainImportButton || !terrainImport || terrainIndex < 0)
+        return false;
+
+    for (const auto& path : files)
+        if (isSupportedTerrainHeightmapFile(juce::File(path)))
+            return true;
+
+    return false;
+}
+
+void OscPanel::fileDragEnter(const juce::StringArray& files, int, int)
+{
+    const bool shouldHighlight = isInterestedInFileDrag(files);
+    if (terrainDropActive == shouldHighlight)
+        return;
+
+    terrainDropActive = shouldHighlight;
+    repaint();
+}
+
+void OscPanel::fileDragExit(const juce::StringArray&)
+{
+    if (!terrainDropActive)
+        return;
+
+    terrainDropActive = false;
+    repaint();
+}
+
+void OscPanel::filesDropped(const juce::StringArray& files, int, int)
+{
+    terrainDropActive = false;
+    repaint();
+
+    if (!isInterestedInFileDrag(files))
+        return;
+
+    for (const auto& path : files)
+    {
+        const juce::File file(path);
+        if (isSupportedTerrainHeightmapFile(file) && file.existsAsFile())
+        {
+            importTerrainHeightmapFile(file);
+            return;
+        }
+    }
 }
 
 void OscPanel::resized()

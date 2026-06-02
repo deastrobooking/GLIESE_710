@@ -76,7 +76,7 @@ osc_terrain8_  # slot 8
 
 ## Heightmap Import
 
-The Terrain panel has an **IMPORT MAP** button. Click it and choose a bitmap image; the selected heightmap is applied to that terrain slot across all voices.
+The Terrain panel has an **IMPORT MAP** button and also accepts supported bitmap files dropped onto the terrain panel. Imported heightmaps are applied to that terrain slot across all voices.
 The panel also shows a small heightmap viewer with the active scan path and moving scan point overlaid.
 
 Under the hood, `TerrainOsc` supports image import through JUCE image loading:
@@ -111,10 +111,9 @@ In the oscillator slot layout, Terrain consumes two slot units when there is roo
 
 ## Suggested Next Upgrades
 
-1. Add drag-and-drop image import in the terrain panel.
-2. Add mipmapped terrain levels for cleaner high notes.
-3. Add per-slot terrain modulation destinations if independent matrix offsets are needed per terrain slot.
-4. Save terrain image references or embedded terrain data in presets.
+1. Add mipmapped terrain levels for cleaner high notes.
+2. Add per-slot terrain modulation destinations if independent matrix offsets are needed per terrain slot.
+3. Save terrain image references or embedded terrain data in presets.
 
 ## Source Files
 

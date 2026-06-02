@@ -266,7 +266,7 @@ GLIESE_710/
 - [x] Roland, TB-303, Sequential-style, GLIESE, alternate ladder, and physical ladder filter character modes
 - [x] Per-voice oscillator engine filters before the master dual filter
 - [x] Wave-terrain oscillator MVP
-- [ ] Terrain image chooser and waveform/path visualizer in the editor
+- [x] Terrain image chooser and waveform/path visualizer in the editor
 - [ ] Terrain mipmaps / anti-aliasing quality modes
 - [ ] FM algorithm graph visualization
 - [ ] 3D field visualizer panel

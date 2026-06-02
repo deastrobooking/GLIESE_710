@@ -63,7 +63,8 @@ private:
 };
 
 // Panel for one oscillator section (3D, WT, VA, KS, granular, or terrain)
-class OscPanel : public juce::Component
+class OscPanel : public juce::Component,
+                 public juce::FileDragAndDropTarget
 {
 public:
     using TerrainImportCallback = std::function<bool(int terrainIndex, const juce::File& file)>;
@@ -74,7 +75,12 @@ public:
                       int terrainIndex = -1);
 
     void paint(juce::Graphics&) override;
+    void paintOverChildren(juce::Graphics&) override;
     void resized() override;
+    bool isInterestedInFileDrag(const juce::StringArray& files) override;
+    void fileDragEnter(const juce::StringArray& files, int, int) override;
+    void fileDragExit(const juce::StringArray& files) override;
+    void filesDropped(const juce::StringArray& files, int, int) override;
 
 private:
     juce::AudioProcessorValueTreeState& apvts;
@@ -98,6 +104,7 @@ private:
     bool hasRetrigButton = false;
     juce::TextButton importHeightmapButton { "IMPORT MAP" };
     bool hasTerrainImportButton = false;
+    bool terrainDropActive = false;
     std::shared_ptr<juce::FileChooser> terrainChooser;
 
     // Level + octave shared by all osc types
@@ -135,5 +142,6 @@ private:
     void setupExtraSlider(juce::Slider& slider, const juce::String& paramId,
                           const juce::String& tooltip, std::unique_ptr<Att>& attachment);
     void launchTerrainImportChooser();
+    void importTerrainHeightmapFile(const juce::File& file);
     void refreshTerrainDisplay();
 };
