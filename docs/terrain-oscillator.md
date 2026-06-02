@@ -30,6 +30,14 @@ output = tanh((height + offset) * drive) * gain
 
 Smoothing blends toward a blurred copy of the heightmap. This softens sharp image edges and makes imported terrain less clicky.
 
+Quality selects the heightmap anti-aliasing mode:
+
+| Mode | Behavior |
+|---|---|
+| Off | Samples the full-resolution terrain directly. |
+| Auto | Chooses a mip level from scan speed, path size, ratio, zoom, and note frequency. |
+| Soft | Uses the automatic level plus one extra smoothing level for brighter maps or very high notes. |
+
 ## Path Modes
 
 | Mode | Behavior |
@@ -56,6 +64,7 @@ osc_terrain8_  # slot 8
 |---|---|---|
 | `on` | bool | Enable slot. |
 | `path` | 0-5 | Circle, ellipse, Lissajous, spiral, line, orbit-noise. |
+| `quality` | 0-2 | Off, Auto, Soft mipmap anti-aliasing. |
 | `center_x` | 0-1 | Horizontal scan center. |
 | `center_y` | 0-1 | Vertical scan center. |
 | `radius_x` | 0-0.5 | Horizontal path radius. |
@@ -105,15 +114,13 @@ In the oscillator slot layout, Terrain consumes two slot units when there is roo
 ## Current Limitations
 
 - No editable path overlay yet.
-- No mipmapped / anti-aliased terrain levels yet.
 - Direct terrain modulation destinations are matrix-wide offsets rather than per-terrain-slot destinations.
 - Presets do not yet collect imported terrain images as sample dependencies.
 
 ## Suggested Next Upgrades
 
-1. Add mipmapped terrain levels for cleaner high notes.
-2. Add per-slot terrain modulation destinations if independent matrix offsets are needed per terrain slot.
-3. Save terrain image references or embedded terrain data in presets.
+1. Add per-slot terrain modulation destinations if independent matrix offsets are needed per terrain slot.
+2. Save terrain image references or embedded terrain data in presets.
 
 ## Source Files
 

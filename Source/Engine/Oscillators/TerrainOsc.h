@@ -16,9 +16,18 @@ public:
         NumModes
     };
 
+    enum class Quality
+    {
+        Off = 0,
+        Auto,
+        Soft,
+        NumModes
+    };
+
     struct Params
     {
         PathMode pathMode = PathMode::Circle;
+        Quality quality = Quality::Auto;
         float centerX = 0.5f;
         float centerY = 0.5f;
         float radiusX = 0.35f;
@@ -63,18 +72,29 @@ private:
     float orbitStateY = 0.61f;
     float lastSmoothing = -1.f;
 
+    struct MipLevel
+    {
+        int width = 0;
+        int height = 0;
+        std::vector<float> terrain;
+        std::vector<float> blurredTerrain;
+    };
+
     int width = 0;
     int height = 0;
     Params params;
     std::vector<float> terrain;
     std::vector<float> blurredTerrain;
+    std::vector<MipLevel> mipLevels;
 
     void updateDerived();
     void generateDefaultTerrain();
     void rebuildBlurredTerrain();
+    void rebuildMipLevels();
+    int chooseMipLevel() const noexcept;
     std::pair<float, float> computePath(float t);
 
-    float sampleTerrain(const std::vector<float>& data, float x, float y) const;
+    float sampleTerrain(const std::vector<float>& data, int dataWidth, int dataHeight, float x, float y) const;
     float proceduralTerrain(float x, float y, float t) const noexcept;
     float valueNoise(float x, float y) const noexcept;
 

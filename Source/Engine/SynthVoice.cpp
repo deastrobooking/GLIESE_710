@@ -454,6 +454,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         auto& c = pc.terrain[(size_t)i];
         c.on        = get(pfx + "on");
         c.path      = get(pfx + "path");
+        c.quality   = get(pfx + "quality");
         c.centerX   = get(pfx + "center_x");
         c.centerY   = get(pfx + "center_y");
         c.radiusX   = get(pfx + "radius_x");
@@ -862,6 +863,7 @@ void SynthVoice::syncParams()
         const auto& ct = pc.terrain[(size_t)i];
         TerrainOsc::Params tp;
         tp.pathMode    = static_cast<TerrainOsc::PathMode>(pI(ct.path));
+        tp.quality     = static_cast<TerrainOsc::Quality>(pI(ct.quality, 1));
         tp.centerX     = pF(ct.centerX, 0.5f) + modDests.dests[(int) ModDest::Terrain_CenterX];
         tp.centerY     = pF(ct.centerY, 0.5f) + modDests.dests[(int) ModDest::Terrain_CenterY];
         tp.radiusX     = pF(ct.radiusX, 0.35f) + modDests.dests[(int) ModDest::Terrain_RadiusX];

@@ -376,11 +376,16 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     else if (oscId.startsWith("terrain"))
     {
         modeBoxA.addItemList({"Circle","Ellipse","Lissajous","Spiral","Line","Orbit Noise"}, 1);
+        modeBoxB.addItemList({"Off","Auto","Soft"}, 1);
         modeBoxA.setTooltip("Wave-terrain scan path");
+        modeBoxB.setTooltip("Terrain mipmap anti-aliasing quality");
         IndustrialTheme::styleCombo(modeBoxA, accent);
+        IndustrialTheme::styleCombo(modeBoxB, accent);
         addAndMakeVisible(modeBoxA);
+        addAndMakeVisible(modeBoxB);
         modeAttA = std::make_unique<CAtt>(apvts, pfx + "path", modeBoxA);
-        numModeBoxes = 1;
+        modeAttB = std::make_unique<CAtt>(apvts, pfx + "quality", modeBoxB);
+        numModeBoxes = 2;
 
         setupExtraSlider(extra1,  pfx + "center_x",  "Terrain Center X",       extraAtt1);
         setupExtraSlider(extra2,  pfx + "center_y",  "Terrain Center Y",       extraAtt2);
@@ -412,6 +417,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
 
         auto updateDisplay = [this] { refreshTerrainDisplay(); };
         modeBoxA.onChange = updateDisplay;
+        modeBoxB.onChange = updateDisplay;
         extra1.onValueChange = updateDisplay;
         extra2.onValueChange = updateDisplay;
         extra3.onValueChange = updateDisplay;
@@ -553,6 +559,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     else if (oscId.startsWith("terrain"))
     {
         makeLabel(modeALabel, "PATH");
+        makeLabel(modeBLabel, "QUAL");
         makeLabel(extraLabels[0], "X");
         makeLabel(extraLabels[1], "Y");
         makeLabel(extraLabels[2], "RAD-X");

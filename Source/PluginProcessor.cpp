@@ -234,6 +234,7 @@ static APVTS::ParameterLayout buildLayout()
         addBool  (prefix + "on",        label + " Enable", true);
         addChoice(prefix + "path",      label + " Path Mode",
                   {"Circle","Ellipse","Lissajous","Spiral","Line","Orbit Noise"}, 0);
+        addChoice(prefix + "quality",   label + " Quality", {"Off","Auto","Soft"}, 1);
         addFloat (prefix + "center_x",  label + " Center X", 0.0f, 1.0f, 0.5f);
         addFloat (prefix + "center_y",  label + " Center Y", 0.0f, 1.0f, 0.5f);
         addFloat (prefix + "radius_x",  label + " Radius X", 0.0f, 0.5f, 0.35f);

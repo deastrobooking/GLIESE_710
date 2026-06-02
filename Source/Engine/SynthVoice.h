@@ -217,6 +217,7 @@ private:
         struct TerrainPtrs {
             std::atomic<float>* on          = nullptr;
             std::atomic<float>* path        = nullptr;
+            std::atomic<float>* quality     = nullptr;
             std::atomic<float>* centerX     = nullptr;
             std::atomic<float>* centerY     = nullptr;
             std::atomic<float>* radiusX     = nullptr;

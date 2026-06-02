@@ -27,6 +27,8 @@ void TerrainOsc::setParams(const Params& newParams)
     params = newParams;
     const int maxMode = (int)PathMode::NumModes - 1;
     params.pathMode = static_cast<PathMode>(juce::jlimit(0, maxMode, (int)params.pathMode));
+    const int maxQuality = (int)Quality::NumModes - 1;
+    params.quality = static_cast<Quality>(juce::jlimit(0, maxQuality, (int)params.quality));
     params.centerX = wrap01(params.centerX);
     params.centerY = wrap01(params.centerY);
     params.radiusX = juce::jlimit(0.f, 0.5f, params.radiusX);
@@ -65,9 +67,16 @@ float TerrainOsc::processSample()
     auto [x, y] = computePath(t);
 
     const float smooth = params.smoothing;
-    float raw = sampleTerrain(terrain, x, y);
-    if (smooth > 0.001f && blurredTerrain.size() == terrain.size())
-        raw += (sampleTerrain(blurredTerrain, x, y) - raw) * smooth;
+    const int mipIndex = chooseMipLevel();
+    const auto* mip = !mipLevels.empty() ? &mipLevels[(size_t)mipIndex] : nullptr;
+    const auto& rawTerrain = mip != nullptr ? mip->terrain : terrain;
+    const auto& blurTerrain = mip != nullptr ? mip->blurredTerrain : blurredTerrain;
+    const int sampleWidth = mip != nullptr ? mip->width : width;
+    const int sampleHeight = mip != nullptr ? mip->height : height;
+
+    float raw = sampleTerrain(rawTerrain, sampleWidth, sampleHeight, x, y);
+    if (smooth > 0.001f && blurTerrain.size() == rawTerrain.size())
+        raw += (sampleTerrain(blurTerrain, sampleWidth, sampleHeight, x, y) - raw) * smooth;
 
     const float proc = proceduralTerrain(x, y, t);
     float out = raw + (proc - raw) * params.morph;
@@ -246,26 +255,100 @@ void TerrainOsc::rebuildBlurredTerrain()
     }
 
     lastSmoothing = params.smoothing;
+    rebuildMipLevels();
 }
 
-float TerrainOsc::sampleTerrain(const std::vector<float>& data, float x, float y) const
+void TerrainOsc::rebuildMipLevels()
 {
-    if (data.empty() || width <= 1 || height <= 1)
+    mipLevels.clear();
+    if (terrain.empty() || width <= 1 || height <= 1)
+        return;
+
+    MipLevel base;
+    base.width = width;
+    base.height = height;
+    base.terrain = terrain;
+    base.blurredTerrain = blurredTerrain.size() == terrain.size() ? blurredTerrain : terrain;
+    mipLevels.push_back(std::move(base));
+
+    auto downsample = [](const std::vector<float>& src, int srcW, int srcH, int dstW, int dstH)
+    {
+        std::vector<float> dst((size_t)dstW * (size_t)dstH, 0.f);
+        auto at = [&](int x, int y)
+        {
+            x = (x % srcW + srcW) % srcW;
+            y = (y % srcH + srcH) % srcH;
+            return src[(size_t)y * (size_t)srcW + (size_t)x];
+        };
+
+        for (int y = 0; y < dstH; ++y)
+        {
+            for (int x = 0; x < dstW; ++x)
+            {
+                const int sx = x * 2;
+                const int sy = y * 2;
+                const float sum = at(sx, sy) + at(sx + 1, sy)
+                                + at(sx, sy + 1) + at(sx + 1, sy + 1);
+                dst[(size_t)y * (size_t)dstW + (size_t)x] = sum * 0.25f;
+            }
+        }
+
+        return dst;
+    };
+
+    while (mipLevels.size() < 9)
+    {
+        const auto& prev = mipLevels.back();
+        const int nextW = juce::jmax(2, prev.width / 2);
+        const int nextH = juce::jmax(2, prev.height / 2);
+        if (nextW == prev.width && nextH == prev.height)
+            break;
+
+        MipLevel next;
+        next.width = nextW;
+        next.height = nextH;
+        next.terrain = downsample(prev.terrain, prev.width, prev.height, nextW, nextH);
+        next.blurredTerrain = downsample(prev.blurredTerrain, prev.width, prev.height, nextW, nextH);
+        mipLevels.push_back(std::move(next));
+    }
+}
+
+int TerrainOsc::chooseMipLevel() const noexcept
+{
+    if (params.quality == Quality::Off || mipLevels.size() <= 1)
+        return 0;
+
+    const float radius = juce::jmax(params.radiusX, params.radiusY) * juce::jmax(0.25f, params.pathSize);
+    const float ratio = juce::jmax(params.ratioX, params.ratioY);
+    const float pathScale = juce::jmax(1.f, juce::MathConstants<float>::twoPi * radius * ratio);
+    const float texelsPerSample = std::abs(phaseInc) * (float)juce::jmax(width, height) * pathScale
+                                / juce::jmax(1.f, params.zoom);
+
+    float targetLevel = std::log2(juce::jmax(1.f, texelsPerSample));
+    if (params.quality == Quality::Soft)
+        targetLevel += 1.f;
+
+    return juce::jlimit(0, (int)mipLevels.size() - 1, juce::roundToInt(targetLevel));
+}
+
+float TerrainOsc::sampleTerrain(const std::vector<float>& data, int dataWidth, int dataHeight, float x, float y) const
+{
+    if (data.empty() || dataWidth <= 1 || dataHeight <= 1)
         return 0.f;
 
-    x = wrap01(x) * (float)width;
-    y = wrap01(y) * (float)height;
-    const int x0 = (int)std::floor(x) % width;
-    const int y0 = (int)std::floor(y) % height;
-    const int x1 = (x0 + 1) % width;
-    const int y1 = (y0 + 1) % height;
+    x = wrap01(x) * (float)dataWidth;
+    y = wrap01(y) * (float)dataHeight;
+    const int x0 = (int)std::floor(x) % dataWidth;
+    const int y0 = (int)std::floor(y) % dataHeight;
+    const int x1 = (x0 + 1) % dataWidth;
+    const int y1 = (y0 + 1) % dataHeight;
     const float tx = x - std::floor(x);
     const float ty = y - std::floor(y);
 
-    const float a = data[(size_t)y0 * (size_t)width + (size_t)x0];
-    const float b = data[(size_t)y0 * (size_t)width + (size_t)x1];
-    const float c = data[(size_t)y1 * (size_t)width + (size_t)x0];
-    const float d = data[(size_t)y1 * (size_t)width + (size_t)x1];
+    const float a = data[(size_t)y0 * (size_t)dataWidth + (size_t)x0];
+    const float b = data[(size_t)y0 * (size_t)dataWidth + (size_t)x1];
+    const float c = data[(size_t)y1 * (size_t)dataWidth + (size_t)x0];
+    const float d = data[(size_t)y1 * (size_t)dataWidth + (size_t)x1];
     const float ab = a + (b - a) * tx;
     const float cd = c + (d - c) * tx;
     return ab + (cd - ab) * ty;

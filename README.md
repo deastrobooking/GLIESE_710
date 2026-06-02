@@ -109,7 +109,7 @@ ctest --preset tests
 | **FM A / FM B** | Two fully separate 10-operator FM engines with independent algorithms, operator controls, ADSRs, detune, phase position, algorithm morph, and modulation-index scaling. |
 | **Wavetable** | Eight independent wavetable slots with FFT mipmap bandlimiting, Catmull-Rom interpolation, table morphing, 15 factory tables, 15 warp modes, CZ-style phase distortion, unison, stereo spread, position spread, phase, random phase, and retrigger controls. |
 | **Granular** | Eight independent preallocated grain engines with 96 grains per instance, free-cloud/burst/audio-rate modes, position, size, density, pitch, spray, jitter, pan spread, reverse probability, scan/freeze, seven window shapes, and optional physical body/modal resonator. |
-| **Wave Terrain** | Eight independent 2D terrain oscillators. Terrain slots span two slot units for a heightmap/path viewer, and a phase-driven path scans a procedural or imported heightmap with circle, ellipse, Lissajous, spiral, line, and orbit-noise modes. |
+| **Wave Terrain** | Eight independent 2D terrain oscillators. Terrain slots span two slot units for a heightmap/path viewer, and a phase-driven path scans a procedural or imported heightmap with circle, ellipse, Lissajous, spiral, line, and orbit-noise modes plus mipmapped anti-aliasing quality modes. |
 | **Virtual Analog** | Eight independent VA layers with continuous shape morph, PolyBLEP saw/square/pulse, reverse saw, triangle, sine, 8-voice unison, stereo spread, ring modulation, and wave folding. |
 | **Karplus-Strong** | Eight independent plucked-string slots with circular delay loop, LPF brightness, all-pass stiffness, excitation morphing, pluck position, and per-slot ADSR. |
 
@@ -267,7 +267,7 @@ GLIESE_710/
 - [x] Per-voice oscillator engine filters before the master dual filter
 - [x] Wave-terrain oscillator MVP
 - [x] Terrain image chooser and waveform/path visualizer in the editor
-- [ ] Terrain mipmaps / anti-aliasing quality modes
+- [x] Terrain mipmaps / anti-aliasing quality modes
 - [ ] FM algorithm graph visualization
 - [ ] 3D field visualizer panel
 - [ ] MPE support

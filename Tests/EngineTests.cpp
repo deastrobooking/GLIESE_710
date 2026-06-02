@@ -1679,6 +1679,54 @@ TEST_CASE("TerrainOsc imports brightness heightmap as bipolar terrain", "[terrai
     REQUIRE(maxS > minS + 0.05f);
 }
 
+TEST_CASE("TerrainOsc mipmap quality smooths high-rate checkerboard terrain", "[terrain]")
+{
+    juce::Image image(juce::Image::RGB, 64, 64, true);
+    for (int y = 0; y < image.getHeight(); ++y)
+        for (int x = 0; x < image.getWidth(); ++x)
+            image.setPixelAt(x, y, ((x + y) & 1) != 0 ? juce::Colours::white : juce::Colours::black);
+
+    auto averageMagnitude = [&image](TerrainOsc::Quality quality)
+    {
+        TerrainOsc osc;
+        osc.prepare(48000.0);
+        REQUIRE(osc.setHeightmapFromImage(image));
+        osc.setFrequency(9000.f);
+
+        TerrainOsc::Params p;
+        p.pathMode = TerrainOsc::PathMode::Line;
+        p.quality = quality;
+        p.centerX = 0.5f;
+        p.centerY = 0.5f;
+        p.radiusX = 0.5f;
+        p.radiusY = 0.0f;
+        p.ratioX = 1.0f;
+        p.ratioY = 1.0f;
+        p.scanRate = 8.0f;
+        p.drive = 1.0f;
+        p.gain = 1.0f;
+        p.morph = 0.0f;
+        p.smoothing = 0.0f;
+        osc.setParams(p);
+
+        float sum = 0.f;
+        for (int i = 0; i < 2048; ++i)
+        {
+            const float s = osc.processSample();
+            REQUIRE(std::isfinite(s));
+            sum += std::abs(s);
+        }
+
+        return sum / 2048.f;
+    };
+
+    const float raw = averageMagnitude(TerrainOsc::Quality::Off);
+    const float soft = averageMagnitude(TerrainOsc::Quality::Soft);
+
+    REQUIRE(raw > 0.05f);
+    REQUIRE(soft < raw * 0.5f);
+}
+
 TEST_CASE("FMOperator clamps shaping params and wraps high-rate phase", "[fm]")
 {
     FMOperator op;
