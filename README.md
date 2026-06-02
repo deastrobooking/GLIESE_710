@@ -46,6 +46,9 @@ from them unless you intentionally configured those folders yourself.
 
 ### Automated Production Build
 
+For website/distribution release packaging and publishing, see
+`docs/deployment.md`.
+
 For the normal local loop, use the build script instead of manually copying plugin bundles:
 
 ```bash
@@ -229,6 +232,7 @@ GLIESE_710/
 │   ├── arpeggiator.md
 │   ├── preset-system.md
 │   ├── build-targets.md
+│   ├── deployment.md
 │   └── contributing.md
 ├── Source/
 │   ├── PluginProcessor.{h,cpp}

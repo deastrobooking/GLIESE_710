@@ -1,5 +1,8 @@
 # Build Targets & CI
 
+For packaging and publishing website-ready plugin releases, follow
+`docs/deployment.md`.
+
 ## CMake Targets
 
 | Target | Description |
