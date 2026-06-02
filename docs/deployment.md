@@ -437,8 +437,8 @@ This repository includes automated release workflows:
 - `.github/workflows/ci.yml`
 - `.github/workflows/release.yml`
 
-`ci.yml` runs on push/PR and performs a full matrix build + test on macOS,
-Windows, and Linux.
+`ci.yml` runs on pushes to `main`, pull requests, and manual dispatch. It
+performs a full matrix build + test on macOS, Windows, and Linux.
 
 `release.yml` runs on tag pushes matching `v*` and:
 1. Builds and tests on macOS/Windows/Linux.
@@ -488,6 +488,58 @@ Add these near the repository title:
 [![CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/<owner>/<repo>/actions/workflows/ci.yml)
 [![Release](https://github.com/<owner>/<repo>/actions/workflows/release.yml/badge.svg)](https://github.com/<owner>/<repo>/actions/workflows/release.yml)
 ```
+
+## GitHub Actions Cost Control
+
+Actions can become expensive when a private repository runs the full
+Linux/macOS/Windows matrix repeatedly. GitHub-hosted standard runners are free
+for public repositories and self-hosted runners, but private repositories use
+included monthly minutes and bill overage. Windows and macOS hosted runners
+consume more billable minutes than Linux, with macOS being the expensive leg of
+this matrix.
+
+Default policy:
+
+1. Keep `ci.yml` enabled for PRs and `main` so merge-ready work gets the full
+   platform signal.
+2. Do local iteration first with `cmake --build --preset tests --parallel` and
+   `ctest --preset tests`.
+3. Push feature branches freely before opening a PR. This repo does not run CI
+   for every feature branch push unless there is an open PR.
+4. Open a PR when the feature needs platform validation. Expect every PR update
+   to run the matrix.
+5. Keep `release.yml` tag-only. Release packaging is intentionally reserved for
+   `v*` tags.
+
+For noisy feature iteration, use this ladder:
+
+1. Prefer local builds/tests while the branch is still changing quickly.
+2. If a PR is open and an intermediate commit does not need CI, include one of
+   these skip markers in that commit message: `[skip ci]`, `[ci skip]`,
+   `[no ci]`, `[skip actions]`, or `[actions skip]`.
+3. Do not leave a merge-ready PR with only skipped required checks. Push a final
+   normal commit, or manually run `ci.yml`, before merging.
+4. If a workflow is broken or consuming too many minutes, temporarily disable it
+   instead of deleting or renaming workflow files.
+
+Temporary workflow shutdown:
+
+```bash
+gh workflow disable ci.yml
+gh workflow enable ci.yml
+```
+
+Use the GitHub UI equivalent from `Actions -> CI -> Disable workflow` when the
+CLI is unavailable. Re-enable CI before merging release-prep work. After
+re-enabling, run the CI workflow manually from the Actions tab or with:
+
+```bash
+gh workflow run ci.yml
+```
+
+Avoid disabling `release.yml` except during an active billing or workflow
+incident. If it must be disabled, record that in the release-prep issue/PR and
+re-enable it before pushing a `v*` tag.
 
 ## Replicate This In Other Plugin Repositories (Fast Path)
 
