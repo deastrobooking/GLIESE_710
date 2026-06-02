@@ -10,9 +10,9 @@ Use this together with `docs/build-targets.md`:
 ## Scope
 
 Release outputs for website distribution:
-- macOS: `VST3`, `AU`, `CLAP`
-- Windows: `VST3`, `CLAP`
-- Linux: `VST3`, `CLAP`, `LV2`
+- macOS: `VST3`, `AU`, `CLAP`, `Standalone`
+- Windows: `VST3`, `CLAP`, `Standalone`
+- Linux: `VST3`, `CLAP`, `LV2`, `Standalone`
 
 ## Current Release Standard
 
@@ -210,13 +210,16 @@ Expected bundle locations:
   - `VST3/GLIESE 710.vst3`
   - `AU/GLIESE 710.component`
   - `CLAP/GLIESE 710.clap`
+  - `Standalone/GLIESE 710.app`
 - Windows:
   - `VST3/GLIESE 710.vst3`
   - `CLAP/GLIESE 710.clap`
+  - `Standalone/GLIESE 710.exe`
 - Linux:
   - `VST3/GLIESE 710.vst3`
   - `CLAP/GLIESE 710.clap`
   - `LV2/GLIESE 710.lv2`
+  - `Standalone/GLIESE 710`
 
 ## 5) Signing and Notarization
 
@@ -232,10 +235,11 @@ Example signing commands:
 codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.vst3"
 codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.component"
 codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.clap"
+codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.app"
 ```
 
-Then notarize a zip/pkg containing the signed bundles and staple tickets before
-publishing.
+Then notarize a zip/pkg containing the signed bundles/app and staple tickets
+before publishing.
 
 ### Windows
 
@@ -255,6 +259,7 @@ Use a deterministic naming scheme so website links are stable:
 
 Each zip should contain:
 - plugin bundles/directories
+- standalone app/executable
 - `README-install.txt`
 - `LICENSE.txt` (as applicable)
 
@@ -270,15 +275,18 @@ dist/
       GLIESE 710.vst3
       GLIESE 710.component
       GLIESE 710.clap
+      GLIESE 710.app
       README-install.txt
     windows/
       GLIESE 710.vst3
       GLIESE 710.clap
+      GLIESE 710.exe
       README-install.txt
     linux/
       GLIESE 710.vst3
       GLIESE 710.clap
       GLIESE 710.lv2
+      GLIESE 710
       README-install.txt
 ```
 
@@ -327,7 +335,7 @@ Use the draft release as the review checkpoint:
 
 1. Confirm all release jobs succeeded.
 2. Download each zip and verify it contains the expected platform folder and
-   plugin bundles.
+   plugin bundles plus the Standalone app/executable.
 3. Verify `gliese-710-vX.Y.Z-sha256.txt` matches the downloaded zip files.
 4. Complete signing/notarization outside the workflow if signing secrets are
    not yet automated.
@@ -361,9 +369,10 @@ Before publishing the draft, add release notes with this shape:
 - Important bug fixes and compatibility fixes.
 
 ### Build And Distribution
-- macOS: VST3, AU, CLAP
-- Windows: VST3, CLAP
-- Linux: VST3, CLAP, LV2
+- macOS: VST3, AU, CLAP, Standalone
+- Windows: VST3, CLAP, Standalone
+- Linux: VST3, CLAP, LV2, Standalone
+- Standalone app included for every platform
 - Vendor/software company: ECOSYSTEM
 - Signing/notarization status
 
@@ -433,7 +442,8 @@ Windows, and Linux.
 
 `release.yml` runs on tag pushes matching `v*` and:
 1. Builds and tests on macOS/Windows/Linux.
-2. Collects platform bundles as artifacts.
+2. Collects platform plugin bundles and Standalone apps/executables as
+   artifacts.
 3. Stages artifacts under `dist/${TAG}/<platform>/`.
 4. Adds `README-install.txt` and `LICENSE.txt` to each platform package.
 5. Packages deterministic zip names.
@@ -496,7 +506,7 @@ Use this as a copy/paste playbook when bootstrapping another JUCE plugin repo.
 Update these values in `release.yml`:
 
 1. Artifact source paths under `build-productions/<Product>_artefacts/Release/...`.
-2. Bundle names (for example `My Plugin.vst3`, `My Plugin.component`, `My Plugin.clap`, `My Plugin.lv2`).
+2. Bundle and executable names (for example `My Plugin.vst3`, `My Plugin.component`, `My Plugin.clap`, `My Plugin.lv2`, `My Plugin.app`, `My Plugin.exe`, and the Linux `My Plugin` executable).
 3. Output archive names:
   - `<slug>-vX.Y.Z-macos-universal.zip`
   - `<slug>-vX.Y.Z-windows-x64.zip`

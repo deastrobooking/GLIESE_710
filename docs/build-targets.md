@@ -217,7 +217,7 @@ Reference matrix configuration:
 
 Three matrix jobs:
 
-### macOS (AU + VST3 + CLAP)
+### macOS (AU + VST3 + CLAP + Standalone)
 ```yaml
 runs-on: macos-14
 steps:
@@ -236,7 +236,7 @@ steps:
       path: build/GLIESE_710_artefacts/Release/**
 ```
 
-### Windows (VST3 + CLAP)
+### Windows (VST3 + CLAP + Standalone)
 ```yaml
 runs-on: windows-latest
 steps:
@@ -253,9 +253,10 @@ steps:
       path: |
         build\GLIESE_710_artefacts\Release\VST3\**
         build\GLIESE_710_artefacts\Release\CLAP\**
+        build\GLIESE_710_artefacts\Release\Standalone\**
 ```
 
-### Linux (LV2 + VST3 + CLAP)
+### Linux (LV2 + VST3 + CLAP + Standalone)
 ```yaml
 runs-on: ubuntu-24.04
 steps:
@@ -268,6 +269,14 @@ steps:
     run: cmake --build build --parallel
   - name: Test
     run: ctest --test-dir build --output-on-failure
+  - uses: actions/upload-artifact@v4
+    with:
+      name: GLIESE710-Linux
+      path: |
+        build/GLIESE_710_artefacts/Release/VST3/**
+        build/GLIESE_710_artefacts/Release/CLAP/**
+        build/GLIESE_710_artefacts/Release/LV2/**
+        build/GLIESE_710_artefacts/Release/Standalone/**
 ```
 
 ## CPM Cache

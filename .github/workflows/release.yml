@@ -73,6 +73,7 @@ jobs:
             build-productions/GLIESE_710_artefacts/Release/VST3/GLIESE 710.vst3
             build-productions/GLIESE_710_artefacts/Release/CLAP/GLIESE 710.clap
             build-productions/GLIESE_710_artefacts/Release/LV2/GLIESE 710.lv2
+            build-productions/GLIESE_710_artefacts/Release/Standalone/GLIESE 710
 
   build_macos:
     name: Build macOS Artifacts
@@ -118,6 +119,7 @@ jobs:
             build-productions/GLIESE_710_artefacts/Release/VST3/GLIESE 710.vst3
             build-productions/GLIESE_710_artefacts/Release/AU/GLIESE 710.component
             build-productions/GLIESE_710_artefacts/Release/CLAP/GLIESE 710.clap
+            build-productions/GLIESE_710_artefacts/Release/Standalone/GLIESE 710.app
 
   build_windows:
     name: Build Windows Artifacts
@@ -169,6 +171,7 @@ jobs:
           path: |
             build-productions/GLIESE_710_artefacts/Release/VST3/GLIESE 710.vst3
             build-productions/GLIESE_710_artefacts/Release/CLAP/GLIESE 710.clap
+            build-productions/GLIESE_710_artefacts/Release/Standalone/GLIESE 710.exe
 
   package_and_release:
     name: Package and Publish Release
@@ -204,7 +207,8 @@ jobs:
               '' \
               '1. Extract this archive.' \
               "2. Copy plugin bundles to your platform's standard plugin locations." \
-              '3. Rescan plugins in your DAW.' \
+              '3. Run the Standalone app/executable directly for non-DAW testing.' \
+              '4. Rescan plugins in your DAW.' \
               > "${base_dir}/${platform}/README-install.txt"
           done
 
