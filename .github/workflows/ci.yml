@@ -47,9 +47,12 @@ jobs:
 
       - name: Configure
         run: |
+          CPM_CACHE="$(pwd -W 2>/dev/null || pwd)/.cpm-cache"
+          mkdir -p "${CPM_CACHE}"
+          echo "CPM cache: ${CPM_CACHE}"
           cmake -S . -B build-productions \
             -G Ninja \
-            -DCPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache \
+            -DCPM_SOURCE_CACHE="${CPM_CACHE}" \
             -DCMAKE_BUILD_TYPE=Release \
             -DGLIESE_BUILD_TESTS=ON \
             -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
@@ -79,9 +82,12 @@ jobs:
 
       - name: Configure
         run: |
+          CPM_CACHE="$(pwd -W 2>/dev/null || pwd)/.cpm-cache"
+          mkdir -p "${CPM_CACHE}"
+          echo "CPM cache: ${CPM_CACHE}"
           cmake -S . -B build-productions \
             -G Xcode \
-            -DCPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache \
+            -DCPM_SOURCE_CACHE="${CPM_CACHE}" \
             -DGLIESE_BUILD_TESTS=ON \
             -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
 
@@ -116,10 +122,13 @@ jobs:
 
       - name: Configure
         run: |
+          CPM_CACHE="$(pwd -W 2>/dev/null || pwd)/.cpm-cache"
+          mkdir -p "${CPM_CACHE}"
+          echo "CPM cache: ${CPM_CACHE}"
           cmake -S . -B build-productions \
             -G "Visual Studio 17 2022" \
             -A x64 \
-            -DCPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache \
+            -DCPM_SOURCE_CACHE="${CPM_CACHE}" \
             -DGLIESE_BUILD_TESTS=ON \
             -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
 

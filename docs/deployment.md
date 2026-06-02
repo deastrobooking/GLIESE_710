@@ -108,8 +108,9 @@ fetch path simple and pinned:
 - Avoid recursive dependency `git clone` paths for release-critical
   dependencies. The Windows runners have repeatedly failed there under cold
   cache conditions.
-- Keep `CPM_SOURCE_CACHE` pointed at `${{ github.workspace }}/.cpm-cache` in CI
-  and use restore keys for platform caches.
+- Cache `${{ github.workspace }}/.cpm-cache` in CI, but pass a shell-normalized
+  cache path to CMake with `CPM_CACHE="$(pwd -W 2>/dev/null || pwd)/.cpm-cache"`.
+  This avoids raw Windows backslashes in `CPM_SOURCE_CACHE`.
 
 Current Linux runner packages:
 
@@ -392,7 +393,8 @@ Both workflows should keep these hardening details:
 
 1. Cache `${{ github.workspace }}/.cpm-cache` with platform-specific keys and
    restore keys.
-2. Pass `-DCPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache` to configure.
+2. Compute `CPM_CACHE="$(pwd -W 2>/dev/null || pwd)/.cpm-cache"` in each
+   configure step, then pass `-DCPM_SOURCE_CACHE="${CPM_CACHE}"` to CMake.
 3. Use `build-productions` as the build directory.
 4. Set `GLIESE_COPY_PLUGIN_AFTER_BUILD=OFF` in CI and release builds.
 5. Use `if-no-files-found: error` for release artifact uploads.
