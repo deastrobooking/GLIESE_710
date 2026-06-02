@@ -241,3 +241,77 @@ Windows, and Linux.
 3. Packages deterministic zip names.
 4. Generates a SHA256 checksum file.
 5. Publishes assets to the GitHub Release for that tag.
+
+### Current workflow files
+
+- `.github/workflows/ci.yml`
+- `.github/workflows/release.yml`
+
+### Current README status badges
+
+Add these near the repository title:
+
+```md
+[![CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/<owner>/<repo>/actions/workflows/ci.yml)
+[![Release](https://github.com/<owner>/<repo>/actions/workflows/release.yml/badge.svg)](https://github.com/<owner>/<repo>/actions/workflows/release.yml)
+```
+
+## Replicate This In Other Plugin Repositories (Fast Path)
+
+Use this as a copy/paste playbook when bootstrapping another JUCE plugin repo.
+
+### A) Copy baseline files
+
+1. Copy `.github/workflows/ci.yml`.
+2. Copy `.github/workflows/release.yml`.
+3. Copy the README badges (above).
+4. Copy this deployment guide section into the target repo docs.
+
+### B) Replace project-specific values
+
+Update these values in `release.yml`:
+
+1. Artifact source paths under `build-productions/<Product>_artefacts/Release/...`.
+2. Bundle names (for example `My Plugin.vst3`, `My Plugin.component`, `My Plugin.clap`, `My Plugin.lv2`).
+3. Output archive names:
+  - `<slug>-vX.Y.Z-macos-universal.zip`
+  - `<slug>-vX.Y.Z-windows-x64.zip`
+  - `<slug>-vX.Y.Z-linux-x64.zip`
+  - `<slug>-vX.Y.Z-sha256.txt`
+
+Update these values in `ci.yml` (if needed):
+
+1. Build directory (default here is `build-productions`).
+2. CMake options (`GLIESE_BUILD_TESTS`, `GLIESE_COPY_PLUGIN_AFTER_BUILD`, or equivalent project flags).
+3. Required Linux packages for your plugin dependencies.
+
+### C) Validate in target repo
+
+1. Open a PR and confirm all `ci.yml` jobs pass (Linux/macOS/Windows).
+2. Create a throwaway tag (`v0.0.0-rc1`) and confirm release assets are published.
+3. Download all generated zip files and verify checksum integrity.
+
+### D) Keep these manual/secret-managed steps explicit
+
+The current automated workflow intentionally does not embed signing credentials.
+For production distribution, configure secure signing/notarization separately:
+
+1. macOS: Developer ID signing + notarization + stapling.
+2. Windows: Authenticode signing.
+3. Linux: checksum verification publication.
+
+Recommended approach:
+
+1. Store signing secrets in GitHub Encrypted Secrets.
+2. Add signing steps in `release.yml` per platform job before artifact upload.
+3. Keep unsigned artifacts out of final public releases.
+
+## Minimal Standard For New Plugin Repos
+
+To replicate quickly with consistent quality, require this baseline:
+
+1. `ci.yml` matrix build/test on PR and push.
+2. `release.yml` tag-triggered package + checksum + GitHub Release upload.
+3. Stable archive naming convention with semantic version tags (`vX.Y.Z`).
+4. README badges for CI and Release visibility.
+5. Deployment doc including rollback and post-release verification.

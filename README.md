@@ -1,5 +1,8 @@
 # GLIESE 710
 
+[![CI](https://github.com/deastrobooking/GLIESE_710/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/deastrobooking/GLIESE_710/actions/workflows/ci.yml)
+[![Release](https://github.com/deastrobooking/GLIESE_710/actions/workflows/release.yml/badge.svg)](https://github.com/deastrobooking/GLIESE_710/actions/workflows/release.yml)
+
 **A hybrid cinematic synthesizer for 3D function, FM, wavetable, granular, terrain, VA, and physical-string synthesis.**
 
 GLIESE 710 is a polyphonic C++20 / JUCE 8 synthesizer plugin. Its original center is the **3D Function Oscillator**, where a scan path moves through a mathematical field instead of reading a normal waveform. The current engine expands that idea into a two-page, mix-and-match oscillator system with independent wavetable, granular, wave-terrain, virtual analog, Karplus-Strong, and dual FM engines.
