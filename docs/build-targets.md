@@ -78,6 +78,53 @@ cmake --preset production
 cmake --build --preset vst3 --parallel
 ```
 
+## VS Code + Xcode Workflow
+
+The repository includes VS Code tasks for the normal CMake build and for an
+Xcode-generated project. Open the command palette and run
+`Tasks: Run Task`, then choose one of:
+
+- `CMake: Build VST3`
+- `CMake: Build All Plugins`
+- `Xcode: Configure Project`
+- `Xcode: Open Project`
+- `Xcode: Build VST3`
+- `Xcode: Build All Plugins`
+- `Xcode: Run Tests`
+- `Deploy: Build and Install User Plugins`
+- `Deploy: Build and Install System Plugins`
+
+The task commands call `scripts/cmake.zsh` and `scripts/ctest.zsh`, which prefer
+system CMake when available and fall back to the local portable CMake bundle.
+
+The Xcode preset generates native project files in `build-xcode/`:
+
+```bash
+scripts/cmake.zsh --preset xcode
+open build-xcode/GLIESE_710.xcodeproj
+```
+
+Build from VS Code through the task list, or directly with Xcode's build tool:
+
+```bash
+xcodebuild -project build-xcode/GLIESE_710.xcodeproj -configuration Release -target GLIESE_710_VST3 -parallelizeTargets build
+xcodebuild -project build-xcode/GLIESE_710.xcodeproj -configuration Release -target GLIESE_710_All -parallelizeTargets build
+```
+
+Xcode-generated bundles are emitted under:
+
+```text
+build-xcode/GLIESE_710_artefacts/Release/
+```
+
+The Xcode preset disables automatic code signing so local bundle generation does
+not fail on extended metadata. Use the deploy tasks or the build script below
+for ad-hoc signing and DAW install testing.
+
+Use the `Deploy:*` VS Code tasks or `scripts/build-plugin.zsh --install-user`
+when you want AU, VST3, and CLAP copied into macOS plugin folders and ad-hoc
+signed for local DAW testing.
+
 The canonical local output directory is `build-productions/`. The VST3 bundle is:
 
 ```text

@@ -11,6 +11,20 @@
         "GLIESE_BUILD_TESTS": "ON",
         "GLIESE_COPY_PLUGIN_AFTER_BUILD": "OFF"
       }
+    },
+    {
+      "name": "xcode",
+      "displayName": "Xcode Release",
+      "description": "Generate a native Xcode project for macOS deployment work.",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build-xcode",
+      "cacheVariables": {
+        "CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED": "NO",
+        "CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED": "NO",
+        "CMAKE_XCODE_GENERATE_SCHEME": "ON",
+        "GLIESE_BUILD_TESTS": "ON",
+        "GLIESE_COPY_PLUGIN_AFTER_BUILD": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -37,6 +51,33 @@
       "targets": [
         "GLIESE_Tests"
       ]
+    },
+    {
+      "name": "xcode-plugin",
+      "configurePreset": "xcode",
+      "configuration": "Release",
+      "description": "Build all GLIESE 710 plugin formats with the Xcode generator.",
+      "targets": [
+        "GLIESE_710_All"
+      ]
+    },
+    {
+      "name": "xcode-vst3",
+      "configurePreset": "xcode",
+      "configuration": "Release",
+      "description": "Build only the VST3 plugin bundle with the Xcode generator.",
+      "targets": [
+        "GLIESE_710_VST3"
+      ]
+    },
+    {
+      "name": "xcode-tests",
+      "configurePreset": "xcode",
+      "configuration": "Release",
+      "description": "Build the GLIESE 710 unit test binary with the Xcode generator.",
+      "targets": [
+        "GLIESE_Tests"
+      ]
     }
   ],
   "testPresets": [
@@ -45,6 +86,15 @@
       "configurePreset": "production",
       "configuration": "Release",
       "description": "Run all GLIESE 710 tests.",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "xcode-tests",
+      "configurePreset": "xcode",
+      "configuration": "Release",
+      "description": "Run all GLIESE 710 tests from the Xcode build tree.",
       "output": {
         "outputOnFailure": true
       }

@@ -1,0 +1,175 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake: Configure Production",
+      "type": "shell",
+      "command": "scripts/cmake.zsh",
+      "args": [
+        "--preset",
+        "production"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "CMake: Build VST3",
+      "type": "shell",
+      "command": "scripts/cmake.zsh",
+      "args": [
+        "--build",
+        "--preset",
+        "vst3",
+        "--parallel"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "CMake: Build All Plugins",
+      "type": "shell",
+      "command": "scripts/cmake.zsh",
+      "args": [
+        "--build",
+        "--preset",
+        "plugin",
+        "--parallel"
+      ],
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "CMake: Build Tests",
+      "type": "shell",
+      "command": "scripts/cmake.zsh",
+      "args": [
+        "--build",
+        "--preset",
+        "tests",
+        "--parallel"
+      ],
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "CTest: Run Tests",
+      "type": "shell",
+      "command": "scripts/ctest.zsh",
+      "args": [
+        "--preset",
+        "tests"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Xcode: Configure Project",
+      "type": "shell",
+      "command": "scripts/cmake.zsh",
+      "args": [
+        "--preset",
+        "xcode"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Xcode: Open Project",
+      "type": "shell",
+      "command": "open",
+      "args": [
+        "build-xcode/GLIESE_710.xcodeproj"
+      ],
+      "dependsOn": [
+        "Xcode: Configure Project"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Xcode: Build VST3",
+      "type": "shell",
+      "command": "xcodebuild",
+      "args": [
+        "-project",
+        "build-xcode/GLIESE_710.xcodeproj",
+        "-configuration",
+        "Release",
+        "-target",
+        "GLIESE_710_VST3",
+        "-parallelizeTargets",
+        "build"
+      ],
+      "dependsOn": [
+        "Xcode: Configure Project"
+      ],
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "Xcode: Build All Plugins",
+      "type": "shell",
+      "command": "xcodebuild",
+      "args": [
+        "-project",
+        "build-xcode/GLIESE_710.xcodeproj",
+        "-configuration",
+        "Release",
+        "-target",
+        "GLIESE_710_All",
+        "-parallelizeTargets",
+        "build"
+      ],
+      "dependsOn": [
+        "Xcode: Configure Project"
+      ],
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "Xcode: Build Tests",
+      "type": "shell",
+      "command": "xcodebuild",
+      "args": [
+        "-project",
+        "build-xcode/GLIESE_710.xcodeproj",
+        "-configuration",
+        "Release",
+        "-target",
+        "GLIESE_Tests",
+        "-parallelizeTargets",
+        "build"
+      ],
+      "dependsOn": [
+        "Xcode: Configure Project"
+      ],
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "Xcode: Run Tests",
+      "type": "shell",
+      "command": "scripts/ctest.zsh",
+      "args": [
+        "--preset",
+        "xcode-tests"
+      ],
+      "dependsOn": [
+        "Xcode: Build Tests"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Deploy: Build and Install User Plugins",
+      "type": "shell",
+      "command": "scripts/build-plugin.zsh",
+      "args": [
+        "--install-user"
+      ],
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "Deploy: Build and Install System Plugins",
+      "type": "shell",
+      "command": "scripts/build-plugin.zsh",
+      "args": [
+        "--install-system"
+      ],
+      "problemMatcher": "$gcc"
+    }
+  ]
+}

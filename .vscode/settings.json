@@ -1,0 +1,8 @@
+{
+  "cmake.useCMakePresets": "always",
+  "cmake.configurePreset": "production",
+  "cmake.buildPreset": "vst3",
+  "cmake.testPreset": "tests",
+  "cmake.cmakePath": "${workspaceFolder}/scripts/cmake.zsh",
+  "cmake.buildDirectory": "${workspaceFolder}/build-productions"
+}

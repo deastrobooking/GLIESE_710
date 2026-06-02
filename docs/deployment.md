@@ -139,6 +139,11 @@ VST3, and CLAP into user plugin folders with ad-hoc signing:
 scripts/build-plugin.zsh --install-user
 ```
 
+For VS Code-driven macOS deployment prep, use `Tasks: Run Task` and choose
+`Xcode: Configure Project` to generate `build-xcode/GLIESE_710.xcodeproj`,
+`Xcode: Open Project` to inspect or build in Xcode, or one of the `Deploy:*`
+tasks to build, install, ad-hoc sign, and verify local plugin bundles.
+
 ## 3) Dependency Fetch and CI Runner Standard
 
 Release builds must be reproducible on cold CI runners. Keep the dependency
