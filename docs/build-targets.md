@@ -27,6 +27,13 @@ cmake --build build-productions --target GLIESE_710_Standalone --config Release
 | `Release` | `-O2`, no assertions. Profile with Instruments / perf. |
 | `RelWithDebInfo` | `-O2` + symbols. Best for profiling with readable traces. |
 
+## Plugin Company Metadata
+
+Release builds use `COMPANY_NAME "ECOSYSTEM"` in `CMakeLists.txt`. This is the
+host-facing software company/vendor name shown by DAWs and plugin scanners.
+Keep the existing `BUNDLE_ID`, `CLAP_ID`, and `LV2URI` stable unless the release
+is intentionally changing plugin identity.
+
 ## macOS — AU + VST3 + CLAP
 
 Recommended local automation:

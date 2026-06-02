@@ -30,7 +30,7 @@ endif()
 # ── Plugin target ──────────────────────────────────────────────────────────────
 juce_add_plugin(GLIESE_710
     VERSION                     ${PROJECT_VERSION}
-    COMPANY_NAME                "GLIESE Studios"
+    COMPANY_NAME                "ECOSYSTEM"
     COMPANY_WEBSITE             ""
     BUNDLE_ID                   "com.gliesestudios.GLIESE710"
     PLUGIN_MANUFACTURER_CODE    GLSE

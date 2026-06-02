@@ -32,5 +32,11 @@ enum class ModDest : int
     EngFiltKS_Cutoff, EngFiltKS_Resonance, EngFiltKS_Drive, EngFiltKS_Morph, EngFiltKS_Mix,
     EngFiltGran_Cutoff, EngFiltGran_Resonance, EngFiltGran_Drive, EngFiltGran_Morph, EngFiltGran_Mix,
     EngFiltTerrain_Cutoff, EngFiltTerrain_Resonance, EngFiltTerrain_Drive, EngFiltTerrain_Morph, EngFiltTerrain_Mix,
+    VA5_Shape, VA5_PW, VA5_Detune, VA5_Spread, VA5_Level, VA5_Ring, VA5_Fold,
+    VA6_Shape, VA6_PW, VA6_Detune, VA6_Spread, VA6_Level, VA6_Ring, VA6_Fold,
+    VA7_Shape, VA7_PW, VA7_Detune, VA7_Spread, VA7_Level, VA7_Ring, VA7_Fold,
+    VA8_Shape, VA8_PW, VA8_Detune, VA8_Spread, VA8_Level, VA8_Ring, VA8_Fold,
+    Terrain_CenterX, Terrain_CenterY, Terrain_RadiusX, Terrain_RadiusY,
+    Terrain_RatioX, Terrain_RatioY, Terrain_Smoothing, Terrain_Morph, Terrain_Drive,
     NumDests
 };

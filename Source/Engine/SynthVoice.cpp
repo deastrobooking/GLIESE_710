@@ -74,44 +74,51 @@ EnvIndex terrainEnvIndex(int index)
 ModDest vaShapeDest(int index)
 {
     static constexpr ModDest d[] = {
-        ModDest::VA_Shape, ModDest::VA2_Shape, ModDest::VA3_Shape, ModDest::VA4_Shape };
-    return d[juce::jlimit(0, 3, index)];
+        ModDest::VA_Shape, ModDest::VA2_Shape, ModDest::VA3_Shape, ModDest::VA4_Shape,
+        ModDest::VA5_Shape, ModDest::VA6_Shape, ModDest::VA7_Shape, ModDest::VA8_Shape };
+    return d[juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
 }
 ModDest vaPwDest(int index)
 {
     static constexpr ModDest d[] = {
-        ModDest::VA_PW, ModDest::VA2_PW, ModDest::VA3_PW, ModDest::VA4_PW };
-    return d[juce::jlimit(0, 3, index)];
+        ModDest::VA_PW, ModDest::VA2_PW, ModDest::VA3_PW, ModDest::VA4_PW,
+        ModDest::VA5_PW, ModDest::VA6_PW, ModDest::VA7_PW, ModDest::VA8_PW };
+    return d[juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
 }
 ModDest vaDetuneDest(int index)
 {
     static constexpr ModDest d[] = {
-        ModDest::VA_Detune, ModDest::VA2_Detune, ModDest::VA3_Detune, ModDest::VA4_Detune };
-    return d[juce::jlimit(0, 3, index)];
+        ModDest::VA_Detune, ModDest::VA2_Detune, ModDest::VA3_Detune, ModDest::VA4_Detune,
+        ModDest::VA5_Detune, ModDest::VA6_Detune, ModDest::VA7_Detune, ModDest::VA8_Detune };
+    return d[juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
 }
 ModDest vaSpreadDest(int index)
 {
     static constexpr ModDest d[] = {
-        ModDest::VA_Spread, ModDest::VA2_Spread, ModDest::VA3_Spread, ModDest::VA4_Spread };
-    return d[juce::jlimit(0, 3, index)];
+        ModDest::VA_Spread, ModDest::VA2_Spread, ModDest::VA3_Spread, ModDest::VA4_Spread,
+        ModDest::VA5_Spread, ModDest::VA6_Spread, ModDest::VA7_Spread, ModDest::VA8_Spread };
+    return d[juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
 }
 ModDest vaLevelDest(int index)
 {
     static constexpr ModDest d[] = {
-        ModDest::VA_Level, ModDest::VA2_Level, ModDest::VA3_Level, ModDest::VA4_Level };
-    return d[juce::jlimit(0, 3, index)];
+        ModDest::VA_Level, ModDest::VA2_Level, ModDest::VA3_Level, ModDest::VA4_Level,
+        ModDest::VA5_Level, ModDest::VA6_Level, ModDest::VA7_Level, ModDest::VA8_Level };
+    return d[juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
 }
 ModDest vaRingDest(int index)
 {
     static constexpr ModDest d[] = {
-        ModDest::VA_Ring, ModDest::VA2_Ring, ModDest::VA3_Ring, ModDest::VA4_Ring };
-    return d[juce::jlimit(0, 3, index)];
+        ModDest::VA_Ring, ModDest::VA2_Ring, ModDest::VA3_Ring, ModDest::VA4_Ring,
+        ModDest::VA5_Ring, ModDest::VA6_Ring, ModDest::VA7_Ring, ModDest::VA8_Ring };
+    return d[juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
 }
 ModDest vaFoldDest(int index)
 {
     static constexpr ModDest d[] = {
-        ModDest::VA_Fold, ModDest::VA2_Fold, ModDest::VA3_Fold, ModDest::VA4_Fold };
-    return d[juce::jlimit(0, 3, index)];
+        ModDest::VA_Fold, ModDest::VA2_Fold, ModDest::VA3_Fold, ModDest::VA4_Fold,
+        ModDest::VA5_Fold, ModDest::VA6_Fold, ModDest::VA7_Fold, ModDest::VA8_Fold };
+    return d[juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
 }
 
 ModDest engineFilterCutoffDest(int index)
@@ -855,22 +862,22 @@ void SynthVoice::syncParams()
         const auto& ct = pc.terrain[(size_t)i];
         TerrainOsc::Params tp;
         tp.pathMode    = static_cast<TerrainOsc::PathMode>(pI(ct.path));
-        tp.centerX     = pF(ct.centerX, 0.5f);
-        tp.centerY     = pF(ct.centerY, 0.5f);
-        tp.radiusX     = pF(ct.radiusX, 0.35f);
-        tp.radiusY     = pF(ct.radiusY, 0.35f);
+        tp.centerX     = pF(ct.centerX, 0.5f) + modDests.dests[(int) ModDest::Terrain_CenterX];
+        tp.centerY     = pF(ct.centerY, 0.5f) + modDests.dests[(int) ModDest::Terrain_CenterY];
+        tp.radiusX     = pF(ct.radiusX, 0.35f) + modDests.dests[(int) ModDest::Terrain_RadiusX];
+        tp.radiusY     = pF(ct.radiusY, 0.35f) + modDests.dests[(int) ModDest::Terrain_RadiusY];
         tp.zoom        = pF(ct.zoom, 1.f);
         tp.rotation    = pF(ct.rotation);
         tp.pathSize    = pF(ct.pathSize, 1.f);
-        tp.ratioX      = pF(ct.ratioX, 1.f);
-        tp.ratioY      = pF(ct.ratioY, 1.5f);
+        tp.ratioX      = pF(ct.ratioX, 1.f) + modDests.dests[(int) ModDest::Terrain_RatioX];
+        tp.ratioY      = pF(ct.ratioY, 1.5f) + modDests.dests[(int) ModDest::Terrain_RatioY];
         tp.scanRate    = pF(ct.scanRate, 1.f);
         tp.phaseOffset = pF(ct.phase);
         tp.spiral      = pF(ct.spiral);
-        tp.drive       = pF(ct.drive, 1.5f);
+        tp.drive       = pF(ct.drive, 1.5f) + modDests.dests[(int) ModDest::Terrain_Drive];
         tp.offset      = pF(ct.offset);
-        tp.smoothing   = pF(ct.smoothing);
-        tp.morph       = pF(ct.morph);
+        tp.smoothing   = pF(ct.smoothing) + modDests.dests[(int) ModDest::Terrain_Smoothing];
+        tp.morph       = pF(ct.morph) + modDests.dests[(int) ModDest::Terrain_Morph];
         tp.gain        = pF(ct.gain, 1.f);
 
         const float terrainHz = pitchedHz * std::pow(2.f, pF(ct.octave));

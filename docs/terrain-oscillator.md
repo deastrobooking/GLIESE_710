@@ -106,14 +106,14 @@ In the oscillator slot layout, Terrain consumes two slot units when there is roo
 
 - No editable path overlay yet.
 - No mipmapped / anti-aliased terrain levels yet.
-- Terrain parameters are not exposed as modulation-matrix destinations yet.
+- Direct terrain modulation destinations are matrix-wide offsets rather than per-terrain-slot destinations.
 - Presets do not yet collect imported terrain images as sample dependencies.
 
 ## Suggested Next Upgrades
 
 1. Add drag-and-drop image import in the terrain panel.
 2. Add mipmapped terrain levels for cleaner high notes.
-3. Add modulation destinations for center, radius, ratio, smoothing, and morph.
+3. Add per-slot terrain modulation destinations if independent matrix offsets are needed per terrain slot.
 4. Save terrain image references or embedded terrain data in presets.
 
 ## Source Files

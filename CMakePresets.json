@@ -43,6 +43,7 @@
     {
       "name": "tests",
       "configurePreset": "production",
+      "configuration": "Release",
       "description": "Run all GLIESE 710 tests.",
       "output": {
         "outputOnFailure": true

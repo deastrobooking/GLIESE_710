@@ -132,9 +132,17 @@ install_bundle() {
     dest_parent=$(dirname "${dest_bundle}")
 
     [[ -d "${source_bundle}" ]] || die "missing built bundle: ${source_bundle}"
+    case "${dest_bundle}" in
+        *.vst3|*.component|*.clap)
+            ;;
+        *)
+            die "refusing to replace unexpected bundle path: ${dest_bundle}"
+            ;;
+    esac
 
     print -- "[gliese] install: ${dest_bundle}"
     run_or_sudo mkdir -p "${dest_parent}"
+    run_or_sudo rm -rf "${dest_bundle}"
     run_or_sudo ditto "${source_bundle}" "${dest_bundle}"
 
     if command -v codesign >/dev/null 2>&1; then

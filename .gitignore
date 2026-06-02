@@ -1,5 +1,6 @@
 build/
 build-production/
 build-productions/
+dist/
 cmake-build-*/
 .DS_Store

@@ -9,6 +9,7 @@
 #include "../Source/Engine/Oscillators/FMAlgorithm.h"
 #include "../Source/Engine/Filter/DualFilter.h"
 #include "../Source/Engine/Modulation/ModMatrix.h"
+#include "../Source/Engine/Modulation/ModNames.h"
 #include "../Source/Engine/Modulation/StepSequencerMod.h"
 #include "../Source/Engine/LFO/LFOEngine.h"
 #include "../Source/Engine/Arpeggiator/Arpeggiator.h"
@@ -517,6 +518,44 @@ TEST_CASE("ModMatrix None slot is skipped", "[modmatrix]")
     // All slots are None — all destinations should be zero
     for (const auto& d : dst.dests)
         REQUIRE(d == Approx(0.f));
+}
+
+TEST_CASE("Modulation destination names cover appended backlog destinations", "[modmatrix]")
+{
+    const auto displayNames = ModNames::destDisplayNames();
+    const auto parameterNames = ModNames::destParameterNames();
+
+    REQUIRE(displayNames.size() == (int) ModDest::NumDests);
+    REQUIRE(parameterNames.size() == (int) ModDest::NumDests);
+
+    for (int i = 0; i < (int) ModDest::NumDests; ++i)
+    {
+        INFO("ModDest index " << i);
+        REQUIRE(displayNames[i].isNotEmpty());
+        REQUIRE(parameterNames[i].isNotEmpty());
+    }
+
+    REQUIRE(parameterNames[(int) ModDest::EngFiltTerrain_Mix] == "EngFiltTerrain_Mix");
+    REQUIRE((int) ModDest::VA5_Shape > (int) ModDest::EngFiltTerrain_Mix);
+
+    REQUIRE(parameterNames[(int) ModDest::VA5_Shape] == "VA5_Shape");
+    REQUIRE(parameterNames[(int) ModDest::VA5_Level] == "VA5_Level");
+    REQUIRE(parameterNames[(int) ModDest::VA6_Level] == "VA6_Level");
+    REQUIRE(parameterNames[(int) ModDest::VA7_Level] == "VA7_Level");
+    REQUIRE(parameterNames[(int) ModDest::VA8_Level] == "VA8_Level");
+    REQUIRE(displayNames[(int) ModDest::VA8_Fold] == "VA8 Fold");
+
+    REQUIRE((int) ModDest::Terrain_CenterX > (int) ModDest::VA8_Fold);
+    REQUIRE(parameterNames[(int) ModDest::Terrain_CenterX] == "Terrain_CenterX");
+    REQUIRE(parameterNames[(int) ModDest::Terrain_CenterY] == "Terrain_CenterY");
+    REQUIRE(parameterNames[(int) ModDest::Terrain_RadiusX] == "Terrain_RadiusX");
+    REQUIRE(parameterNames[(int) ModDest::Terrain_RadiusY] == "Terrain_RadiusY");
+    REQUIRE(parameterNames[(int) ModDest::Terrain_RatioX] == "Terrain_RatioX");
+    REQUIRE(parameterNames[(int) ModDest::Terrain_RatioY] == "Terrain_RatioY");
+    REQUIRE(parameterNames[(int) ModDest::Terrain_Smoothing] == "Terrain_Smoothing");
+    REQUIRE(parameterNames[(int) ModDest::Terrain_Morph] == "Terrain_Morph");
+    REQUIRE(parameterNames[(int) ModDest::Terrain_Drive] == "Terrain_Drive");
+    REQUIRE(displayNames[(int) ModDest::Terrain_Drive] == "Terrain Drive");
 }
 
 TEST_CASE("StepSequencer loop length trims playback without changing programmed length", "[modseq]")

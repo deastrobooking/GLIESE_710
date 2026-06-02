@@ -21,6 +21,8 @@ The design goal is direct: every oscillator page should feel playable and modula
 | LV2 | Linux |
 | Standalone | All platforms |
 
+Host/plugin scanner vendor metadata is `ECOSYSTEM`.
+
 ---
 
 ## Quick Start
@@ -201,11 +203,11 @@ The **ENGINE FILTERS** page adds one per-voice filter for each oscillator family
 
 32 slots. Each slot: **Source -> Destination -> Amount (-1 to +1) -> Bipolar toggle**.
 
-Sources include LFO1-4, envelope groups, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, and eight macros. Destinations cover 3D controls, FM operator level/ratio controls, wavetable position/warp, granular controls, VA controls, master filter controls, per-engine filter controls, LFO controls, master volume/pan, and arp rate/gate.
+Sources include LFO1-4, envelope groups, velocity, aftertouch, mod wheel, pitch bend, CC74, channel pressure, and eight macros. Destinations cover 3D controls, FM operator level/ratio controls, wavetable position/warp, granular controls, VA controls, terrain scan/path controls, master filter controls, per-engine filter controls, LFO controls, master volume/pan, and arp rate/gate.
 
 The four-lane mod step sequencer has a performance loop-length knob that can trim playback from the full programmed pattern down to a single step without changing stored step values.
 
-Terrain pre-filter modulation is available through the engine filter destinations; direct terrain path modulation is still a later expansion.
+Terrain pre-filter modulation is available through the engine filter destinations, and direct terrain path modulation covers center, radius, ratio, smoothing, morph, and drive.
 
 ### Arpeggiator
 
@@ -269,7 +271,7 @@ GLIESE_710/
 - [ ] FM algorithm graph visualization
 - [ ] 3D field visualizer panel
 - [ ] MPE support
-- [ ] GitHub Actions CI
+- [x] GitHub Actions CI
 - [ ] Factory preset bank
 
 ---

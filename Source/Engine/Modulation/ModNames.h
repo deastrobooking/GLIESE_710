@@ -53,7 +53,13 @@ inline constexpr std::array<const char*, (int) ModDest::NumDests> kDestDisplayNa
     "VA Filt Cut", "VA Filt Res", "VA Filt Drv", "VA Filt Morph", "VA Filt Mix",
     "KS Filt Cut", "KS Filt Res", "KS Filt Drv", "KS Filt Morph", "KS Filt Mix",
     "Gran Filt Cut", "Gran Filt Res", "Gran Filt Drv", "Gran Filt Morph", "Gran Filt Mix",
-    "Terrain Filt Cut", "Terrain Filt Res", "Terrain Filt Drv", "Terrain Filt Morph", "Terrain Filt Mix"
+    "Terrain Filt Cut", "Terrain Filt Res", "Terrain Filt Drv", "Terrain Filt Morph", "Terrain Filt Mix",
+    "VA5 Shape", "VA5 PW", "VA5 Detune", "VA5 Spread", "VA5 Level", "VA5 Ring", "VA5 Fold",
+    "VA6 Shape", "VA6 PW", "VA6 Detune", "VA6 Spread", "VA6 Level", "VA6 Ring", "VA6 Fold",
+    "VA7 Shape", "VA7 PW", "VA7 Detune", "VA7 Spread", "VA7 Level", "VA7 Ring", "VA7 Fold",
+    "VA8 Shape", "VA8 PW", "VA8 Detune", "VA8 Spread", "VA8 Level", "VA8 Ring", "VA8 Fold",
+    "Terrain Center X", "Terrain Center Y", "Terrain Radius X", "Terrain Radius Y",
+    "Terrain Ratio X", "Terrain Ratio Y", "Terrain Smooth", "Terrain Morph", "Terrain Drive"
 };
 
 inline constexpr std::array<const char*, (int) ModDest::NumDests> kDestParameterNames {
@@ -86,7 +92,13 @@ inline constexpr std::array<const char*, (int) ModDest::NumDests> kDestParameter
     "EngFiltVA_Cutoff", "EngFiltVA_Resonance", "EngFiltVA_Drive", "EngFiltVA_Morph", "EngFiltVA_Mix",
     "EngFiltKS_Cutoff", "EngFiltKS_Resonance", "EngFiltKS_Drive", "EngFiltKS_Morph", "EngFiltKS_Mix",
     "EngFiltGran_Cutoff", "EngFiltGran_Resonance", "EngFiltGran_Drive", "EngFiltGran_Morph", "EngFiltGran_Mix",
-    "EngFiltTerrain_Cutoff", "EngFiltTerrain_Resonance", "EngFiltTerrain_Drive", "EngFiltTerrain_Morph", "EngFiltTerrain_Mix"
+    "EngFiltTerrain_Cutoff", "EngFiltTerrain_Resonance", "EngFiltTerrain_Drive", "EngFiltTerrain_Morph", "EngFiltTerrain_Mix",
+    "VA5_Shape", "VA5_PW", "VA5_Detune", "VA5_Spread", "VA5_Level", "VA5_Ring", "VA5_Fold",
+    "VA6_Shape", "VA6_PW", "VA6_Detune", "VA6_Spread", "VA6_Level", "VA6_Ring", "VA6_Fold",
+    "VA7_Shape", "VA7_PW", "VA7_Detune", "VA7_Spread", "VA7_Level", "VA7_Ring", "VA7_Fold",
+    "VA8_Shape", "VA8_PW", "VA8_Detune", "VA8_Spread", "VA8_Level", "VA8_Ring", "VA8_Fold",
+    "Terrain_CenterX", "Terrain_CenterY", "Terrain_RadiusX", "Terrain_RadiusY",
+    "Terrain_RatioX", "Terrain_RatioY", "Terrain_Smoothing", "Terrain_Morph", "Terrain_Drive"
 };
 
 inline juce::StringArray toStringArray(const auto& names)

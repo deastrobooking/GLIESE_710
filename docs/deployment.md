@@ -28,7 +28,7 @@ Release outputs for website distribution:
 10. Upload files and metadata to the website download area.
 11. Smoke-test fresh installs from website-hosted files.
 
-## 1) Versioning
+## 1) Versioning and Release Metadata
 
 Current source of truth for plugin version is in `CMakeLists.txt`:
 
@@ -36,10 +36,23 @@ Current source of truth for plugin version is in `CMakeLists.txt`:
 project(GLIESE_710 VERSION 0.1.0)
 ```
 
+The host-facing software company/vendor metadata is also defined in
+`CMakeLists.txt`:
+
+```cmake
+COMPANY_NAME "ECOSYSTEM"
+```
+
+Keep the company name set to `ECOSYSTEM` for release builds so DAWs and plugin
+scanners list the plugin under the correct software company. The existing
+reverse-DNS plugin IDs (`BUNDLE_ID`, `CLAP_ID`, and `LV2URI`) are stable plugin
+identity fields; change them only as an intentional compatibility break.
+
 For each release:
 1. Bump `VERSION`.
-2. Commit with message: `release: prepare vX.Y.Z`.
-3. Tag after successful packaging: `git tag -a vX.Y.Z -m "GLIESE 710 vX.Y.Z"`.
+2. Verify `COMPANY_NAME` is `ECOSYSTEM`.
+3. Commit with message: `release: prepare vX.Y.Z`.
+4. Tag after successful packaging: `git tag -a vX.Y.Z -m "GLIESE 710 vX.Y.Z"`.
 
 ## 2) Build + Test
 
@@ -85,15 +98,15 @@ Expected bundle locations:
 ### macOS
 
 The helper script currently performs ad-hoc signing for local testing only. For
-website releases, sign with a real `Developer ID Application` identity and
-notarize.
+website releases, sign with the ECOSYSTEM `Developer ID Application` identity
+and notarize.
 
 Example signing commands:
 
 ```bash
-codesign --force --deep --options runtime --sign "Developer ID Application: <TEAM>" "GLIESE 710.vst3"
-codesign --force --deep --options runtime --sign "Developer ID Application: <TEAM>" "GLIESE 710.component"
-codesign --force --deep --options runtime --sign "Developer ID Application: <TEAM>" "GLIESE 710.clap"
+codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.vst3"
+codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.component"
+codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.clap"
 ```
 
 Then notarize a zip/pkg containing the signed bundles and staple tickets before
@@ -101,7 +114,7 @@ publishing.
 
 ### Windows
 
-Sign binaries with Authenticode before packaging.
+Sign binaries with the ECOSYSTEM Authenticode certificate before packaging.
 
 ### Linux
 
@@ -218,6 +231,7 @@ After publishing, verify:
 2. Checksums match downloaded files.
 3. Plugin scan succeeds on at least one host per OS.
 4. The loaded plugin reports the expected version.
+5. The host/plugin scanner lists the software company/vendor as `ECOSYSTEM`.
 
 ## 11) Rollback Procedure
 
@@ -240,7 +254,11 @@ Windows, and Linux.
 2. Collects platform bundles as artifacts.
 3. Packages deterministic zip names.
 4. Generates a SHA256 checksum file.
-5. Publishes assets to the GitHub Release for that tag.
+5. Creates a draft GitHub Release with assets for that tag.
+
+The release workflow creates drafts because it does not currently embed signing
+or notarization credentials. Do not publish those draft assets publicly until the
+platform signing steps in this guide are complete.
 
 ### Current workflow files
 
@@ -294,10 +312,11 @@ Update these values in `ci.yml` (if needed):
 ### D) Keep these manual/secret-managed steps explicit
 
 The current automated workflow intentionally does not embed signing credentials.
+It creates draft releases by default for review and signing follow-up.
 For production distribution, configure secure signing/notarization separately:
 
-1. macOS: Developer ID signing + notarization + stapling.
-2. Windows: Authenticode signing.
+1. macOS: ECOSYSTEM Developer ID signing + notarization + stapling.
+2. Windows: ECOSYSTEM Authenticode signing.
 3. Linux: checksum verification publication.
 
 Recommended approach:

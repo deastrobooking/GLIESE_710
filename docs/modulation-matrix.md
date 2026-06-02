@@ -31,7 +31,7 @@ Multiple slots can share the same destination — their contributions accumulate
 | 17 | ChanPressure | 0 to +1 | MIDI channel pressure |
 | 18–25 | Macro1–Macro8 | 0 to +1 | Panel macro knobs |
 
-## Destinations (126 + None)
+## Destinations (163 + None)
 
 | ID | Destination | Base range | Modulation effect |
 |---|---|---|---|
@@ -80,10 +80,15 @@ Multiple slots can share the same destination — their contributions accumulate
 | 112–116 | EngFiltKS_Cutoff/Res/Drive/Morph/Mix | — | Per-voice Karplus-Strong engine filter controls before Filter A/B |
 | 117–121 | EngFiltGran_Cutoff/Res/Drive/Morph/Mix | — | Per-voice granular engine filter controls before Filter A/B |
 | 122–126 | EngFiltTerrain_Cutoff/Res/Drive/Morph/Mix | — | Per-voice terrain engine filter controls before Filter A/B |
+| 127–133 | VA5_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 5 |
+| 134–140 | VA6_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 6 |
+| 141–147 | VA7_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 7 |
+| 148–154 | VA8_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 8 |
+| 155–163 | Terrain_CenterX/CenterY/RadiusX/RadiusY/RatioX/RatioY/Smoothing/Morph/Drive | — | Direct wave-terrain scan-path and shaping offsets |
 
-Terrain oscillator slots have independent envelopes and APVTS parameters. The terrain engine filter destinations above modulate the terrain pre-filter; direct terrain path destinations would still be useful for center X/Y, radius X/Y, ratio X/Y, smoothing, morph, and drive.
+Terrain oscillator slots have independent envelopes and APVTS parameters. The terrain engine filter destinations above modulate the terrain pre-filter. The direct terrain destinations modulate center X/Y, radius X/Y, ratio X/Y, smoothing, morph, and drive across active terrain slots while preserving each slot's own base values.
 
-VA slots 5-8 are independent oscillator slots, but dedicated modulation destinations currently cover VA slots 1-4. Add `VA5_*` through `VA8_*` destinations if the later slots need direct matrix control.
+The VA5-VA8 and direct terrain destinations are appended after the existing engine-filter destinations to preserve older preset destination IDs.
 
 ## Bipolar vs Unipolar
 
@@ -133,6 +138,8 @@ modseq_loop_length  — int 1..32, active playback loop length
 ```
 
 `modseq_loop_length` is a performance trim. Playback wraps at `min(modseq_length, modseq_loop_length)`, so you can remove steps down to a one-step pulse without erasing or moving the programmed pattern.
+
+Step-sequencer lanes use bipolar output for terrain center X/Y, radius X/Y, and ratio X/Y so terrain scan motion can move around the base path instead of only adding positive offsets. Terrain smoothing, morph, and drive use unipolar step output.
 
 In the editor, steps beyond the active loop length are dimmed but remain editable. This makes it possible to shorten a phrase during performance, edit the parked steps, and bring the full stored pattern back without reprogramming it.
 

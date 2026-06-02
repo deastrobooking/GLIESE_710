@@ -209,5 +209,11 @@ bool StepSequencerMod::targetUsesBipolar(ModDest target) noexcept
         || target == ModDest::FilterB_Cutoff
         || target == ModDest::Master_Pan
         || target == ModDest::Gran_Position
-        || target == ModDest::Gran_Pitch;
+        || target == ModDest::Gran_Pitch
+        || target == ModDest::Terrain_CenterX
+        || target == ModDest::Terrain_CenterY
+        || target == ModDest::Terrain_RadiusX
+        || target == ModDest::Terrain_RadiusY
+        || target == ModDest::Terrain_RatioX
+        || target == ModDest::Terrain_RatioY;
 }
