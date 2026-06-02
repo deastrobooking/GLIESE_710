@@ -84,9 +84,9 @@ From repository root:
 
 ```bash
 cmake --preset production
-cmake --build --preset plugin --parallel
 cmake --build --preset tests --parallel
 ctest --preset tests
+cmake --build --preset plugin --parallel
 ```
 
 Recommended targeted regression suite before shipping filter changes:
@@ -95,11 +95,62 @@ Recommended targeted regression suite before shipping filter changes:
 ./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[filter]"
 ```
 
+For a quick local rebuild before testing in a DAW or handing bundles to another
+machine, use the same sequence and then verify the generated macOS bundles:
+
+```bash
+ART="build-productions/GLIESE_710_artefacts/Release"
+
+codesign --verify --deep --strict "$ART/VST3/GLIESE 710.vst3"
+codesign --verify --deep --strict "$ART/AU/GLIESE 710.component"
+codesign --verify --deep --strict "$ART/CLAP/GLIESE 710.clap"
+codesign --verify --deep --strict "$ART/Standalone/GLIESE 710.app"
+```
+
+If a local testing bundle reports `code has no resources but signature
+indicates they must be present`, replace the generated signature with an ad-hoc
+signature:
+
+```bash
+ART="build-productions/GLIESE_710_artefacts/Release"
+
+codesign --force --deep --sign - "$ART/AU/GLIESE 710.component"
+codesign --force --deep --sign - "$ART/CLAP/GLIESE 710.clap"
+codesign --force --deep --sign - "$ART/Standalone/GLIESE 710.app"
+```
+
+The canonical VST3 bundle for DAW copy/install testing is:
+
+```text
+build-productions/GLIESE_710_artefacts/Release/VST3/GLIESE 710.vst3
+```
+
+If an editor or wrapper change does not appear in the copied VST3, force a clean
+wrapper rebuild:
+
+```bash
+cmake --build build-productions --target GLIESE_710_VST3 --config Release --clean-first
+```
+
+On macOS, the helper script can perform the build/test pass and install AU,
+VST3, and CLAP into user plugin folders with ad-hoc signing:
+
+```bash
+scripts/build-plugin.zsh --install-user
+```
+
 ## 3) Dependency Fetch and CI Runner Standard
 
 Release builds must be reproducible on cold CI runners. Keep the dependency
 fetch path simple and pinned:
 
+- Use Node 24-ready official actions for checkout/cache steps:
+  `actions/checkout@v5` and `actions/cache@v5`. Do not keep
+  `actions/checkout@v4` or `actions/cache@v4` in active workflows; those are the
+  Node 20 runtime lines that trigger runner deprecation warnings.
+- GitHub-hosted runners satisfy the Node 24 action runner requirement. If a
+  copied workflow runs on self-hosted runners, update the Actions runner before
+  moving to the v5 actions.
 - JUCE is fetched by CPM from the pinned JUCE release archive.
 - CLAP support is fetched by CPM from pinned archives for
   `clap-juce-extensions`, CLAP core, and CLAP helpers.
@@ -391,15 +442,17 @@ Windows, and Linux.
 
 Both workflows should keep these hardening details:
 
-1. Cache `${{ github.workspace }}/.cpm-cache` with platform-specific keys and
+1. Use `actions/checkout@v5` and `actions/cache@v5` so the workflows run on the
+   Node 24 action runtime without temporary compatibility flags.
+2. Cache `${{ github.workspace }}/.cpm-cache` with platform-specific keys and
    restore keys.
-2. Compute `CPM_CACHE="$(pwd -W 2>/dev/null || pwd)/.cpm-cache"` in each
+3. Compute `CPM_CACHE="$(pwd -W 2>/dev/null || pwd)/.cpm-cache"` in each
    configure step, then pass `-DCPM_SOURCE_CACHE="${CPM_CACHE}"` to CMake.
-3. Use `build-productions` as the build directory.
-4. Set `GLIESE_COPY_PLUGIN_AFTER_BUILD=OFF` in CI and release builds.
-5. Use `if-no-files-found: error` for release artifact uploads.
-6. Install the Linux JUCE/JUCEAIDE packages listed in this guide.
-7. Run `git config --global core.longpaths true` before Windows configure.
+4. Use `build-productions` as the build directory.
+5. Set `GLIESE_COPY_PLUGIN_AFTER_BUILD=OFF` in CI and release builds.
+6. Use `if-no-files-found: error` for release artifact uploads.
+7. Install the Linux JUCE/JUCEAIDE packages listed in this guide.
+8. Run `git config --global core.longpaths true` before Windows configure.
 
 Current release asset names:
 
@@ -457,16 +510,32 @@ Update these values in `ci.yml` (if needed):
 3. Required Linux packages for your plugin dependencies. JUCE plugin CI should install the freetype, fontconfig, GL, GTK, ALSA, and X11 development packages before configure so `juceaide` can build cleanly.
 4. CPM cache key scope and restore keys.
 5. Windows `core.longpaths` setup before configure.
+6. Official action versions. Use `actions/checkout@v5` and `actions/cache@v5`
+   unless a target repo is pinned to an older self-hosted runner that cannot run
+   Node 24 actions yet.
 
 For CLAP-enabled JUCE projects, prefer pinned archive fetches for `clap-juce-extensions`, CLAP core, and CLAP helpers rather than recursive submodule clones. This avoids cold-cache Windows configure failures during dependency population.
 
-### C) Validate in target repo
+### C) Confirm workflow runtime hygiene
+
+After copying workflows into another repo, verify that no stale Node 20 action
+pins or temporary compatibility flags came along:
+
+```bash
+rg -n "actions/(checkout|cache)@v4|ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION|FORCE_JAVASCRIPT_ACTIONS_TO_NODE24" .github/workflows
+```
+
+Expected result: no matches for active workflow files. Prefer upgrading official
+actions to their Node 24 runtime line over setting compatibility environment
+variables.
+
+### D) Validate in target repo
 
 1. Open a PR and confirm all `ci.yml` jobs pass (Linux/macOS/Windows).
 2. Create a throwaway tag (`v0.0.0-rc1`) and confirm release assets are published.
 3. Download all generated zip files and verify checksum integrity.
 
-### D) Keep these manual/secret-managed steps explicit
+### E) Keep these manual/secret-managed steps explicit
 
 The current automated workflow intentionally does not embed signing credentials.
 It creates draft releases by default for review and signing follow-up.
@@ -486,7 +555,8 @@ Recommended approach:
 
 To replicate quickly with consistent quality, require this baseline:
 
-1. `ci.yml` matrix build/test on PR and push.
+1. `ci.yml` matrix build/test on PR and push, using Node 24-ready official
+   actions for checkout/cache.
 2. `release.yml` tag-triggered package + checksum + GitHub Release upload.
 3. Draft releases until signing/notarization is complete.
 4. Stable archive naming convention with semantic version tags (`vX.Y.Z`).

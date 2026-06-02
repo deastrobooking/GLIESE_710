@@ -221,7 +221,7 @@ Three matrix jobs:
 ```yaml
 runs-on: macos-14
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v5
   - name: Configure
     run: cmake -B build -G Xcode -DGLIESE_BUILD_TESTS=ON
   - name: Build
@@ -240,7 +240,7 @@ steps:
 ```yaml
 runs-on: windows-latest
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v5
   - name: Configure
     run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DGLIESE_BUILD_TESTS=ON
   - name: Build
@@ -259,7 +259,7 @@ steps:
 ```yaml
 runs-on: ubuntu-24.04
 steps:
-  - uses: actions/checkout@v4
+  - uses: actions/checkout@v5
   - name: Install deps
     run: sudo apt-get install -y ninja-build lv2-dev libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libxcomposite-dev libxrender-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev libgtk-3-dev
   - name: Configure
@@ -275,7 +275,7 @@ steps:
 CPM downloads JUCE and CLAP dependency archives from pinned release/commit URLs and caches them in `~/.cache/CPM`. On CI, cache the CPM directory to avoid re-downloading on every run:
 
 ```yaml
-- uses: actions/cache@v4
+- uses: actions/cache@v5
   with:
     path: ~/.cache/CPM
     key: ${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt') }}
