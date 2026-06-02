@@ -17,13 +17,40 @@ CPMAddPackage(
 
 if(GLIESE_BUILD_CLAP)
     set(CLAP_JUCE_EXTENSIONS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+
+    set(GLIESE_CLAP_JUCE_EXTENSIONS_COMMIT e8de9e8571626633b8541a54c2406fccc4272767)
+    set(GLIESE_CLAP_CORE_COMMIT 29ffcc273be7c7c651f6c9953b99e69700e2387a)
+    set(GLIESE_CLAP_HELPERS_COMMIT a61bcdf0ecc2c8db1e80bfe8bf9cb7e8d9fd2bbc)
+
+    CPMAddPackage(
+        NAME clap_core
+        URL https://github.com/free-audio/clap/archive/${GLIESE_CLAP_CORE_COMMIT}.tar.gz
+        DOWNLOAD_ONLY YES
+    )
+
+    CPMAddPackage(
+        NAME clap_helpers
+        URL https://github.com/free-audio/clap-helpers/archive/${GLIESE_CLAP_HELPERS_COMMIT}.tar.gz
+        DOWNLOAD_ONLY YES
+    )
+
     CPMAddPackage(
         NAME clap_juce_extensions
-        GITHUB_REPOSITORY free-audio/clap-juce-extensions
         # Release tags predate the current JUCE 8 wrapper support.
-        GIT_TAG e8de9e8571626633b8541a54c2406fccc4272767
-        GIT_SUBMODULES_RECURSE TRUE
+        URL https://github.com/free-audio/clap-juce-extensions/archive/${GLIESE_CLAP_JUCE_EXTENSIONS_COMMIT}.tar.gz
+        DOWNLOAD_ONLY YES
     )
+
+    set(GLIESE_CLAP_LIBS_DIR "${clap_juce_extensions_SOURCE_DIR}/clap-libs")
+    file(REMOVE_RECURSE
+        "${GLIESE_CLAP_LIBS_DIR}/clap"
+        "${GLIESE_CLAP_LIBS_DIR}/clap-helpers"
+    )
+    file(MAKE_DIRECTORY "${GLIESE_CLAP_LIBS_DIR}")
+    file(COPY "${clap_core_SOURCE_DIR}/" DESTINATION "${GLIESE_CLAP_LIBS_DIR}/clap")
+    file(COPY "${clap_helpers_SOURCE_DIR}/" DESTINATION "${GLIESE_CLAP_LIBS_DIR}/clap-helpers")
+
+    add_subdirectory("${clap_juce_extensions_SOURCE_DIR}" "${clap_juce_extensions_BINARY_DIR}")
 endif()
 
 # ── Plugin target ──────────────────────────────────────────────────────────────

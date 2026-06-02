@@ -121,9 +121,9 @@ Expected output: `PASS` with no errors.
 
 ## CLAP Support
 
-JUCE 8 does not provide a native `CLAP` entry in `juce_add_plugin(FORMATS ...)`, so GLIESE builds CLAP through `free-audio/clap-juce-extensions`. The dependency is fetched by CPM when `GLIESE_BUILD_CLAP=ON`, which is the default.
+JUCE 8 does not provide a native `CLAP` entry in `juce_add_plugin(FORMATS ...)`, so GLIESE builds CLAP through `free-audio/clap-juce-extensions`. The wrapper, CLAP core, and CLAP helper sources are fetched by CPM when `GLIESE_BUILD_CLAP=ON`, which is the default.
 
-The wrapper is pinned to a known commit in `CMakeLists.txt` because the published release tags predate the current JUCE 8 wrapper support. Disable CLAP for an offline or minimal build with:
+The wrapper is pinned to a known commit in `CMakeLists.txt` because the published release tags predate the current JUCE 8 wrapper support. Its submodule dependencies are fetched as pinned archives and copied into the wrapper's expected `clap-libs/` layout during configure; this keeps CI off the more fragile recursive `git clone` path on Windows. Disable CLAP for an offline or minimal build with:
 
 ```bash
 cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_CLAP=OFF
@@ -272,7 +272,7 @@ steps:
 
 ## CPM Cache
 
-CPM downloads JUCE from the pinned JUCE release archive and caches it in `~/.cache/CPM`. On CI, cache the CPM directory to avoid re-downloading on every run:
+CPM downloads JUCE and CLAP dependency archives from pinned release/commit URLs and caches them in `~/.cache/CPM`. On CI, cache the CPM directory to avoid re-downloading on every run:
 
 ```yaml
 - uses: actions/cache@v4

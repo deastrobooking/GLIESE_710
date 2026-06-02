@@ -303,6 +303,8 @@ Update these values in `ci.yml` (if needed):
 2. CMake options (`GLIESE_BUILD_TESTS`, `GLIESE_COPY_PLUGIN_AFTER_BUILD`, or equivalent project flags).
 3. Required Linux packages for your plugin dependencies. JUCE plugin CI should install the freetype, fontconfig, GL, GTK, ALSA, and X11 development packages before configure so `juceaide` can build cleanly.
 
+For CLAP-enabled JUCE projects, prefer pinned archive fetches for `clap-juce-extensions`, CLAP core, and CLAP helpers rather than recursive submodule clones. This avoids cold-cache Windows configure failures during dependency population.
+
 ### C) Validate in target repo
 
 1. Open a PR and confirm all `ci.yml` jobs pass (Linux/macOS/Windows).
