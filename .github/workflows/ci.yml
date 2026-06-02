@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Linux Build and Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CPM
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.cpm-cache
+          key: ${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ninja-build \
+            lv2-dev \
+            libasound2-dev \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxext-dev \
+            libxcomposite-dev \
+            libxrender-dev \
+            libfreetype6-dev
+
+      - name: Configure
+        run: |
+          cmake -S . -B build-productions \
+            -G Ninja \
+            -DCPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DGLIESE_BUILD_TESTS=ON \
+            -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
+
+      - name: Build plugin targets
+        run: cmake --build build-productions --target GLIESE_710_All --parallel
+
+      - name: Build tests
+        run: cmake --build build-productions --target GLIESE_Tests --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build-productions --output-on-failure
+
+  macos:
+    name: macOS Build and Test
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CPM
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.cpm-cache
+          key: ${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+
+      - name: Configure
+        run: |
+          cmake -S . -B build-productions \
+            -G Xcode \
+            -DCPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache \
+            -DGLIESE_BUILD_TESTS=ON \
+            -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
+
+      - name: Build plugin targets
+        run: cmake --build build-productions --config Release --target GLIESE_710_All --parallel
+
+      - name: Build tests
+        run: cmake --build build-productions --config Release --target GLIESE_Tests --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build-productions -C Release --output-on-failure
+
+  windows:
+    name: Windows Build and Test
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CPM
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.cpm-cache
+          key: ${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+
+      - name: Configure
+        run: |
+          cmake -S . -B build-productions \
+            -G "Visual Studio 17 2022" \
+            -A x64 \
+            -DCPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache \
+            -DGLIESE_BUILD_TESTS=ON \
+            -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
+
+      - name: Build plugin targets
+        run: cmake --build build-productions --config Release --target GLIESE_710_All --parallel
+
+      - name: Build tests
+        run: cmake --build build-productions --config Release --target GLIESE_Tests --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build-productions -C Release --output-on-failure

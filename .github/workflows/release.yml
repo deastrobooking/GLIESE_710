@@ -1,0 +1,207 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+permissions:
+  contents: write
+
+jobs:
+  build_linux:
+    name: Build Linux Artifacts
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CPM
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.cpm-cache
+          key: release-${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ninja-build \
+            lv2-dev \
+            libasound2-dev \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxext-dev \
+            libxcomposite-dev \
+            libxrender-dev \
+            libfreetype6-dev
+
+      - name: Configure
+        run: |
+          cmake -S . -B build-productions \
+            -G Ninja \
+            -DCPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DGLIESE_BUILD_TESTS=ON \
+            -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
+
+      - name: Build plugin targets
+        run: cmake --build build-productions --target GLIESE_710_All --parallel
+
+      - name: Build tests
+        run: cmake --build build-productions --target GLIESE_Tests --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build-productions --output-on-failure
+
+      - name: Upload Linux bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundles-linux
+          if-no-files-found: error
+          path: |
+            build-productions/GLIESE_710_artefacts/Release/VST3/GLIESE 710.vst3
+            build-productions/GLIESE_710_artefacts/Release/CLAP/GLIESE 710.clap
+            build-productions/GLIESE_710_artefacts/Release/LV2/GLIESE 710.lv2
+
+  build_macos:
+    name: Build macOS Artifacts
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CPM
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.cpm-cache
+          key: release-${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+
+      - name: Configure
+        run: |
+          cmake -S . -B build-productions \
+            -G Xcode \
+            -DCPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache \
+            -DGLIESE_BUILD_TESTS=ON \
+            -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
+
+      - name: Build plugin targets
+        run: cmake --build build-productions --config Release --target GLIESE_710_All --parallel
+
+      - name: Build tests
+        run: cmake --build build-productions --config Release --target GLIESE_Tests --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build-productions -C Release --output-on-failure
+
+      - name: Upload macOS bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundles-macos
+          if-no-files-found: error
+          path: |
+            build-productions/GLIESE_710_artefacts/Release/VST3/GLIESE 710.vst3
+            build-productions/GLIESE_710_artefacts/Release/AU/GLIESE 710.component
+            build-productions/GLIESE_710_artefacts/Release/CLAP/GLIESE 710.clap
+
+  build_windows:
+    name: Build Windows Artifacts
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CPM
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.cpm-cache
+          key: release-${{ runner.os }}-cpm-${{ hashFiles('CMakeLists.txt', 'cmake/CPM.cmake') }}
+
+      - name: Configure
+        run: |
+          cmake -S . -B build-productions \
+            -G "Visual Studio 17 2022" \
+            -A x64 \
+            -DCPM_SOURCE_CACHE=${{ github.workspace }}/.cpm-cache \
+            -DGLIESE_BUILD_TESTS=ON \
+            -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
+
+      - name: Build plugin targets
+        run: cmake --build build-productions --config Release --target GLIESE_710_All --parallel
+
+      - name: Build tests
+        run: cmake --build build-productions --config Release --target GLIESE_Tests --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build-productions -C Release --output-on-failure
+
+      - name: Upload Windows bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundles-windows
+          if-no-files-found: error
+          path: |
+            build-productions/GLIESE_710_artefacts/Release/VST3/GLIESE 710.vst3
+            build-productions/GLIESE_710_artefacts/Release/CLAP/GLIESE 710.clap
+
+  package_and_release:
+    name: Package and Publish Release
+    runs-on: ubuntu-24.04
+    needs:
+      - build_linux
+      - build_macos
+      - build_windows
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download platform bundles
+        uses: actions/download-artifact@v4
+        with:
+          path: incoming
+
+      - name: Package release assets
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          base_dir="dist/${TAG}"
+          mkdir -p "${base_dir}/macos" "${base_dir}/windows" "${base_dir}/linux"
+
+          cp -R incoming/bundles-macos/* "${base_dir}/macos/"
+          cp -R incoming/bundles-windows/* "${base_dir}/windows/"
+          cp -R incoming/bundles-linux/* "${base_dir}/linux/"
+
+          for platform in macos windows linux; do
+            printf '%s\n' \
+              'GLIESE 710 Installation' \
+              '' \
+              '1. Extract this archive.' \
+              "2. Copy plugin bundles to your platform's standard plugin locations." \
+              '3. Rescan plugins in your DAW.' \
+              > "${base_dir}/${platform}/README-install.txt"
+          done
+
+          if [[ -f LICENSE ]]; then
+            cp LICENSE "${base_dir}/macos/LICENSE.txt"
+            cp LICENSE "${base_dir}/windows/LICENSE.txt"
+            cp LICENSE "${base_dir}/linux/LICENSE.txt"
+          fi
+
+          pushd dist > /dev/null
+          zip -r "gliese-710-${TAG}-macos-universal.zip" "${TAG}/macos"
+          zip -r "gliese-710-${TAG}-windows-x64.zip" "${TAG}/windows"
+          zip -r "gliese-710-${TAG}-linux-x64.zip" "${TAG}/linux"
+          sha256sum "gliese-710-${TAG}-"*.zip > "gliese-710-${TAG}-sha256.txt"
+          popd > /dev/null
+
+      - name: Publish GitHub Release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/gliese-710-${{ github.ref_name }}-macos-universal.zip
+            dist/gliese-710-${{ github.ref_name }}-windows-x64.zip
+            dist/gliese-710-${{ github.ref_name }}-linux-x64.zip
+            dist/gliese-710-${{ github.ref_name }}-sha256.txt

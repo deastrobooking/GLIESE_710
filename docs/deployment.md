@@ -120,7 +120,44 @@ Each zip should contain:
 - `README-install.txt`
 - `LICENSE.txt` (as applicable)
 
-## 6) Generate Checksums
+## 6) Stage and Package Artefacts
+
+Create a release staging tree before zipping so the package contents are
+predictable:
+
+```text
+dist/
+  vX.Y.Z/
+    macos/
+      GLIESE 710.vst3
+      GLIESE 710.component
+      GLIESE 710.clap
+      README-install.txt
+    windows/
+      GLIESE 710.vst3
+      GLIESE 710.clap
+      README-install.txt
+    linux/
+      GLIESE 710.vst3
+      GLIESE 710.clap
+      GLIESE 710.lv2
+      README-install.txt
+```
+
+Example packaging commands (run per platform after signing/notarization):
+
+```bash
+# macOS
+cd dist/vX.Y.Z && zip -r ../gliese-710-vX.Y.Z-macos-universal.zip macos
+
+# Linux
+cd dist/vX.Y.Z && zip -r ../gliese-710-vX.Y.Z-linux-x64.zip linux
+```
+
+On Windows runners, use PowerShell `Compress-Archive` for the `windows/`
+staging folder.
+
+## 7) Generate Checksums
 
 From the release output directory:
 
@@ -130,7 +167,7 @@ sha256sum gliese-710-vX.Y.Z-*.zip > gliese-710-vX.Y.Z-sha256.txt
 
 Publish this checksum file with the release.
 
-## 7) Create GitHub Release
+## 8) Create GitHub Release
 
 ```bash
 git push origin main
@@ -145,7 +182,7 @@ gh release create vX.Y.Z \
   --notes-file RELEASE_NOTES_vX.Y.Z.md
 ```
 
-## 8) Website Publishing
+## 9) Website Publishing
 
 Use a versioned folder per release in website storage, for example:
 
@@ -174,7 +211,7 @@ Recommended website metadata payload:
 }
 ```
 
-## 9) Post-Release Validation
+## 10) Post-Release Validation
 
 After publishing, verify:
 1. Download links work from a clean browser session.
@@ -182,18 +219,25 @@ After publishing, verify:
 3. Plugin scan succeeds on at least one host per OS.
 4. The loaded plugin reports the expected version.
 
-## 10) Rollback Procedure
+## 11) Rollback Procedure
 
 If a release is bad:
 1. Remove/disable website links for `vX.Y.Z`.
 2. Mark GitHub release as pre-release or append warning.
 3. Publish a hotfix `vX.Y.(Z+1)`.
 
-## Suggested Next Step: CI Release Automation
+## GitHub Actions Automation
 
-To reduce manual risk, add a GitHub Actions workflow that:
-1. Builds matrix artefacts (macOS/Windows/Linux).
-2. Runs tests per platform.
-3. Packages zip files with stable naming.
-4. Generates checksums.
-5. Attaches assets to GitHub Releases on tag pushes.
+This repository includes automated release workflows:
+- `.github/workflows/ci.yml`
+- `.github/workflows/release.yml`
+
+`ci.yml` runs on push/PR and performs a full matrix build + test on macOS,
+Windows, and Linux.
+
+`release.yml` runs on tag pushes matching `v*` and:
+1. Builds and tests on macOS/Windows/Linux.
+2. Collects platform bundles as artifacts.
+3. Packages deterministic zip names.
+4. Generates a SHA256 checksum file.
+5. Publishes assets to the GitHub Release for that tag.

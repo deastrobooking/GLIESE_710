@@ -184,7 +184,13 @@ Individual test filtering:
 ./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[arp]"
 ```
 
-## GitHub Actions CI (Planned — Phase 6)
+## GitHub Actions CI
+
+Implemented workflows:
+- `.github/workflows/ci.yml` (push/PR matrix build + test)
+- `.github/workflows/release.yml` (tag-triggered build/test/package/release)
+
+Reference matrix configuration:
 
 Three matrix jobs:
 
