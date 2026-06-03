@@ -128,6 +128,7 @@ private:
             std::atomic<float>* drive     = nullptr;
             std::atomic<float>* on        = nullptr;
             std::atomic<float>* level     = nullptr;
+            std::atomic<float>* tune      = nullptr;
             std::atomic<float>* octave    = nullptr;
             EnvPtrs env;
         };
@@ -135,6 +136,7 @@ private:
             std::atomic<float>* on        = nullptr;
             std::atomic<float>* algorithm = nullptr;
             std::atomic<float>* level     = nullptr;
+            std::atomic<float>* tune      = nullptr;
             std::atomic<float>* octave    = nullptr;
             std::atomic<float>* detune    = nullptr;
             std::atomic<float>* phase     = nullptr;
@@ -157,6 +159,7 @@ private:
             std::atomic<float>* random = nullptr;
             std::atomic<float>* retrig = nullptr;
             std::atomic<float>* level  = nullptr;
+            std::atomic<float>* tune   = nullptr;
             std::atomic<float>* octave = nullptr;
             EnvPtrs env;
         };
@@ -171,12 +174,14 @@ private:
             std::atomic<float>* ring    = nullptr;
             std::atomic<float>* fold    = nullptr;
             std::atomic<float>* level   = nullptr;
+            std::atomic<float>* tune    = nullptr;
             std::atomic<float>* octave  = nullptr;
             EnvPtrs env;
         };
         struct KSPtrs {
             std::atomic<float>* on         = nullptr;
             std::atomic<float>* level      = nullptr;
+            std::atomic<float>* tune       = nullptr;
             std::atomic<float>* octave     = nullptr;
             std::atomic<float>* decay      = nullptr;
             std::atomic<float>* brightness = nullptr;
@@ -211,6 +216,7 @@ private:
             std::atomic<float>* bodySpread  = nullptr;
             std::atomic<float>* bodyModes   = nullptr;
             std::atomic<float>* level       = nullptr;
+            std::atomic<float>* tune        = nullptr;
             std::atomic<float>* octave      = nullptr;
             EnvPtrs env;
         };
@@ -236,6 +242,7 @@ private:
             std::atomic<float>* morph       = nullptr;
             std::atomic<float>* gain        = nullptr;
             std::atomic<float>* level       = nullptr;
+            std::atomic<float>* tune        = nullptr;
             std::atomic<float>* octave      = nullptr;
             EnvPtrs env;
         };

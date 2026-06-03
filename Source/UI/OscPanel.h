@@ -107,9 +107,9 @@ private:
     bool terrainDropActive = false;
     std::shared_ptr<juce::FileChooser> terrainChooser;
 
-    // Level + octave shared by all osc types
-    juce::Slider levelSlider, octaveSlider;
-    std::unique_ptr<Att> levelAtt, octaveAtt;
+    // Level + pitch controls shared by all osc types
+    juce::Slider levelSlider, tuneSlider, octaveSlider;
+    std::unique_ptr<Att> levelAtt, tuneAtt, octaveAtt;
 
     // ADSR sliders
     juce::Slider adsrA, adsrD, adsrS, adsrR;
@@ -131,7 +131,7 @@ private:
     int numExtraSliders = 0;
     int numModeBoxes = 0;
 
-    juce::Label levelLabel, octaveLabel;
+    juce::Label levelLabel, tuneLabel, octaveLabel;
     juce::Label retrigLabel;
     juce::Label modeALabel, modeBLabel, modeCLabel;
     std::array<juce::Label, 20> extraLabels;

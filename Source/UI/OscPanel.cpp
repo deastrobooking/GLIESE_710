@@ -285,6 +285,9 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     setupSlider(levelSlider,  "Oscillator Level");
     levelAtt = std::make_unique<Att>(apvts, pfx + "level", levelSlider);
 
+    setupSlider(tuneSlider, "Fine Tune (cents)");
+    tuneAtt = std::make_unique<Att>(apvts, pfx + "tune", tuneSlider);
+
     setupSlider(octaveSlider, "Octave Transpose");
     octaveAtt = std::make_unique<Att>(apvts, pfx + "octave", octaveSlider);
 
@@ -505,6 +508,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
     };
 
     makeLabel(levelLabel,  "LEVEL");
+    makeLabel(tuneLabel,   "TUNE");
     makeLabel(octaveLabel, "OCTAVE");
 
     if (oscId.startsWith("3d"))
@@ -788,14 +792,16 @@ void OscPanel::resized()
     }
     area.removeFromTop(2);
 
-    // ── Level + Octave ────────────────────────────────────────────────────────
+    // ── Level + pitch controls ────────────────────────────────────────────────
     auto lr0 = area.removeFromTop(13);
     const int topKnobH = juce::jlimit(48, 60, getHeight() / 7);
     auto sr0 = area.removeFromTop(topKnobH);
-    levelLabel  .setBounds(portion(lr0, 0, 2));
-    octaveLabel .setBounds(portion(lr0, 1, 2));
-    levelSlider .setBounds(portion(sr0, 0, 2));
-    octaveSlider.setBounds(portion(sr0, 1, 2));
+    levelLabel  .setBounds(portion(lr0, 0, 3));
+    tuneLabel   .setBounds(portion(lr0, 1, 3));
+    octaveLabel .setBounds(portion(lr0, 2, 3));
+    levelSlider .setBounds(portion(sr0, 0, 3));
+    tuneSlider  .setBounds(portion(sr0, 1, 3));
+    octaveSlider.setBounds(portion(sr0, 2, 3));
     area.removeFromTop(4);
 
     // ── VA Waveform display ───────────────────────────────────────────────────

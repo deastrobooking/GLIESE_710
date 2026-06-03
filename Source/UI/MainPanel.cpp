@@ -45,6 +45,7 @@ public:
         algorithmAtt = std::make_unique<CAtt>(apvts, fmPrefix + "algorithm", algorithmBox);
 
         setupRotary(levelSlider,  fmPrefix + "level",      "FM Level", levelAtt, 52);
+        setupRotary(tuneSlider,   fmPrefix + "tune",       "FM Fine Tune (cents)", tuneAtt, 52);
         setupRotary(octaveSlider, fmPrefix + "octave",     "FM Octave", octaveAtt, 52);
         setupRotary(detuneSlider, fmPrefix + "detune",     "Master Detune", detuneAtt, 60);
         setupRotary(phaseSlider,  fmPrefix + "phase",      "Phase Position", phaseAtt, 60);
@@ -95,6 +96,7 @@ public:
 
         addLabel(algoLabel, "ALGORITHM");
         addLabel(levelLabel, "LEVEL");
+        addLabel(tuneLabel, "TUNE");
         addLabel(octaveLabel, "OCTAVE");
         const juce::String envNames[] = { "A", "D", "S", "R" };
         for (int i = 0; i < 4; ++i)
@@ -149,16 +151,18 @@ public:
 
         auto topLabelRow = topBand.removeFromTop(13);
         algoLabel .setBounds(topLabelRow.removeFromLeft(172));
-        levelLabel.setBounds(topLabelRow.removeFromLeft(70));
-        octaveLabel.setBounds(topLabelRow.removeFromLeft(70));
+        levelLabel.setBounds(topLabelRow.removeFromLeft(64));
+        tuneLabel .setBounds(topLabelRow.removeFromLeft(64));
+        octaveLabel.setBounds(topLabelRow.removeFromLeft(64));
         topLabelRow.removeFromLeft(8);
         for (auto& label : envLabels)
             label.setBounds(topLabelRow.removeFromLeft(44));
 
         auto topRow = topBand;
         algorithmBox.setBounds(topRow.removeFromLeft(172).withHeight(24));
-        levelSlider .setBounds(topRow.removeFromLeft(70));
-        octaveSlider.setBounds(topRow.removeFromLeft(70));
+        levelSlider .setBounds(topRow.removeFromLeft(64));
+        tuneSlider  .setBounds(topRow.removeFromLeft(64));
+        octaveSlider.setBounds(topRow.removeFromLeft(64));
         topRow.removeFromLeft(8);
         envA.setBounds(topRow.removeFromLeft(44).reduced(2, 0));
         envD.setBounds(topRow.removeFromLeft(44).reduced(2, 0));
@@ -236,9 +240,9 @@ private:
     juce::Label title;
     juce::ToggleButton enableButton;
     juce::ComboBox algorithmBox;
-    juce::Slider levelSlider, octaveSlider, detuneSlider, phaseSlider, morphSlider, indexSlider;
+    juce::Slider levelSlider, tuneSlider, octaveSlider, detuneSlider, phaseSlider, morphSlider, indexSlider;
     juce::Slider envA, envD, envS, envR;
-    juce::Label algoLabel, levelLabel, octaveLabel;
+    juce::Label algoLabel, levelLabel, tuneLabel, octaveLabel;
     std::array<juce::Label, 4> envLabels, perfLabels;
 
     std::array<juce::Slider, 10> opCoarse, opFine, opDetune, opLevel, opFeedback;
@@ -250,7 +254,7 @@ private:
 
     std::unique_ptr<BAtt> enableAtt;
     std::unique_ptr<CAtt> algorithmAtt;
-    std::unique_ptr<Att> levelAtt, octaveAtt, detuneAtt, phaseAtt, morphAtt, indexAtt;
+    std::unique_ptr<Att> levelAtt, tuneAtt, octaveAtt, detuneAtt, phaseAtt, morphAtt, indexAtt;
     std::unique_ptr<Att> envAAtt, envDAtt, envSAtt, envRAtt;
     std::array<std::unique_ptr<Att>, 10> coarseAtts, fineAtts, detuneAtts, levelAtts, feedbackAtts;
     std::array<std::unique_ptr<CAtt>, 10> waveAtts;

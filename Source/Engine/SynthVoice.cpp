@@ -17,6 +17,12 @@ bool pB(std::atomic<float>* p, bool def = true) noexcept
     return p ? p->load(std::memory_order_relaxed) > 0.5f : def;
 }
 
+float oscPitchMultiplier(std::atomic<float>* octave, std::atomic<float>* tune) noexcept
+{
+    const float semitones = (float)pI(octave) * 12.f + pF(tune) / 100.f;
+    return std::pow(2.f, semitones / 12.f);
+}
+
 enum EngineFilterIndex
 {
     EngineFilter3D = 0,
@@ -341,6 +347,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.drive     = get(pfx + "drive");
         c.on        = get(pfx + "on");
         c.level     = get(pfx + "level");
+        c.tune      = get(pfx + "tune");
         c.octave    = get(pfx + "octave");
         cacheEnv(c.env, pfx);
     }
@@ -350,6 +357,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         f.on         = get(pfx + "on");
         f.algorithm  = get(pfx + "algorithm");
         f.level      = get(pfx + "level");
+        f.tune       = get(pfx + "tune");
         f.octave     = get(pfx + "octave");
         f.detune     = get(pfx + "detune");
         f.phase      = get(pfx + "phase");
@@ -378,6 +386,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.random = get(pfx + "random");
         c.retrig = get(pfx + "retrig");
         c.level  = get(pfx + "level");
+        c.tune   = get(pfx + "tune");
         c.octave = get(pfx + "octave");
         cacheEnv(c.env, pfx);
     }
@@ -396,6 +405,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         v.ring   = get(pfx + "ring");
         v.fold   = get(pfx + "fold");
         v.level  = get(pfx + "level");
+        v.tune   = get(pfx + "tune");
         v.octave = get(pfx + "octave");
         cacheEnv(v.env, pfx);
     }
@@ -406,6 +416,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         auto& c = pc.ks[(size_t)i];
         c.on         = get(pfx + "on");
         c.level      = get(pfx + "level");
+        c.tune       = get(pfx + "tune");
         c.octave     = get(pfx + "octave");
         c.decay      = get(pfx + "decay");
         c.brightness = get(pfx + "brightness");
@@ -444,6 +455,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.bodySpread  = get(pfx + "body_spread");
         c.bodyModes   = get(pfx + "body_modes");
         c.level       = get(pfx + "level");
+        c.tune        = get(pfx + "tune");
         c.octave      = get(pfx + "octave");
         cacheEnv(c.env, pfx);
     }
@@ -473,6 +485,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.morph     = get(pfx + "morph");
         c.gain      = get(pfx + "gain");
         c.level     = get(pfx + "level");
+        c.tune      = get(pfx + "tune");
         c.octave    = get(pfx + "octave");
         cacheEnv(c.env, pfx);
     }
@@ -689,7 +702,7 @@ void SynthVoice::syncParams()
             float pos = (float)activeRank / (float)(current3dCount - 1) * 2.f - 1.f;
             offset = pos * detuneSemis * 0.5f;
         }
-        const float baseHz3d = pitchedHz * std::pow(2.f, pF(c3d.octave));
+        const float baseHz3d = pitchedHz * oscPitchMultiplier(c3d.octave, c3d.tune);
         osc3dArray[(size_t)i].setFrequency(baseHz3d * std::pow(2.f, offset / 12.f));
         envBank.get(osc3dEnvIndex(i)).setParams(envParams(c3d.env, 0.01f, 0.2f, 1.f, 0.3f));
     }
@@ -700,7 +713,7 @@ void SynthVoice::syncParams()
                            EnvIndex envIndex, float extraDetuneCents)
     {
         const float detuneCents = pF(cfm.detune) + extraDetuneCents;
-        const float fmHz = pitchedHz * std::pow(2.f, pF(cfm.octave))
+        const float fmHz = pitchedHz * oscPitchMultiplier(cfm.octave, cfm.tune)
                                   * std::pow(2.f, detuneCents / 1200.f);
         engine.setAlgorithm(pI(cfm.algorithm));
         engine.setAlgorithmMorph(pF(cfm.algoMorph));
@@ -753,7 +766,7 @@ void SynthVoice::syncParams()
     for (int i = 0; i < kNumWTOscs; ++i)
     {
         const auto& cwt = pc.wt[(size_t)i];
-        float wtHz = pitchedHz * std::pow(2.f, pF(cwt.octave));
+        float wtHz = pitchedHz * oscPitchMultiplier(cwt.octave, cwt.tune);
         WavetableOsc::Params wtParams;
         wtParams.warpMode = static_cast<WavetableOsc::WarpMode>(pI(cwt.warpMode));
         wtParams.warpAmount = juce::jlimit(0.f, 1.f,
@@ -778,7 +791,7 @@ void SynthVoice::syncParams()
     for (int i = 0; i < kNumVAOscs; ++i)
     {
         const auto& cv = pc.va[(size_t)i];
-        float vaHz = pitchedHz * std::pow(2.f, pF(cv.octave));
+        float vaHz = pitchedHz * oscPitchMultiplier(cv.octave, cv.tune);
         vaOscs[(size_t)i].setFrequency(vaHz);
 
         VAOscillator::Params vap;
@@ -807,7 +820,7 @@ void SynthVoice::syncParams()
         ksp.stiffness  = juce::jlimit(0.f, 0.95f, pF(cks.stiffness, 0.f));
         ksp.morph      = juce::jlimit(0.f, 1.f, pF(cks.morph, 0.f));
         ksp.position   = juce::jlimit(0.05f, 0.95f, pF(cks.position, 0.3f));
-        float ksHz = pitchedHz * std::pow(2.f, pF(cks.octave, 0.f));
+        float ksHz = pitchedHz * oscPitchMultiplier(cks.octave, cks.tune);
         ksOscs[(size_t)i].setFrequency(ksHz);
         envBank.get(ksEnvIndex(i)).setParams(envParams(cks.env, 0.001f, 0.1f, 0.f, 1.0f));
     }
@@ -851,7 +864,7 @@ void SynthVoice::syncParams()
         gp.bodySpread  = pF(cg.bodySpread, 0.5f);
         gp.bodyModes   = pI(cg.bodyModes, 16);
 
-        const float grainHz = pitchedHz * std::pow(2.f, pF(cg.octave));
+        const float grainHz = pitchedHz * oscPitchMultiplier(cg.octave, cg.tune);
         granularOscs[(size_t)i].setFrequency(grainHz);
         granularOscs[(size_t)i].setParams(gp);
         envBank.get(granEnvIndex(i)).setParams(envParams(cg.env, 0.01f, 0.2f, 1.f, 0.4f));
@@ -882,7 +895,7 @@ void SynthVoice::syncParams()
         tp.morph       = pF(ct.morph) + modDests.dests[(int) ModDest::Terrain_Morph];
         tp.gain        = pF(ct.gain, 1.f);
 
-        const float terrainHz = pitchedHz * std::pow(2.f, pF(ct.octave));
+        const float terrainHz = pitchedHz * oscPitchMultiplier(ct.octave, ct.tune);
         terrainOscs[(size_t)i].setFrequency(terrainHz);
         terrainOscs[(size_t)i].setParams(tp);
         envBank.get(terrainEnvIndex(i)).setParams(envParams(ct.env, 0.01f, 0.2f, 1.f, 0.3f));

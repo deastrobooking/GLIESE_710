@@ -93,7 +93,8 @@ static APVTS::ParameterLayout buildLayout()
         addFloat(prefix + "drive",      label + " Drive",      0.25f, 4.0f,  1.0f, 0.5f);
         addBool (prefix + "on",       label + " Enable",   true);
         addFloat(prefix + "level",    label + " Level",    0.0f, 1.0f, 0.8f);
-        addFloat(prefix + "octave",   label + " Octave",   -3.0f, 3.0f, 0.0f);
+        addFloat(prefix + "tune",     label + " Tune",     -100.0f, 100.0f, 0.0f);
+        addInt  (prefix + "octave",   label + " Octave",   -3, 3, 0);
         addEnvTime(prefix + "adsr_a", label + " Env Attack",  0.01f);
         addEnvTime(prefix + "adsr_d", label + " Env Decay",   0.2f);
         addFloat(prefix + "adsr_s",   label + " Env Sustain", 0.0f, 1.0f, 1.0f);
@@ -116,7 +117,8 @@ static APVTS::ParameterLayout buildLayout()
         addBool (fmPrefix + "on",        label + " Enable",    true);
         addInt  (fmPrefix + "algorithm", label + " Algorithm", 0, 39, 0);
         addFloat(fmPrefix + "level",     label + " Level",     0.0f, 1.0f, defaultLevel);
-        addFloat(fmPrefix + "octave",    label + " Octave",   -3.0f, 3.0f, 0.0f);
+        addFloat(fmPrefix + "tune",      label + " Tune",     -100.0f, 100.0f, 0.0f);
+        addInt  (fmPrefix + "octave",    label + " Octave",   -3, 3, 0);
         addFloat(fmPrefix + "detune",    label + " Master Detune", -100.0f, 100.0f, 0.0f);
         addFloat(fmPrefix + "phase",     label + " Phase Position", 0.0f, 1.0f, 0.0f);
         addFloat(fmPrefix + "algo_morph", label + " Algorithm Morph", 0.0f, 1.0f, 0.0f);
@@ -175,7 +177,8 @@ static APVTS::ParameterLayout buildLayout()
         addFloat(prefix + "random",     label + " Random Phase",   0.0f, 1.0f, 0.0f);
         addBool (prefix + "retrig",     label + " Retrigger",      true);
         addFloat(prefix + "level",      label + " Level",          0.0f, 1.0f, 0.0f);
-        addFloat(prefix + "octave",     label + " Octave",        -3.0f, 3.0f, 0.0f);
+        addFloat(prefix + "tune",       label + " Tune",        -100.0f, 100.0f, 0.0f);
+        addInt  (prefix + "octave",     label + " Octave",        -3, 3, 0);
         addEnvTime(prefix + "adsr_a", label + " Env Attack",  0.01f);
         addEnvTime(prefix + "adsr_d", label + " Env Decay",   0.2f);
         addFloat(prefix + "adsr_s", label + " Env Sustain", 0.0f, 1.0f, 1.0f);
@@ -217,7 +220,8 @@ static APVTS::ParameterLayout buildLayout()
         addFloat(prefix + "body_spread", label + " Body Spread",  0.0f, 1.0f, 0.5f);
         addInt  (prefix + "body_modes",  label + " Body Modes",   4, 32, 16);
         addFloat(prefix + "level",    label + " Level", 0.0f, 1.0f, 0.0f);
-        addFloat(prefix + "octave",   label + " Octave",-3.0f, 3.0f, 0.0f);
+        addFloat(prefix + "tune",     label + " Tune", -100.0f, 100.0f, 0.0f);
+        addInt  (prefix + "octave",   label + " Octave",-3, 3, 0);
         addEnvTime(prefix + "adsr_a", label + " Env Attack",  0.01f);
         addEnvTime(prefix + "adsr_d", label + " Env Decay",   0.2f);
         addFloat(prefix + "adsr_s",   label + " Env Sustain", 0.0f, 1.0f, 1.0f);
@@ -253,7 +257,8 @@ static APVTS::ParameterLayout buildLayout()
         addFloat (prefix + "morph",     label + " Morph",    0.0f, 1.0f, 0.0f);
         addFloat (prefix + "gain",      label + " Gain",     0.0f, 2.0f, 1.0f);
         addFloat (prefix + "level",     label + " Level",    0.0f, 1.0f, 0.0f);
-        addFloat (prefix + "octave",    label + " Octave",  -3.0f, 3.0f, 0.0f);
+        addFloat (prefix + "tune",      label + " Tune",  -100.0f, 100.0f, 0.0f);
+        addInt   (prefix + "octave",    label + " Octave",  -3, 3, 0);
         addEnvTime(prefix + "adsr_a",   label + " Env Attack",  0.01f);
         addEnvTime(prefix + "adsr_d",   label + " Env Decay",   0.2f);
         addFloat  (prefix + "adsr_s",   label + " Env Sustain", 0.0f, 1.0f, 1.0f);
@@ -278,7 +283,8 @@ static APVTS::ParameterLayout buildLayout()
         addFloat(prefix + "ring",    label + " Ring Mod",    0.0f, 1.0f, 0.0f);
         addFloat(prefix + "fold",    label + " Wave Fold",   0.0f, 1.0f, 0.0f);
         addFloat(prefix + "level",   label + " Level",       0.0f, 1.0f, 0.0f);
-        addFloat(prefix + "octave",  label + " Octave",     -3.0f, 3.0f, 0.0f);
+        addFloat(prefix + "tune",    label + " Tune",      -100.0f, 100.0f, 0.0f);
+        addInt  (prefix + "octave",  label + " Octave",     -3, 3, 0);
         addEnvTime(prefix + "adsr_a", label + " Env Attack",  0.01f);
         addEnvTime(prefix + "adsr_d", label + " Env Decay",   0.2f);
         addFloat(prefix + "adsr_s",  label + " Env Sustain", 0.0f, 1.0f, 1.0f);
@@ -300,7 +306,8 @@ static APVTS::ParameterLayout buildLayout()
         juce::String label = "KS" + juce::String(index + 1);
         addBool  (prefix + "on",         label + " Enable",    true);
         addFloat (prefix + "level",      label + " Level",     0.0f, 1.0f, 0.0f);
-        addFloat (prefix + "octave",     label + " Octave",   -3.0f, 3.0f, 0.0f);
+        addFloat (prefix + "tune",       label + " Tune",    -100.0f, 100.0f, 0.0f);
+        addInt   (prefix + "octave",     label + " Octave",   -3, 3, 0);
         addFloat (prefix + "decay",      label + " Decay",     0.0f, 1.0f, 0.6f);
         addFloat (prefix + "brightness", label + " Brightness",0.0f, 1.0f, 0.5f);
         addFloat (prefix + "stiffness",  label + " Stiffness", 0.0f, 0.95f,0.0f);

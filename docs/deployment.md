@@ -140,6 +140,14 @@ VST3, and CLAP into user plugin folders with ad-hoc signing:
 scripts/build-plugin.zsh --install-user
 ```
 
+Use the local install helper for normal development iteration and DAW testing.
+It rebuilds and ad-hoc signs the installed plugins, which is enough for the
+current machine but not for customer distribution.
+
+Any customer-facing software change requires a fresh release package. Rebuild,
+Developer ID sign, zip, and notarize the new version because changed binaries
+have new hashes and cannot reuse the previous signature/notarization result.
+
 For VS Code-driven macOS deployment prep, use `Tasks: Run Task` and choose
 `Xcode: Configure Project` to generate `build-xcode/GLIESE_710.xcodeproj`,
 `Xcode: Open Project` to inspect or build in Xcode, or one of the `Deploy:*`
@@ -269,6 +277,11 @@ scripts/package-macos-release.zsh \
   --identity "Developer ID Application: Randolph Chabot (Q7AUR8GX6S)" \
   --skip-notarize
 ```
+
+Use a new version, for example `v0.1.1`, for each public update. Even small
+code or resource changes require running this release packaging command again
+and submitting the new zip to Apple, because notarization is tied to the exact
+signed binary contents.
 
 The script creates the distributable files:
 
