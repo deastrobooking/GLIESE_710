@@ -44,7 +44,8 @@ plugin releases:
    and create a draft GitHub Release.
 8. Review generated assets and checksum output from the draft release.
 9. Code-sign release binaries with platform-appropriate ECOSYSTEM identities.
-10. Notarize and staple macOS bundles.
+10. Notarize macOS zip/pkg/dmg assets. Staple only `.pkg` or `.dmg`
+    containers, not plain `.zip` archives.
 11. Replace draft assets with signed/notarized assets when signing is not yet
     automated in the workflow.
 12. Publish the GitHub Release.
@@ -230,21 +231,105 @@ Expected bundle locations:
 
 ### macOS
 
-The helper script currently performs ad-hoc signing for local testing only. For
-website releases, sign with the ECOSYSTEM `Developer ID Application` identity
-and notarize.
+The local install helper performs ad-hoc signing for DAW testing only. Website
+release packages must be signed with a `Developer ID Application` identity and
+accepted by Apple's notary service before publication.
 
-Example signing commands:
+The proven GLIESE 710 macOS release identity is:
 
-```bash
-codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.vst3"
-codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.component"
-codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.clap"
-codesign --force --deep --options runtime --sign "Developer ID Application: ECOSYSTEM (<TEAM_ID>)" "GLIESE 710.app"
+```text
+Developer ID Application: Randolph Chabot (Q7AUR8GX6S)
 ```
 
-Then notarize a zip/pkg containing the signed bundles/app and staple tickets
-before publishing.
+Before the first notarized release on a machine:
+
+1. Install the Developer ID Application certificate in Keychain Access. The
+   matching private key must also be present; verify with:
+
+```bash
+security find-identity -v -p codesigning
+```
+
+2. Store notarization credentials in the login keychain:
+
+```bash
+xcrun notarytool store-credentials "gliese-notary" \
+  --apple-id "you@example.com" \
+  --team-id "Q7AUR8GX6S"
+```
+
+Use an Apple ID app-specific password when prompted, not the normal Apple ID
+password.
+
+Then build, test, sign, stage, zip, and checksum the macOS release:
+
+```bash
+scripts/package-macos-release.zsh \
+  --version vX.Y.Z \
+  --identity "Developer ID Application: Randolph Chabot (Q7AUR8GX6S)" \
+  --skip-notarize
+```
+
+The script creates the distributable files:
+
+```text
+dist/gliese-710-vX.Y.Z-macos-universal.zip
+dist/gliese-710-vX.Y.Z-sha256.txt
+```
+
+The zip contains:
+
+```text
+macos/GLIESE 710.vst3
+macos/GLIESE 710.component
+macos/GLIESE 710.clap
+macos/GLIESE 710.app
+macos/README-install.txt
+```
+
+Signed bundles are staged under the system temp directory by default so
+Desktop/iCloud/FileProvider metadata does not leak into AU bundles during
+signing. Override that location only when needed with `--stage-root PATH`.
+
+After the zip is created, submit that exact file for notarization:
+
+```bash
+xcrun notarytool submit dist/gliese-710-vX.Y.Z-macos-universal.zip \
+  --keychain-profile gliese-notary \
+  --wait
+```
+
+If the result is `Accepted`, the zip is ready for macOS website distribution.
+Plain `.zip` files cannot be stapled; Gatekeeper verifies the notarization
+ticket online. If the release is later wrapped in a `.dmg` or `.pkg`, notarize
+and staple that container before publication.
+
+Troubleshooting:
+
+- `No Keychain password item found for profile: gliese-notary`: run
+  `xcrun notarytool store-credentials "gliese-notary" ...` on this machine.
+- `0 valid identities found`: install the Developer ID Application certificate
+  and make sure the matching private key is in Keychain.
+- `resource fork, Finder information, or similar detritus not allowed`: avoid
+  signing staged bundles from Desktop/iCloud/FileProvider folders. The helper
+  script stages under system temp by default and uses `ditto --norsrc`,
+  `dot_clean`, and `xattr -cr` to avoid this.
+
+The signing identity can also be supplied through an environment variable:
+
+```bash
+export GLIESE_CODESIGN_IDENTITY="Developer ID Application: Randolph Chabot (Q7AUR8GX6S)"
+scripts/package-macos-release.zsh --version vX.Y.Z --skip-notarize
+```
+
+Manual fallback signing commands, if the helper script is unavailable:
+
+```bash
+codesign --force --timestamp --options runtime --sign "Developer ID Application: Randolph Chabot (Q7AUR8GX6S)" "GLIESE 710.vst3"
+codesign --force --timestamp --options runtime --sign "Developer ID Application: Randolph Chabot (Q7AUR8GX6S)" "GLIESE 710.component"
+codesign --force --timestamp --options runtime --sign "Developer ID Application: Randolph Chabot (Q7AUR8GX6S)" "GLIESE 710.clap"
+codesign --force --timestamp --options runtime --sign "Developer ID Application: Randolph Chabot (Q7AUR8GX6S)" "GLIESE 710.app"
+```
 
 ### Windows
 
@@ -296,8 +381,10 @@ dist/
 ```
 
 The release workflow creates this staging tree automatically from uploaded
-platform artifacts. Use these commands only for a local/manual fallback after
-signing/notarization:
+platform artifacts. For local macOS releases, prefer
+`scripts/package-macos-release.zsh` because it stages signed bundles in system
+temp before writing the final zip/checksum to `dist/`. Use these commands only
+for a local/manual fallback after signing/notarization:
 
 ```bash
 # macOS
@@ -608,7 +695,8 @@ The current automated workflow intentionally does not embed signing credentials.
 It creates draft releases by default for review and signing follow-up.
 For production distribution, configure secure signing/notarization separately:
 
-1. macOS: ECOSYSTEM Developer ID signing + notarization + stapling.
+1. macOS: ECOSYSTEM Developer ID signing + notarization. Staple only if
+   publishing a `.pkg` or `.dmg`.
 2. Windows: ECOSYSTEM Authenticode signing.
 3. Linux: checksum verification publication.
 

@@ -10,3 +10,14 @@ cmake-*-macos-*/
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
 *.xcuserstate
+
+# Apple signing/notarization material belongs in Keychain, not the repo.
+*.cer
+*.cert
+*.crt
+*.p12
+*.pfx
+*.pem
+*.key
+*.mobileprovision
+*.provisionprofile
