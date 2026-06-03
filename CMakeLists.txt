@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(GLIESE_COPY_PLUGIN_AFTER_BUILD "Copy built plugin artefacts into system plugin folders" OFF)
 option(GLIESE_BUILD_CLAP "Build the CLAP plugin wrapper through clap-juce-extensions" ON)
+option(GLIESE_NATIVE_OPTIMIZATIONS "Use host-native CPU tuning for local benchmarks; keep OFF for distributable universal builds" OFF)
 
 include(cmake/CPM.cmake)
 
@@ -135,6 +136,18 @@ PUBLIC
     juce::juce_recommended_config_flags
     juce::juce_recommended_warning_flags
 )
+
+target_compile_options(GLIESE_710 PRIVATE
+    $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:AppleClang,Clang,GNU>>:-O3;-fomit-frame-pointer>
+    $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2>
+)
+
+if(GLIESE_NATIVE_OPTIMIZATIONS)
+    target_compile_options(GLIESE_710 PRIVATE
+        $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:AppleClang,Clang,GNU>>:-march=native>
+        $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/arch:AVX2>
+    )
+endif()
 
 if(GLIESE_BUILD_CLAP)
     clap_juce_extensions_plugin(TARGET GLIESE_710

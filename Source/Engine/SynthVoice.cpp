@@ -1,4 +1,5 @@
 #include "SynthVoice.h"
+#include "DSPUtils.h"
 
 namespace
 {
@@ -20,7 +21,7 @@ bool pB(std::atomic<float>* p, bool def = true) noexcept
 float oscPitchMultiplier(std::atomic<float>* octave, std::atomic<float>* tune) noexcept
 {
     const float semitones = (float)pI(octave) * 12.f + pF(tune) / 100.f;
-    return std::pow(2.f, semitones / 12.f);
+    return gliese::dsp::pitchRatioFromSemitones(semitones);
 }
 
 enum EngineFilterIndex
@@ -175,7 +176,7 @@ ModDest engineFilterMixDest(int index)
 
 float SynthVoice::midiToHz(int note, float pitchBendSemitones)
 {
-    return 440.f * std::pow(2.f, ((float)(note - 69) + pitchBendSemitones) / 12.f);
+    return 440.f * gliese::dsp::pitchRatioFromSemitones((float)(note - 69) + pitchBendSemitones);
 }
 
 void SynthVoice::prepare(double sr)
@@ -665,7 +666,7 @@ void SynthVoice::syncParams()
     float octaveSemi = (float)pI(pc.master.octave) * 12.f;
     float pbEffect   = midiCCs[(int)ModSource::PitchBend] * pF(pc.master.pbRange, 2.f);
     float totalPitch = pitchMod * 12.f + tuneSemi + octaveSemi + pbEffect;
-    float pitchedHz  = portaHz * std::pow(2.f, totalPitch / 12.f);
+    float pitchedHz  = portaHz * gliese::dsp::pitchRatioFromSemitones(totalPitch);
 
     // 3D instances — symmetric detune per active 3D slot, independent controls
     float detuneSemis = pF(pc.slotCfg.osc3dDetune, 0.f);
@@ -703,7 +704,7 @@ void SynthVoice::syncParams()
             offset = pos * detuneSemis * 0.5f;
         }
         const float baseHz3d = pitchedHz * oscPitchMultiplier(c3d.octave, c3d.tune);
-        osc3dArray[(size_t)i].setFrequency(baseHz3d * std::pow(2.f, offset / 12.f));
+        osc3dArray[(size_t)i].setFrequency(baseHz3d * gliese::dsp::pitchRatioFromSemitones(offset));
         envBank.get(osc3dEnvIndex(i)).setParams(envParams(c3d.env, 0.01f, 0.2f, 1.f, 0.3f));
     }
 
@@ -714,7 +715,7 @@ void SynthVoice::syncParams()
     {
         const float detuneCents = pF(cfm.detune) + extraDetuneCents;
         const float fmHz = pitchedHz * oscPitchMultiplier(cfm.octave, cfm.tune)
-                                  * std::pow(2.f, detuneCents / 1200.f);
+                                  * gliese::dsp::pitchRatioFromCents(detuneCents);
         engine.setAlgorithm(pI(cfm.algorithm));
         engine.setAlgorithmMorph(pF(cfm.algoMorph));
         engine.setNoteFrequency(fmHz);
@@ -835,9 +836,11 @@ void SynthVoice::syncParams()
         gp.position    = juce::jlimit(0.f, 1.f,
             pF(cg.position, 0.5f) + modDests.dests[(int)ModDest::Gran_Position]);
         gp.sizeMs      = juce::jlimit(5.f, 1000.f,
-            pF(cg.size, 120.f) * std::pow(2.f, modDests.dests[(int)ModDest::Gran_Size] * 3.f));
+            pF(cg.size, 120.f)
+                * gliese::dsp::pitchRatioFromSemitones(modDests.dests[(int)ModDest::Gran_Size] * 36.f));
         gp.density     = juce::jlimit(0.1f, 1200.f,
-            pF(cg.density, 35.f) * std::pow(2.f, modDests.dests[(int)ModDest::Gran_Density] * 4.f));
+            pF(cg.density, 35.f)
+                * gliese::dsp::pitchRatioFromSemitones(modDests.dests[(int)ModDest::Gran_Density] * 48.f));
         gp.pitchSemis  = juce::jlimit(-48.f, 48.f,
             pF(cg.pitch) + modDests.dests[(int)ModDest::Gran_Pitch] * 24.f);
         gp.spray       = juce::jlimit(0.f, 1.f,
@@ -910,8 +913,8 @@ void SynthVoice::syncParams()
                                            pI(cef.type, (int) FilterMode::AltLadder));
         efp.mode      = static_cast<FilterMode>(modeIndex);
         efp.cutoff    = juce::jlimit(20.f, (float)(sampleRate * 0.49),
-            pF(cef.cutoff, 20000.f) * std::pow(2.f,
-                modDests.dests[(int) engineFilterCutoffDest(i)] * 4.f));
+            pF(cef.cutoff, 20000.f)
+                * gliese::dsp::pitchRatioFromSemitones(modDests.dests[(int) engineFilterCutoffDest(i)] * 48.f));
         efp.resonance = juce::jlimit(0.f, 1.f,
             pF(cef.resonance) + modDests.dests[(int) engineFilterResDest(i)]);
         efp.drive     = juce::jlimit(0.f, 1.f,
@@ -934,7 +937,8 @@ void SynthVoice::syncParams()
     SingleFilter::Params fpA;
     fpA.mode      = static_cast<FilterMode>(pI(cfa.type));
     fpA.cutoff    = juce::jlimit(20.f, (float)(sampleRate * 0.49),
-                                 pF(cfa.cutoff, 20000.f) * std::pow(2.f, modDests.dests[(int)ModDest::FilterA_Cutoff] * 4.f));
+                                 pF(cfa.cutoff, 20000.f)
+                                    * gliese::dsp::pitchRatioFromSemitones(modDests.dests[(int)ModDest::FilterA_Cutoff] * 48.f));
     fpA.resonance = juce::jlimit(0.f, 1.f, pF(cfa.resonance) + modDests.dests[(int)ModDest::FilterA_Resonance]);
     fpA.drive     = juce::jlimit(0.f, 1.f, pF(cfa.drive)     + modDests.dests[(int)ModDest::FilterA_Drive]);
     fpA.morph     = pF(cfa.morph, 0.5f);
@@ -953,7 +957,8 @@ void SynthVoice::syncParams()
     SingleFilter::Params fpB;
     fpB.mode      = static_cast<FilterMode>(pI(cfb.type));
     fpB.cutoff    = juce::jlimit(20.f, (float)(sampleRate * 0.49),
-                                 pF(cfb.cutoff, 20000.f) * std::pow(2.f, modDests.dests[(int)ModDest::FilterB_Cutoff] * 4.f));
+                                 pF(cfb.cutoff, 20000.f)
+                                    * gliese::dsp::pitchRatioFromSemitones(modDests.dests[(int)ModDest::FilterB_Cutoff] * 48.f));
     fpB.resonance = juce::jlimit(0.f, 1.f, pF(cfb.resonance) + modDests.dests[(int)ModDest::FilterB_Resonance]);
     fpB.drive     = juce::jlimit(0.f, 1.f, pF(cfb.drive)     + modDests.dests[(int)ModDest::FilterB_Drive]);
     fpB.morph     = pF(cfb.morph, 0.5f);

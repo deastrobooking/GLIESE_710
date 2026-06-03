@@ -1,4 +1,5 @@
 #include "DualFilter.h"
+#include "../DSPUtils.h"
 
 //==============================================================================
 // SingleFilter
@@ -108,7 +109,7 @@ float SingleFilter::computeCutoff(float baseCutoff, float envValue, float lfoVal
     float envOctaves = params.envAmount * 4.f * envValue;
     // LFO: add up to 2 octaves
     float lfoOctaves = params.lfoAmount * 2.f * lfoValue;
-    float modulated  = baseCutoff * std::pow(2.f, envOctaves + lfoOctaves);
+    float modulated  = baseCutoff * gliese::dsp::pitchRatioFromSemitones((envOctaves + lfoOctaves) * 12.f);
     return juce::jlimit(20.f, (float)(sr * 0.49), modulated);
 }
 

@@ -1,4 +1,5 @@
 #include "VAOscillator.h"
+#include "../DSPUtils.h"
 
 void VAOscillator::prepare(double sampleRate)
 {
@@ -55,7 +56,7 @@ void VAOscillator::rebuildVoiceState()
 
         float detuneSemitones = (n == 1) ? 0.f
             : ((float)i / (float)(n - 1) * 2.f - 1.f) * params.detune * 0.5f;
-        float voiceFreq = freq * std::pow(2.f, detuneSemitones / 12.f)
+        float voiceFreq = freq * gliese::dsp::pitchRatioFromSemitones(detuneSemitones)
                          * centsToRatio(modelCalibrationCents(i));
         phaseIncs[i] = (float)(voiceFreq / sr);
 
@@ -292,7 +293,7 @@ float VAOscillator::asymmetry(float x, float amount) noexcept
 
 float VAOscillator::centsToRatio(float cents) noexcept
 {
-    return std::pow(2.f, cents / 1200.f);
+    return gliese::dsp::pitchRatioFromCents(cents);
 }
 
 float VAOscillator::foldSignal(float x) noexcept

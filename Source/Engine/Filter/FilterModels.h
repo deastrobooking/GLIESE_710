@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "FilterTypes.h"
+#include "../DSPUtils.h"
 #include <array>
 
 struct FilterProcessParams
@@ -512,7 +513,7 @@ private:
                              * (0.20f + res * 0.80f);
         const float targetCutoff = juce::jlimit(25.f,
                                                 juce::jmin(15500.f, (float) coreSr * 0.36f),
-                                                acidRangeHz * std::pow(2.f, accent * 0.95f)
+                                                acidRangeHz * gliese::dsp::pitchRatioFromSemitones(accent * 11.4f)
                                                     + selfFmHz);
         cutoffMemory += (targetCutoff - cutoffMemory) * (0.10f + accent * 0.42f + params.drive * 0.08f);
 
@@ -749,7 +750,7 @@ private:
         if (c.aggressiveCutoff)
             targetCutoff = 20.f * std::pow(c.maxCutoff / 20.f, std::pow(cutoffNorm, 1.18f));
 
-        targetCutoff *= std::pow(2.f, (morph - 0.5f) * c.stageSpread * 5.f);
+        targetCutoff *= gliese::dsp::pitchRatioFromSemitones((morph - 0.5f) * c.stageSpread * 60.f);
         targetCutoff = juce::jlimit(20.f,
                                     juce::jmin(c.maxCutoff, (float) coreSr * 0.42f),
                                     targetCutoff);
@@ -990,7 +991,7 @@ private:
         const float targetCutoff = juce::jlimit(20.f,
                                                 juce::jmin(c.maxCutoff, (float) coreSr * 0.42f),
                                                 params.cutoff * c.cutoffScale
-                                                    * std::pow(2.f, morphBipolar * c.morphCutoffOctaves));
+                                                    * gliese::dsp::pitchRatioFromSemitones(morphBipolar * c.morphCutoffOctaves * 12.f));
         cutoffMemory += (targetCutoff - cutoffMemory) * c.slew;
 
         const float cutoff = juce::jlimit(20.f,
@@ -1410,8 +1411,8 @@ private:
         const float sat = juce::jlimit(0.f, 1.f, params.saturation);
         const float baseCutoff = juce::jlimit(20.f, (float) coreSr * 0.40f, params.cutoff);
 
-        const float prismSpread = std::pow(2.f, 0.35f + morph * 1.75f);
-        const float cutA = baseCutoff * std::pow(2.f, -0.18f - morph * 0.34f);
+        const float prismSpread = gliese::dsp::pitchRatioFromSemitones((0.35f + morph * 1.75f) * 12.f);
+        const float cutA = baseCutoff * gliese::dsp::pitchRatioFromSemitones((-0.18f - morph * 0.34f) * 12.f);
         const float cutB = juce::jmin(baseCutoff * prismSpread, (float) coreSr * 0.42f);
         const float dampingA = 1.52f - res * 1.43f;
         const float dampingB = 1.28f - res * 1.16f + (0.5f - morph) * 0.22f;

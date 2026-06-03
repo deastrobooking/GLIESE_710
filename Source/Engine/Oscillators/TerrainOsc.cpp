@@ -47,12 +47,6 @@ void TerrainOsc::setParams(const Params& newParams)
     params.morph = juce::jlimit(0.f, 1.f, params.morph);
     params.gain = juce::jlimit(0.f, 2.f, params.gain);
 
-    if (std::abs(params.smoothing - lastSmoothing) > 0.001f)
-    {
-        rebuildBlurredTerrain();
-        lastSmoothing = params.smoothing;
-    }
-
     updateDerived();
 }
 
@@ -70,7 +64,10 @@ float TerrainOsc::processSample()
     const int mipIndex = chooseMipLevel();
     const auto* mip = !mipLevels.empty() ? &mipLevels[(size_t)mipIndex] : nullptr;
     const auto& rawTerrain = mip != nullptr ? mip->terrain : terrain;
-    const auto& blurTerrain = mip != nullptr ? mip->blurredTerrain : blurredTerrain;
+    const int blurIndex = smoothingBlurIndex();
+    const auto& blurTerrain = mip != nullptr
+        ? mip->blurredTerrain[(size_t) blurIndex]
+        : blurredTerrain[(size_t) blurIndex];
     const int sampleWidth = mip != nullptr ? mip->width : width;
     const int sampleHeight = mip != nullptr ? mip->height : height;
 
@@ -228,10 +225,6 @@ void TerrainOsc::rebuildBlurredTerrain()
     if (terrain.empty() || width <= 0 || height <= 0)
         return;
 
-    blurredTerrain = terrain;
-    std::vector<float> tmp = blurredTerrain;
-    const int passes = juce::jlimit(1, 5, 1 + juce::roundToInt(params.smoothing * 4.f));
-
     auto at = [&](const std::vector<float>& data, int x, int y)
     {
         x = (x % width + width) % width;
@@ -239,19 +232,23 @@ void TerrainOsc::rebuildBlurredTerrain()
         return data[(size_t)y * (size_t)width + (size_t)x];
     };
 
-    for (int pass = 0; pass < passes; ++pass)
+    std::vector<float> current = terrain;
+    std::vector<float> tmp = current;
+
+    for (int pass = 0; pass < kBlurPassCount; ++pass)
     {
         for (int y = 0; y < height; ++y)
         {
             for (int x = 0; x < width; ++x)
             {
-                float sum = at(blurredTerrain, x, y) * 4.f;
-                sum += at(blurredTerrain, x - 1, y) + at(blurredTerrain, x + 1, y);
-                sum += at(blurredTerrain, x, y - 1) + at(blurredTerrain, x, y + 1);
+                float sum = at(current, x, y) * 4.f;
+                sum += at(current, x - 1, y) + at(current, x + 1, y);
+                sum += at(current, x, y - 1) + at(current, x, y + 1);
                 tmp[(size_t)y * (size_t)width + (size_t)x] = sum * 0.125f;
             }
         }
-        blurredTerrain.swap(tmp);
+        current.swap(tmp);
+        blurredTerrain[(size_t) pass] = current;
     }
 
     lastSmoothing = params.smoothing;
@@ -268,7 +265,10 @@ void TerrainOsc::rebuildMipLevels()
     base.width = width;
     base.height = height;
     base.terrain = terrain;
-    base.blurredTerrain = blurredTerrain.size() == terrain.size() ? blurredTerrain : terrain;
+    for (int i = 0; i < kBlurPassCount; ++i)
+        base.blurredTerrain[(size_t) i] = blurredTerrain[(size_t) i].size() == terrain.size()
+            ? blurredTerrain[(size_t) i]
+            : terrain;
     mipLevels.push_back(std::move(base));
 
     auto downsample = [](const std::vector<float>& src, int srcW, int srcH, int dstW, int dstH)
@@ -308,9 +308,17 @@ void TerrainOsc::rebuildMipLevels()
         next.width = nextW;
         next.height = nextH;
         next.terrain = downsample(prev.terrain, prev.width, prev.height, nextW, nextH);
-        next.blurredTerrain = downsample(prev.blurredTerrain, prev.width, prev.height, nextW, nextH);
+        for (int i = 0; i < kBlurPassCount; ++i)
+            next.blurredTerrain[(size_t) i] = downsample(prev.blurredTerrain[(size_t) i],
+                                                         prev.width, prev.height, nextW, nextH);
         mipLevels.push_back(std::move(next));
     }
+}
+
+int TerrainOsc::smoothingBlurIndex() const noexcept
+{
+    return juce::jlimit(0, kBlurPassCount - 1,
+                        juce::roundToInt(params.smoothing * (float)(kBlurPassCount - 1)));
 }
 
 int TerrainOsc::chooseMipLevel() const noexcept

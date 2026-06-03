@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include <vector>
+#include <array>
 
 class Arpeggiator
 {
@@ -40,10 +40,28 @@ private:
     double bpm = 120.0;
     Params params;
 
-    std::vector<int> heldNotes;     // currently pressed keys, in played order
-    std::vector<int> latchedNotes;  // latched
-    std::vector<int> sortedNotes;   // rebuilt only when active notes change
-    std::vector<int> randomLatchOrder;
+    struct NoteList
+    {
+        static constexpr int capacity = 128;
+        std::array<int, capacity> data {};
+        int count = 0;
+
+        bool empty() const noexcept { return count == 0; }
+        int size() const noexcept { return count; }
+        int operator[] (int index) const noexcept { return data[(size_t) index]; }
+        const int* begin() const noexcept { return data.data(); }
+        const int* end() const noexcept { return data.data() + count; }
+        void clear() noexcept { count = 0; }
+        bool contains(int note) const noexcept;
+        bool push(int note) noexcept;
+        bool remove(int note) noexcept;
+        void copyFrom(const NoteList& other) noexcept;
+    };
+
+    NoteList heldNotes;     // currently pressed keys, in played order
+    NoteList latchedNotes;  // latched
+    NoteList sortedNotes;   // rebuilt only when active notes change
+    NoteList randomLatchOrder;
     int arpIndex   = 0;             // position in the pattern
     int octaveStep = 0;
     int direction  = 1;            // +1 or -1 for UpDown/DownUp
@@ -59,8 +77,8 @@ private:
     bool sortedNotesDirty = true;
     bool randomLatchDirty = true;
 
-    std::vector<int>& activeNotes();
-    const std::vector<int>& orderedNotesForPattern();
+    NoteList& activeNotes();
+    const NoteList& orderedNotesForPattern();
     void markNotesChanged();
     int  nextNote();
     void sendNoteOff(juce::MidiBuffer& buf, int sample);

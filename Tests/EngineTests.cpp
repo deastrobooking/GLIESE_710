@@ -14,6 +14,7 @@
 #include "../Source/Engine/LFO/LFOEngine.h"
 #include "../Source/Engine/Arpeggiator/Arpeggiator.h"
 #include <array>
+#include <chrono>
 #include <vector>
 
 using Catch::Approx;
@@ -1991,4 +1992,106 @@ TEST_CASE("Arpeggiator random latch repeats its shuffled order", "[arp]")
     REQUIRE(notes[0] == notes[3]);
     REQUIRE(notes[1] == notes[4]);
     REQUIRE(notes[2] == notes[5]);
+}
+
+TEST_CASE("Realtime DSP hot paths survive a dense stress render", "[performance]")
+{
+    constexpr int samples = 8192;
+    constexpr double sr = 48000.0;
+
+    VAOscillator va;
+    va.prepare(sr);
+    va.setFrequency(110.f);
+    VAOscillator::Params vap;
+    vap.model = VAOscillator::Model::Sequential;
+    vap.shapeMorph = 2.7f;
+    vap.unisonCount = 8;
+    vap.detune = 0.42f;
+    vap.spread = 0.85f;
+    vap.ringMod = 0.35f;
+    vap.wavefold = 0.25f;
+    va.setParams(vap);
+
+    WavetableOsc wt;
+    wt.prepare(sr);
+    wt.setFrequency(165.f);
+    WavetableOsc::Params wtp;
+    wtp.warpMode = WavetableOsc::WarpMode::PDFormant;
+    wtp.warpAmount = 0.65f;
+    wtp.unison = 8;
+    wtp.detune = 0.6f;
+    wtp.spread = 0.9f;
+    wtp.positionSpread = 0.4f;
+    wt.setParams(wtp);
+    wt.setTablePosition(4, 0.45f);
+
+    GranularOsc gran;
+    gran.prepare(sr);
+    gran.setFrequency(82.41f);
+    GranularOsc::Params gp;
+    gp.triggerMode = GranularOsc::TriggerMode::FreeCloud;
+    gp.window = GranularOsc::Window::Tukey;
+    gp.sizeMs = 95.f;
+    gp.density = 260.f;
+    gp.jitter = 0.28f;
+    gp.panSpread = 0.9f;
+    gp.bodyType = GranularOsc::BodyType::Glass;
+    gp.bodyMix = 0.35f;
+    gp.bodyModes = 24;
+    gran.setParams(gp);
+
+    TerrainOsc terrain;
+    terrain.prepare(sr);
+    terrain.setFrequency(73.42f);
+    TerrainOsc::Params tp;
+    tp.pathMode = TerrainOsc::PathMode::OrbitNoise;
+    tp.quality = TerrainOsc::Quality::Soft;
+    tp.smoothing = 0.72f;
+    tp.morph = 0.55f;
+    tp.drive = 2.1f;
+    terrain.setParams(tp);
+
+    DualFilter filter;
+    filter.prepare(sr);
+    SingleFilter::Params fp;
+    fp.mode = FilterMode::AltLadder;
+    fp.cutoff = 2600.f;
+    fp.resonance = 0.45f;
+    fp.drive = 0.35f;
+    fp.morph = 0.6f;
+    fp.mix = 1.f;
+    filter.setFilterA(fp);
+    fp.mode = FilterMode::GliesePrism;
+    fp.cutoff = 5100.f;
+    fp.resonance = 0.38f;
+    filter.setFilterB(fp);
+    filter.setRouting(FilterRouting::Series);
+
+    double energy = 0.0;
+    float maxAbs = 0.f;
+    const auto start = std::chrono::steady_clock::now();
+
+    for (int i = 0; i < samples; ++i)
+    {
+        auto [vaL, vaR] = va.processSample();
+        auto [wtL, wtR] = wt.processSample();
+        auto [gL, gR] = gran.processSample();
+        const float t = terrain.processSample();
+        auto [outL, outR] = filter.processSample(vaL + wtL + gL + t,
+                                                 vaR + wtR + gR + t,
+                                                 0.15f, -0.1f);
+
+        REQUIRE(std::isfinite(outL));
+        REQUIRE(std::isfinite(outR));
+        maxAbs = std::max(maxAbs, std::max(std::abs(outL), std::abs(outR)));
+        energy += (double) outL * (double) outL + (double) outR * (double) outR;
+    }
+
+    const auto elapsed = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - start).count();
+    INFO("Stress render elapsed ms: " << elapsed);
+
+    REQUIRE(maxAbs <= 8.f);
+    REQUIRE(energy > 1.0e-5);
+    REQUIRE(elapsed < 2000.0);
 }

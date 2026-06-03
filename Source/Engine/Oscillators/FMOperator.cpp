@@ -1,4 +1,5 @@
 #include "FMOperator.h"
+#include "../DSPUtils.h"
 
 void FMOperator::prepare(double sampleRate)
 {
@@ -66,8 +67,8 @@ float FMOperator::getFrequency() const
 
     float ratio = (params.coarse == 0) ? 0.5f : (float)params.coarse;
     ratio = juce::jlimit(0.01f, 64.f, ratio + params.ratioOffset);
-    ratio *= std::pow(2.f, params.fine / 12.f);
-    ratio *= std::pow(2.f, params.detune / 1200.f);
+    ratio *= gliese::dsp::pitchRatioFromSemitones(params.fine);
+    ratio *= gliese::dsp::pitchRatioFromCents(params.detune);
     return noteFreq * ratio;
 }
 

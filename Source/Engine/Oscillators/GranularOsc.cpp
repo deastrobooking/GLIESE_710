@@ -1,4 +1,5 @@
 #include "GranularOsc.h"
+#include "../DSPUtils.h"
 
 namespace
 {
@@ -306,7 +307,8 @@ void GranularOsc::triggerGrain()
 
     const float pitchRand = randomBipolar() * params.jitter * 4.f;
     const float pitch = params.pitchSemis + pitchRand;
-    const float grainHz = juce::jlimit(1.f, 20000.f, frequency * std::pow(2.f, pitch / 12.f));
+    const float grainHz = juce::jlimit(1.f, 20000.f,
+                                       frequency * gliese::dsp::pitchRatioFromSemitones(pitch));
     float step = grainHz * (float) kFrameSamples / (float) sr;
 
     bool reverse = random01() < params.reverseProb;
@@ -401,7 +403,7 @@ void GranularOsc::configureBody()
     const int count = juce::jlimit(4, kMaxBodyModes, params.bodyModes);
     const float sizeShift = (0.5f - params.bodySize) * 2.2f;
     const float rootHz = juce::jlimit(20.f, (float) sr * 0.22f,
-        frequency * std::pow(2.f, (params.bodyRootSemis + sizeShift * 12.f) / 12.f));
+        frequency * gliese::dsp::pitchRatioFromSemitones(params.bodyRootSemis + sizeShift * 12.f));
     const float qBase = 3.f + params.bodyDecay * 80.f;
     const float damping = 0.2f + params.bodyDamping * 2.8f;
     const float spread = params.bodySpread;
@@ -494,7 +496,7 @@ float GranularOsc::modalRatio(BodyType type, int index) const
 
     const int i = index % 8;
     const int octave = index / 8;
-    const float oct = std::pow(2.f, (float) octave);
+    const float oct = gliese::dsp::pitchRatioFromSemitones((float) octave * 12.f);
 
     switch (type)
     {

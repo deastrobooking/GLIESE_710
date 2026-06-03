@@ -5,10 +5,6 @@
 void Arpeggiator::prepare(double sampleRate)
 {
     sr = sampleRate;
-    heldNotes.reserve(128);
-    latchedNotes.reserve(128);
-    sortedNotes.reserve(128);
-    randomLatchOrder.reserve(128);
     reset();
 }
 
@@ -45,7 +41,49 @@ int Arpeggiator::randInt(int max)
     return (int)(rngState >> 16) % max;
 }
 
-std::vector<int>& Arpeggiator::activeNotes()
+bool Arpeggiator::NoteList::contains(int note) const noexcept
+{
+    for (int i = 0; i < count; ++i)
+        if (data[(size_t) i] == note)
+            return true;
+
+    return false;
+}
+
+bool Arpeggiator::NoteList::push(int note) noexcept
+{
+    if (contains(note) || count >= capacity)
+        return false;
+
+    data[(size_t) count++] = note;
+    return true;
+}
+
+bool Arpeggiator::NoteList::remove(int note) noexcept
+{
+    for (int i = 0; i < count; ++i)
+    {
+        if (data[(size_t) i] != note)
+            continue;
+
+        for (int j = i + 1; j < count; ++j)
+            data[(size_t) (j - 1)] = data[(size_t) j];
+
+        --count;
+        return true;
+    }
+
+    return false;
+}
+
+void Arpeggiator::NoteList::copyFrom(const NoteList& other) noexcept
+{
+    count = other.count;
+    for (int i = 0; i < count; ++i)
+        data[(size_t) i] = other.data[(size_t) i];
+}
+
+Arpeggiator::NoteList& Arpeggiator::activeNotes()
 {
     return params.latch ? latchedNotes : heldNotes;
 }
@@ -57,7 +95,7 @@ void Arpeggiator::markNotesChanged()
     arpIndex = 0;
 }
 
-const std::vector<int>& Arpeggiator::orderedNotesForPattern()
+const Arpeggiator::NoteList& Arpeggiator::orderedNotesForPattern()
 {
     auto& notes = activeNotes();
 
@@ -66,8 +104,8 @@ const std::vector<int>& Arpeggiator::orderedNotesForPattern()
     {
         if (sortedNotesDirty)
         {
-            sortedNotes = notes;
-            std::sort(sortedNotes.begin(), sortedNotes.end());
+            sortedNotes.copyFrom(notes);
+            std::sort(sortedNotes.data.begin(), sortedNotes.data.begin() + sortedNotes.count);
             sortedNotesDirty = false;
         }
         return sortedNotes;
@@ -77,9 +115,9 @@ const std::vector<int>& Arpeggiator::orderedNotesForPattern()
     {
         if (randomLatchDirty)
         {
-            randomLatchOrder = notes;
+            randomLatchOrder.copyFrom(notes);
             for (int i = (int)randomLatchOrder.size() - 1; i > 0; --i)
-                std::swap(randomLatchOrder[(size_t)i], randomLatchOrder[(size_t)randInt(i + 1)]);
+                std::swap(randomLatchOrder.data[(size_t)i], randomLatchOrder.data[(size_t)randInt(i + 1)]);
             randomLatchDirty = false;
         }
         return randomLatchOrder;
@@ -93,34 +131,20 @@ void Arpeggiator::handleMidi(const juce::MidiMessage& msg)
     if (msg.isNoteOn())
     {
         int note = msg.getNoteNumber();
-        if (std::find(heldNotes.begin(), heldNotes.end(), note) == heldNotes.end())
-        {
-            heldNotes.push_back(note);
-            if (!params.latch)
-                markNotesChanged();
-        }
+        if (heldNotes.push(note) && !params.latch)
+            markNotesChanged();
 
         if (params.latch)
         {
-            // Toggle latch: add if not present, remove if already latched
-            auto it = std::find(latchedNotes.begin(), latchedNotes.end(), note);
-            if (it == latchedNotes.end())
-            {
-                latchedNotes.push_back(note);
-            }
-            else
-            {
-                latchedNotes.erase(it);
-            }
+            if (!latchedNotes.remove(note))
+                latchedNotes.push(note);
             markNotesChanged();
         }
     }
     else if (msg.isNoteOff())
     {
         int note = msg.getNoteNumber();
-        auto oldSize = heldNotes.size();
-        heldNotes.erase(std::remove(heldNotes.begin(), heldNotes.end(), note), heldNotes.end());
-        if (!params.latch && heldNotes.size() != oldSize)
+        if (heldNotes.remove(note) && !params.latch)
             markNotesChanged();
     }
 }
@@ -205,7 +229,7 @@ int Arpeggiator::nextNote()
     }
 
     if (noteIdx < 0 || noteIdx >= (int)notes.size()) return -1;
-    return notes[(size_t)noteIdx] + oct * 12;
+    return notes[noteIdx] + oct * 12;
 }
 
 void Arpeggiator::sendNoteOff(juce::MidiBuffer& buf, int sample)

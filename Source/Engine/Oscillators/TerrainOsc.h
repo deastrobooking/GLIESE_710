@@ -1,5 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
+#include <array>
 #include <vector>
 
 class TerrainOsc
@@ -63,6 +64,7 @@ public:
 private:
     static constexpr int kDefaultSize = 128;
     static constexpr int kMaxImportedSize = 512;
+    static constexpr int kBlurPassCount = 5;
 
     double sr = 48000.0;
     float freq = 440.f;
@@ -77,14 +79,14 @@ private:
         int width = 0;
         int height = 0;
         std::vector<float> terrain;
-        std::vector<float> blurredTerrain;
+        std::array<std::vector<float>, kBlurPassCount> blurredTerrain;
     };
 
     int width = 0;
     int height = 0;
     Params params;
     std::vector<float> terrain;
-    std::vector<float> blurredTerrain;
+    std::array<std::vector<float>, kBlurPassCount> blurredTerrain;
     std::vector<MipLevel> mipLevels;
 
     void updateDerived();
@@ -92,6 +94,7 @@ private:
     void rebuildBlurredTerrain();
     void rebuildMipLevels();
     int chooseMipLevel() const noexcept;
+    int smoothingBlurIndex() const noexcept;
     std::pair<float, float> computePath(float t);
 
     float sampleTerrain(const std::vector<float>& data, int dataWidth, int dataHeight, float x, float y) const;
