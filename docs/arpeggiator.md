@@ -111,7 +111,7 @@ Use `LFO → Arp_Gate` for rhythmic accents, or `Macro → Arp_Gate` for a perfo
 
 ## Implementation Notes
 
-- The arpeggiator maintains two note lists: `heldNotes` (currently pressed keys in played order) and `latchedNotes` (toggled latch notes in played order). `activeNotes()` returns whichever is relevant given the latch state.
+- The arpeggiator maintains fixed-capacity note lists: `heldNotes` (currently pressed keys in played order), `latchedNotes` (toggled latch notes in played order), plus cached sorted/random-latch order buffers. This keeps MIDI handling allocation-free on the audio thread.
 - Timing is tracked in fractional samples (`stepPhase`) to avoid drift across blocks.
 - When host sync is off, the arpeggiator runs at 120 BPM. When sync is on and the host has not supplied a new BPM, it continues at the last known BPM.
 - `RandomLatch` fixes a shuffled order until the active note list changes, giving a consistent but non-sequential pattern.

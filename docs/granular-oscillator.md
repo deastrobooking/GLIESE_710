@@ -54,6 +54,7 @@ The table shows the first slot prefix. Additional granular slots use `osc_grain2
 | `osc_grain_body_spread` | 0-1 | Alternating modal stereo spread |
 | `osc_grain_body_modes` | 4-32 | Active modal filter count |
 | `osc_grain_level` | 0-1 | Engine mix level |
+| `osc_grain_tune` | -100 to +100 cents | Fine tune relative to the played note |
 | `osc_grain_octave` | -3 to +3 | Pitch offset inherited from the played note |
 
 Each granular slot has its own ADSR envelope through `ENV_GRAN1` through `ENV_GRAN8`.

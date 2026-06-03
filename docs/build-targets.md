@@ -24,8 +24,21 @@ cmake --build build-productions --target GLIESE_710_Standalone --config Release
 | Config | Use |
 |---|---|
 | `Debug` | Full symbols, no optimization. Enables JUCE assertions. |
-| `Release` | `-O2`, no assertions. Profile with Instruments / perf. |
+| `Release` | Explicit `-O3` on Clang/GCC-style compilers, `/O2` on MSVC, no assertions. Profile with Instruments / perf. |
 | `RelWithDebInfo` | `-O2` + symbols. Best for profiling with readable traces. |
+
+Release builds also pass `-fomit-frame-pointer` for AppleClang/Clang/GNU
+compilers. Do not enable native CPU tuning for public universal/distribution
+builds unless that compatibility tradeoff is intentional.
+
+For local benchmarks only, configure with:
+
+```bash
+cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_NATIVE_OPTIMIZATIONS=ON
+```
+
+That adds `-march=native` for AppleClang/Clang/GNU or `/arch:AVX2` for MSVC.
+Keep it `OFF` for portable release packages.
 
 ## Plugin Company Metadata
 
@@ -76,6 +89,14 @@ VST3-only local build:
 ```bash
 cmake --preset production
 cmake --build --preset vst3 --parallel
+```
+
+Focused performance and safety checks:
+
+```bash
+cmake --build --preset tests --parallel
+./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[performance]"
+./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[filter]"
 ```
 
 ## VS Code + Xcode Workflow

@@ -96,6 +96,18 @@ Recommended targeted regression suite before shipping filter changes:
 ./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[filter]"
 ```
 
+Recommended targeted regression suite before shipping oscillator, arpeggiator,
+or audio-thread performance changes:
+
+```bash
+./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[performance]"
+```
+
+Public releases must use portable Release builds. Leave
+`GLIESE_NATIVE_OPTIMIZATIONS=OFF` for distributable macOS universal packages,
+Windows packages, and Linux packages unless the release is explicitly scoped to
+one CPU family.
+
 For a quick local rebuild before testing in a DAW or handing bundles to another
 machine, use the same sequence and then verify the generated macOS bundles:
 

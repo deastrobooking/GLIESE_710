@@ -159,7 +159,7 @@ Elliptical orbit. Higher `chaos` increases eccentricity — the point swings clo
 
 ## Multi-Instance Slot Model
 
-The current UI exposes up to eight independent 3D oscillator slots. They do not share one ensemble parameter set. Each slot has its own field, path, envelope, level, octave, phase state, and parameter prefix:
+The current UI exposes up to eight independent 3D oscillator slots. They do not share one ensemble parameter set. Each slot has its own field, path, envelope, level, fine tune, octave, phase state, and parameter prefix:
 
 ```text
 osc_3d_   # slot 1
@@ -189,6 +189,7 @@ The table below shows the first slot prefix. Additional 3D slots use `osc_3d2_` 
 | `osc_3d_fold` | 0.0–1.0 | Blends warped coordinates toward mirrored/folded coordinates |
 | `osc_3d_drive` | 0.25–4.0 | Multiplies raw field output before `tanh` |
 | `osc_3d_level` | 0.0–1.0 | Output level (summed ensemble output) |
+| `osc_3d_tune` | −100–+100 cents | Fine tune relative to the played note |
 | `osc_3d_octave` | −3–+3 | Octave transpose |
 | `osc_3d_adsr_{a,d,s,r}` | — | Per-oscillator amplitude envelope |
 

@@ -28,7 +28,7 @@ height = morph(height, procedural terrain, morph)
 output = tanh((height + offset) * drive) * gain
 ```
 
-Smoothing blends toward a blurred copy of the heightmap. This softens sharp image edges and makes imported terrain less clicky.
+Smoothing blends toward precomputed blurred copies of the heightmap. This softens sharp image edges and makes imported terrain less clicky without rebuilding vectors on the audio thread when the smoothing parameter moves.
 
 Quality selects the heightmap anti-aliasing mode:
 
@@ -80,6 +80,7 @@ osc_terrain8_  # slot 8
 | `morph` | 0-1 | Blend toward procedural terrain color. |
 | `gain` | 0-2 | Output gain after shaping. |
 | `level` | 0-1 | Slot mixer level. |
+| `tune` | -100 to +100 cents | Fine tune relative to the played note. |
 | `octave` | -3 to +3 | Octave transpose. |
 | `adsr_a/d/s/r` | envelope | Per-slot amplitude envelope. |
 
@@ -108,7 +109,7 @@ TerrainOsc[8]
 ENV_TERRAIN1..ENV_TERRAIN8
 ```
 
-Each slot owns its own parameters, envelope, phase, orbit-noise state, smoothing state, and heightmap data. Duplicating the terrain oscillator across pages should not share the same control values.
+Each slot owns its own parameters, envelope, phase, orbit-noise state, precomputed smoothing/mipmap data, and heightmap data. Duplicating the terrain oscillator across pages should not share the same control values.
 In the oscillator slot layout, Terrain consumes two slot units when there is room. The following slot is skipped by both the UI layout and the voice slot scanner so hidden controls do not keep sounding behind the terrain panel.
 
 ## Current Limitations

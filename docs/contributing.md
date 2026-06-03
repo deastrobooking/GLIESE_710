@@ -39,10 +39,10 @@ Write:
 | Forbidden | Safe alternative |
 |---|---|
 | `new` / `delete` / `malloc` | Pre-allocate in `prepareToPlay` |
-| `std::vector::push_back` (may realloc) | Pre-sized arrays |
+| `std::vector::push_back` / `erase` / `assign` / `resize` | Fixed-capacity arrays or precomputed data swapped outside rendering |
 | `std::mutex::lock` | `std::atomic`, APVTS params |
 | File I/O | Read in message thread, copy via lock-free queue |
-| System calls (`sleep`, `printf`, ...) | — |
+| System calls (`sleep`, `printf`, logging, network calls) | — |
 | JUCE assertions that throw | Use `jassertfalse` (debug-only, no throw) |
 
 Check with Address Sanitizer:
@@ -69,7 +69,7 @@ Parameter IDs are immutable after shipping — changing an ID breaks saved prese
 2. Implement `prepare(double sampleRate)`, `reset()`, `setFrequency(float)`, `processSample()` returning `std::pair<float,float>`
 3. Add as a member of `SynthVoice`, usually as an eight-instance array if it is a slot oscillator
 4. Call `prepare` in `SynthVoice::prepare()` and `reset` in `SynthVoice::reset()`
-5. Add per-oscillator parameters (level, octave, ADSR at minimum) in `PluginProcessor.cpp`
+5. Add per-oscillator parameters (level, tune, octave, ADSR at minimum) in `PluginProcessor.cpp`
 6. Add envelope IDs to `EnvelopeBank` if the oscillator needs per-slot envelopes
 7. Cache/read/sync parameters in `SynthVoice`
 8. Mix its output into `sigL / sigR` in `SynthVoice::renderBlock()`
@@ -89,6 +89,7 @@ Add tests to [Tests/EngineTests.cpp](../Tests/EngineTests.cpp). Run with `ctest`
 ctest --preset tests
 ./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests
 ./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[arp]"
+./build-productions/GLIESE_Tests_artefacts/Release/GLIESE_Tests "[performance]"
 ```
 
 ## Debugging Tips

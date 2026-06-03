@@ -41,8 +41,8 @@ JUCE 8 is fetched automatically by CMake via CPM from the pinned release archive
 ### Build
 
 ```bash
-cmake --preset production
-cmake --build --preset vst3 --parallel
+scripts/cmake.zsh --preset production
+scripts/cmake.zsh --build --preset vst3 --parallel
 ```
 
 The canonical local build folder is `build-productions/`. Older local folders named
@@ -72,7 +72,7 @@ Use `--install-user` to install into `~/Library/Audio/Plug-Ins` instead. See [do
 
 ```bash
 cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_TESTS=ON -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
-cmake --build build-productions --target GLIESE_710_VST3 --config Release --parallel
+scripts/cmake.zsh --build build-productions --target GLIESE_710_VST3 --config Release --parallel
 ```
 
 Set `GLIESE_COPY_PLUGIN_AFTER_BUILD=ON` only when you explicitly want build-time plugin copying. JUCE handles AU/VST3/LV2 copy steps; the CLAP wrapper uses its own user-scope copy path. The build script is preferred for normal macOS installs because it copies AU, VST3, and CLAP consistently and verifies the installed bundles.
@@ -86,15 +86,15 @@ build-productions/GLIESE_710_artefacts/Release/VST3/GLIESE 710.vst3
 If a newly added editor page does not appear in the DAW, force a clean wrapper rebuild:
 
 ```bash
-cmake --build build-productions --target GLIESE_710_VST3 --config Release --clean-first
+scripts/cmake.zsh --build build-productions --target GLIESE_710_VST3 --config Release --clean-first
 ```
 
 ### Run Tests
 
 ```bash
-cmake --preset production
-cmake --build --preset tests --parallel
-ctest --preset tests
+scripts/cmake.zsh --preset production
+scripts/cmake.zsh --build --preset tests --parallel
+scripts/ctest.zsh --preset tests
 ```
 
 ---
@@ -113,7 +113,7 @@ ctest --preset tests
 | **Virtual Analog** | Eight independent VA layers with continuous shape morph, PolyBLEP saw/square/pulse, reverse saw, triangle, sine, 8-voice unison, stereo spread, ring modulation, and wave folding. |
 | **Karplus-Strong** | Eight independent plucked-string slots with circular delay loop, LPF brightness, all-pass stiffness, excitation morphing, pluck position, and per-slot ADSR. |
 
-Each oscillator slot has its own enable state, level, octave transpose, and ADSR envelope. Duplicate oscillator types now use separate parameter prefixes, so changing one wavetable, granular, terrain, VA, or KS slot does not change the others.
+Each oscillator slot has its own enable state, level, fine tune in cents, octave transpose, and ADSR envelope. Duplicate oscillator types now use separate parameter prefixes, so changing one wavetable, granular, terrain, VA, or KS slot does not change the others.
 
 ### Engine Pages
 
@@ -138,12 +138,13 @@ Each FM engine exposes large performance controls for:
 
 ```
 Master Detune
+Fine Tune
 Phase Position
 Algorithm Morph
 Mod Index Scale
 ```
 
-These sit above the operator grid in the FM pages. They are designed for real-time movement: detuned cinematic drift, phase-position changes between attacks, crossblended algorithms, and single-knob harmonic intensity swells.
+These sit above the operator grid in the FM pages. They are designed for real-time movement: fine-tuned layer offsets, detuned cinematic drift, phase-position changes between attacks, crossblended algorithms, and single-knob harmonic intensity swells.
 
 ### Wave-Terrain Oscillator
 

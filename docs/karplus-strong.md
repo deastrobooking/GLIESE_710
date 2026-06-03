@@ -128,6 +128,7 @@ The table shows the first slot prefix. Additional KS slots use `osc_ks2_` throug
 |---|---|---|---|
 | Enable | `osc_ks_on` | on/off | Hard-bypasses the oscillator |
 | Level | `osc_ks_level` | 0–1 | Output amplitude |
+| Tune | `osc_ks_tune` | −100–+100 cents | Fine tune relative to the played note |
 | Octave | `osc_ks_octave` | −3–+3 | Octave transpose |
 | Decay | `osc_ks_decay` | 0–1 | Loop feedback: 0 = 0.990 (fast), 1 = 0.9999 (slow) |
 | Brightness | `osc_ks_brightness` | 0–1 | LPF blend: 1 = bright/slow-decay, 0 = dark/fast-decay |

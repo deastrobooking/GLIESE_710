@@ -9,7 +9,7 @@ Page 1 FM mode -> FM A
 Page 2 FM mode -> FM B
 ```
 
-Each engine has its own APVTS parameters, algorithm, level, octave, ADSR, master detune, phase position, algorithm morph, modulation-index scale, and ten independent operators. Turning on the second FM page does not reuse the first engine's controls.
+Each engine has its own APVTS parameters, algorithm, level, fine tune, octave, ADSR, master detune, phase position, algorithm morph, modulation-index scale, and ten independent operators. Turning on the second FM page does not reuse the first engine's controls.
 
 ## Engine Prefixes
 
@@ -62,6 +62,7 @@ Each FM engine has four higher-level controls intended for real-time sound desig
 | Parameter | Range | Description |
 |---|---|---|
 | `osc_fm*_detune` | -100 to +100 cents | Master engine detune. Useful for FM A/B chorusing and slow beating. |
+| `osc_fm*_tune` | -100 to +100 cents | Fine tune before master detune. Use it for exact layer offsets without changing octave. |
 | `osc_fm*_phase` | 0-1 | Master phase position offset. Changes the attack relationship between operators. |
 | `osc_fm*_algo_morph` | 0-1 | Crossblends the selected algorithm toward the next algorithm. |
 | `osc_fm*_index` | 0-2 | Scales operator modulation contribution for pure-to-complex timbral swells. |
@@ -130,6 +131,7 @@ This keeps simple downward chains immediate while cross-FM and feedback paths re
 | `osc_fm_on`, `osc_fm2_on` | bool | Enable FM A / FM B. |
 | `osc_fm_algorithm`, `osc_fm2_algorithm` | 0-39 | Algorithm selection. |
 | `osc_fm_level`, `osc_fm2_level` | 0-1 | Engine output level. |
+| `osc_fm_tune`, `osc_fm2_tune` | -100 to +100 cents | Fine tune. |
 | `osc_fm_octave`, `osc_fm2_octave` | -3 to +3 | Octave transpose. |
 | `osc_fm_detune`, `osc_fm2_detune` | -100 to +100 cents | Master detune. |
 | `osc_fm_phase`, `osc_fm2_phase` | 0-1 | Phase position. |
