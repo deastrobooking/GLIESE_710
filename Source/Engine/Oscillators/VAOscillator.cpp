@@ -123,28 +123,6 @@ float VAOscillator::generateTriangle(float phase) const
     return 2.f * std::abs(2.f * phase - 1.f) - 1.f;
 }
 
-float VAOscillator::generateShape(int shapeIndex, float phase, float phaseInc) const
-{
-    switch ((Shape)juce::jlimit(0, (int)Shape::NumShapes - 1, shapeIndex))
-    {
-        case Shape::Sine:
-            return std::sin(phase * juce::MathConstants<float>::twoPi);
-        case Shape::Saw:
-            return generateSaw(phase, phaseInc);
-        case Shape::RevSaw:
-            return -generateSaw(phase, phaseInc);
-        case Shape::Square:
-            return generateSquare(phase, phaseInc);
-        case Shape::Triangle:
-            return generateTriangle(phase);
-        case Shape::Pulse:
-            return generateSquare(phase, phaseInc);
-        case Shape::NumShapes:
-        default:
-            return 0.f;
-    }
-}
-
 float VAOscillator::generateMorphedShape(float phase, float phaseInc) const
 {
     return generateShapeAt(params.shapeMorph, params.pulseWidth, phase, phaseInc);

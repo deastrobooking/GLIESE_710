@@ -90,6 +90,7 @@ void SynthEngine::processMasterEffects(juce::AudioBuffer<float>& buffer,
                                         int startSample, int numSamples)
 {
     if (numSamples <= 0) return;
+    if (buffer.getNumChannels() < 2) return;
     if (!fxParams.built && apvts)
         buildParamCache();
 

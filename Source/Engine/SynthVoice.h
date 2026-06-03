@@ -336,7 +336,7 @@ private:
         FilterPtrs       filterB;
         std::atomic<float>* filterRouting = nullptr;
 
-        bool built = false;
+        std::atomic<bool> built { false };
     };
     ParamCache pc;
 

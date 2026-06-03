@@ -8,6 +8,7 @@ enum class ModDest : int
     FM_Op0_Level, FM_Op1_Level, FM_Op2_Level, FM_Op3_Level, FM_Op4_Level,
     FM_Op5_Level, FM_Op6_Level, FM_Op7_Level, FM_Op8_Level, FM_Op9_Level,
     FM_Op0_Ratio, FM_Op1_Ratio, FM_Op2_Ratio, FM_Op3_Ratio, FM_Op4_Ratio,
+    FM_Op5_Ratio, FM_Op6_Ratio, FM_Op7_Ratio, FM_Op8_Ratio, FM_Op9_Ratio,
     WT_Position, WT_Level,
     VA_PW, VA_Detune, VA_Spread, VA_Level,
     FilterA_Cutoff, FilterA_Resonance, FilterA_Drive,

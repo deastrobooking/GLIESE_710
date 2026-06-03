@@ -601,7 +601,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
     for (int i = 0; i < 8; ++i)
         pc.macros[(size_t)i] = get("macro" + juce::String(i + 1));
 
-    pc.built = true;
+    pc.built.store(true, std::memory_order_release);
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -732,7 +732,7 @@ void SynthVoice::syncParams()
         {
             const auto& opc = ops[(size_t)i];
             FMOperator::Params op;
-            float ratioMod = i < 5 ? modDests.dests[(int)ModDest::FM_Op0_Ratio + i] : 0.f;
+            float ratioMod = modDests.dests[(int)ModDest::FM_Op0_Ratio + i];
             float levelMod = i < 10 ? modDests.dests[(int)ModDest::FM_Op0_Level + i] : 0.f;
             op.coarse        = pI(opc.coarse, 1);
             op.fine          = pF(opc.fine);
@@ -1015,13 +1015,13 @@ void SynthVoice::buildModSources()
 
 //──────────────────────────────────────────────────────────────────────────────
 void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, int numSamples,
-                              juce::AudioProcessorValueTreeState& apvts,
+                              juce::AudioProcessorValueTreeState& /*apvts*/,
                               const ModValues& globalModDests)
 {
     if (!isActive()) return;
     static constexpr float kSilent = 1.0e-5f;
 
-    if (!pc.built) buildParamCache(apvts);
+    if (!pc.built.load(std::memory_order_acquire)) return;
 
     for (int i = 0; i < LFOEngine::kNumLFOs; ++i)
     {

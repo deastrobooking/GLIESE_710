@@ -56,7 +56,6 @@ private:
     float generateSquare(float phase, float phaseInc) const;
     float generatePulse(float phase, float phaseInc, float pulseWidth) const;
     float generateTriangle(float phase) const;
-    float generateShape(int shapeIndex, float phase, float phaseInc) const;
     float generateMorphedShape(float phase, float phaseInc) const;
     float generateShapeAt(float shapeMorph, float pulseWidth, float phase, float phaseInc) const;
     float applyModelShape(float x, int voiceIndex) noexcept;

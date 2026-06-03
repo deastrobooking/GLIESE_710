@@ -63,7 +63,7 @@ float ADSREnvelope::processSample()
             if (value >= 1.f)
             {
                 value = 1.f;
-                stage = Stage::Decay;
+                stage = (params.sustain >= 1.f - 1e-4f) ? Stage::Sustain : Stage::Decay;
             }
             break;
 
