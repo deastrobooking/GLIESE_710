@@ -14,6 +14,11 @@ For packaging and publishing website-ready plugin releases, follow
 | `GLIESE_710_LV2` | LV2 (Linux, requires lv2 dev package) |
 | `GLIESE_Tests` | Catch2 unit tests (requires `-DGLIESE_BUILD_TESTS=ON`) |
 
+VST3 and CLAP are available on multiple operating systems, but each operating
+system needs its own native binary. A macOS-built VST3 or CLAP bundle will not
+load on Windows or Linux. Public releases are therefore produced as separate
+macOS, Windows, and Linux zips by `.github/workflows/release.yml`.
+
 Build a single target:
 ```bash
 cmake --build build-productions --target GLIESE_710_Standalone --config Release

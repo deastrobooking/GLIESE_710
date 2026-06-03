@@ -197,20 +197,64 @@ jobs:
           base_dir="dist/${TAG}"
           mkdir -p "${base_dir}/macos" "${base_dir}/windows" "${base_dir}/linux"
 
-          cp -R incoming/bundles-macos/* "${base_dir}/macos/"
-          cp -R incoming/bundles-windows/* "${base_dir}/windows/"
-          cp -R incoming/bundles-linux/* "${base_dir}/linux/"
+          copy_asset() {
+            local src="$1"
+            local dst="$2"
 
-          for platform in macos windows linux; do
-            printf '%s\n' \
-              'GLIESE 710 Installation' \
-              '' \
-              '1. Extract this archive.' \
-              "2. Copy plugin bundles to your platform's standard plugin locations." \
-              '3. Run the Standalone app/executable directly for non-DAW testing.' \
-              '4. Rescan plugins in your DAW.' \
-              > "${base_dir}/${platform}/README-install.txt"
-          done
+            if [[ ! -e "${src}" ]]; then
+              echo "::error::Missing release artifact: ${src}"
+              find incoming -maxdepth 5 -print
+              exit 1
+            fi
+
+            cp -R "${src}" "${dst}/"
+          }
+
+          copy_asset "incoming/bundles-macos/VST3/GLIESE 710.vst3" "${base_dir}/macos"
+          copy_asset "incoming/bundles-macos/AU/GLIESE 710.component" "${base_dir}/macos"
+          copy_asset "incoming/bundles-macos/CLAP/GLIESE 710.clap" "${base_dir}/macos"
+          copy_asset "incoming/bundles-macos/Standalone/GLIESE 710.app" "${base_dir}/macos"
+
+          copy_asset "incoming/bundles-windows/VST3/GLIESE 710.vst3" "${base_dir}/windows"
+          copy_asset "incoming/bundles-windows/CLAP/GLIESE 710.clap" "${base_dir}/windows"
+          copy_asset "incoming/bundles-windows/Standalone/GLIESE 710.exe" "${base_dir}/windows"
+
+          copy_asset "incoming/bundles-linux/VST3/GLIESE 710.vst3" "${base_dir}/linux"
+          copy_asset "incoming/bundles-linux/CLAP/GLIESE 710.clap" "${base_dir}/linux"
+          copy_asset "incoming/bundles-linux/LV2/GLIESE 710.lv2" "${base_dir}/linux"
+          copy_asset "incoming/bundles-linux/Standalone/GLIESE 710" "${base_dir}/linux"
+
+          cat > "${base_dir}/macos/README-install.txt" <<'EOF'
+          GLIESE 710 macOS Installation
+
+          1. Extract this archive.
+          2. Copy GLIESE 710.vst3 to ~/Library/Audio/Plug-Ins/VST3/ or /Library/Audio/Plug-Ins/VST3/.
+          3. Copy GLIESE 710.component to ~/Library/Audio/Plug-Ins/Components/ or /Library/Audio/Plug-Ins/Components/.
+          4. Copy GLIESE 710.clap to ~/Library/Audio/Plug-Ins/CLAP/ or /Library/Audio/Plug-Ins/CLAP/.
+          5. Run GLIESE 710.app directly for non-DAW testing.
+          6. Rescan plugins in your DAW.
+          EOF
+
+          cat > "${base_dir}/windows/README-install.txt" <<'EOF'
+          GLIESE 710 Windows Installation
+
+          1. Extract this archive.
+          2. Copy GLIESE 710.vst3 to C:\Program Files\Common Files\VST3\.
+          3. Copy GLIESE 710.clap to C:\Program Files\Common Files\CLAP\.
+          4. Run GLIESE 710.exe directly for non-DAW testing.
+          5. Rescan plugins in your DAW.
+          EOF
+
+          cat > "${base_dir}/linux/README-install.txt" <<'EOF'
+          GLIESE 710 Linux Installation
+
+          1. Extract this archive.
+          2. Copy GLIESE 710.vst3 to ~/.vst3/.
+          3. Copy GLIESE 710.clap to ~/.clap/.
+          4. Copy GLIESE 710.lv2 to ~/.lv2/.
+          5. Run GLIESE 710 directly for non-DAW testing.
+          6. Rescan plugins in your DAW.
+          EOF
 
           if [[ -f LICENSE ]]; then
             cp LICENSE "${base_dir}/macos/LICENSE.txt"

@@ -14,6 +14,12 @@ Release outputs for website distribution:
 - Windows: `VST3`, `CLAP`, `Standalone`
 - Linux: `VST3`, `CLAP`, `LV2`, `Standalone`
 
+VST3 and CLAP are cross-platform plugin formats, but the compiled binaries are
+not cross-platform. A macOS `GLIESE 710.vst3` or `GLIESE 710.clap` bundle will
+not load on Windows or Linux. Each release must build native VST3/CLAP binaries
+on that operating system, then package one user-facing zip per platform. AU is
+macOS-only; LV2 is shipped in the Linux package.
+
 ## Current Release Standard
 
 Use this standard for GLIESE 710 and as the baseline for future ECOSYSTEM
@@ -41,7 +47,8 @@ plugin releases:
 5. Merge the release-prep changes to `main`.
 6. Push the annotated release tag, for example `vX.Y.Z`.
 7. Wait for `.github/workflows/release.yml` to build, test, package, checksum,
-   and create a draft GitHub Release.
+   and create a draft GitHub Release with one zip each for macOS, Windows, and
+   Linux.
 8. Review generated assets and checksum output from the draft release.
 9. Code-sign release binaries with platform-appropriate ECOSYSTEM identities.
 10. Notarize macOS zip/pkg/dmg assets. Staple only `.pkg` or `.dmg`
@@ -247,6 +254,17 @@ Expected bundle locations:
   - `LV2/GLIESE 710.lv2`
   - `Standalone/GLIESE 710`
 
+The GitHub release workflow flattens those format-specific build folders into
+user-facing platform packages. Users should download only the package for their
+operating system:
+
+- `gliese-710-vX.Y.Z-macos-universal.zip` contains the macOS AU, VST3, CLAP,
+  and Standalone app.
+- `gliese-710-vX.Y.Z-windows-x64.zip` contains the Windows VST3, CLAP, and
+  Standalone executable.
+- `gliese-710-vX.Y.Z-linux-x64.zip` contains the Linux VST3, CLAP, LV2, and
+  Standalone executable.
+
 ## 5) Signing and Notarization
 
 ### macOS
@@ -406,7 +424,8 @@ dist/
 ```
 
 The release workflow creates this staging tree automatically from uploaded
-platform artifacts. For local macOS releases, prefer
+platform artifacts and fails if any expected platform-native plugin bundle is
+missing. For local macOS releases, prefer
 `scripts/package-macos-release.zsh` because it stages signed bundles in system
 temp before writing the final zip/checksum to `dist/`. Use these commands only
 for a local/manual fallback after signing/notarization:
@@ -444,9 +463,9 @@ git push origin vX.Y.Z
 ```
 
 Pushing the tag starts `.github/workflows/release.yml`. The workflow builds and
-tests all supported platforms, downloads the platform artifacts, stages them
-under `dist/vX.Y.Z/`, creates deterministic zip files, generates the SHA256
-file, and opens a draft GitHub Release.
+tests all supported platforms, downloads the platform artifacts, flattens the
+expected bundles under `dist/vX.Y.Z/<platform>/`, creates deterministic zip
+files, generates the SHA256 file, and opens a draft GitHub Release.
 
 Use the draft release as the review checkpoint:
 
@@ -561,11 +580,14 @@ performs a full matrix build + test on macOS, Windows, and Linux.
 1. Builds and tests on macOS/Windows/Linux.
 2. Collects platform plugin bundles and Standalone apps/executables as
    artifacts.
-3. Stages artifacts under `dist/${TAG}/<platform>/`.
-4. Adds `README-install.txt` and `LICENSE.txt` to each platform package.
-5. Packages deterministic zip names.
-6. Generates a SHA256 checksum file.
-7. Creates a draft GitHub Release with assets for that tag.
+3. Stages the exact expected artifacts under `dist/${TAG}/<platform>/`.
+4. Flattens each platform folder so users see the bundles/apps immediately
+   after extraction.
+5. Adds platform-specific `README-install.txt` and `LICENSE.txt` to each
+   package.
+6. Packages deterministic zip names.
+7. Generates a SHA256 checksum file.
+8. Creates a draft GitHub Release with assets for that tag.
 
 Both workflows should keep these hardening details:
 
