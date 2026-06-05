@@ -1350,6 +1350,37 @@ TEST_CASE("WavetableOsc phase offset controls initial phase", "[wavetable]")
     REQUIRE(r == Approx(1.f).margin(0.01f));
 }
 
+TEST_CASE("WavetableOsc unison output advances every sample", "[wavetable]")
+{
+    WavetableOsc wt;
+    wt.prepare(48000.0);
+    wt.setFrequency(660.f);
+    wt.setTablePosition(8, 0.35f);
+
+    WavetableOsc::Params p;
+    p.unison = 5;
+    p.detune = 0.35f;
+    p.spread = 0.7f;
+    p.positionSpread = 0.25f;
+    p.phaseOffset = 0.123f;
+    wt.setParams(p);
+    wt.reset();
+
+    int changedSamples = 0;
+    auto [prevL, prevR] = wt.processSample();
+    for (int i = 1; i < 128; ++i)
+    {
+        auto [currentL, currentR] = wt.processSample();
+        if (std::abs(currentL - prevL) > 1.0e-7f || std::abs(currentR - prevR) > 1.0e-7f)
+            ++changedSamples;
+
+        prevL = currentL;
+        prevR = currentR;
+    }
+
+    REQUIRE(changedSamples > 110);
+}
+
 //──────────────────────────────────────────────────────────────────────────────
 TEST_CASE("GranularOsc cloud produces finite stereo grains", "[granular]")
 {

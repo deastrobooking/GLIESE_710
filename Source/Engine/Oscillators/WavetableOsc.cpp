@@ -1,5 +1,4 @@
 #include "WavetableOsc.h"
-#include "../DSPUtils.h"
 
 //==============================================================================
 // Static waveform generators (time-domain, full kTableSize resolution)
@@ -96,7 +95,6 @@ void WavetableOsc::setFrequency(float hz)
     freq = juce::jlimit(20.f, (float)(sr * 0.49), hz);
     phaseInc = freq / (float)sr;
     mipLevel = selectMipLevel(freq);
-    rebuildUnisonState();
 }
 
 void WavetableOsc::setParams(const Params& p)
@@ -112,33 +110,6 @@ void WavetableOsc::setParams(const Params& p)
     params.phaseOffset   = wrap01(params.phaseOffset);
     params.randomPhase   = juce::jlimit(0.f, 1.f, params.randomPhase);
     params.pdBreakpoint  = juce::jlimit(0.f, 1.f, params.pdBreakpoint);
-    rebuildUnisonState();
-}
-
-void WavetableOsc::rebuildUnisonState()
-{
-    const int n = juce::jlimit(1, kMaxUnison, params.unison);
-
-    for (int i = 0; i < kMaxUnison; ++i)
-    {
-        const float pos = n > 1 ? ((float)i / (float)(n - 1)) * 2.f - 1.f : 0.f;
-        unisonIncs[(size_t) i] = phaseInc * gliese::dsp::pitchRatioFromCents(pos * params.detune * 100.f);
-        unisonScanOffsets[(size_t) i] = pos * params.positionSpread;
-
-        if (n == 1)
-        {
-            unisonPanL[(size_t) i] = 1.f;
-            unisonPanR[(size_t) i] = 1.f;
-        }
-        else
-        {
-            const float pan = juce::jlimit(0.f, 1.f, 0.5f + pos * params.spread * 0.5f);
-            unisonPanL[(size_t) i] = std::sqrt(1.f - pan) * juce::MathConstants<float>::sqrt2;
-            unisonPanR[(size_t) i] = std::sqrt(pan) * juce::MathConstants<float>::sqrt2;
-        }
-    }
-
-    unisonNorm = n > 1 ? 1.f / std::sqrt((float)n) : 1.f;
 }
 
 void WavetableOsc::setTablePosition(int tableIndex, float position)
@@ -577,7 +548,10 @@ std::pair<float, float> WavetableOsc::processSample()
 
     for (int i = 0; i < n; ++i)
     {
-        float s = sampleAt(phases[(size_t)i], unisonScanOffsets[(size_t)i]);
+        float pos = n > 1 ? ((float)i / (float)(n - 1)) * 2.f - 1.f : 0.f;
+        float cents = pos * params.detune * 100.f;
+        float inc = phaseInc * std::pow(2.f, cents / 1200.f);
+        float s = sampleAt(phases[(size_t)i], pos * params.positionSpread);
 
         if (n == 1)
         {
@@ -586,13 +560,17 @@ std::pair<float, float> WavetableOsc::processSample()
         }
         else
         {
-            outL += s * unisonPanL[(size_t)i];
-            outR += s * unisonPanR[(size_t)i];
+            float pan = juce::jlimit(0.f, 1.f, 0.5f + pos * params.spread * 0.5f);
+            float lGain = std::sqrt(1.f - pan) * juce::MathConstants<float>::sqrt2;
+            float rGain = std::sqrt(pan) * juce::MathConstants<float>::sqrt2;
+            outL += s * lGain;
+            outR += s * rGain;
         }
 
-        phases[(size_t)i] = wrap01(phases[(size_t)i] + unisonIncs[(size_t)i]);
+        phases[(size_t)i] = wrap01(phases[(size_t)i] + inc);
     }
 
-    return { juce::jlimit(-1.5f, 1.5f, outL * unisonNorm),
-             juce::jlimit(-1.5f, 1.5f, outR * unisonNorm) };
+    float norm = n > 1 ? 1.f / std::sqrt((float)n) : 1.f;
+    return { juce::jlimit(-1.5f, 1.5f, outL * norm),
+             juce::jlimit(-1.5f, 1.5f, outR * norm) };
 }

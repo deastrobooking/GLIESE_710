@@ -78,11 +78,6 @@ private:
     float  freq   = 440.f;
     float  phaseInc = 440.f / 48000.f;
     std::array<float, kMaxUnison> phases {};
-    std::array<float, kMaxUnison> unisonIncs {};
-    std::array<float, kMaxUnison> unisonScanOffsets {};
-    std::array<float, kMaxUnison> unisonPanL {};
-    std::array<float, kMaxUnison> unisonPanR {};
-    float unisonNorm = 1.f;
     int    tableA = 0;
     int    tableB = 1;
     int    mipLevel = 0;
@@ -93,7 +88,6 @@ private:
 
     std::vector<Table> tables;
 
-    void rebuildUnisonState();
     int selectMipLevel(float frequency) const;
     float cubicInterp(const float* table, float position) const;
     float sampleAt(float phase, float scanOffset) const;
