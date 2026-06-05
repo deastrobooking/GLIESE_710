@@ -174,7 +174,6 @@ require_command ditto
 require_command dot_clean
 require_command find
 require_command shasum
-require_command zip
 if command -v xattr >/dev/null 2>&1; then
     have_xattr=1
 else
@@ -274,12 +273,12 @@ done
 log "package ${zip_path}"
 run rm -f "${zip_path}"
 if (( dry_run )); then
-    print -- "+ (cd ${stage_version_dir} && zip -r -y ${zip_path} macos)"
+    print -- "+ (cd ${stage_version_dir} && ditto -c -k --keepParent macos ${zip_path})"
 else
     mkdir -p "${output_dir}"
     (
         cd "${stage_version_dir}"
-        zip -r -y "${zip_path}" macos
+        ditto -c -k --keepParent macos "${zip_path}"
     )
 fi
 
