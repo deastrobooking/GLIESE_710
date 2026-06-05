@@ -322,6 +322,31 @@ TEST_CASE("Osc3D outputs bounded signal", "[osc3d]")
             REQUIRE(s <=  1.01f);
         }
     }
+
+    SECTION("field output is evaluated at audio rate")
+    {
+        Osc3D::Params p;
+        p.field = Osc3D::FieldType::HarmonicLattice;
+        p.path = Osc3D::PathType::Lissajous;
+        p.fieldFreq = 8.f;
+        p.warpAmt = 0.8f;
+        p.zRatio = 2.5f;
+        osc.setParams(p);
+        osc.setFrequency(880.f);
+        osc.reset();
+
+        int heldAdjacentSamples = 0;
+        float previous = osc.processSample();
+        for (int i = 1; i < 64; ++i)
+        {
+            const float current = osc.processSample();
+            if (current == previous)
+                ++heldAdjacentSamples;
+            previous = current;
+        }
+
+        REQUIRE(heldAdjacentSamples == 0);
+    }
 }
 
 //──────────────────────────────────────────────────────────────────────────────

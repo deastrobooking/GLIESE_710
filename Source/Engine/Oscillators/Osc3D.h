@@ -64,10 +64,6 @@ public:
 
     float processSample();  // mono output
 
-    // Sub-rate divisor: field evaluation runs every N audio samples (ZOH).
-    // 4 → 12 kHz effective field rate; sufficient for all audible harmonics.
-    static constexpr int kSubRate = 4;
-
 private:
     double sr    = 48000.0;
     float  freq  = 440.f;
@@ -80,10 +76,6 @@ private:
     float  cachedFoldAmt = 0.f;
     float  cachedFieldFreq = 1.f;
     float  cachedDrive = 1.f;
-
-    // Sub-rate state
-    int   subCount  = 0;
-    float lastOut   = 0.f;
 
     Params params;
 

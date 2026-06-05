@@ -14,12 +14,10 @@ void Osc3D::prepare(double sampleRate)
 
 void Osc3D::reset()
 {
-    phase    = 0.f;
-    subCount = 0;
-    lastOut  = 0.f;
-    rwPos    = {0.f, 0.f, 0.f};
-    rwVel    = {0.1f, 0.07f, 0.13f};
-    lorenz   = {1.f, 1.f, 1.f};
+    phase  = 0.f;
+    rwPos  = {0.f, 0.f, 0.f};
+    rwVel  = {0.1f, 0.07f, 0.13f};
+    lorenz = {1.f, 1.f, 1.f};
 }
 
 void Osc3D::setParams(const Params& p)
@@ -362,24 +360,13 @@ float Osc3D::whiteSample()
 //──────────────────────────────────────────────────────────────────────────────
 float Osc3D::processSample()
 {
-    // Always advance phase at full sample rate for correct pitch.
     phase += phaseInc;
     if (phase >= 1.f) phase -= 1.f;
-
-    // Evaluate the expensive 3D field only every kSubRate samples (ZOH).
-    // Reduces trig/sqrt burden by ~4x with negligible audio quality loss:
-    // the effective field rate (12 kHz at kSubRate=4) still captures all
-    // harmonics that matter given typical oscillator frequencies.
-    if (--subCount > 0)
-        return lastOut;
-
-    subCount = kSubRate;
 
     float t  = phase * kTau;
     Vec3  p  = computePath(t);
     p        = warpCoordinates(p);
     p        = foldCoordinates(p);
     float s  = blend(p);
-    lastOut  = std::tanh(s * cachedDrive);
-    return lastOut;
+    return std::tanh(s * cachedDrive);
 }
