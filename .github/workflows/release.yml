@@ -263,10 +263,10 @@ jobs:
           fi
 
           pushd "${base_dir}" > /dev/null
-          zip -r "../gliese-710-${TAG}-macos-universal.zip" macos
-          zip -r "../gliese-710-${TAG}-windows-x64.zip" windows
-          zip -r "../gliese-710-${TAG}-linux-x64.zip" linux
-          sha256sum "../gliese-710-${TAG}-"*.zip > "../gliese-710-${TAG}-sha256.txt"
+          zip -r "../${TAG}macos.zip" macos
+          zip -r "../${TAG}windows.zip" windows
+          zip -r "../${TAG}linux.zip" linux
+          sha256sum "../${TAG}"*.zip > "../${TAG}sha256.txt"
           popd > /dev/null
 
       - name: Publish GitHub Release assets
@@ -274,7 +274,7 @@ jobs:
         with:
           draft: true
           files: |
-            dist/gliese-710-${{ github.ref_name }}-macos-universal.zip
-            dist/gliese-710-${{ github.ref_name }}-windows-x64.zip
-            dist/gliese-710-${{ github.ref_name }}-linux-x64.zip
-            dist/gliese-710-${{ github.ref_name }}-sha256.txt
+            dist/${{ github.ref_name }}macos.zip
+            dist/${{ github.ref_name }}windows.zip
+            dist/${{ github.ref_name }}linux.zip
+            dist/${{ github.ref_name }}sha256.txt
