@@ -157,8 +157,8 @@ stage_root=${stage_root:A}
 artefacts="${build_dir}/GLIESE_710_artefacts/${config}"
 stage_version_dir="${stage_root}/${version}"
 stage_dir="${stage_version_dir}/macos"
-zip_path="${output_dir}/gliese-710-${version}-macos-universal.zip"
-checksum_path="${output_dir}/gliese-710-${version}-sha256.txt"
+zip_path="${output_dir}/${version}macos.zip"
+checksum_path="${output_dir}/${version}sha256.txt"
 
 bundles=(
     "${artefacts}/VST3/GLIESE 710.vst3"

@@ -258,11 +258,11 @@ The GitHub release workflow flattens those format-specific build folders into
 user-facing platform packages. Users should download only the package for their
 operating system:
 
-- `gliese-710-vX.Y.Z-macos-universal.zip` contains the macOS AU, VST3, CLAP,
+- `vX.Y.Zmacos.zip` contains the macOS AU, VST3, CLAP,
   and Standalone app.
-- `gliese-710-vX.Y.Z-windows-x64.zip` contains the Windows VST3, CLAP, and
+- `vX.Y.Zwindows.zip` contains the Windows VST3, CLAP, and
   Standalone executable.
-- `gliese-710-vX.Y.Z-linux-x64.zip` contains the Linux VST3, CLAP, LV2, and
+- `vX.Y.Zlinux.zip` contains the Linux VST3, CLAP, LV2, and
   Standalone executable.
 
 ## 5) Signing and Notarization
@@ -316,8 +316,8 @@ signed binary contents.
 The script creates the distributable files:
 
 ```text
-dist/gliese-710-vX.Y.Z-macos-universal.zip
-dist/gliese-710-vX.Y.Z-sha256.txt
+dist/vX.Y.Zmacos.zip
+dist/vX.Y.Zsha256.txt
 ```
 
 The zip contains:
@@ -337,7 +337,7 @@ signing. Override that location only when needed with `--stage-root PATH`.
 After the zip is created, submit that exact file for notarization:
 
 ```bash
-xcrun notarytool submit dist/gliese-710-vX.Y.Z-macos-universal.zip \
+xcrun notarytool submit dist/vX.Y.Zmacos.zip \
   --keychain-profile gliese-notary \
   --wait
 ```
@@ -386,9 +386,9 @@ No standard platform gatekeeper signing requirement, but checksums are required.
 
 Use a deterministic naming scheme so website links are stable:
 
-- `gliese-710-vX.Y.Z-macos-universal.zip`
-- `gliese-710-vX.Y.Z-windows-x64.zip`
-- `gliese-710-vX.Y.Z-linux-x64.zip`
+- `vX.Y.Zmacos.zip`
+- `vX.Y.Zwindows.zip`
+- `vX.Y.Zlinux.zip`
 
 Each zip should contain:
 - plugin bundles/directories
@@ -432,10 +432,10 @@ for a local/manual fallback after signing/notarization:
 
 ```bash
 # macOS
-cd dist/vX.Y.Z && zip -r ../gliese-710-vX.Y.Z-macos-universal.zip macos
+cd dist/vX.Y.Z && zip -r ../vX.Y.Zmacos.zip macos
 
 # Linux
-cd dist/vX.Y.Z && zip -r ../gliese-710-vX.Y.Z-linux-x64.zip linux
+cd dist/vX.Y.Z && zip -r ../vX.Y.Zlinux.zip linux
 ```
 
 On Windows runners, use PowerShell `Compress-Archive` for the `windows/`
@@ -446,7 +446,7 @@ staging folder.
 From the release output directory:
 
 ```bash
-sha256sum gliese-710-vX.Y.Z-*.zip > gliese-710-vX.Y.Z-sha256.txt
+sha256sum vX.Y.Z*.zip > vX.Y.Zsha256.txt
 ```
 
 The release workflow generates this checksum file automatically for draft
@@ -472,7 +472,7 @@ Use the draft release as the review checkpoint:
 1. Confirm all release jobs succeeded.
 2. Download each zip and verify it contains the expected platform folder and
    plugin bundles plus the Standalone app/executable.
-3. Verify `gliese-710-vX.Y.Z-sha256.txt` matches the downloaded zip files.
+3. Verify `vX.Y.Zsha256.txt` matches the downloaded zip files.
 4. Complete signing/notarization outside the workflow if signing secrets are
    not yet automated.
 5. Replace unsigned draft assets with signed/notarized assets when needed.
@@ -482,10 +482,10 @@ Manual fallback if the workflow is unavailable:
 
 ```bash
 gh release create vX.Y.Z \
-  gliese-710-vX.Y.Z-macos-universal.zip \
-  gliese-710-vX.Y.Z-windows-x64.zip \
-  gliese-710-vX.Y.Z-linux-x64.zip \
-  gliese-710-vX.Y.Z-sha256.txt \
+  vX.Y.Zmacos.zip \
+  vX.Y.Zwindows.zip \
+  vX.Y.Zlinux.zip \
+  vX.Y.Zsha256.txt \
   --title "GLIESE 710 vX.Y.Z" \
   --notes-file RELEASE_NOTES_vX.Y.Z.md \
   --draft
@@ -513,7 +513,7 @@ Before publishing the draft, add release notes with this shape:
 - Signing/notarization status
 
 ### Checksums
-- See gliese-710-vX.Y.Z-sha256.txt.
+- See vX.Y.Zsha256.txt.
 
 ### Known Issues
 - Any known release caveats, or "None currently known."
@@ -543,10 +543,10 @@ Recommended website metadata payload:
   "version": "X.Y.Z",
   "releasedAt": "YYYY-MM-DD",
   "downloads": {
-    "macos": "https://<site>/downloads/gliese-710/vX.Y.Z/gliese-710-vX.Y.Z-macos-universal.zip",
-    "windows": "https://<site>/downloads/gliese-710/vX.Y.Z/gliese-710-vX.Y.Z-windows-x64.zip",
-    "linux": "https://<site>/downloads/gliese-710/vX.Y.Z/gliese-710-vX.Y.Z-linux-x64.zip",
-    "checksums": "https://<site>/downloads/gliese-710/vX.Y.Z/gliese-710-vX.Y.Z-sha256.txt"
+    "macos": "https://<site>/downloads/gliese-710/vX.Y.Z/vX.Y.Zmacos.zip",
+    "windows": "https://<site>/downloads/gliese-710/vX.Y.Z/vX.Y.Zwindows.zip",
+    "linux": "https://<site>/downloads/gliese-710/vX.Y.Z/vX.Y.Zlinux.zip",
+    "checksums": "https://<site>/downloads/gliese-710/vX.Y.Z/vX.Y.Zsha256.txt"
   }
 }
 ```
@@ -605,10 +605,10 @@ Both workflows should keep these hardening details:
 
 Current release asset names:
 
-1. `gliese-710-${TAG}-macos-universal.zip`
-2. `gliese-710-${TAG}-windows-x64.zip`
-3. `gliese-710-${TAG}-linux-x64.zip`
-4. `gliese-710-${TAG}-sha256.txt`
+1. `${TAG}macos.zip`
+2. `${TAG}windows.zip`
+3. `${TAG}linux.zip`
+4. `${TAG}sha256.txt`
 
 The release workflow creates drafts because it does not currently embed signing
 or notarization credentials. Do not publish those draft assets publicly until the
