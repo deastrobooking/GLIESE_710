@@ -101,7 +101,7 @@ The Standalone target links everything and runs as a normal app. Use it for:
 - Quick iteration before loading in a DAW
 
 ### Plugin wrappers
-Use `GLIESE_710_All` when a change touches plugin metadata, build flags, binary compatibility, or the processor/editor boundary. That target builds AU, VST3, LV2, Standalone, and CLAP when `GLIESE_BUILD_CLAP=ON`.
+Use `GLIESE_710_All` when a change touches plugin metadata, build flags, binary compatibility, or the processor/editor boundary. That target builds AUv2, VST3, LV2, Standalone, AUv3 when using the Xcode generator, and CLAP when `GLIESE_BUILD_CLAP=ON`.
 
 Use `GLIESE_710_VST3` when you only need to refresh the VST3 bundle. The `GLIESE_710` target only builds the shared code library; it does not update the VST3 wrapper bundle by itself. If an editor change is missing in a DAW, run:
 

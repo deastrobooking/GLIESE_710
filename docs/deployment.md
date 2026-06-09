@@ -10,22 +10,24 @@ Use this together with `docs/build-targets.md`:
 ## Scope
 
 Release outputs for website distribution:
-- macOS: `VST3`, `AU`, `CLAP`, `Standalone`
+- macOS: `VST3`, `AUv2`, `AUv3`, `CLAP`, `Standalone`
 - Windows: `VST3`, `CLAP`, `Standalone`
 - Linux: `VST3`, `CLAP`, `LV2`, `Standalone`
 
 VST3 and CLAP are cross-platform plugin formats, but the compiled binaries are
 not cross-platform. A macOS `GLIESE 710.vst3` or `GLIESE 710.clap` bundle will
 not load on Windows or Linux. Each release must build native VST3/CLAP binaries
-on that operating system, then package one user-facing zip per platform. AU is
-macOS-only; LV2 is shipped in the Linux package.
+on that operating system, then package one user-facing zip per platform. AUv2
+and AUv3 are macOS-only; LV2 is shipped in the Linux package.
 
 ## Current Release Standard
 
 Use this standard for GLIESE 710 and as the baseline for future ECOSYSTEM
 plugin releases:
 
-1. `build-productions/` is the canonical CMake build directory.
+1. `build-productions/` is the canonical CMake build directory for normal
+   local builds; macOS signed release packages use `build-xcode/` so AUv3 can
+   be generated and embedded by Xcode.
 2. Release tags use semantic version tags in the form `vX.Y.Z`.
 3. GitHub Actions is the source of truth for release bundles. Tag pushes run
    the full matrix build, tests, packaging, checksum generation, and draft
@@ -115,8 +117,9 @@ Public releases must use portable Release builds. Leave
 Windows packages, and Linux packages unless the release is explicitly scoped to
 one CPU family.
 
-For a quick local rebuild before testing in a DAW or handing bundles to another
-machine, use the same sequence and then verify the generated macOS bundles:
+For a quick local rebuild before testing in a DAW or handing AUv2/VST3/CLAP
+bundles to another machine, use the same sequence and then verify the generated
+macOS bundles:
 
 ```bash
 ART="build-productions/GLIESE_710_artefacts/Release"
@@ -152,7 +155,7 @@ wrapper rebuild:
 cmake --build build-productions --target GLIESE_710_VST3 --config Release --clean-first
 ```
 
-On macOS, the helper script can perform the build/test pass and install AU,
+On macOS, the helper script can perform the build/test pass and install AUv2,
 VST3, and CLAP into user plugin folders with ad-hoc signing:
 
 ```bash
@@ -231,19 +234,27 @@ JUCE/CLAP sources and generated Visual Studio build trees.
 
 ## 4) Collect Artefacts
 
-Release artefacts are emitted under:
+Normal release artefacts are emitted under:
 
 ```text
 build-productions/GLIESE_710_artefacts/Release/
+```
+
+macOS signed release packaging uses the Xcode build tree so the AUv3 app
+extension is available:
+
+```text
+build-xcode/GLIESE_710_artefacts/Release/
 ```
 
 Expected bundle locations:
 
 - macOS:
   - `VST3/GLIESE 710.vst3`
-  - `AU/GLIESE 710.component`
+  - `AU/GLIESE 710.component` (AUv2)
+  - `AUv3/GLIESE 710.appex`
   - `CLAP/GLIESE 710.clap`
-  - `Standalone/GLIESE 710.app`
+  - `Standalone/GLIESE 710.app` with `Contents/PlugIns/GLIESE 710.appex`
 - Windows:
   - `VST3/GLIESE 710.vst3`
   - `CLAP/GLIESE 710.clap`
@@ -258,8 +269,8 @@ The GitHub release workflow flattens those format-specific build folders into
 user-facing platform packages. Users should download only the package for their
 operating system:
 
-- `vX.Y.Zmacos.zip` contains the macOS AU, VST3, CLAP,
-  and Standalone app.
+- `vX.Y.Zmacos.zip` contains the macOS AUv2 component, VST3, CLAP,
+  and Standalone app with the embedded AUv3 extension.
 - `vX.Y.Zwindows.zip` contains the Windows VST3, CLAP, and
   Standalone executable.
 - `vX.Y.Zlinux.zip` contains the Linux VST3, CLAP, LV2, and
@@ -328,6 +339,12 @@ macos/GLIESE 710.component
 macos/GLIESE 710.clap
 macos/GLIESE 710.app
 macos/README-install.txt
+```
+
+`macos/GLIESE 710.app` contains the AUv3 extension at:
+
+```text
+macos/GLIESE 710.app/Contents/PlugIns/GLIESE 710.appex
 ```
 
 Signed bundles are staged under the system temp directory by default so

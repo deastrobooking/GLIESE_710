@@ -15,7 +15,7 @@ The design goal is direct: every oscillator page should feel playable and modula
 
 | Format | Platform |
 |---|---|
-| AU | macOS |
+| AUv2 / AUv3 | macOS |
 | VST3 | macOS / Windows |
 | CLAP | macOS / Windows / Linux |
 | LV2 | Linux |
@@ -33,7 +33,7 @@ Host/plugin scanner vendor metadata is `ECOSYSTEM`.
 |---|---|
 | CMake | 3.22 |
 | C++ compiler | C++20 (Clang 13, GCC 11, MSVC 2022) |
-| Xcode | 14+ (macOS AU builds only) |
+| Xcode | 14+ (macOS AU and signed release builds) |
 | Git | Any recent version |
 
 JUCE 8 is fetched automatically by CMake via CPM from the pinned release archive. When CLAP support is enabled, the CLAP wrapper, CLAP core, and CLAP helper sources are also fetched from pinned archives.
@@ -54,13 +54,17 @@ from them unless you intentionally configured those folders yourself.
 For website/distribution release packaging and publishing, see
 `docs/deployment.md`.
 
+macOS signed release packages are built from the Xcode project in `build-xcode/`
+so the AUv3 app extension can be generated and embedded in the Standalone app.
+The classic AUv2 bundle remains `GLIESE 710.component`.
+
 For the normal local loop, use the build script instead of manually copying plugin bundles:
 
 ```bash
 scripts/build-plugin.zsh
 ```
 
-To build, test, install AU/VST3/CLAP into the macOS system plugin folders, ad-hoc sign them, and verify the installed bundles:
+To build, test, install AUv2/VST3/CLAP into the macOS system plugin folders, ad-hoc sign them, and verify the installed bundles:
 
 ```bash
 scripts/build-plugin.zsh --install-system
@@ -75,7 +79,7 @@ cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_TESTS=
 scripts/cmake.zsh --build build-productions --target GLIESE_710_VST3 --config Release --parallel
 ```
 
-Set `GLIESE_COPY_PLUGIN_AFTER_BUILD=ON` only when you explicitly want build-time plugin copying. JUCE handles AU/VST3/LV2 copy steps; the CLAP wrapper uses its own user-scope copy path. The build script is preferred for normal macOS installs because it copies AU, VST3, and CLAP consistently and verifies the installed bundles.
+Set `GLIESE_COPY_PLUGIN_AFTER_BUILD=ON` only when you explicitly want build-time plugin copying. JUCE handles AUv2/VST3/LV2 copy steps; the CLAP wrapper uses its own user-scope copy path. The build script is preferred for normal macOS installs because it copies AUv2, VST3, and CLAP consistently and verifies the installed bundles.
 
 The current VST3 bundle path is:
 

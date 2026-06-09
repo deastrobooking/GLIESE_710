@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir=${0:A:h}
 repo_root=${script_dir:h}
 
-build_dir="${repo_root}/build-productions"
+build_dir="${repo_root}/build-xcode"
 cmake_cmd="${repo_root}/scripts/cmake.zsh"
 ctest_cmd="${repo_root}/scripts/ctest.zsh"
 config="Release"
@@ -34,7 +34,7 @@ Options:
                            notarization is skipped unless GLIESE_NOTARY_PROFILE is set.
   --team-id TEAMID         Optional Apple team ID, used only for logging/checks.
                            Can also be set with GLIESE_TEAM_ID.
-  --build-dir PATH         Build directory. Default: build-productions.
+  --build-dir PATH         Build directory. Default: build-xcode.
   --config NAME            Build configuration. Default: Release.
   --output-dir PATH        Output directory. Default: dist.
   --stage-root PATH        Temporary staging root. Default: system temp.
@@ -185,7 +185,7 @@ fi
 
 if (( ! skip_build )); then
     log "configure ${build_dir}"
-    run "${cmake_cmd}" -S "${repo_root}" -B "${build_dir}" -DCMAKE_BUILD_TYPE="${config}" -DGLIESE_BUILD_TESTS=ON -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
+    run "${cmake_cmd}" -S "${repo_root}" -B "${build_dir}" -G Xcode -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_GENERATE_SCHEME=ON -DGLIESE_BUILD_TESTS=ON -DGLIESE_COPY_PLUGIN_AFTER_BUILD=OFF
 
     log "build GLIESE_710_All"
     run "${cmake_cmd}" --build "${build_dir}" --config "${config}" --target GLIESE_710_All --parallel
@@ -220,11 +220,12 @@ else
         print -- ""
         print -- "Install the plugin formats you need:"
         print -- "- VST3: copy GLIESE 710.vst3 to /Library/Audio/Plug-Ins/VST3 or ~/Library/Audio/Plug-Ins/VST3"
-        print -- "- AU: copy GLIESE 710.component to /Library/Audio/Plug-Ins/Components or ~/Library/Audio/Plug-Ins/Components"
+        print -- "- AUv2: copy GLIESE 710.component to /Library/Audio/Plug-Ins/Components or ~/Library/Audio/Plug-Ins/Components"
+        print -- "- AUv3: move GLIESE 710.app to /Applications so macOS can discover the embedded extension"
         print -- "- CLAP: copy GLIESE 710.clap to /Library/Audio/Plug-Ins/CLAP or ~/Library/Audio/Plug-Ins/CLAP"
         print -- "- Standalone: move GLIESE 710.app to /Applications if desired"
         print -- ""
-        print -- "Restart your DAW after copying plugins. Logic users can validate the AU with:"
+        print -- "Restart your DAW after copying plugins. Logic users can validate the AUv2 component with:"
         print -- "auval -v aumu GLSE G710"
     } > "${readme_path}"
 fi
@@ -251,7 +252,7 @@ sign_nested_code() {
     while IFS= read -r nested; do
         log "sign nested ${nested}"
         run codesign --force --timestamp --options runtime --sign "${identity}" "${nested}"
-    done < <(find "${bundle}" \( -name "*.framework" -o -name "*.dylib" \) -print)
+    done < <(find "${bundle}" \( -name "*.framework" -o -name "*.dylib" -o -name "*.appex" \) -print)
 }
 
 for staged_bundle in "${stage_dir}/GLIESE 710.vst3" "${stage_dir}/GLIESE 710.component" "${stage_dir}/GLIESE 710.clap" "${stage_dir}/GLIESE 710.app"; do

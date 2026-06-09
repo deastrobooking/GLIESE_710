@@ -10,7 +10,8 @@ For packaging and publishing website-ready plugin releases, follow
 | `GLIESE_710_Standalone` | Standalone application (fastest for DSP iteration) |
 | `GLIESE_710_VST3` | VST3 plugin |
 | `GLIESE_710_CLAP` | CLAP plugin, built through `clap-juce-extensions` when `GLIESE_BUILD_CLAP=ON` |
-| `GLIESE_710_AU` | Audio Unit (macOS only, requires Xcode) |
+| `GLIESE_710_AU` | AUv2 component (macOS only) |
+| `GLIESE_710_AUv3` | AUv3 app extension (macOS only, Xcode generator only) |
 | `GLIESE_710_LV2` | LV2 (Linux, requires lv2 dev package) |
 | `GLIESE_Tests` | Catch2 unit tests (requires `-DGLIESE_BUILD_TESTS=ON`) |
 
@@ -52,7 +53,7 @@ host-facing software company/vendor name shown by DAWs and plugin scanners.
 Keep the existing `BUNDLE_ID`, `CLAP_ID`, and `LV2URI` stable unless the release
 is intentionally changing plugin identity.
 
-## macOS — AU + VST3 + CLAP
+## macOS — AUv2/AUv3 + VST3 + CLAP
 
 Recommended local automation:
 
@@ -64,9 +65,14 @@ That command:
 - configures `build-productions` in Release mode with tests enabled
 - builds `GLIESE_710_All`
 - builds and runs `GLIESE_Tests`
-- copies the AU, VST3, and CLAP into `/Library/Audio/Plug-Ins`
-- ad-hoc signs the installed AU/VST3/CLAP
+- copies the AUv2 component, VST3, and CLAP into `/Library/Audio/Plug-Ins`
+- ad-hoc signs the installed AUv2/VST3/CLAP
 - verifies the installed signatures
+
+AUv3 is generated only by the Xcode build. For signed release packages, use
+`scripts/package-macos-release.zsh`; it builds `build-xcode`, emits
+`AUv3/GLIESE 710.appex`, and embeds that extension into
+`Standalone/GLIESE 710.app/Contents/PlugIns/`.
 
 For a non-system install:
 
@@ -143,12 +149,19 @@ Xcode-generated bundles are emitted under:
 build-xcode/GLIESE_710_artefacts/Release/
 ```
 
+The AUv3 extension is available as:
+
+```text
+build-xcode/GLIESE_710_artefacts/Release/AUv3/GLIESE 710.appex
+build-xcode/GLIESE_710_artefacts/Release/Standalone/GLIESE 710.app/Contents/PlugIns/GLIESE 710.appex
+```
+
 The Xcode preset disables automatic code signing so local bundle generation does
 not fail on extended metadata. Use the deploy tasks or the build script below
 for ad-hoc signing and DAW install testing.
 
 Use the `Deploy:*` VS Code tasks or `scripts/build-plugin.zsh --install-user`
-when you want AU, VST3, and CLAP copied into macOS plugin folders and ad-hoc
+when you want AUv2, VST3, and CLAP copied into macOS plugin folders and ad-hoc
 signed for local DAW testing.
 
 The canonical local output directory is `build-productions/`. The VST3 bundle is:
@@ -169,7 +182,7 @@ By default, production builds stay inside `build-productions/`. To also copy plu
 cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_COPY_PLUGIN_AFTER_BUILD=ON
 ```
 
-When enabled, JUCE copies built AU/VST3 plugins to:
+When enabled, JUCE copies built AUv2/VST3 plugins to:
 - `/Library/Audio/Plug-Ins/VST3/GLIESE 710.vst3`
 - `/Library/Audio/Plug-Ins/Components/GLIESE 710.component`
 
@@ -184,7 +197,7 @@ cmake -S . -B build-productions -DCMAKE_BUILD_TYPE=Release -DGLIESE_BUILD_TESTS=
 cmake --build build-productions --target GLIESE_710_All --config Release --parallel
 ```
 
-After a rebuild, restart Logic Pro or use `auval` to validate:
+After an AUv2 rebuild, restart Logic Pro or use `auval` to validate:
 
 ```bash
 auval -v aumu GLSE G710

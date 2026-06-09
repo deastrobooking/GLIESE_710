@@ -63,7 +63,7 @@ juce_add_plugin(GLIESE_710
     PLUGIN_MANUFACTURER_CODE    GLSE
     PLUGIN_CODE                 G710
     LV2URI                      "urn:com:gliesestudios:gliese710"
-    FORMATS                     AU VST3 LV2 Standalone
+    FORMATS                     AU AUv3 VST3 LV2 Standalone
     IS_SYNTH                    TRUE
     NEEDS_MIDI_INPUT            TRUE
     NEEDS_MIDI_OUTPUT           FALSE

@@ -24,8 +24,8 @@ Usage: scripts/build-plugin.zsh [options]
 Builds GLIESE 710 using the production CMake preset.
 
 Options:
-  --install-user       Copy AU/VST3/CLAP to ~/Library/Audio/Plug-Ins and sign them.
-  --install-system     Copy AU/VST3/CLAP to /Library/Audio/Plug-Ins and sign them.
+  --install-user       Copy AUv2/VST3/CLAP to ~/Library/Audio/Plug-Ins and sign them.
+  --install-system     Copy AUv2/VST3/CLAP to /Library/Audio/Plug-Ins and sign them.
   --no-install         Build only. This is the default.
   --skip-tests         Build plugins without building/running tests.
   --build-dir PATH     Override build directory. Default: build-productions.
@@ -159,7 +159,7 @@ install_bundle() {
 
 if [[ "${install_scope}" != "none" ]]; then
     if [[ "$(uname -s)" != "Darwin" ]]; then
-        die "AU/VST3/CLAP installation automation is currently macOS-only"
+        die "AUv2/VST3/CLAP installation automation is currently macOS-only"
     fi
 
     artefacts="${build_dir}/GLIESE_710_artefacts/${config}"
