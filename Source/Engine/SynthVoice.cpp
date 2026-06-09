@@ -35,6 +35,8 @@ enum EngineFilterIndex
     EngineFilterTerrain
 };
 
+constexpr int kEngineFilterNoneMode = (int) FilterMode::NumModes;
+
 // VA param prefix: index 0 → "osc_va_", 1 → "osc_va2_", 4 → "osc_va5_", etc.
 juce::String vaPrefix(int index)
 {
@@ -668,10 +670,25 @@ void SynthVoice::syncParams()
     float totalPitch = pitchMod * 12.f + tuneSemi + octaveSemi + pbEffect;
     float pitchedHz  = portaHz * gliese::dsp::pitchRatioFromSemitones(totalPitch);
 
+    auto engineFilterSourceActive = [&](int filterIndex) {
+        switch (filterIndex)
+        {
+            case EngineFilter3D:      return current3dCount > 0;
+            case EngineFilterFM:      return currentBlockAIsFM || currentBlockBIsFM;
+            case EngineFilterWT:      return currentWTCount > 0;
+            case EngineFilterVA:      return currentVACount > 0;
+            case EngineFilterKS:      return currentKSCount > 0;
+            case EngineFilterGran:    return currentGranCount > 0;
+            case EngineFilterTerrain: return currentTerrainCount > 0;
+            default:                  return false;
+        }
+    };
+
     // 3D instances — symmetric detune per active 3D slot, independent controls
     float detuneSemis = pF(pc.slotCfg.osc3dDetune, 0.f);
-    for (int i = 0; i < kNum3DOscs; ++i)
+    for (int n = 0; n < current3dCount; ++n)
     {
+        const int i = active3dIndices[(size_t)n];
         const auto& c3d = pc.osc3d[(size_t)i];
         Osc3D::Params p3d;
         p3d.field    = static_cast<Osc3D::FieldType>(pI(c3d.field));
@@ -689,18 +706,9 @@ void SynthVoice::syncParams()
 
         osc3dArray[(size_t)i].setParams(p3d);
         float offset = 0.f;
-        int activeRank = -1;
-        for (int n = 0; n < current3dCount; ++n)
+        if (current3dCount > 1 && detuneSemis > 0.f)
         {
-            if (active3dIndices[(size_t)n] == i)
-            {
-                activeRank = n;
-                break;
-            }
-        }
-        if (activeRank >= 0 && current3dCount > 1 && detuneSemis > 0.f)
-        {
-            float pos = (float)activeRank / (float)(current3dCount - 1) * 2.f - 1.f;
+            float pos = (float)n / (float)(current3dCount - 1) * 2.f - 1.f;
             offset = pos * detuneSemis * 0.5f;
         }
         const float baseHz3d = pitchedHz * oscPitchMultiplier(c3d.octave, c3d.tune);
@@ -759,13 +767,16 @@ void SynthVoice::syncParams()
         }
     };
 
-    configureFM(fm,  pc.fm,  pc.ops,  ENV_FM,  0.f);
-    configureFM(fm2, pc.fmB, pc.opsB, ENV_FM2,
-                currentBlockBIsFM ? pF(pc.slotCfg.fmDetune, 0.f) : 0.f);
+    if (currentBlockAIsFM)
+        configureFM(fm, pc.fm, pc.ops, ENV_FM, 0.f);
+    if (currentBlockBIsFM)
+        configureFM(fm2, pc.fmB, pc.opsB, ENV_FM2,
+                    pF(pc.slotCfg.fmDetune, 0.f));
 
     // ── Wavetable ─────────────────────────────────────────────────────────────
-    for (int i = 0; i < kNumWTOscs; ++i)
+    for (int n = 0; n < currentWTCount; ++n)
     {
+        const int i = activeWTIndices[(size_t)n];
         const auto& cwt = pc.wt[(size_t)i];
         float wtHz = pitchedHz * oscPitchMultiplier(cwt.octave, cwt.tune);
         WavetableOsc::Params wtParams;
@@ -789,8 +800,9 @@ void SynthVoice::syncParams()
     }
 
     // ── VA Oscillators ────────────────────────────────────────────────────────
-    for (int i = 0; i < kNumVAOscs; ++i)
+    for (int n = 0; n < currentVACount; ++n)
     {
+        const int i = activeVAIndices[(size_t)n];
         const auto& cv = pc.va[(size_t)i];
         float vaHz = pitchedHz * oscPitchMultiplier(cv.octave, cv.tune);
         vaOscs[(size_t)i].setFrequency(vaHz);
@@ -812,8 +824,9 @@ void SynthVoice::syncParams()
     }
 
     // ── Karplus-Strong ────────────────────────────────────────────────────────
-    for (int i = 0; i < kNumKSOscs; ++i)
+    for (int n = 0; n < currentKSCount; ++n)
     {
+        const int i = activeKSIndices[(size_t)n];
         const auto& cks = pc.ks[(size_t)i];
         auto& ksp = cachedKSParams[(size_t)i];
         ksp.decay      = 0.99f + 0.0099f * juce::jlimit(0.f, 1.f, pF(cks.decay, 0.6f));
@@ -827,8 +840,9 @@ void SynthVoice::syncParams()
     }
 
     // ── Granular Oscillator Pool ──────────────────────────────────────────────
-    for (int i = 0; i < kNumGranOscs; ++i)
+    for (int n = 0; n < currentGranCount; ++n)
     {
+        const int i = activeGranIndices[(size_t)n];
         const auto& cg = pc.grain[(size_t)i];
         GranularOsc::Params gp;
         gp.triggerMode = static_cast<GranularOsc::TriggerMode>(pI(cg.triggerMode));
@@ -874,8 +888,9 @@ void SynthVoice::syncParams()
     }
 
     // ── Terrain Oscillator Pool ──────────────────────────────────────────────
-    for (int i = 0; i < kNumTerrainOscs; ++i)
+    for (int n = 0; n < currentTerrainCount; ++n)
     {
+        const int i = activeTerrainIndices[(size_t)n];
         const auto& ct = pc.terrain[(size_t)i];
         TerrainOsc::Params tp;
         tp.pathMode    = static_cast<TerrainOsc::PathMode>(pI(ct.path));
@@ -907,10 +922,17 @@ void SynthVoice::syncParams()
     // ── Per-engine pre-master filters ────────────────────────────────────────
     for (int i = 0; i < kNumEngineFilters; ++i)
     {
+        if (!engineFilterSourceActive(i))
+            continue;
+
         const auto& cef = pc.engineFilters[(size_t) i];
+        const int modeParam = pI(cef.type, kEngineFilterNoneMode);
+        if (modeParam >= kEngineFilterNoneMode)
+            continue;
+
         SingleFilter::Params efp;
         const int modeIndex = juce::jlimit(0, (int) FilterMode::NumModes - 1,
-                                           pI(cef.type, (int) FilterMode::AltLadder));
+                                           modeParam);
         efp.mode      = static_cast<FilterMode>(modeIndex);
         efp.cutoff    = juce::jlimit(20.f, (float)(sampleRate * 0.49),
             pF(cef.cutoff, 20000.f)
@@ -1165,8 +1187,32 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
         ? 1.f / std::sqrt((float)currentTerrainCount) : 1.f;
 
     std::array<bool, kNumEngineFilters> engineFilterOn {};
+    auto anyActiveSlot = [](const auto& useFlags, const auto& activeIndices, int count) {
+        for (int n = 0; n < count; ++n)
+            if (useFlags[(size_t) activeIndices[(size_t) n]])
+                return true;
+        return false;
+    };
+    auto engineFilterHasSource = [&](int filterIndex) {
+        switch (filterIndex)
+        {
+            case EngineFilter3D:      return anyActiveSlot(use3D, active3dIndices, current3dCount);
+            case EngineFilterFM:      return useFM;
+            case EngineFilterWT:      return anyActiveSlot(useWT, activeWTIndices, currentWTCount);
+            case EngineFilterVA:      return anyActiveSlot(useVA, activeVAIndices, currentVACount);
+            case EngineFilterKS:      return anyActiveSlot(useKS, activeKSIndices, currentKSCount);
+            case EngineFilterGran:    return anyActiveSlot(useGran, activeGranIndices, currentGranCount);
+            case EngineFilterTerrain: return anyActiveSlot(useTerrain, activeTerrainIndices, currentTerrainCount);
+            default:                  return false;
+        }
+    };
     for (int i = 0; i < kNumEngineFilters; ++i)
-        engineFilterOn[(size_t) i] = pB(pc.engineFilters[(size_t) i].on, false);
+    {
+        const auto& ef = pc.engineFilters[(size_t) i];
+        engineFilterOn[(size_t) i] = engineFilterHasSource(i)
+                                  && pB(ef.on, false)
+                                  && pI(ef.type, kEngineFilterNoneMode) < kEngineFilterNoneMode;
+    }
 
     auto* leftCh  = buffer.getWritePointer(0, startSample);
     auto* rightCh = buffer.getWritePointer(1, startSample);
@@ -1202,26 +1248,44 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             continue;
         }
 
-        float envFMA = envBank.processAndGet(ENV_FM);
-        float envFMB = envBank.processAndGet(ENV_FM2);
-        float env3D[kNum3DOscs];
-        float envWT[kNumWTOscs];
-        float envKS[kNumKSOscs];
-        float envGran[kNumGranOscs];
-        float envTerrain[kNumTerrainOscs];
-        for (int i = 0; i < kNum3DOscs; ++i)
-            env3D[i] = envBank.processAndGet(osc3dEnvIndex(i));
-        for (int i = 0; i < kNumWTOscs; ++i)
-            envWT[i] = envBank.processAndGet(wtEnvIndex(i));
-        for (int i = 0; i < kNumKSOscs; ++i)
-            envKS[i] = envBank.processAndGet(ksEnvIndex(i));
-        for (int i = 0; i < kNumGranOscs; ++i)
-            envGran[i] = envBank.processAndGet(granEnvIndex(i));
-        for (int i = 0; i < kNumTerrainOscs; ++i)
-            envTerrain[i] = envBank.processAndGet(terrainEnvIndex(i));
-        float envVA[kNumVAOscs];
-        for (int i = 0; i < kNumVAOscs; ++i)
-            envVA[i] = envBank.processAndGet(vaEnvIndex(i));
+        float envFMA = useFMA ? envBank.processAndGet(ENV_FM) : 0.f;
+        float envFMB = useFMB ? envBank.processAndGet(ENV_FM2) : 0.f;
+        float env3D[kNum3DOscs] {};
+        float envWT[kNumWTOscs] {};
+        float envKS[kNumKSOscs] {};
+        float envGran[kNumGranOscs] {};
+        float envTerrain[kNumTerrainOscs] {};
+        for (int n = 0; n < current3dCount; ++n)
+        {
+            const int i = active3dIndices[(size_t)n];
+            env3D[i] = use3D[(size_t)i] ? envBank.processAndGet(osc3dEnvIndex(i)) : 0.f;
+        }
+        for (int n = 0; n < currentWTCount; ++n)
+        {
+            const int i = activeWTIndices[(size_t)n];
+            envWT[i] = useWT[(size_t)i] ? envBank.processAndGet(wtEnvIndex(i)) : 0.f;
+        }
+        for (int n = 0; n < currentKSCount; ++n)
+        {
+            const int i = activeKSIndices[(size_t)n];
+            envKS[i] = useKS[(size_t)i] ? envBank.processAndGet(ksEnvIndex(i)) : 0.f;
+        }
+        for (int n = 0; n < currentGranCount; ++n)
+        {
+            const int i = activeGranIndices[(size_t)n];
+            envGran[i] = useGran[(size_t)i] ? envBank.processAndGet(granEnvIndex(i)) : 0.f;
+        }
+        for (int n = 0; n < currentTerrainCount; ++n)
+        {
+            const int i = activeTerrainIndices[(size_t)n];
+            envTerrain[i] = useTerrain[(size_t)i] ? envBank.processAndGet(terrainEnvIndex(i)) : 0.f;
+        }
+        float envVA[kNumVAOscs] {};
+        for (int n = 0; n < currentVACount; ++n)
+        {
+            const int i = activeVAIndices[(size_t)n];
+            envVA[i] = useVA[(size_t)i] ? envBank.processAndGet(vaEnvIndex(i)) : 0.f;
+        }
         envBank.processAndGet(ENV_FILTER_A);
         envBank.processAndGet(ENV_FILTER_B);
 
@@ -1356,6 +1420,8 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
                                        float envValue, float lfoValue)
         {
             if (!engineFilterOn[(size_t) filterIndex])
+                return;
+            if (std::abs(left) < kSilent && std::abs(right) < kSilent && envValue < kSilent)
                 return;
 
             left = engineFilterL[(size_t) filterIndex].processSample(left, envValue, lfoValue);

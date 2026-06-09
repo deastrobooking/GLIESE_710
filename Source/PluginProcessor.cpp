@@ -348,6 +348,8 @@ static APVTS::ParameterLayout buildLayout()
         "P5 Rev2 SSM","P5 Rev3 CEM","Prophet-600","Prophet-6","Pro-One",
         "GLIESE Prism","Alt Ladder","Phys Ladder"
     };
+    juce::StringArray engineFilterModes = filterModes;
+    engineFilterModes.add("None");
     juce::StringArray filterRouting { "Series","Parallel","A Only","B Only" };
     juce::StringArray filterOversampling { "Off", "2x", "4x" };
 
@@ -355,7 +357,7 @@ static APVTS::ParameterLayout buildLayout()
     {
         const juce::String p = "engine_filter_" + id + "_";
         addBool  (p + "on",        label + " Filter Enable", false);
-        addChoice(p + "type",      label + " Filter Type", filterModes, (int) FilterMode::AltLadder);
+        addChoice(p + "type",      label + " Filter Type", engineFilterModes, (int) FilterMode::NumModes);
         addFloat (p + "cutoff",    label + " Filter Cutoff",
                   20.0f, 20000.0f, 20000.0f, 0.25f);
         addFloat (p + "resonance", label + " Filter Resonance", 0.0f, 1.0f, 0.0f);

@@ -284,6 +284,8 @@ public:
             "P5 Rev2 SSM","P5 Rev3 CEM","Prophet-600","Prophet-6","Pro-One",
             "GLIESE Prism","Alt Ladder","Phys Ladder"
         };
+        juce::StringArray engineFilterModes = filterModes;
+        engineFilterModes.add("None");
         static const juce::StringArray oversampling { "Off", "2x", "4x" };
         static const juce::String names[] { "3D", "FM", "WT", "VA", "KS", "GRAN", "TERRAIN" };
         static const juce::String ids[] { "3d", "fm", "wt", "va", "ks", "gran", "terrain" };
@@ -301,7 +303,7 @@ public:
             addAndMakeVisible(row.on);
             row.onAtt = std::make_unique<BAtt>(apvts, pfx + "on", row.on);
 
-            row.type.addItemList(filterModes, 1);
+            row.type.addItemList(engineFilterModes, 1);
             IndustrialTheme::styleCombo(row.type, accent);
             addAndMakeVisible(row.type);
             row.typeAtt = std::make_unique<CAtt>(apvts, pfx + "type", row.type);
