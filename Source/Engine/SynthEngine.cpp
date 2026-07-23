@@ -37,6 +37,8 @@ void SynthEngine::reset()
     feedbackL = feedbackR = 0.f;
     ageSampleL = ageSampleR = 0.f;
     ageCounter = 0;
+    heldNoteCounts = {};
+    sustainDown = {};
 }
 
 void SynthEngine::setAPVTS(juce::AudioProcessorValueTreeState* a)
@@ -160,22 +162,52 @@ SynthVoice* SynthEngine::stealVoice() const
     return oldest;
 }
 
-void SynthEngine::noteOn(int note, float velocity)
+void SynthEngine::noteOn(int note, float velocity, int channel)
 {
+    const int channelIndex = juce::jlimit(1, 16, channel) - 1;
+    const int noteIndex = juce::jlimit(0, 127, note);
+    auto& count = heldNoteCounts[(size_t) channelIndex][(size_t) noteIndex];
+    if (count < 255)
+        ++count;
+
     SynthVoice* voice = findFreeVoice();
     if (!voice) voice = stealVoice();
-    if (voice) voice->noteOn(note, velocity);
+    if (voice) voice->noteOn(note, velocity, channel);
 }
 
-void SynthEngine::noteOff(int note)
+void SynthEngine::noteOff(int note, int channel)
 {
+    const int channelIndex = juce::jlimit(1, 16, channel) - 1;
+    const int noteIndex = juce::jlimit(0, 127, note);
+    auto& count = heldNoteCounts[(size_t) channelIndex][(size_t) noteIndex];
+    if (count > 0)
+        --count;
+    if (sustainDown[(size_t) channelIndex] || count > 0)
+        return;
+
     for (auto& v : voices)
-        if (v.isActive() && v.getMidiNote() == note)
+        if (v.isActive() && v.getMidiNote() == note && v.getMidiChannel() == channel)
             v.noteOff();
+}
+
+void SynthEngine::setSustain(int channel, bool down)
+{
+    const int channelIndex = juce::jlimit(1, 16, channel) - 1;
+    if (sustainDown[(size_t) channelIndex] == down)
+        return;
+    sustainDown[(size_t) channelIndex] = down;
+
+    if (!down)
+        for (auto& v : voices)
+            if (v.isActive() && v.getMidiChannel() == channel
+                && heldNoteCounts[(size_t) channelIndex][(size_t) v.getMidiNote()] == 0)
+                v.noteOff();
 }
 
 void SynthEngine::allNotesOff()
 {
+    heldNoteCounts = {};
+    sustainDown = {};
     for (auto& v : voices) v.noteOff();
 }
 
@@ -183,37 +215,52 @@ void SynthEngine::allNotesOff()
 void SynthEngine::handleMidiMessage(const juce::MidiMessage& msg, bool triggerNotes)
 {
     if (triggerNotes && msg.isNoteOn())
-        noteOn(msg.getNoteNumber(), msg.getFloatVelocity());
+        noteOn(msg.getNoteNumber(), msg.getFloatVelocity(), msg.getChannel());
     else if (triggerNotes && msg.isNoteOff())
-        noteOff(msg.getNoteNumber());
+        noteOff(msg.getNoteNumber(), msg.getChannel());
     else if (msg.isAllNotesOff())
         allNotesOff();
     else if (msg.isAftertouch() || msg.isChannelPressure())
     {
         float pressure = msg.isChannelPressure()
-                             ? msg.getChannelPressureValue() / 127.f
-                             : msg.getAfterTouchValue() / 127.f;
+                             ? (float) msg.getChannelPressureValue() / 127.f
+                             : (float) msg.getAfterTouchValue() / 127.f;
         for (auto& v : voices)
         {
-            v.setMidiCC(ModSource::Aftertouch, pressure);
-            v.setMidiCC(ModSource::ChanPressure, pressure);
+            if (v.getMidiChannel() != msg.getChannel())
+                continue;
+            if (msg.isAftertouch() && v.getMidiNote() != msg.getNoteNumber())
+                continue;
+            if (msg.isAftertouch())
+                v.setMidiCC(ModSource::Aftertouch, pressure);
+            else
+                v.setMidiCC(ModSource::ChanPressure, pressure);
         }
     }
     else if (msg.isController())
     {
-        float norm = msg.getControllerValue() / 127.f;
-        if (msg.getControllerNumber() == 1)
+        float norm = (float) msg.getControllerValue() / 127.f;
+        if (msg.getControllerNumber() == 64)
+            setSustain(msg.getChannel(), msg.getControllerValue() >= 64);
+        else if (msg.getControllerNumber() == 1)
+        {
             for (auto& v : voices)
-                v.setMidiCC(ModSource::ModWheel, norm);
+                if (v.getMidiChannel() == msg.getChannel())
+                    v.setMidiCC(ModSource::ModWheel, norm);
+        }
         else if (msg.getControllerNumber() == 74)
+        {
             for (auto& v : voices)
-                v.setMidiCC(ModSource::CC74, norm);
+                if (v.getMidiChannel() == msg.getChannel())
+                    v.setMidiCC(ModSource::CC74, norm);
+        }
     }
     else if (msg.isPitchWheel())
     {
-        float pb = (msg.getPitchWheelValue() - 8192) / 8192.f;
+        float pb = (float) (msg.getPitchWheelValue() - 8192) / 8192.f;
         for (auto& v : voices)
-            v.setMidiCC(ModSource::PitchBend, pb);
+            if (v.getMidiChannel() == msg.getChannel())
+                v.setMidiCC(ModSource::PitchBend, pb);
     }
 }
 

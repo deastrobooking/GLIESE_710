@@ -65,13 +65,16 @@ private:
     Arpeggiator arp;
     juce::MidiBuffer arpMidi;
     juce::MidiBuffer renderMidi;
+    std::array<std::array<uint8_t, 128>, 16> heldNoteCounts {};
+    std::array<bool, 16> sustainDown {};
 
     void handleMidiMessage(const juce::MidiMessage& msg, bool triggerNotes);
     void renderVoices(juce::AudioBuffer<float>& buffer, int startSample, int numSamples);
     void renderTimedMidi(juce::AudioBuffer<float>& buffer, const juce::MidiBuffer& midi,
                          int startSample, int numSamples, bool triggerNotes);
-    void noteOn(int note, float velocity);
-    void noteOff(int note);
+    void noteOn(int note, float velocity, int channel);
+    void noteOff(int note, int channel);
+    void setSustain(int channel, bool down);
     void allNotesOff();
 
     SynthVoice* findFreeVoice() const;

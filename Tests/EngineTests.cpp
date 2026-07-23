@@ -13,8 +13,10 @@
 #include "../Source/Engine/Modulation/StepSequencerMod.h"
 #include "../Source/Engine/LFO/LFOEngine.h"
 #include "../Source/Engine/Arpeggiator/Arpeggiator.h"
+#include "../Source/Engine/MasterOutputStage.h"
 #include <array>
 #include <chrono>
+#include <limits>
 #include <vector>
 
 using Catch::Approx;
@@ -490,6 +492,43 @@ TEST_CASE("LFOEngine sample and block advancement agree", "[lfo]")
         sampleLfo.processSample();
 
     REQUIRE(blockLfo.getValue(0) == Catch::Approx(sampleLfo.getValue(0)).margin(1.0e-6f));
+}
+
+TEST_CASE("Master output stage links stereo and enforces its ceiling", "[output][performance]")
+{
+    MasterOutputStage output;
+    output.prepare(48000.0);
+    juce::AudioBuffer<float> buffer(2, 64);
+    buffer.clear();
+    buffer.setSample(0, 0, 4.f);
+    buffer.setSample(1, 0, -2.f);
+    for (int i = 1; i < buffer.getNumSamples(); ++i)
+    {
+        buffer.setSample(0, i, 0.4f);
+        buffer.setSample(1, i, -0.2f);
+    }
+
+    const auto result = output.process(buffer);
+    REQUIRE(result.limited);
+    REQUIRE(result.peakL <= 0.98001f);
+    REQUIRE(result.peakR <= 0.98001f);
+    REQUIRE(buffer.getSample(0, 0) == Approx(-2.f * buffer.getSample(1, 0)).margin(1.0e-6f));
+}
+
+TEST_CASE("Master output stage recovers non-finite samples", "[output]")
+{
+    MasterOutputStage output;
+    output.prepare(48000.0);
+    juce::AudioBuffer<float> buffer(2, 4);
+    buffer.clear();
+    buffer.setSample(0, 0, std::numeric_limits<float>::quiet_NaN());
+    buffer.setSample(1, 1, std::numeric_limits<float>::infinity());
+
+    const auto result = output.process(buffer);
+    REQUIRE(result.recoveredNonFinite);
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+            REQUIRE(std::isfinite(buffer.getSample(channel, sample)));
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -2045,6 +2084,35 @@ TEST_CASE("Arpeggiator sync toggle chooses host tempo or internal tempo", "[arp]
     freeRunning.setParams(p);
     freeRunning.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
     REQUIRE(collectArpNoteOns(freeRunning, 30).empty());
+}
+
+TEST_CASE("Arpeggiator preserves source channel and velocity", "[arp][midi]")
+{
+    Arpeggiator arp;
+    arp.prepare(3200.0);
+
+    Arpeggiator::Params p;
+    p.pattern = Arpeggiator::Pattern::AsPlayed;
+    p.rateIdx = 0;
+    p.sync = false;
+    p.gate = 0.5f;
+    arp.setParams(p);
+    arp.handleMidi(juce::MidiMessage::noteOn(7, 62, (juce::uint8) 73));
+
+    juce::MidiBuffer output;
+    arp.processBlock(output, 0, 80);
+
+    bool foundNoteOn = false;
+    for (const auto meta : output)
+    {
+        const auto msg = meta.getMessage();
+        if (!msg.isNoteOn())
+            continue;
+        foundNoteOn = true;
+        REQUIRE(msg.getChannel() == 7);
+        REQUIRE(msg.getVelocity() == 73);
+    }
+    REQUIRE(foundNoteOn);
 }
 
 TEST_CASE("Arpeggiator random latch repeats its shuffled order", "[arp]")

@@ -27,11 +27,12 @@ public:
     void prepare(double sampleRate);
     void reset();
 
-    void noteOn(int midiNote, float velocity);
+    void noteOn(int midiNote, float velocity, int midiChannel = 1);
     void noteOff();
 
     bool isActive() const;
     int  getMidiNote() const { return midiNote; }
+    int  getMidiChannel() const { return midiChannel; }
     int  getVoiceAge() const { return age; }
 
     void renderBlock(juce::AudioBuffer<float>& buffer, int startSample, int numSamples,
@@ -50,6 +51,7 @@ public:
 
 private:
     int    midiNote = -1;
+    int    midiChannel = 1;
     float  velocity = 1.f;
     int    age      = 0;
 
@@ -94,6 +96,18 @@ private:
     ModMatrix    modMatrix;
 
     ModValues modSources, modDests;
+
+    using LinearSmooth = juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>;
+    LinearSmooth masterVolumeSmooth;
+    LinearSmooth masterPanSmooth;
+    std::array<LinearSmooth, 2> fmLevelSmooth;
+    std::array<LinearSmooth, kNum3DOscs> osc3dLevelSmooth;
+    std::array<LinearSmooth, kNumWTOscs> wtLevelSmooth;
+    std::array<LinearSmooth, kNumKSOscs> ksLevelSmooth;
+    std::array<LinearSmooth, kNumGranOscs> grainLevelSmooth;
+    std::array<LinearSmooth, kNumTerrainOscs> terrainLevelSmooth;
+    std::array<LinearSmooth, kNumVAOscs> vaLevelSmooth;
+    bool smoothingInitialized = false;
 
     // ── Parameter pointer cache ───────────────────────────────────────────────
     struct ParamCache

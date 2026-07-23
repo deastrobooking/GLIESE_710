@@ -197,11 +197,27 @@ void SynthVoice::prepare(double sr)
     for (auto& filter : engineFilterL) filter.prepare(sr);
     for (auto& filter : engineFilterR) filter.prepare(sr);
     dualFilter.prepare(sr);
+
+    auto prepareSmooth = [sr](auto& smooth) {
+        smooth.reset(sr, 0.01);
+        smooth.setCurrentAndTargetValue(0.f);
+    };
+    prepareSmooth(masterVolumeSmooth);
+    masterPanSmooth.reset(sr, 0.01);
+    masterPanSmooth.setCurrentAndTargetValue(0.f);
+    for (auto& smooth : fmLevelSmooth) prepareSmooth(smooth);
+    for (auto& smooth : osc3dLevelSmooth) prepareSmooth(smooth);
+    for (auto& smooth : wtLevelSmooth) prepareSmooth(smooth);
+    for (auto& smooth : ksLevelSmooth) prepareSmooth(smooth);
+    for (auto& smooth : grainLevelSmooth) prepareSmooth(smooth);
+    for (auto& smooth : terrainLevelSmooth) prepareSmooth(smooth);
+    for (auto& smooth : vaLevelSmooth) prepareSmooth(smooth);
 }
 
 void SynthVoice::reset()
 {
     midiNote = -1;
+    midiChannel = 1;
     age      = 0;
     for (auto& osc : osc3dArray) osc.reset();
     fm.reset();
@@ -216,11 +232,15 @@ void SynthVoice::reset()
     for (auto& filter : engineFilterL) filter.reset();
     for (auto& filter : engineFilterR) filter.reset();
     dualFilter.reset();
+    smoothingInitialized = false;
 }
 
-void SynthVoice::noteOn(int note, float vel)
+void SynthVoice::noteOn(int note, float vel, int channel)
 {
+    if (!isActive())
+        smoothingInitialized = false;
     midiNote = note;
+    midiChannel = juce::jlimit(1, 16, channel);
     velocity = juce::jlimit(0.f, 1.f, vel);
     age      = 0;
 
@@ -1129,58 +1149,98 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
         pF(pc.master.volume, 0.8f) + modDests.dests[(int)ModDest::Master_Volume]);
     float masterPan  = juce::jlimit(-1.f, 1.f,
         pF(pc.master.pan) + modDests.dests[(int)ModDest::Master_Pan]);
+    masterVolumeSmooth.setTargetValue(masterVol);
+    masterPanSmooth.setTargetValue(masterPan);
+    fmLevelSmooth[0].setTargetValue(pB(pc.fm.on) ? fmLevelA : 0.f);
+    fmLevelSmooth[1].setTargetValue(pB(pc.fmB.on) ? fmLevelB : 0.f);
+    for (int i = 0; i < kNum3DOscs; ++i)
+        osc3dLevelSmooth[(size_t)i].setTargetValue(pB(pc.osc3d[(size_t)i].on) ? osc3dLevels[(size_t)i] : 0.f);
+    for (int i = 0; i < kNumWTOscs; ++i)
+        wtLevelSmooth[(size_t)i].setTargetValue(pB(pc.wt[(size_t)i].on) ? wtLevels[(size_t)i] : 0.f);
+    for (int i = 0; i < kNumKSOscs; ++i)
+        ksLevelSmooth[(size_t)i].setTargetValue(pB(pc.ks[(size_t)i].on) ? ksLevels[(size_t)i] : 0.f);
+    for (int i = 0; i < kNumGranOscs; ++i)
+        grainLevelSmooth[(size_t)i].setTargetValue(pB(pc.grain[(size_t)i].on) ? grainLevels[(size_t)i] : 0.f);
+    for (int i = 0; i < kNumTerrainOscs; ++i)
+        terrainLevelSmooth[(size_t)i].setTargetValue(pB(pc.terrain[(size_t)i].on) ? terrainLevels[(size_t)i] : 0.f);
+    for (int i = 0; i < kNumVAOscs; ++i)
+        vaLevelSmooth[(size_t)i].setTargetValue(pB(pc.va[(size_t)i].on) ? vaLevels[(size_t)i] : 0.f);
+
+    if (!smoothingInitialized)
+    {
+        auto snapToTarget = [](auto& smooth) {
+            smooth.setCurrentAndTargetValue(smooth.getTargetValue());
+        };
+        snapToTarget(masterVolumeSmooth);
+        snapToTarget(masterPanSmooth);
+        for (auto& smooth : fmLevelSmooth) snapToTarget(smooth);
+        for (auto& smooth : osc3dLevelSmooth) snapToTarget(smooth);
+        for (auto& smooth : wtLevelSmooth) snapToTarget(smooth);
+        for (auto& smooth : ksLevelSmooth) snapToTarget(smooth);
+        for (auto& smooth : grainLevelSmooth) snapToTarget(smooth);
+        for (auto& smooth : terrainLevelSmooth) snapToTarget(smooth);
+        for (auto& smooth : vaLevelSmooth) snapToTarget(smooth);
+        smoothingInitialized = true;
+    }
 
     float lfoA = lfo.getValue(0);
     float lfoB = lfo.getValue(1);
 
-    const bool useFMA = currentBlockAIsFM && pB(pc.fm.on)  && fmLevelA > kSilent;
-    const bool useFMB = currentBlockBIsFM && pB(pc.fmB.on) && fmLevelB > kSilent;
+    const bool useFMA = currentBlockAIsFM
+                     && (fmLevelSmooth[0].getTargetValue() > kSilent
+                         || fmLevelSmooth[0].getCurrentValue() > kSilent);
+    const bool useFMB = currentBlockBIsFM
+                     && (fmLevelSmooth[1].getTargetValue() > kSilent
+                         || fmLevelSmooth[1].getCurrentValue() > kSilent);
     const bool useFM  = useFMA || useFMB;
 
     std::array<bool, kNum3DOscs> use3D {};
     for (int i = 0; i < current3dCount; ++i)
     {
         const int idx = active3dIndices[(size_t)i];
-        use3D[(size_t)idx] = pB(pc.osc3d[(size_t)idx].on) && osc3dLevels[(size_t)idx] > kSilent;
+        use3D[(size_t)idx] = osc3dLevelSmooth[(size_t)idx].getTargetValue() > kSilent
+                          || osc3dLevelSmooth[(size_t)idx].getCurrentValue() > kSilent;
     }
 
     std::array<bool, kNumWTOscs> useWT {};
     for (int i = 0; i < currentWTCount; ++i)
     {
         const int idx = activeWTIndices[(size_t)i];
-        useWT[(size_t)idx] = pB(pc.wt[(size_t)idx].on) && wtLevels[(size_t)idx] > kSilent;
+        useWT[(size_t)idx] = wtLevelSmooth[(size_t)idx].getTargetValue() > kSilent
+                          || wtLevelSmooth[(size_t)idx].getCurrentValue() > kSilent;
     }
 
     std::array<bool, kNumKSOscs> useKS {};
     for (int i = 0; i < currentKSCount; ++i)
     {
         const int idx = activeKSIndices[(size_t)i];
-        useKS[(size_t)idx] = pB(pc.ks[(size_t)idx].on) && ksLevels[(size_t)idx] > kSilent;
+        useKS[(size_t)idx] = ksLevelSmooth[(size_t)idx].getTargetValue() > kSilent
+                          || ksLevelSmooth[(size_t)idx].getCurrentValue() > kSilent;
     }
 
     std::array<bool, kNumGranOscs> useGran {};
     for (int i = 0; i < currentGranCount; ++i)
     {
         const int idx = activeGranIndices[(size_t)i];
-        useGran[(size_t)idx] = pB(pc.grain[(size_t)idx].on) && grainLevels[(size_t)idx] > kSilent;
+        useGran[(size_t)idx] = grainLevelSmooth[(size_t)idx].getTargetValue() > kSilent
+                            || grainLevelSmooth[(size_t)idx].getCurrentValue() > kSilent;
     }
 
     std::array<bool, kNumTerrainOscs> useTerrain {};
     for (int i = 0; i < currentTerrainCount; ++i)
     {
         const int idx = activeTerrainIndices[(size_t)i];
-        useTerrain[(size_t)idx] = pB(pc.terrain[(size_t)idx].on) && terrainLevels[(size_t)idx] > kSilent;
+        useTerrain[(size_t)idx] = terrainLevelSmooth[(size_t)idx].getTargetValue() > kSilent
+                               || terrainLevelSmooth[(size_t)idx].getCurrentValue() > kSilent;
     }
 
     std::array<bool, kNumVAOscs> useVA {};
     for (int i = 0; i < currentVACount; ++i)
     {
         const int idx = activeVAIndices[(size_t)i];
-        useVA[(size_t)idx] = pB(pc.va[(size_t)idx].on) && vaLevels[(size_t)idx] > kSilent;
+        useVA[(size_t)idx] = vaLevelSmooth[(size_t)idx].getTargetValue() > kSilent
+                          || vaLevelSmooth[(size_t)idx].getCurrentValue() > kSilent;
     }
-
-    const float panGainL = masterVol * std::sqrt(0.5f - 0.5f * masterPan);
-    const float panGainR = masterVol * std::sqrt(0.5f + 0.5f * masterPan);
 
     const float osc3dNorm = current3dCount > 0
         ? 1.f / std::sqrt((float)current3dCount) : 1.f;
@@ -1239,6 +1299,12 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
         }
 
         float masterEnv = envBank.processAndGet(ENV_MASTER);
+        const float smoothedMasterVolume = masterVolumeSmooth.getNextValue();
+        const float smoothedMasterPan = masterPanSmooth.getNextValue();
+        const float panGainL = smoothedMasterVolume * std::sqrt(0.5f - 0.5f * smoothedMasterPan);
+        const float panGainR = smoothedMasterVolume * std::sqrt(0.5f + 0.5f * smoothedMasterPan);
+        const float smoothedFmLevelA = fmLevelSmooth[0].getNextValue();
+        const float smoothedFmLevelB = fmLevelSmooth[1].getNextValue();
 
         if (masterEnv < kSilent)
         {
@@ -1330,7 +1396,8 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
                 const int i = active3dIndices[(size_t)n];
                 if (use3D[(size_t)i] && env3D[i] > kSilent)
                 {
-                    sum += osc3dArray[(size_t)i].processSample() * env3D[i] * osc3dLevels[(size_t)i];
+                    sum += osc3dArray[(size_t)i].processSample() * env3D[i]
+                         * osc3dLevelSmooth[(size_t)i].getNextValue();
                     env3DGroup = juce::jmax(env3DGroup, env3D[i]);
                 }
             }
@@ -1344,7 +1411,7 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             {
                 if (envFMA > kSilent)
                 {
-                    sigFM += fm.processSample() * fmScale * envFMA * fmLevelA;
+                    sigFM += fm.processSample() * fmScale * envFMA * smoothedFmLevelA;
                     envFMGroup = juce::jmax(envFMGroup, envFMA);
                 }
                 else
@@ -1355,7 +1422,7 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             {
                 if (envFMB > kSilent)
                 {
-                    sigFM += fm2.processSample() * fmScale * envFMB * fmLevelB;
+                    sigFM += fm2.processSample() * fmScale * envFMB * smoothedFmLevelB;
                     envFMGroup = juce::jmax(envFMGroup, envFMB);
                 }
                 else
@@ -1370,7 +1437,7 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             if (useKS[(size_t)i] && (ksOscs[(size_t)i].isActive() || envKS[i] > kSilent))
             {
                 sigKS += ksOscs[(size_t)i].processSample(cachedKSParams[(size_t)i])
-                       * envKS[i] * ksLevels[(size_t)i] * ksNorm;
+                       * envKS[i] * ksLevelSmooth[(size_t)i].getNextValue() * ksNorm;
                 envKSGroup = juce::jmax(envKSGroup, envKS[i]);
             }
         }
@@ -1384,8 +1451,9 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
                 if (useWT[(size_t)i] && envWT[i] > kSilent)
                 {
                     auto [wtL, wtR] = wtOscs[(size_t)i].processSample();
-                    sigWTL += wtL * envWT[i] * wtLevels[(size_t)i] * wtNorm;
-                    sigWTR += wtR * envWT[i] * wtLevels[(size_t)i] * wtNorm;
+                    const float level = wtLevelSmooth[(size_t)i].getNextValue();
+                    sigWTL += wtL * envWT[i] * level * wtNorm;
+                    sigWTR += wtR * envWT[i] * level * wtNorm;
                     envWTGroup = juce::jmax(envWTGroup, envWT[i]);
                 }
             }
@@ -1400,8 +1468,9 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
                 if (useGran[(size_t)i] && envGran[i] > kSilent)
                 {
                     auto [gL, gR] = granularOscs[(size_t)i].processSample();
-                    sigGranL += gL * envGran[i] * grainLevels[(size_t)i] * grainNorm;
-                    sigGranR += gR * envGran[i] * grainLevels[(size_t)i] * grainNorm;
+                    const float level = grainLevelSmooth[(size_t)i].getNextValue();
+                    sigGranL += gL * envGran[i] * level * grainNorm;
+                    sigGranR += gR * envGran[i] * level * grainNorm;
                     envGranGroup = juce::jmax(envGranGroup, envGran[i]);
                 }
             }
@@ -1414,7 +1483,8 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             if (useTerrain[(size_t)i] && envTerrain[i] > kSilent)
             {
                 const float t = terrainOscs[(size_t)i].processSample()
-                              * envTerrain[i] * terrainLevels[(size_t)i] * terrainNorm;
+                              * envTerrain[i] * terrainLevelSmooth[(size_t)i].getNextValue()
+                              * terrainNorm;
                 sigTerrain += t;
                 envTerrainGroup = juce::jmax(envTerrainGroup, envTerrain[i]);
             }
@@ -1427,8 +1497,9 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
             if (useVA[(size_t)i] && envVA[i] > kSilent)
             {
                 auto [vaL, vaR] = vaOscs[(size_t)i].processSample();
-                sigVAL += vaL * envVA[i] * vaLevels[(size_t)i];
-                sigVAR += vaR * envVA[i] * vaLevels[(size_t)i];
+                const float level = vaLevelSmooth[(size_t)i].getNextValue();
+                sigVAL += vaL * envVA[i] * level;
+                sigVAR += vaR * envVA[i] * level;
                 envVAGroup = juce::jmax(envVAGroup, envVA[i]);
             }
         }

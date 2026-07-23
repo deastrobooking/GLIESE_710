@@ -41,29 +41,29 @@ int Arpeggiator::randInt(int max)
     return (int)(rngState >> 16) % max;
 }
 
-bool Arpeggiator::NoteList::contains(int note) const noexcept
+bool Arpeggiator::NoteList::contains(int note, int channel) const noexcept
 {
     for (int i = 0; i < count; ++i)
-        if (data[(size_t) i] == note)
+        if (data[(size_t) i].number == note && data[(size_t) i].channel == channel)
             return true;
 
     return false;
 }
 
-bool Arpeggiator::NoteList::push(int note) noexcept
+bool Arpeggiator::NoteList::push(Note note) noexcept
 {
-    if (contains(note) || count >= capacity)
+    if (contains(note.number, note.channel) || count >= capacity)
         return false;
 
     data[(size_t) count++] = note;
     return true;
 }
 
-bool Arpeggiator::NoteList::remove(int note) noexcept
+bool Arpeggiator::NoteList::remove(int note, int channel) noexcept
 {
     for (int i = 0; i < count; ++i)
     {
-        if (data[(size_t) i] != note)
+        if (data[(size_t) i].number != note || data[(size_t) i].channel != channel)
             continue;
 
         for (int j = i + 1; j < count; ++j)
@@ -105,7 +105,11 @@ const Arpeggiator::NoteList& Arpeggiator::orderedNotesForPattern()
         if (sortedNotesDirty)
         {
             sortedNotes.copyFrom(notes);
-            std::sort(sortedNotes.data.begin(), sortedNotes.data.begin() + sortedNotes.count);
+            std::sort(sortedNotes.data.begin(), sortedNotes.data.begin() + sortedNotes.count,
+                      [](const Note& a, const Note& b) {
+                          return a.number == b.number ? a.channel < b.channel
+                                                     : a.number < b.number;
+                      });
             sortedNotesDirty = false;
         }
         return sortedNotes;
@@ -131,28 +135,30 @@ void Arpeggiator::handleMidi(const juce::MidiMessage& msg)
     if (msg.isNoteOn())
     {
         int note = msg.getNoteNumber();
-        if (heldNotes.push(note) && !params.latch)
+        const int channel = msg.getChannel();
+        Note played { note, channel, (juce::uint8) msg.getVelocity() };
+        if (heldNotes.push(played) && !params.latch)
             markNotesChanged();
 
         if (params.latch)
         {
-            if (!latchedNotes.remove(note))
-                latchedNotes.push(note);
+            if (!latchedNotes.remove(note, channel))
+                latchedNotes.push(played);
             markNotesChanged();
         }
     }
     else if (msg.isNoteOff())
     {
         int note = msg.getNoteNumber();
-        if (heldNotes.remove(note) && !params.latch)
+        if (heldNotes.remove(note, msg.getChannel()) && !params.latch)
             markNotesChanged();
     }
 }
 
-int Arpeggiator::nextNote()
+Arpeggiator::Note Arpeggiator::nextNote()
 {
     const auto& notes = orderedNotesForPattern();
-    if (notes.empty()) return -1;
+    if (notes.empty()) return {};
 
     int totalSteps = (int)notes.size() * params.octaves;
     arpIndex = juce::jlimit(0, totalSteps - 1, arpIndex);
@@ -228,23 +234,26 @@ int Arpeggiator::nextNote()
             break;
     }
 
-    if (noteIdx < 0 || noteIdx >= (int)notes.size()) return -1;
-    return notes[noteIdx] + oct * 12;
+    if (noteIdx < 0 || noteIdx >= (int)notes.size()) return {};
+    auto result = notes[noteIdx];
+    result.number += oct * 12;
+    return result;
 }
 
 void Arpeggiator::sendNoteOff(juce::MidiBuffer& buf, int sample)
 {
     if (noteIsOn && currentNoteNumber >= 0)
     {
-        buf.addEvent(juce::MidiMessage::noteOff(1, currentNoteNumber), sample);
+        buf.addEvent(juce::MidiMessage::noteOff(currentNoteChannel, currentNoteNumber), sample);
         noteIsOn = false;
     }
 }
 
-void Arpeggiator::sendNoteOn(juce::MidiBuffer& buf, int sample, int note)
+void Arpeggiator::sendNoteOn(juce::MidiBuffer& buf, int sample, const Note& note)
 {
-    currentNoteNumber = note;
-    buf.addEvent(juce::MidiMessage::noteOn(1, note, (juce::uint8)100), sample);
+    currentNoteNumber = note.number;
+    currentNoteChannel = note.channel;
+    buf.addEvent(juce::MidiMessage::noteOn(note.channel, note.number, note.velocity), sample);
     noteIsOn = true;
 }
 
@@ -281,8 +290,8 @@ void Arpeggiator::processBlock(juce::MidiBuffer& outputMidi, int startSample, in
             currentStepSamples = stepSamples * (1.0 + (swingToggle == 0 ? params.swing : -params.swing) * 0.5);
 
             sendNoteOff(outputMidi, startSample + s);
-            int note = nextNote();
-            if (note >= 0 && note <= 127)
+            auto note = nextNote();
+            if (note.number >= 0 && note.number <= 127)
                 sendNoteOn(outputMidi, startSample + s, note);
         }
     }

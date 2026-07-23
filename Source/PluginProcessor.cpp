@@ -517,11 +517,16 @@ void GLIESE710AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
 {
     synthEngine.prepare({ sampleRate, (juce::uint32)samplesPerBlock, 2 });
     synthEngine.setAPVTS(&apvts);
+    masterOutput.prepare(sampleRate);
+    outputPeakL.store(0.f, std::memory_order_relaxed);
+    outputPeakR.store(0.f, std::memory_order_relaxed);
+    outputClip.store(false, std::memory_order_relaxed);
 }
 
 void GLIESE710AudioProcessor::releaseResources()
 {
     synthEngine.reset();
+    masterOutput.reset();
 }
 
 void GLIESE710AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
@@ -545,6 +550,16 @@ void GLIESE710AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     synthEngine.setHostPosition(ppqPosition);
 
     synthEngine.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+
+    const auto output = masterOutput.process(buffer);
+    const auto updatePeak = [](std::atomic<float>& meter, float peak) {
+        const float previous = meter.load(std::memory_order_relaxed);
+        meter.store(juce::jmax(peak, previous * 0.82f), std::memory_order_relaxed);
+    };
+    updatePeak(outputPeakL, output.peakL);
+    updatePeak(outputPeakR, output.peakR);
+    if (output.limited || output.recoveredNonFinite)
+        outputClip.store(true, std::memory_order_relaxed);
 }
 
 bool GLIESE710AudioProcessor::importTerrainHeightmap(int terrainIndex, const juce::File& file)

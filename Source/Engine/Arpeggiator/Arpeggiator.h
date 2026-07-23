@@ -40,21 +40,26 @@ private:
     double bpm = 120.0;
     Params params;
 
+    struct Note
+    {
+        int number = -1;
+        int channel = 1;
+        juce::uint8 velocity = 100;
+    };
+
     struct NoteList
     {
         static constexpr int capacity = 128;
-        std::array<int, capacity> data {};
+        std::array<Note, capacity> data {};
         int count = 0;
 
         bool empty() const noexcept { return count == 0; }
         int size() const noexcept { return count; }
-        int operator[] (int index) const noexcept { return data[(size_t) index]; }
-        const int* begin() const noexcept { return data.data(); }
-        const int* end() const noexcept { return data.data() + count; }
+        const Note& operator[] (int index) const noexcept { return data[(size_t) index]; }
         void clear() noexcept { count = 0; }
-        bool contains(int note) const noexcept;
-        bool push(int note) noexcept;
-        bool remove(int note) noexcept;
+        bool contains(int note, int channel) const noexcept;
+        bool push(Note note) noexcept;
+        bool remove(int note, int channel) noexcept;
         void copyFrom(const NoteList& other) noexcept;
     };
 
@@ -71,6 +76,7 @@ private:
     double stepSamples       = 0.0;
     bool   noteIsOn          = false;
     int    currentNoteNumber = -1;
+    int    currentNoteChannel = 1;
     int    swingToggle       = 0;
 
     uint32_t rngState = 42;
@@ -80,8 +86,8 @@ private:
     NoteList& activeNotes();
     const NoteList& orderedNotesForPattern();
     void markNotesChanged();
-    int  nextNote();
+    Note nextNote();
     void sendNoteOff(juce::MidiBuffer& buf, int sample);
-    void sendNoteOn(juce::MidiBuffer& buf, int sample, int note);
+    void sendNoteOn(juce::MidiBuffer& buf, int sample, const Note& note);
     int  randInt(int max);
 };
