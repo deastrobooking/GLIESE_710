@@ -17,6 +17,7 @@ public:
     void setHostBPM(double bpm);
     void setHostPosition(std::optional<double> ppqPosition);
     int getModSequencerCurrentStep() const noexcept { return modSequencer.getCurrentStep(); }
+    int getActiveVoiceCount() const noexcept;
 
     void renderNextBlock(juce::AudioBuffer<float>& buffer,
                          juce::MidiBuffer& midiMessages,

@@ -521,6 +521,8 @@ void GLIESE710AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
     outputPeakL.store(0.f, std::memory_order_relaxed);
     outputPeakR.store(0.f, std::memory_order_relaxed);
     outputClip.store(false, std::memory_order_relaxed);
+    dspLoad.store(0.f, std::memory_order_relaxed);
+    activeVoiceCount.store(0, std::memory_order_relaxed);
 }
 
 void GLIESE710AudioProcessor::releaseResources()
@@ -532,6 +534,7 @@ void GLIESE710AudioProcessor::releaseResources()
 void GLIESE710AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                            juce::MidiBuffer& midiMessages)
 {
+    const auto startTicks = juce::Time::getHighResolutionTicks();
     juce::ScopedNoDenormals noDenormals;
     buffer.clear();
 
@@ -560,6 +563,20 @@ void GLIESE710AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     updatePeak(outputPeakR, output.peakR);
     if (output.limited || output.recoveredNonFinite)
         outputClip.store(true, std::memory_order_relaxed);
+
+    activeVoiceCount.store(synthEngine.getActiveVoiceCount(), std::memory_order_relaxed);
+    const auto elapsedTicks = juce::Time::getHighResolutionTicks() - startTicks;
+    const double elapsedSeconds = juce::Time::highResolutionTicksToSeconds(elapsedTicks);
+    const double blockSeconds = getSampleRate() > 0.0
+        ? (double) buffer.getNumSamples() / getSampleRate() : 0.0;
+    if (blockSeconds > 0.0)
+    {
+        const float instantaneous = (float) juce::jlimit(0.0, 4.0, elapsedSeconds / blockSeconds);
+        const float previous = dspLoad.load(std::memory_order_relaxed);
+        const float coefficient = instantaneous > previous ? 0.35f : 0.08f;
+        dspLoad.store(previous + coefficient * (instantaneous - previous),
+                      std::memory_order_relaxed);
+    }
 }
 
 bool GLIESE710AudioProcessor::importTerrainHeightmap(int terrainIndex, const juce::File& file)

@@ -17,6 +17,8 @@ private:
     GLIESE710AudioProcessor& processor;
     float peakL = 0.f;
     float peakR = 0.f;
+    float dspLoad = 0.f;
+    int activeVoices = 0;
     int clipHoldFrames = 0;
     void timerCallback() override;
 };

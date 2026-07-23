@@ -3,7 +3,7 @@
 
 OutputMeter::OutputMeter(GLIESE710AudioProcessor& p) : processor(p)
 {
-    setTooltip("Stereo master output level. Red indicates limiter activity or recovered invalid audio.");
+    setTooltip("Stereo output, smoothed DSP load, and active voices. Red indicates limiter activity, invalid audio recovery, or CPU overload risk.");
     startTimerHz(30);
 }
 
@@ -11,6 +11,8 @@ void OutputMeter::timerCallback()
 {
     peakL = processor.getOutputPeakL();
     peakR = processor.getOutputPeakR();
+    dspLoad = processor.getDspLoad();
+    activeVoices = processor.getActiveVoiceCount();
     if (processor.consumeOutputClipFlag())
         clipHoldFrames = 30;
     else if (clipHoldFrames > 0)
@@ -28,6 +30,17 @@ void OutputMeter::paint(juce::Graphics& g)
     g.setColour(IndustrialTheme::text().withAlpha(0.65f));
     g.setFont(juce::Font(juce::FontOptions { 8.f, juce::Font::bold }));
     g.drawText("OUT", labelArea, juce::Justification::centred);
+
+    auto telemetry = bounds.removeFromRight(62);
+    g.setFont(juce::Font(juce::FontOptions { 8.f, juce::Font::bold }));
+    g.setColour(dspLoad >= 0.9f ? IndustrialTheme::accentMaster()
+                                : IndustrialTheme::text().withAlpha(0.72f));
+    g.drawText("CPU " + juce::String(juce::roundToInt(dspLoad * 100.f)) + "%",
+               telemetry.removeFromTop(9), juce::Justification::centredRight);
+    g.setColour(IndustrialTheme::text().withAlpha(0.62f));
+    g.drawText("V " + juce::String(activeVoices) + "/10",
+               telemetry.removeFromTop(10), juce::Justification::centredRight);
+    bounds.removeFromRight(5);
 
     auto drawChannel = [&](juce::Rectangle<int> area, float peak) {
         g.setColour(juce::Colour(0xff20262d));
@@ -96,7 +109,7 @@ void GLIESE710AudioProcessorEditor::resized()
 {
     auto area = getLocalBounds();
     auto header = area.removeFromTop(36);
-    outputMeter.setBounds(header.removeFromRight(112));
+    outputMeter.setBounds(header.removeFromRight(180));
     presetBrowser.setBounds(header);
     mainPanel.setBounds(area);
 

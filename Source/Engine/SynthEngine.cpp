@@ -61,6 +61,15 @@ void SynthEngine::setHostPosition(std::optional<double> ppqPosition)
     modSequencer.setHostPosition(ppqPosition);
 }
 
+int SynthEngine::getActiveVoiceCount() const noexcept
+{
+    int count = 0;
+    for (const auto& voice : voices)
+        if (voice.isActive())
+            ++count;
+    return count;
+}
+
 void SynthEngine::buildParamCache()
 {
     if (apvts == nullptr)

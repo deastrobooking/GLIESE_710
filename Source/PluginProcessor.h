@@ -39,6 +39,8 @@ public:
     float getOutputPeakL() const noexcept { return outputPeakL.load(std::memory_order_relaxed); }
     float getOutputPeakR() const noexcept { return outputPeakR.load(std::memory_order_relaxed); }
     bool consumeOutputClipFlag() noexcept { return outputClip.exchange(false, std::memory_order_relaxed); }
+    float getDspLoad() const noexcept { return dspLoad.load(std::memory_order_relaxed); }
+    int getActiveVoiceCount() const noexcept { return activeVoiceCount.load(std::memory_order_relaxed); }
 
     juce::AudioProcessorValueTreeState apvts;
     PresetManager presetManager;
@@ -49,6 +51,8 @@ private:
     std::atomic<float> outputPeakL { 0.f };
     std::atomic<float> outputPeakR { 0.f };
     std::atomic<bool> outputClip { false };
+    std::atomic<float> dspLoad { 0.f };
+    std::atomic<int> activeVoiceCount { 0 };
     void restoreTerrainHeightmapsFromState();
     static juce::Identifier terrainStateProperty(int terrainIndex);
 
