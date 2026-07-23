@@ -502,6 +502,7 @@ GLIESE710AudioProcessor::GLIESE710AudioProcessor()
       apvts(*this, nullptr, "State", buildLayout()),
       presetManager(apvts)
 {
+    presetManager.setStateLoadedCallback([this] { restoreTerrainHeightmapsFromState(); });
 }
 
 GLIESE710AudioProcessor::~GLIESE710AudioProcessor() = default;
@@ -557,8 +558,52 @@ bool GLIESE710AudioProcessor::importTerrainHeightmap(int terrainIndex, const juc
 
     suspendProcessing(true);
     const bool ok = synthEngine.setTerrainHeightmap(terrainIndex, image);
+    if (ok)
+    {
+        auto stateImage = image;
+        constexpr int maxStateDimension = 512;
+        const int maxDimension = juce::jmax(image.getWidth(), image.getHeight());
+        if (maxDimension > maxStateDimension)
+        {
+            const float scale = (float) maxStateDimension / (float) maxDimension;
+            stateImage = image.rescaled(
+                juce::jmax(2, juce::roundToInt((float) image.getWidth() * scale)),
+                juce::jmax(2, juce::roundToInt((float) image.getHeight() * scale)),
+                juce::Graphics::mediumResamplingQuality);
+        }
+
+        juce::MemoryOutputStream encoded;
+        juce::PNGImageFormat png;
+        if (png.writeImageToStream(stateImage, encoded))
+            apvts.state.setProperty(terrainStateProperty(terrainIndex),
+                                    encoded.getMemoryBlock().toBase64Encoding(), nullptr);
+    }
     suspendProcessing(false);
     return ok;
+}
+
+juce::Identifier GLIESE710AudioProcessor::terrainStateProperty(int terrainIndex)
+{
+    return juce::Identifier("terrain_heightmap_" + juce::String(terrainIndex));
+}
+
+void GLIESE710AudioProcessor::restoreTerrainHeightmapsFromState()
+{
+    const juce::ScopedLock lock(getCallbackLock());
+    for (int i = 0; i < SynthVoice::kNumTerrainOscs; ++i)
+    {
+        const auto encoded = apvts.state[terrainStateProperty(i)].toString();
+        if (encoded.isEmpty())
+            continue;
+
+        juce::MemoryBlock data;
+        if (!data.fromBase64Encoding(encoded))
+            continue;
+
+        auto image = juce::ImageFileFormat::loadFrom(data.getData(), data.getSize());
+        if (image.isValid())
+            synthEngine.setTerrainHeightmap(i, image);
+    }
 }
 
 //==============================================================================
@@ -580,7 +625,10 @@ void GLIESE710AudioProcessor::setStateInformation(const void* data, int sizeInBy
     {
         auto tree = juce::ValueTree::fromXml(*xml);
         if (tree.isValid())
+        {
             apvts.replaceState(tree);
+            restoreTerrainHeightmapsFromState();
+        }
     }
 }
 

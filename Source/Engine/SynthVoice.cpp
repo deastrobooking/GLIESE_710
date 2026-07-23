@@ -294,6 +294,13 @@ bool SynthVoice::setTerrainHeightmap(int index, const juce::Image& image)
     return terrainOscs[(size_t)index].setHeightmapFromImage(image);
 }
 
+void SynthVoice::shareTerrainHeightmap(int index, const SynthVoice& source)
+{
+    if (index < 0 || index >= kNumTerrainOscs)
+        return;
+    terrainOscs[(size_t) index].shareTerrainFrom(source.terrainOscs[(size_t) index]);
+}
+
 void SynthVoice::setMidiCC(ModSource src, float value)
 {
     int idx = (int)src;
@@ -1061,7 +1068,10 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
         lp.retrig  = pI(lc.retrig) != 0;
         lfo.setParams(i, lp);
     }
-    lfo.processBlock(numSamples);
+    // Prime the control values at the first sample. Subsequent values are
+    // advanced inside the render loop so audio-rate destinations do not step
+    // once per host block.
+    lfo.processSample();
 
     for (int i = 0; i < ModMatrix::kNumSlots; ++i)
     {
@@ -1221,6 +1231,13 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
 
     for (int s = 0; s < numSamples; ++s)
     {
+        if (s > 0)
+        {
+            lfo.processSample();
+            lfoA = lfo.getValue(0);
+            lfoB = lfo.getValue(1);
+        }
+
         float masterEnv = envBank.processAndGet(ENV_MASTER);
 
         if (masterEnv < kSilent)

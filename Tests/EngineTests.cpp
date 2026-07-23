@@ -472,6 +472,26 @@ TEST_CASE("LFOEngine shape output ranges", "[lfo]")
     }
 }
 
+TEST_CASE("LFOEngine sample and block advancement agree", "[lfo]")
+{
+    LFOEngine blockLfo, sampleLfo;
+    blockLfo.prepare(48000.0);
+    sampleLfo.prepare(48000.0);
+
+    LFOEngine::LFOParams p;
+    p.shape = LFOEngine::Shape::Sine;
+    p.rate = 37.f;
+    p.amount = 0.8f;
+    blockLfo.setParams(0, p);
+    sampleLfo.setParams(0, p);
+
+    blockLfo.processBlock(257);
+    for (int i = 0; i < 257; ++i)
+        sampleLfo.processSample();
+
+    REQUIRE(blockLfo.getValue(0) == Catch::Approx(sampleLfo.getValue(0)).margin(1.0e-6f));
+}
+
 //──────────────────────────────────────────────────────────────────────────────
 TEST_CASE("ModMatrix accumulates correctly", "[modmatrix]")
 {

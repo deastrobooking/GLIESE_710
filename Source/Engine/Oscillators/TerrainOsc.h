@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include <array>
+#include <memory>
 #include <vector>
 
 class TerrainOsc
@@ -57,6 +58,7 @@ public:
 
     bool setHeightmapFromImage(const juce::Image& image);
     bool importHeightmapFile(const juce::File& file);
+    void shareTerrainFrom(const TerrainOsc& other) noexcept { sharedTerrain = other.sharedTerrain; }
 
     int getWidth() const noexcept { return width; }
     int getHeight() const noexcept { return height; }
@@ -82,12 +84,22 @@ private:
         std::array<std::vector<float>, kBlurPassCount> blurredTerrain;
     };
 
+    struct TerrainData
+    {
+        int width = 0;
+        int height = 0;
+        std::vector<float> terrain;
+        std::array<std::vector<float>, kBlurPassCount> blurredTerrain;
+        std::vector<MipLevel> mipLevels;
+    };
+
     int width = 0;
     int height = 0;
     Params params;
     std::vector<float> terrain;
     std::array<std::vector<float>, kBlurPassCount> blurredTerrain;
     std::vector<MipLevel> mipLevels;
+    std::shared_ptr<const TerrainData> sharedTerrain;
 
     void updateDerived();
     void generateDefaultTerrain();

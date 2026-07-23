@@ -41,6 +41,8 @@ public:
 
 private:
     SynthEngine synthEngine;
+    void restoreTerrainHeightmapsFromState();
+    static juce::Identifier terrainStateProperty(int terrainIndex);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GLIESE710AudioProcessor)
 };

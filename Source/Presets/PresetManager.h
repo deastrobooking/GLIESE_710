@@ -1,5 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
+#include <functional>
 
 class PresetManager
 {
@@ -28,6 +29,10 @@ public:
     };
 
     explicit PresetManager(juce::AudioProcessorValueTreeState& apvts);
+    void setStateLoadedCallback(std::function<void()> callback)
+    {
+        stateLoadedCallback = std::move(callback);
+    }
 
     // ── Current patch ─────────────────────────────────────────────────────────
     const juce::String& getCurrentPresetName() const { return currentPresetName; }
@@ -71,8 +76,11 @@ private:
     juce::String currentPresetName { "Init" };
     Category     currentCategory   { Category::Other };
     juce::File   presetsDir;
+    std::function<void()> stateLoadedCallback;
 
     void ensureDirectoryExists(const juce::File& dir);
+    static bool isSafeName(const juce::String& name);
+    bool isInsidePresetsDirectory(const juce::File& file) const;
 
     // Wrap APVTS state in our metadata envelope
     juce::XmlElement* buildPresetXml(const juce::String& name, Category cat) const;

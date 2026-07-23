@@ -55,6 +55,21 @@ void PresetManager::ensureDirectoryExists(const juce::File& dir)
         dir.createDirectory();
 }
 
+bool PresetManager::isSafeName(const juce::String& name)
+{
+    const auto trimmed = name.trim();
+    return trimmed.isNotEmpty()
+        && trimmed != "."
+        && trimmed != ".."
+        && !trimmed.containsAnyOf("/\\:")
+        && juce::File::createLegalFileName(trimmed) == trimmed;
+}
+
+bool PresetManager::isInsidePresetsDirectory(const juce::File& file) const
+{
+    return file == presetsDir || file.isAChildOf(presetsDir);
+}
+
 juce::File PresetManager::getPresetsDirectory() const
 {
     return juce::File::getSpecialLocation(juce::File::userMusicDirectory)
@@ -131,6 +146,9 @@ bool PresetManager::parsePresetFile(const juce::File& file,
 void PresetManager::savePreset(const juce::String& name, Category cat,
                                 const juce::String& bankName)
 {
+    if (!isSafeName(name) || (bankName.isNotEmpty() && !isSafeName(bankName)))
+        return;
+
     if (bankName.isNotEmpty())
         ensureDirectoryExists(bankDirectory(bankName));
 
@@ -149,6 +167,8 @@ bool PresetManager::loadPreset(const juce::File& file)
     juce::ValueTree state;
     if (!parsePresetFile(file, name, cat, author, state)) return false;
     apvts.replaceState(state);
+    if (stateLoadedCallback)
+        stateLoadedCallback();
     currentPresetName = name;
     currentCategory   = cat;
     return true;
@@ -161,6 +181,8 @@ bool PresetManager::loadPreset(const PatchInfo& info)
 
 bool PresetManager::loadPresetByName(const juce::String& name)
 {
+    if (!isSafeName(name))
+        return false;
     return loadPreset(presetsDir.getChildFile(name + kPresetExtension));
 }
 
@@ -176,9 +198,10 @@ PresetManager::scanDirectory(const juce::File& dir, const juce::String& bankName
                                        "*" + juce::String(kPresetExtension)))
     {
         juce::String name, author;
-        Category cat;
+        Category cat = Category::Other;
         juce::ValueTree dummy;
-        parsePresetFile(f, name, cat, author, dummy);
+        if (!parsePresetFile(f, name, cat, author, dummy))
+            continue;
 
         PatchInfo info;
         info.name     = name;
@@ -220,6 +243,8 @@ PresetManager::getPatchesInBank(const juce::String& bankName) const
 {
     if (bankName.isEmpty() || bankName == "Root")
         return scanDirectory(presetsDir, {});
+    if (!isSafeName(bankName))
+        return {};
     return scanDirectory(bankDirectory(bankName), bankName);
 }
 
@@ -249,7 +274,8 @@ juce::StringArray PresetManager::getUserPresetNames() const
 
 void PresetManager::deletePreset(const PatchInfo& info)
 {
-    info.file.deleteFile();
+    if (isInsidePresetsDirectory(info.file) && info.file.existsAsFile())
+        info.file.deleteFile();
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -258,7 +284,7 @@ void PresetManager::deletePreset(const PatchInfo& info)
 
 bool PresetManager::createBank(const juce::String& bankName)
 {
-    if (bankName.isEmpty()) return false;
+    if (!isSafeName(bankName)) return false;
     auto dir = bankDirectory(bankName);
     if (dir.exists()) return false;
     return dir.createDirectory();
@@ -266,7 +292,7 @@ bool PresetManager::createBank(const juce::String& bankName)
 
 bool PresetManager::renameBank(const juce::String& oldName, const juce::String& newName)
 {
-    if (oldName.isEmpty() || newName.isEmpty()) return false;
+    if (!isSafeName(oldName) || !isSafeName(newName)) return false;
     auto src = bankDirectory(oldName);
     auto dst = bankDirectory(newName);
     if (!src.exists() || dst.exists()) return false;
@@ -275,7 +301,11 @@ bool PresetManager::renameBank(const juce::String& oldName, const juce::String& 
 
 void PresetManager::deleteBank(const juce::String& bankName)
 {
-    bankDirectory(bankName).deleteRecursively();
+    if (!isSafeName(bankName))
+        return;
+    auto dir = bankDirectory(bankName);
+    if (dir.isAChildOf(presetsDir) && dir != presetsDir)
+        dir.deleteRecursively();
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -285,6 +315,7 @@ void PresetManager::deleteBank(const juce::String& bankName)
 bool PresetManager::importPatch(const juce::File& srcFile, const juce::String& bankName)
 {
     if (!srcFile.existsAsFile()) return false;
+    if (bankName.isNotEmpty() && !isSafeName(bankName)) return false;
     auto destDir = bankName.isNotEmpty() ? bankDirectory(bankName) : presetsDir;
     ensureDirectoryExists(destDir);
     auto dest = destDir.getChildFile(srcFile.getFileName());
@@ -311,6 +342,8 @@ bool PresetManager::importBank(const juce::File& bankFile)
 
     juce::String bankName = xml->getStringAttribute("name",
                                 bankFile.getFileNameWithoutExtension());
+    if (!isSafeName(bankName))
+        return false;
     auto dir = bankDirectory(bankName);
     ensureDirectoryExists(dir);
 
@@ -320,6 +353,8 @@ bool PresetManager::importBank(const juce::File& bankFile)
         if (patchEl->getTagName() != "Patch") continue;
         juce::String pName = patchEl->getStringAttribute("name", "Unnamed");
         juce::String pCat  = patchEl->getStringAttribute("category", "Other");
+        if (!isSafeName(pName))
+            continue;
 
         auto* root = new juce::XmlElement("GLIESE710Preset");
         root->setAttribute("name",    pName);
@@ -339,6 +374,8 @@ bool PresetManager::importBank(const juce::File& bankFile)
 
 void PresetManager::exportBank(const juce::String& bankName, const juce::File& destFile)
 {
+    if (bankName.isNotEmpty() && !isSafeName(bankName))
+        return;
     juce::XmlElement root("GLIESE710Bank");
     root.setAttribute("name", bankName.isEmpty() ? "Export" : bankName);
     root.setAttribute("version", 1);

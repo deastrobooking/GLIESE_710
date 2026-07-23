@@ -105,9 +105,12 @@ float LFOEngine::generateShape(int i, float ph)
 
 void LFOEngine::processBlock(int numSamples)
 {
-    if (numSamples <= 0)
-        return;
+    for (int sample = 0; sample < numSamples; ++sample)
+        processSample();
+}
 
+void LFOEngine::processSample()
+{
     for (int i = 0; i < kNumLFOs; ++i)
     {
         auto idx = lfoIndex(i);
@@ -117,15 +120,14 @@ void LFOEngine::processBlock(int numSamples)
         if (ph >= 1.f)
             ph -= std::floor(ph);
 
-        const float advanced = ph + phaseInc * (float)numSamples;
+        const float advanced = ph + phaseInc;
         const int wraps = static_cast<int>(advanced);
         ph = advanced - (float)wraps;
 
         if (wraps > 0
             && (params[idx].shape == Shape::SampleHold || params[idx].shape == Shape::SmoothSH))
         {
-            for (int w = 0; w < wraps; ++w)
-                shPrev[idx] = whiteSample(i);
+            shPrev[idx] = whiteSample(i);
         }
 
         phases[idx] = ph - params[idx].phase;

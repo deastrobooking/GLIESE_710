@@ -45,6 +45,7 @@ public:
     WavetableOsc& getWavetableOsc() { return wtOscs[0]; }
     void addWavetable(juce::String name, const float* samples, int numSamples);
     bool setTerrainHeightmap(int index, const juce::Image& image);
+    void shareTerrainHeightmap(int index, const SynthVoice& source);
     void buildParamCache(juce::AudioProcessorValueTreeState& apvts);
 
 private:

@@ -61,15 +61,20 @@ float TerrainOsc::processSample()
     auto [x, y] = computePath(t);
 
     const float smooth = params.smoothing;
+    const auto& activeMips = sharedTerrain ? sharedTerrain->mipLevels : mipLevels;
+    const auto& activeTerrain = sharedTerrain ? sharedTerrain->terrain : terrain;
+    const auto& activeBlurred = sharedTerrain ? sharedTerrain->blurredTerrain : blurredTerrain;
+    const int activeWidth = sharedTerrain ? sharedTerrain->width : width;
+    const int activeHeight = sharedTerrain ? sharedTerrain->height : height;
     const int mipIndex = chooseMipLevel();
-    const auto* mip = !mipLevels.empty() ? &mipLevels[(size_t)mipIndex] : nullptr;
-    const auto& rawTerrain = mip != nullptr ? mip->terrain : terrain;
+    const auto* mip = !activeMips.empty() ? &activeMips[(size_t)mipIndex] : nullptr;
+    const auto& rawTerrain = mip != nullptr ? mip->terrain : activeTerrain;
     const int blurIndex = smoothingBlurIndex();
     const auto& blurTerrain = mip != nullptr
         ? mip->blurredTerrain[(size_t) blurIndex]
-        : blurredTerrain[(size_t) blurIndex];
-    const int sampleWidth = mip != nullptr ? mip->width : width;
-    const int sampleHeight = mip != nullptr ? mip->height : height;
+        : activeBlurred[(size_t) blurIndex];
+    const int sampleWidth = mip != nullptr ? mip->width : activeWidth;
+    const int sampleHeight = mip != nullptr ? mip->height : activeHeight;
 
     float raw = sampleTerrain(rawTerrain, sampleWidth, sampleHeight, x, y);
     if (smooth > 0.001f && blurTerrain.size() == rawTerrain.size())
@@ -167,6 +172,7 @@ bool TerrainOsc::setHeightmapFromImage(const juce::Image& image)
                                 juce::Graphics::mediumResamplingQuality);
     }
 
+    sharedTerrain.reset();
     width = source.getWidth();
     height = source.getHeight();
     terrain.assign((size_t)width * (size_t)height, 0.f);
@@ -183,6 +189,14 @@ bool TerrainOsc::setHeightmapFromImage(const juce::Image& image)
 
     lastSmoothing = -1.f;
     rebuildBlurredTerrain();
+
+    auto data = std::make_shared<TerrainData>();
+    data->width = width;
+    data->height = height;
+    data->terrain = std::move(terrain);
+    data->blurredTerrain = std::move(blurredTerrain);
+    data->mipLevels = std::move(mipLevels);
+    sharedTerrain = std::move(data);
     return true;
 }
 
@@ -323,20 +337,23 @@ int TerrainOsc::smoothingBlurIndex() const noexcept
 
 int TerrainOsc::chooseMipLevel() const noexcept
 {
-    if (params.quality == Quality::Off || mipLevels.size() <= 1)
+    const auto& activeMips = sharedTerrain ? sharedTerrain->mipLevels : mipLevels;
+    const int activeWidth = sharedTerrain ? sharedTerrain->width : width;
+    const int activeHeight = sharedTerrain ? sharedTerrain->height : height;
+    if (params.quality == Quality::Off || activeMips.size() <= 1)
         return 0;
 
     const float radius = juce::jmax(params.radiusX, params.radiusY) * juce::jmax(0.25f, params.pathSize);
     const float ratio = juce::jmax(params.ratioX, params.ratioY);
     const float pathScale = juce::jmax(1.f, juce::MathConstants<float>::twoPi * radius * ratio);
-    const float texelsPerSample = std::abs(phaseInc) * (float)juce::jmax(width, height) * pathScale
+    const float texelsPerSample = std::abs(phaseInc) * (float)juce::jmax(activeWidth, activeHeight) * pathScale
                                 / juce::jmax(1.f, params.zoom);
 
     float targetLevel = std::log2(juce::jmax(1.f, texelsPerSample));
     if (params.quality == Quality::Soft)
         targetLevel += 1.f;
 
-    return juce::jlimit(0, (int)mipLevels.size() - 1, juce::roundToInt(targetLevel));
+    return juce::jlimit(0, (int)activeMips.size() - 1, juce::roundToInt(targetLevel));
 }
 
 float TerrainOsc::sampleTerrain(const std::vector<float>& data, int dataWidth, int dataHeight, float x, float y) const

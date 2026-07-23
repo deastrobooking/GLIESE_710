@@ -35,6 +35,7 @@ public:
 
     // Process all 4 LFOs, returns pointer to array of kNumLFOs values
     void processBlock(int numSamples);
+    void processSample();
 
     // Get current value of LFO i (call after processBlock)
     float getValue(int i) const { return values[(size_t) juce::jlimit(0, kNumLFOs - 1, i)]; }

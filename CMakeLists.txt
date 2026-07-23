@@ -75,6 +75,10 @@ juce_add_plugin(GLIESE_710
     PRODUCT_NAME                "GLIESE 710"
     DESCRIPTION                 "3D Function Oscillator Synthesizer"
     VST3_CATEGORIES             "Instrument|Synth"
+    # JUCE's manifest helper loads the finished plug-in during the build. That
+    # can deadlock under sandboxed/non-GUI build agents; hosts generate the
+    # optional moduleinfo metadata when it is absent.
+    VST3_AUTO_MANIFEST          FALSE
 )
 
 juce_generate_juce_header(GLIESE_710)

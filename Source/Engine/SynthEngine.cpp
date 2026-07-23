@@ -335,8 +335,10 @@ void SynthEngine::addWavetable(juce::String name, const float* samples, int numS
 
 bool SynthEngine::setTerrainHeightmap(int index, const juce::Image& image)
 {
-    bool ok = false;
-    for (auto& v : voices)
-        ok = v.setTerrainHeightmap(index, image) || ok;
-    return ok;
+    if (voices.empty() || !voices.front().setTerrainHeightmap(index, image))
+        return false;
+
+    for (size_t i = 1; i < voices.size(); ++i)
+        voices[i].shareTerrainHeightmap(index, voices.front());
+    return true;
 }
