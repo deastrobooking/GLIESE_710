@@ -14,6 +14,7 @@
 #include "../Source/Engine/LFO/LFOEngine.h"
 #include "../Source/Engine/Arpeggiator/Arpeggiator.h"
 #include "../Source/Engine/MasterOutputStage.h"
+#include "../Source/Engine/MPEZone.h"
 #include <array>
 #include <chrono>
 #include <limits>
@@ -351,6 +352,45 @@ TEST_CASE("Osc3D outputs bounded signal", "[osc3d]")
     }
 }
 
+TEST_CASE("Osc3D adapts oversampling to field density and nonlinear shaping", "[osc3d][performance]")
+{
+    Osc3D osc;
+    osc.prepare(48000.0);
+    osc.setFrequency(440.f);
+
+    Osc3D::Params p;
+    p.fieldFreq = 4.f;
+    osc.setParams(p);
+    REQUIRE(osc.getOversampleFactor() == 1);
+
+    p.fieldFreq = 6.f;
+    osc.setParams(p);
+    REQUIRE(osc.getOversampleFactor() == 2);
+
+    p.fieldFreq = 12.f;
+    osc.setParams(p);
+    REQUIRE(osc.getOversampleFactor() == 4);
+
+    p.fieldFreq = 2.f;
+    p.foldAmt = 0.75f;
+    osc.setParams(p);
+    REQUIRE(osc.getOversampleFactor() == 2);
+
+    p.foldAmt = 0.f;
+    p.drive = 3.f;
+    osc.setParams(p);
+    REQUIRE(osc.getOversampleFactor() == 2);
+
+    osc.reset();
+    for (int i = 0; i < 4096; ++i)
+    {
+        const float sample = osc.processSample();
+        REQUIRE(std::isfinite(sample));
+        REQUIRE(sample >= -1.01f);
+        REQUIRE(sample <= 1.01f);
+    }
+}
+
 //──────────────────────────────────────────────────────────────────────────────
 TEST_CASE("VAOscillator stereo output bounds", "[vaosc]")
 {
@@ -531,6 +571,66 @@ TEST_CASE("Master output stage recovers non-finite samples", "[output]")
             REQUIRE(std::isfinite(buffer.getSample(channel, sample)));
 }
 
+TEST_CASE("MPE lower zone configures through RPN 6", "[mpe][midi]")
+{
+    GlieseMPEZone zone;
+    zone.reset();
+    REQUIRE(zone.handleController(1, 101, 0));
+    REQUIRE(zone.handleController(1, 100, 6));
+    REQUIRE(zone.handleController(1, 6, 5));
+
+    REQUIRE(zone.getType() == GlieseMPEZone::Type::Lower);
+    REQUIRE(zone.getMasterChannel() == 1);
+    REQUIRE(zone.getMemberCount() == 5);
+    REQUIRE(zone.isMemberChannel(2));
+    REQUIRE(zone.isMemberChannel(6));
+    REQUIRE_FALSE(zone.isMemberChannel(7));
+    REQUIRE(zone.expressionAffectsChannel(1, 5));
+    REQUIRE(zone.expressionAffectsChannel(5, 5));
+    REQUIRE_FALSE(zone.expressionAffectsChannel(5, 4));
+    REQUIRE(zone.expressionAffectsChannel(10, 10));
+    REQUIRE_FALSE(zone.expressionAffectsChannel(10, 11));
+}
+
+TEST_CASE("MPE upper zone replaces and disables active zone", "[mpe][midi]")
+{
+    GlieseMPEZone zone;
+    zone.reset();
+    zone.handleController(1, 101, 0);
+    zone.handleController(1, 100, 6);
+    zone.handleController(1, 6, 4);
+
+    zone.handleController(16, 101, 0);
+    zone.handleController(16, 100, 6);
+    zone.handleController(16, 6, 3);
+    REQUIRE(zone.getType() == GlieseMPEZone::Type::Upper);
+    REQUIRE(zone.getMasterChannel() == 16);
+    REQUIRE(zone.isMemberChannel(15));
+    REQUIRE(zone.isMemberChannel(13));
+    REQUIRE_FALSE(zone.isMemberChannel(12));
+    REQUIRE(zone.expressionAffectsChannel(16, 14));
+
+    zone.handleController(16, 6, 0);
+    REQUIRE(zone.getType() == GlieseMPEZone::Type::None);
+    REQUIRE(zone.expressionAffectsChannel(4, 4));
+    REQUIRE_FALSE(zone.expressionAffectsChannel(4, 5));
+}
+
+TEST_CASE("MPE ignores data entry for unrelated RPN", "[mpe][midi]")
+{
+    GlieseMPEZone zone;
+    zone.reset();
+    zone.handleController(1, 101, 0);
+    zone.handleController(1, 100, 0);
+    REQUIRE_FALSE(zone.handleController(1, 6, 12));
+    REQUIRE(zone.getType() == GlieseMPEZone::Type::None);
+
+    zone.handleController(1, 101, 127);
+    zone.handleController(1, 100, 127);
+    REQUIRE_FALSE(zone.handleController(1, 6, 8));
+    REQUIRE(zone.getType() == GlieseMPEZone::Type::None);
+}
+
 //──────────────────────────────────────────────────────────────────────────────
 TEST_CASE("ModMatrix accumulates correctly", "[modmatrix]")
 {
@@ -603,6 +703,65 @@ TEST_CASE("ModMatrix None slot is skipped", "[modmatrix]")
     // All slots are None — all destinations should be zero
     for (const auto& d : dst.dests)
         REQUIRE(d == Approx(0.f));
+}
+
+TEST_CASE("FM A and FM B operator modulation destinations remain isolated", "[fm][modmatrix]")
+{
+    ModMatrix mm;
+    mm.clear();
+
+    ModSlot fmALevel;
+    fmALevel.source = ModSource::LFO1;
+    fmALevel.dest = ModDest::FM_Op0_Level;
+    fmALevel.amount = 0.25f;
+    fmALevel.bipolar = false;
+    mm.setSlot(0, fmALevel);
+
+    ModSlot fmBLevel = fmALevel;
+    fmBLevel.source = ModSource::LFO2;
+    fmBLevel.dest = ModDest::FM_B_Op0_Level;
+    fmBLevel.amount = 0.75f;
+    mm.setSlot(1, fmBLevel);
+
+    ModSlot fmARatio = fmALevel;
+    fmARatio.source = ModSource::LFO3;
+    fmARatio.dest = ModDest::FM_Op9_Ratio;
+    fmARatio.amount = -0.5f;
+    mm.setSlot(2, fmARatio);
+
+    ModSlot fmBRatio = fmALevel;
+    fmBRatio.source = ModSource::LFO4;
+    fmBRatio.dest = ModDest::FM_B_Op9_Ratio;
+    fmBRatio.amount = 0.4f;
+    mm.setSlot(3, fmBRatio);
+
+    ModValues src{}, dst{};
+    src.sources[(int) ModSource::LFO1] = 0.8f;
+    src.sources[(int) ModSource::LFO2] = 0.4f;
+    src.sources[(int) ModSource::LFO3] = 0.6f;
+    src.sources[(int) ModSource::LFO4] = 0.5f;
+    mm.process(src, dst);
+
+    REQUIRE(dst.dests[(int) ModDest::FM_Op0_Level] == Approx(0.2f));
+    REQUIRE(dst.dests[(int) ModDest::FM_B_Op0_Level] == Approx(0.3f));
+    REQUIRE(dst.dests[(int) ModDest::FM_Op9_Ratio] == Approx(-0.3f));
+    REQUIRE(dst.dests[(int) ModDest::FM_B_Op9_Ratio] == Approx(0.2f));
+    REQUIRE(dst.dests[(int) ModDest::FM_Op1_Level] == Approx(0.f));
+    REQUIRE(dst.dests[(int) ModDest::FM_B_Op1_Level] == Approx(0.f));
+
+    for (int op = 0; op < 10; ++op)
+    {
+        const auto fmALevelDest = (int) ModDest::FM_Op0_Level + op;
+        const auto fmBLevelDest = (int) ModDest::FM_B_Op0_Level + op;
+        const auto fmARatioDest = (int) ModDest::FM_Op0_Ratio + op;
+        const auto fmBRatioDest = (int) ModDest::FM_B_Op0_Ratio + op;
+
+        INFO("FM operator " << op);
+        REQUIRE(fmALevelDest != fmBLevelDest);
+        REQUIRE(fmARatioDest != fmBRatioDest);
+        REQUIRE(fmALevelDest != fmARatioDest);
+        REQUIRE(fmBLevelDest != fmBRatioDest);
+    }
 }
 
 TEST_CASE("Modulation destination names cover appended backlog destinations", "[modmatrix]")

@@ -3,6 +3,7 @@
 #include "SynthVoice.h"
 #include "Arpeggiator/Arpeggiator.h"
 #include "Modulation/StepSequencerMod.h"
+#include "MPEZone.h"
 #include <array>
 #include <optional>
 
@@ -68,6 +69,8 @@ private:
     juce::MidiBuffer renderMidi;
     std::array<std::array<uint8_t, 128>, 16> heldNoteCounts {};
     std::array<bool, 16> sustainDown {};
+    bool mpeMasterSustainDown = false;
+    GlieseMPEZone mpeZone;
 
     void handleMidiMessage(const juce::MidiMessage& msg, bool triggerNotes);
     void renderVoices(juce::AudioBuffer<float>& buffer, int startSample, int numSamples);
@@ -76,6 +79,8 @@ private:
     void noteOn(int note, float velocity, int channel);
     void noteOff(int note, int channel);
     void setSustain(int channel, bool down);
+    bool isSustainActive(int channel) const noexcept;
+    void setExpression(ModSource source, float value, int sourceChannel);
     void allNotesOff();
 
     SynthVoice* findFreeVoice() const;

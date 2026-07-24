@@ -20,6 +20,9 @@ void styleTitle(juce::Label& label, juce::Colour accent, float size = 13.f);
 void styleLabel(juce::Label& label, juce::Colour accent, float size = 10.f,
                 juce::Justification justification = juce::Justification::centred);
 void styleSlider(juce::Slider& slider, juce::Colour accent);
+// Compact, low-profile linear fader (Ableton-device style thin track + flag handle).
+// Use for dense parameter grids where standard sliders would consume too much space.
+void styleMiniFader(juce::Slider& slider, juce::Colour accent);
 void styleCombo(juce::ComboBox& combo, juce::Colour accent);
 void styleButton(juce::Button& button, juce::Colour accent);
 

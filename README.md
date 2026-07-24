@@ -240,6 +240,7 @@ GLIESE_710/
 │   ├── modulation-matrix.md
 │   ├── filter.md
 │   ├── arpeggiator.md
+│   ├── mpe.md
 │   ├── preset-system.md
 │   ├── build-targets.md
 │   ├── deployment.md
@@ -273,11 +274,16 @@ GLIESE_710/
 - [x] Wave-terrain oscillator MVP
 - [x] Terrain image chooser and waveform/path visualizer in the editor
 - [x] Terrain mipmaps / anti-aliasing quality modes
+- [x] Imported terrain embedding and shared per-slot terrain assets
+- [x] Per-slot terrain and independent FM A / FM B modulation destinations
+- [x] Master safety limiter, output meter, DSP load, and voice telemetry
 - [ ] FM algorithm graph visualization
 - [ ] 3D field visualizer panel
-- [ ] MPE support
+- [x] Formal lower/upper-zone MPE support with RPN 6 and master/member expression routing
 - [x] GitHub Actions CI
 - [ ] Factory preset bank
+- [x] Adaptive 3D oscillator oversampling for high field-frequency and nonlinear settings
+- [ ] Granular sample workflow: background loading, regions/slices, waveform display, and live capture
 
 ---
 

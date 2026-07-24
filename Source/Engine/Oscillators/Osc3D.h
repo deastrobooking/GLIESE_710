@@ -63,6 +63,7 @@ public:
     void reset();
 
     float processSample();  // mono output
+    int getOversampleFactor() const noexcept { return oversampleFactor; }
 
 private:
     double sr    = 48000.0;
@@ -76,6 +77,7 @@ private:
     float  cachedFoldAmt = 0.f;
     float  cachedFieldFreq = 1.f;
     float  cachedDrive = 1.f;
+    int    oversampleFactor = 1;
 
     Params params;
 
@@ -89,13 +91,14 @@ private:
     // Noise seed (LCG)
     uint32_t noiseSeed = 12345;
 
-    Vec3   computePath(float t);
+    Vec3   computePath(float t, int rateFactor);
     Vec3   warpCoordinates(Vec3 p) const;
     Vec3   foldCoordinates(Vec3 p) const;
     float  evaluateField(Vec3 p, FieldType ft) const;
     float  blend(Vec3 p) const;
 
     float  whiteSample();
+    float  processSubSample(int rateFactor);
     void   updateDerived();
 
     static float foldCoordinate(float v);

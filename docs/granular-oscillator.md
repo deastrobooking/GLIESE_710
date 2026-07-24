@@ -108,12 +108,14 @@ These are appended to the modulation destination enum to preserve earlier destin
 
 ## Next Upgrades
 
+- Drag-and-drop/sample-browser loading with background decode and resampling
 - Stereo sample buffers and true stereo grain reads
-- Drag-and-drop sample loading with background decode/resample
-- Sample regions, slices, root note, and transient markers
+- Sample regions, slices, root note, transient markers, and named scenes
 - Tempo-synced density divisions
 - Scale-quantized pitch clouds
 - Grain direction sequencing
 - Live input circular buffer and freeze capture
 - Visual waveform/grain cloud overlay
 - Dual granular layer morphing
+
+Implementation order should keep all file decoding, analysis, and resampling off the audio thread. Completed sample assets should be handed to voices as immutable shared data, following the terrain asset model.

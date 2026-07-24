@@ -224,7 +224,7 @@ Pitch comes from phase speed:
 phase += frequency / sampleRate;
 ```
 
-`osc_3d_field_freq` does not change phase speed. It multiplies the field's internal terms — use it as a brightness or harmonic-density control. High values generate more aliasing and should eventually pair with oscillator oversampling.
+`osc_3d_field_freq` does not change phase speed. It multiplies the field's internal terms — use it as a brightness or harmonic-density control. The oscillator adapts its internal sample rate to the patch: field-frequency values through 4 use 1x, values above 4 use 2x, and values above 8 use 4x. Strong coordinate folding or drive also enables at least 2x processing. High-rate evaluations are averaged before returning to the host rate, reducing foldback while leaving ordinary patches on the cheaper 1x path.
 
 ## Morph
 

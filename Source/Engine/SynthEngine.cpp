@@ -39,6 +39,8 @@ void SynthEngine::reset()
     ageCounter = 0;
     heldNoteCounts = {};
     sustainDown = {};
+    mpeMasterSustainDown = false;
+    mpeZone.reset();
 }
 
 void SynthEngine::setAPVTS(juce::AudioProcessorValueTreeState* a)
@@ -191,7 +193,7 @@ void SynthEngine::noteOff(int note, int channel)
     auto& count = heldNoteCounts[(size_t) channelIndex][(size_t) noteIndex];
     if (count > 0)
         --count;
-    if (sustainDown[(size_t) channelIndex] || count > 0)
+    if (isSustainActive(channel) || count > 0)
         return;
 
     for (auto& v : voices)
@@ -201,22 +203,53 @@ void SynthEngine::noteOff(int note, int channel)
 
 void SynthEngine::setSustain(int channel, bool down)
 {
-    const int channelIndex = juce::jlimit(1, 16, channel) - 1;
-    if (sustainDown[(size_t) channelIndex] == down)
-        return;
-    sustainDown[(size_t) channelIndex] = down;
+    auto releaseChannelIfNeeded = [&](int targetChannel) {
+        const int channelIndex = juce::jlimit(1, 16, targetChannel) - 1;
+        if (isSustainActive(targetChannel))
+            return;
+        for (auto& voice : voices)
+            if (voice.isActive() && voice.getMidiChannel() == targetChannel
+                && heldNoteCounts[(size_t) channelIndex][(size_t) voice.getMidiNote()] == 0)
+                voice.noteOff();
+    };
 
-    if (!down)
-        for (auto& v : voices)
-            if (v.isActive() && v.getMidiChannel() == channel
-                && heldNoteCounts[(size_t) channelIndex][(size_t) v.getMidiNote()] == 0)
-                v.noteOff();
+    if (!mpeZone.isMasterChannel(channel))
+    {
+        const int channelIndex = juce::jlimit(1, 16, channel) - 1;
+        sustainDown[(size_t) channelIndex] = down;
+        if (!down)
+            releaseChannelIfNeeded(channel);
+        return;
+    }
+
+    mpeMasterSustainDown = down;
+    if (down)
+        return;
+    for (int targetChannel = 1; targetChannel <= 16; ++targetChannel)
+        if (mpeZone.expressionAffectsChannel(channel, targetChannel))
+            releaseChannelIfNeeded(targetChannel);
+}
+
+bool SynthEngine::isSustainActive(int channel) const noexcept
+{
+    const int channelIndex = juce::jlimit(1, 16, channel) - 1;
+    return sustainDown[(size_t) channelIndex]
+        || (mpeMasterSustainDown
+            && (mpeZone.isMemberChannel(channel) || mpeZone.isMasterChannel(channel)));
+}
+
+void SynthEngine::setExpression(ModSource source, float value, int sourceChannel)
+{
+    for (auto& voice : voices)
+        if (mpeZone.expressionAffectsChannel(sourceChannel, voice.getMidiChannel()))
+            voice.setMidiCC(source, value);
 }
 
 void SynthEngine::allNotesOff()
 {
     heldNoteCounts = {};
     sustainDown = {};
+    mpeMasterSustainDown = false;
     for (auto& v : voices) v.noteOff();
 }
 
@@ -234,21 +267,39 @@ void SynthEngine::handleMidiMessage(const juce::MidiMessage& msg, bool triggerNo
         float pressure = msg.isChannelPressure()
                              ? (float) msg.getChannelPressureValue() / 127.f
                              : (float) msg.getAfterTouchValue() / 127.f;
-        for (auto& v : voices)
+        if (msg.isChannelPressure())
+            setExpression(ModSource::ChanPressure, pressure, msg.getChannel());
+        else
         {
-            if (v.getMidiChannel() != msg.getChannel())
-                continue;
-            if (msg.isAftertouch() && v.getMidiNote() != msg.getNoteNumber())
-                continue;
-            if (msg.isAftertouch())
-                v.setMidiCC(ModSource::Aftertouch, pressure);
-            else
-                v.setMidiCC(ModSource::ChanPressure, pressure);
+            for (auto& v : voices)
+                if (v.getMidiChannel() == msg.getChannel()
+                    && v.getMidiNote() == msg.getNoteNumber())
+                    v.setMidiCC(ModSource::Aftertouch, pressure);
         }
     }
     else if (msg.isController())
     {
         float norm = (float) msg.getControllerValue() / 127.f;
+        const auto previousZoneType = mpeZone.getType();
+        const int previousMemberCount = mpeZone.getMemberCount();
+        if (mpeZone.handleController(msg.getChannel(), msg.getControllerNumber(),
+                                     msg.getControllerValue()))
+        {
+            if (previousZoneType != mpeZone.getType()
+                || previousMemberCount != mpeZone.getMemberCount())
+            {
+                mpeMasterSustainDown = false;
+                for (auto& voice : voices)
+                {
+                    const int channelIndex = voice.getMidiChannel() - 1;
+                    if (voice.isActive()
+                        && !sustainDown[(size_t) channelIndex]
+                        && heldNoteCounts[(size_t) channelIndex][(size_t) voice.getMidiNote()] == 0)
+                        voice.noteOff();
+                }
+            }
+            return;
+        }
         if (msg.getControllerNumber() == 64)
             setSustain(msg.getChannel(), msg.getControllerValue() >= 64);
         else if (msg.getControllerNumber() == 1)
@@ -258,18 +309,12 @@ void SynthEngine::handleMidiMessage(const juce::MidiMessage& msg, bool triggerNo
                     v.setMidiCC(ModSource::ModWheel, norm);
         }
         else if (msg.getControllerNumber() == 74)
-        {
-            for (auto& v : voices)
-                if (v.getMidiChannel() == msg.getChannel())
-                    v.setMidiCC(ModSource::CC74, norm);
-        }
+            setExpression(ModSource::CC74, norm, msg.getChannel());
     }
     else if (msg.isPitchWheel())
     {
         float pb = (float) (msg.getPitchWheelValue() - 8192) / 8192.f;
-        for (auto& v : voices)
-            if (v.getMidiChannel() == msg.getChannel())
-                v.setMidiCC(ModSource::PitchBend, pb);
+        setExpression(ModSource::PitchBend, pb, msg.getChannel());
     }
 }
 

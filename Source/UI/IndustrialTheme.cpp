@@ -118,6 +118,15 @@ void styleSlider(juce::Slider& slider, juce::Colour accent)
     slider.setColour(juce::Slider::textBoxHighlightColourId, accent.withAlpha(0.4f));
 }
 
+void styleMiniFader(juce::Slider& slider, juce::Colour accent)
+{
+    styleSlider(slider, accent);
+    // Marks this slider for the compact thin-track/flag-handle draw path in
+    // IndustrialLookAndFeel::drawLinearSlider, used for dense grids like the
+    // FM operator matrix.
+    slider.getProperties().set("miniFader", true);
+}
+
 void styleCombo(juce::ComboBox& combo, juce::Colour accent)
 {
     combo.setJustificationType(juce::Justification::centred);
@@ -281,6 +290,60 @@ void IndustrialLookAndFeel::drawLinearSlider(juce::Graphics& g, int x, int y, in
                                              juce::Slider& slider)
 {
     auto accent = slider.findColour(juce::Slider::thumbColourId);
+
+    if (slider.getProperties().getWithDefault("miniFader", false))
+    {
+        auto b = juce::Rectangle<float>((float)x, (float)y, (float)width, (float)height);
+
+        if (style == juce::Slider::LinearVertical)
+        {
+            auto track = b.reduced(juce::jmax(0.f, b.getWidth() * 0.5f - 1.5f), 1.f);
+            g.setColour(juce::Colour(0xff030404));
+            g.fillRoundedRectangle(track, track.getWidth() * 0.5f);
+            g.setColour(juce::Colour(0xff20272a));
+            g.drawRoundedRectangle(track, track.getWidth() * 0.5f, 0.7f);
+
+            auto centre = (minSliderPos + maxSliderPos) * 0.5f;
+            auto top = juce::jmin(centre, sliderPos);
+            auto bottom = juce::jmax(centre, sliderPos);
+            g.setColour(accent.withAlpha(0.85f));
+            g.fillRoundedRectangle(
+                juce::Rectangle<float>(track.getX(), top, track.getWidth(),
+                                       juce::jmax(1.f, bottom - top)),
+                track.getWidth() * 0.5f);
+
+            auto handleW = juce::jmin(b.getWidth() - 2.f, 12.f);
+            auto handle = juce::Rectangle<float>(b.getCentreX() - handleW * 0.5f, sliderPos - 1.1f,
+                                                 handleW, 2.2f);
+            g.setColour(accent.brighter(0.3f));
+            g.fillRoundedRectangle(handle, 1.f);
+            return;
+        }
+
+        // Thin recessed track, minimal footprint — Ableton-device style mini fader.
+        auto track = b.reduced(1.f, juce::jmax(0.f, b.getHeight() * 0.5f - 1.5f));
+        g.setColour(juce::Colour(0xff030404));
+        g.fillRoundedRectangle(track, track.getHeight() * 0.5f);
+        g.setColour(juce::Colour(0xff20272a));
+        g.drawRoundedRectangle(track, track.getHeight() * 0.5f, 0.7f);
+
+        auto centre = (minSliderPos + maxSliderPos) * 0.5f;
+        auto left = juce::jmin(centre, sliderPos);
+        auto right = juce::jmax(centre, sliderPos);
+        g.setColour(accent.withAlpha(0.85f));
+        g.fillRoundedRectangle(
+            juce::Rectangle<float>(left, track.getY(), juce::jmax(1.f, right - left), track.getHeight()),
+            track.getHeight() * 0.5f);
+
+        // Slim vertical "flag" marks the exact value, like a compact fader cap.
+        auto handleH = juce::jmin(b.getHeight() - 2.f, 12.f);
+        auto handle = juce::Rectangle<float>(sliderPos - 1.1f, b.getCentreY() - handleH * 0.5f,
+                                             2.2f, handleH);
+        g.setColour(accent.brighter(0.3f));
+        g.fillRoundedRectangle(handle, 1.f);
+        return;
+    }
+
     auto area = juce::Rectangle<float>((float)x, (float)y, (float)width, (float)height).reduced(4.f);
 
     if (style == juce::Slider::LinearVertical)

@@ -98,7 +98,7 @@ bool importHeightmapFile(const juce::File& file);
 
 JUCE handles the file formats registered by the application, typically including PNG, JPG, and BMP-style bitmap formats. Imported images are converted to normalized bipolar terrain data and capped to the oscillator's maximum imported size.
 
-The processor loads the image on the message thread, briefly suspends audio processing, and then copies the terrain data into every voice's matching terrain oscillator.
+The processor loads and preprocesses the image off the audio thread, then shares one immutable terrain/mipmap asset with every voice's matching terrain oscillator. Images are capped at 512 pixels on their longest edge before being embedded in state.
 
 ## Multi-Instance Behavior
 
@@ -109,19 +109,22 @@ TerrainOsc[8]
 ENV_TERRAIN1..ENV_TERRAIN8
 ```
 
-Each slot owns its own parameters, envelope, phase, orbit-noise state, precomputed smoothing/mipmap data, and heightmap data. Duplicating the terrain oscillator across pages should not share the same control values.
+Each slot owns its own parameters, envelope, phase, and orbit-noise state. Precomputed smoothing/mipmap and heightmap data are immutable and shared across voices for the same slot; control and traversal state remain independent.
 In the oscillator slot layout, Terrain consumes two slot units when there is room. The following slot is skipped by both the UI layout and the voice slot scanner so hidden controls do not keep sounding behind the terrain panel.
 
 ## Current Limitations
 
 - No editable path overlay yet.
-- Direct terrain modulation destinations are matrix-wide offsets rather than per-terrain-slot destinations.
-- Presets do not yet collect imported terrain images as sample dependencies.
+- Imported images are embedded in plug-in/preset state rather than maintained as external sample dependencies.
+
+## Modulation Destinations
+
+Each of the eight terrain oscillators has its own independent set of matrix destinations, matching the VA2..VA8 convention. Slot 1 uses the original `Terrain_*` names (`Terrain_CenterX`, `Terrain_CenterY`, `Terrain_RadiusX`, `Terrain_RadiusY`, `Terrain_RatioX`, `Terrain_RatioY`, `Terrain_Smoothing`, `Terrain_Morph`, `Terrain_Drive`); slots 2-8 use `Terrain2_*` through `Terrain8_*` with the same suffixes.
 
 ## Suggested Next Upgrades
 
-1. Add per-slot terrain modulation destinations if independent matrix offsets are needed per terrain slot.
-2. Save terrain image references or embedded terrain data in presets.
+1. Add an editable path overlay with draggable center, radius, rotation, and path-shape handles.
+2. Add optional external-reference mode for very large future terrain assets while retaining embedded fallback data.
 
 ## Source Files
 

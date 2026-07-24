@@ -39,5 +39,26 @@ enum class ModDest : int
     VA8_Shape, VA8_PW, VA8_Detune, VA8_Spread, VA8_Level, VA8_Ring, VA8_Fold,
     Terrain_CenterX, Terrain_CenterY, Terrain_RadiusX, Terrain_RadiusY,
     Terrain_RatioX, Terrain_RatioY, Terrain_Smoothing, Terrain_Morph, Terrain_Drive,
+    // FM B now has its own operator level/ratio destinations, independent from FM A above.
+    FM_B_Op0_Level, FM_B_Op1_Level, FM_B_Op2_Level, FM_B_Op3_Level, FM_B_Op4_Level,
+    FM_B_Op5_Level, FM_B_Op6_Level, FM_B_Op7_Level, FM_B_Op8_Level, FM_B_Op9_Level,
+    FM_B_Op0_Ratio, FM_B_Op1_Ratio, FM_B_Op2_Ratio, FM_B_Op3_Ratio, FM_B_Op4_Ratio,
+    FM_B_Op5_Ratio, FM_B_Op6_Ratio, FM_B_Op7_Ratio, FM_B_Op8_Ratio, FM_B_Op9_Ratio,
+    // Per-slot terrain destinations. Terrain_* above now applies only to terrain slot 1;
+    // slots 2-8 get independent matrix offsets here, matching the VA2..VA8 convention.
+    Terrain2_CenterX, Terrain2_CenterY, Terrain2_RadiusX, Terrain2_RadiusY,
+    Terrain2_RatioX, Terrain2_RatioY, Terrain2_Smoothing, Terrain2_Morph, Terrain2_Drive,
+    Terrain3_CenterX, Terrain3_CenterY, Terrain3_RadiusX, Terrain3_RadiusY,
+    Terrain3_RatioX, Terrain3_RatioY, Terrain3_Smoothing, Terrain3_Morph, Terrain3_Drive,
+    Terrain4_CenterX, Terrain4_CenterY, Terrain4_RadiusX, Terrain4_RadiusY,
+    Terrain4_RatioX, Terrain4_RatioY, Terrain4_Smoothing, Terrain4_Morph, Terrain4_Drive,
+    Terrain5_CenterX, Terrain5_CenterY, Terrain5_RadiusX, Terrain5_RadiusY,
+    Terrain5_RatioX, Terrain5_RatioY, Terrain5_Smoothing, Terrain5_Morph, Terrain5_Drive,
+    Terrain6_CenterX, Terrain6_CenterY, Terrain6_RadiusX, Terrain6_RadiusY,
+    Terrain6_RatioX, Terrain6_RatioY, Terrain6_Smoothing, Terrain6_Morph, Terrain6_Drive,
+    Terrain7_CenterX, Terrain7_CenterY, Terrain7_RadiusX, Terrain7_RadiusY,
+    Terrain7_RatioX, Terrain7_RatioY, Terrain7_Smoothing, Terrain7_Morph, Terrain7_Drive,
+    Terrain8_CenterX, Terrain8_CenterY, Terrain8_RadiusX, Terrain8_RadiusY,
+    Terrain8_RatioX, Terrain8_RatioY, Terrain8_Smoothing, Terrain8_Morph, Terrain8_Drive,
     NumDests
 };

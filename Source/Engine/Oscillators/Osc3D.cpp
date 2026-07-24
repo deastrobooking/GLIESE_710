@@ -44,10 +44,19 @@ void Osc3D::updateDerived()
     cachedFoldAmt = juce::jlimit(0.f, 1.f, params.foldAmt);
     cachedFieldFreq = juce::jlimit(0.25f, 16.f, params.fieldFreq);
     cachedDrive = juce::jlimit(0.25f, 4.f, params.drive);
+
+    // Field frequency is a harmonic-density control rather than oscillator
+    // pitch. Raise the internal rate only when that density (or strong
+    // nonlinear shaping) makes aliasing likely, keeping ordinary patches cheap.
+    oversampleFactor = cachedFieldFreq > 8.f ? 4
+                         : cachedFieldFreq > 4.f ? 2
+                         : 1;
+    if (cachedFoldAmt > 0.5f || cachedDrive > 2.f)
+        oversampleFactor = juce::jmax(oversampleFactor, 2);
 }
 
 //──────────────────────────────────────────────────────────────────────────────
-Vec3 Osc3D::computePath(float t)
+Vec3 Osc3D::computePath(float t, int rateFactor)
 {
     Vec3 p{};
     float r = params.radius;
@@ -76,7 +85,7 @@ Vec3 Osc3D::computePath(float t)
 
         case PathType::RandomWalk:
         {
-            float dt = 1.f / (float)sr;
+            float dt = 1.f / ((float)sr * (float)rateFactor);
             float noiseScale = 0.05f + params.chaos * 0.5f;
             rwVel.x += noiseScale * whiteSample();
             rwVel.y += noiseScale * whiteSample();
@@ -358,15 +367,27 @@ float Osc3D::whiteSample()
 }
 
 //──────────────────────────────────────────────────────────────────────────────
-float Osc3D::processSample()
+float Osc3D::processSubSample(int rateFactor)
 {
-    phase += phaseInc;
+    phase += phaseInc / (float)rateFactor;
     if (phase >= 1.f) phase -= 1.f;
 
     float t  = phase * kTau;
-    Vec3  p  = computePath(t);
+    Vec3  p  = computePath(t, rateFactor);
     p        = warpCoordinates(p);
     p        = foldCoordinates(p);
     float s  = blend(p);
     return std::tanh(s * cachedDrive);
+}
+
+float Osc3D::processSample()
+{
+    float sum = 0.f;
+    for (int i = 0; i < oversampleFactor; ++i)
+        sum += processSubSample(oversampleFactor);
+
+    // Integrating the evenly spaced high-rate evaluations is a short box FIR.
+    // Besides restoring unity gain, it suppresses content above the host
+    // Nyquist frequency before returning to the host sample rate.
+    return sum / (float)oversampleFactor;
 }

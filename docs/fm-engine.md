@@ -161,9 +161,7 @@ For FM A, use `op{N}_*`. For FM B, use `op2_{N}_*`.
 
 ## Modulation Matrix Notes
 
-The current FM modulation destinations target operator levels and the first five operator ratios. These destinations are engine-shared by design right now: a matrix target such as `FM_Op3_Level` applies to the corresponding operator path when FM A or FM B is synced.
-
-Future work can split these into `FM_A_*` and `FM_B_*` destinations if we need fully separate modulation routings per FM page.
+FM A and FM B have fully independent operator-level and operator-ratio modulation destinations. `FM_Op0_Level` through `FM_Op9_Level` and `FM_Op0_Ratio` through `FM_Op9_Ratio` target FM A only; `FM_B_Op0_Level` through `FM_B_Op9_Level` and `FM_B_Op0_Ratio` through `FM_B_Op9_Ratio` target FM B. A matrix slot can drive FM A and FM B operators separately without one page's modulation bleeding into the other.
 
 ## Adding A Custom Algorithm
 

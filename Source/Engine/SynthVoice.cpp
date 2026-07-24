@@ -130,6 +130,100 @@ ModDest vaFoldDest(int index)
     return d[juce::jlimit(0, SynthVoice::kNumVAOscs - 1, index)];
 }
 
+// FM A uses the original FM_Op*_Level/Ratio destinations; FM B has its own
+// independent set so the two engines no longer share modulation routing.
+ModDest fmLevelDest(bool engineB, int opIndex)
+{
+    static constexpr ModDest a[] = {
+        ModDest::FM_Op0_Level, ModDest::FM_Op1_Level, ModDest::FM_Op2_Level, ModDest::FM_Op3_Level,
+        ModDest::FM_Op4_Level, ModDest::FM_Op5_Level, ModDest::FM_Op6_Level, ModDest::FM_Op7_Level,
+        ModDest::FM_Op8_Level, ModDest::FM_Op9_Level };
+    static constexpr ModDest b[] = {
+        ModDest::FM_B_Op0_Level, ModDest::FM_B_Op1_Level, ModDest::FM_B_Op2_Level, ModDest::FM_B_Op3_Level,
+        ModDest::FM_B_Op4_Level, ModDest::FM_B_Op5_Level, ModDest::FM_B_Op6_Level, ModDest::FM_B_Op7_Level,
+        ModDest::FM_B_Op8_Level, ModDest::FM_B_Op9_Level };
+    return (engineB ? b : a)[juce::jlimit(0, 9, opIndex)];
+}
+ModDest fmRatioDest(bool engineB, int opIndex)
+{
+    static constexpr ModDest a[] = {
+        ModDest::FM_Op0_Ratio, ModDest::FM_Op1_Ratio, ModDest::FM_Op2_Ratio, ModDest::FM_Op3_Ratio,
+        ModDest::FM_Op4_Ratio, ModDest::FM_Op5_Ratio, ModDest::FM_Op6_Ratio, ModDest::FM_Op7_Ratio,
+        ModDest::FM_Op8_Ratio, ModDest::FM_Op9_Ratio };
+    static constexpr ModDest b[] = {
+        ModDest::FM_B_Op0_Ratio, ModDest::FM_B_Op1_Ratio, ModDest::FM_B_Op2_Ratio, ModDest::FM_B_Op3_Ratio,
+        ModDest::FM_B_Op4_Ratio, ModDest::FM_B_Op5_Ratio, ModDest::FM_B_Op6_Ratio, ModDest::FM_B_Op7_Ratio,
+        ModDest::FM_B_Op8_Ratio, ModDest::FM_B_Op9_Ratio };
+    return (engineB ? b : a)[juce::jlimit(0, 9, opIndex)];
+}
+
+// Per-slot terrain destinations. Slot 0 keeps the original shared Terrain_*
+// names; slots 1-7 (Terrain2..Terrain8) give each terrain oscillator its own
+// independent matrix offsets, matching the VA2..VA8 convention.
+ModDest terrainCenterXDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::Terrain_CenterX, ModDest::Terrain2_CenterX, ModDest::Terrain3_CenterX, ModDest::Terrain4_CenterX,
+        ModDest::Terrain5_CenterX, ModDest::Terrain6_CenterX, ModDest::Terrain7_CenterX, ModDest::Terrain8_CenterX };
+    return d[juce::jlimit(0, SynthVoice::kNumTerrainOscs - 1, index)];
+}
+ModDest terrainCenterYDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::Terrain_CenterY, ModDest::Terrain2_CenterY, ModDest::Terrain3_CenterY, ModDest::Terrain4_CenterY,
+        ModDest::Terrain5_CenterY, ModDest::Terrain6_CenterY, ModDest::Terrain7_CenterY, ModDest::Terrain8_CenterY };
+    return d[juce::jlimit(0, SynthVoice::kNumTerrainOscs - 1, index)];
+}
+ModDest terrainRadiusXDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::Terrain_RadiusX, ModDest::Terrain2_RadiusX, ModDest::Terrain3_RadiusX, ModDest::Terrain4_RadiusX,
+        ModDest::Terrain5_RadiusX, ModDest::Terrain6_RadiusX, ModDest::Terrain7_RadiusX, ModDest::Terrain8_RadiusX };
+    return d[juce::jlimit(0, SynthVoice::kNumTerrainOscs - 1, index)];
+}
+ModDest terrainRadiusYDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::Terrain_RadiusY, ModDest::Terrain2_RadiusY, ModDest::Terrain3_RadiusY, ModDest::Terrain4_RadiusY,
+        ModDest::Terrain5_RadiusY, ModDest::Terrain6_RadiusY, ModDest::Terrain7_RadiusY, ModDest::Terrain8_RadiusY };
+    return d[juce::jlimit(0, SynthVoice::kNumTerrainOscs - 1, index)];
+}
+ModDest terrainRatioXDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::Terrain_RatioX, ModDest::Terrain2_RatioX, ModDest::Terrain3_RatioX, ModDest::Terrain4_RatioX,
+        ModDest::Terrain5_RatioX, ModDest::Terrain6_RatioX, ModDest::Terrain7_RatioX, ModDest::Terrain8_RatioX };
+    return d[juce::jlimit(0, SynthVoice::kNumTerrainOscs - 1, index)];
+}
+ModDest terrainRatioYDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::Terrain_RatioY, ModDest::Terrain2_RatioY, ModDest::Terrain3_RatioY, ModDest::Terrain4_RatioY,
+        ModDest::Terrain5_RatioY, ModDest::Terrain6_RatioY, ModDest::Terrain7_RatioY, ModDest::Terrain8_RatioY };
+    return d[juce::jlimit(0, SynthVoice::kNumTerrainOscs - 1, index)];
+}
+ModDest terrainSmoothingDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::Terrain_Smoothing, ModDest::Terrain2_Smoothing, ModDest::Terrain3_Smoothing, ModDest::Terrain4_Smoothing,
+        ModDest::Terrain5_Smoothing, ModDest::Terrain6_Smoothing, ModDest::Terrain7_Smoothing, ModDest::Terrain8_Smoothing };
+    return d[juce::jlimit(0, SynthVoice::kNumTerrainOscs - 1, index)];
+}
+ModDest terrainMorphDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::Terrain_Morph, ModDest::Terrain2_Morph, ModDest::Terrain3_Morph, ModDest::Terrain4_Morph,
+        ModDest::Terrain5_Morph, ModDest::Terrain6_Morph, ModDest::Terrain7_Morph, ModDest::Terrain8_Morph };
+    return d[juce::jlimit(0, SynthVoice::kNumTerrainOscs - 1, index)];
+}
+ModDest terrainDriveDest(int index)
+{
+    static constexpr ModDest d[] = {
+        ModDest::Terrain_Drive, ModDest::Terrain2_Drive, ModDest::Terrain3_Drive, ModDest::Terrain4_Drive,
+        ModDest::Terrain5_Drive, ModDest::Terrain6_Drive, ModDest::Terrain7_Drive, ModDest::Terrain8_Drive };
+    return d[juce::jlimit(0, SynthVoice::kNumTerrainOscs - 1, index)];
+}
+
 ModDest engineFilterCutoffDest(int index)
 {
     static constexpr ModDest d[] = {
@@ -746,7 +840,7 @@ void SynthVoice::syncParams()
     // ── FM Engines ────────────────────────────────────────────────────────────
     auto configureFM = [&](FMAlgorithm& engine, const ParamCache::FMPtrs& cfm,
                            const std::array<ParamCache::OpPtrs, 10>& ops,
-                           EnvIndex envIndex, float extraDetuneCents)
+                           EnvIndex envIndex, float extraDetuneCents, bool engineB)
     {
         const float detuneCents = pF(cfm.detune) + extraDetuneCents;
         const float fmHz = pitchedHz * oscPitchMultiplier(cfm.octave, cfm.tune)
@@ -767,8 +861,8 @@ void SynthVoice::syncParams()
         {
             const auto& opc = ops[(size_t)i];
             FMOperator::Params op;
-            float ratioMod = modDests.dests[(int)ModDest::FM_Op0_Ratio + i];
-            float levelMod = i < 10 ? modDests.dests[(int)ModDest::FM_Op0_Level + i] : 0.f;
+            float ratioMod = modDests.dests[(int)fmRatioDest(engineB, i)];
+            float levelMod = modDests.dests[(int)fmLevelDest(engineB, i)];
             op.coarse        = pI(opc.coarse, 1);
             op.fine          = pF(opc.fine);
             op.detune        = pF(opc.detune);
@@ -795,10 +889,10 @@ void SynthVoice::syncParams()
     };
 
     if (currentBlockAIsFM)
-        configureFM(fm, pc.fm, pc.ops, ENV_FM, 0.f);
+        configureFM(fm, pc.fm, pc.ops, ENV_FM, 0.f, false);
     if (currentBlockBIsFM)
         configureFM(fm2, pc.fmB, pc.opsB, ENV_FM2,
-                    pF(pc.slotCfg.fmDetune, 0.f));
+                    pF(pc.slotCfg.fmDetune, 0.f), true);
 
     // ── Wavetable ─────────────────────────────────────────────────────────────
     for (int n = 0; n < currentWTCount; ++n)
@@ -922,22 +1016,22 @@ void SynthVoice::syncParams()
         TerrainOsc::Params tp;
         tp.pathMode    = static_cast<TerrainOsc::PathMode>(pI(ct.path));
         tp.quality     = static_cast<TerrainOsc::Quality>(pI(ct.quality, 1));
-        tp.centerX     = pF(ct.centerX, 0.5f) + modDests.dests[(int) ModDest::Terrain_CenterX];
-        tp.centerY     = pF(ct.centerY, 0.5f) + modDests.dests[(int) ModDest::Terrain_CenterY];
-        tp.radiusX     = pF(ct.radiusX, 0.35f) + modDests.dests[(int) ModDest::Terrain_RadiusX];
-        tp.radiusY     = pF(ct.radiusY, 0.35f) + modDests.dests[(int) ModDest::Terrain_RadiusY];
+        tp.centerX     = pF(ct.centerX, 0.5f) + modDests.dests[(int) terrainCenterXDest(i)];
+        tp.centerY     = pF(ct.centerY, 0.5f) + modDests.dests[(int) terrainCenterYDest(i)];
+        tp.radiusX     = pF(ct.radiusX, 0.35f) + modDests.dests[(int) terrainRadiusXDest(i)];
+        tp.radiusY     = pF(ct.radiusY, 0.35f) + modDests.dests[(int) terrainRadiusYDest(i)];
         tp.zoom        = pF(ct.zoom, 1.f);
         tp.rotation    = pF(ct.rotation);
         tp.pathSize    = pF(ct.pathSize, 1.f);
-        tp.ratioX      = pF(ct.ratioX, 1.f) + modDests.dests[(int) ModDest::Terrain_RatioX];
-        tp.ratioY      = pF(ct.ratioY, 1.5f) + modDests.dests[(int) ModDest::Terrain_RatioY];
+        tp.ratioX      = pF(ct.ratioX, 1.f) + modDests.dests[(int) terrainRatioXDest(i)];
+        tp.ratioY      = pF(ct.ratioY, 1.5f) + modDests.dests[(int) terrainRatioYDest(i)];
         tp.scanRate    = pF(ct.scanRate, 1.f);
         tp.phaseOffset = pF(ct.phase);
         tp.spiral      = pF(ct.spiral);
-        tp.drive       = pF(ct.drive, 1.5f) + modDests.dests[(int) ModDest::Terrain_Drive];
+        tp.drive       = pF(ct.drive, 1.5f) + modDests.dests[(int) terrainDriveDest(i)];
         tp.offset      = pF(ct.offset);
-        tp.smoothing   = pF(ct.smoothing) + modDests.dests[(int) ModDest::Terrain_Smoothing];
-        tp.morph       = pF(ct.morph) + modDests.dests[(int) ModDest::Terrain_Morph];
+        tp.smoothing   = pF(ct.smoothing) + modDests.dests[(int) terrainSmoothingDest(i)];
+        tp.morph       = pF(ct.morph) + modDests.dests[(int) terrainMorphDest(i)];
         tp.gain        = pF(ct.gain, 1.f);
 
         const float terrainHz = pitchedHz * oscPitchMultiplier(ct.octave, ct.tune);

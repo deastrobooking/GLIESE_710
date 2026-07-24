@@ -171,10 +171,10 @@ public:
 
         area.removeFromTop(4);
         const int labelH = 10;
-        const int gap = 2;
+        const int gap = 1;
         const int waveH = 22;
         const int sliderRows = 9;
-        const int sliderH = juce::jlimit(18, 54,
+        const int sliderH = juce::jlimit(10, 22,
             (area.getHeight() - 13 - labelH - waveH - sliderRows * labelH - (sliderRows + 1) * gap)
                 / sliderRows);
 
@@ -187,7 +187,7 @@ public:
             header.setBounds(area.removeFromTop(labelH));
             auto row = area.removeFromTop(sliderH);
             for (int i = 0; i < 10; ++i)
-                sliders[(size_t)i].setBounds(row.removeFromLeft(opW).reduced(2));
+                sliders[(size_t)i].setBounds(row.removeFromLeft(opW).reduced(2, 1));
             area.removeFromTop(gap);
         };
 
@@ -225,10 +225,13 @@ private:
     void setupOpSlider(juce::Slider& slider, const juce::String& paramId,
                        const juce::String& tooltip, std::unique_ptr<Att>& attachment)
     {
+        // Ableton-device style: thin fader track, tiny read-only value box, and
+        // a drag popup so exact values are still visible without eating row space.
         slider.setSliderStyle(juce::Slider::LinearHorizontal);
-        slider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 38, 12);
+        slider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 22, 11);
+        slider.setPopupDisplayEnabled(true, true, this);
         slider.setTooltip(tooltip);
-        IndustrialTheme::styleSlider(slider, IndustrialTheme::accentFM());
+        IndustrialTheme::styleMiniFader(slider, IndustrialTheme::accentFM());
         addAndMakeVisible(slider);
         attachment = std::make_unique<Att>(apvts, paramId, slider);
     }

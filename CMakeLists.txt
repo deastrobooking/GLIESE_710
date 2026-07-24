@@ -91,6 +91,7 @@ PRIVATE
     Source/Engine/SynthVoice.cpp
     Source/Engine/SynthEngine.cpp
     Source/Engine/MasterOutputStage.cpp
+    Source/Engine/MPEZone.cpp
     Source/Engine/Oscillators/Osc3D.cpp
     Source/Engine/Oscillators/FMOperator.cpp
     Source/Engine/Oscillators/FMAlgorithm.cpp
@@ -179,6 +180,7 @@ if(GLIESE_BUILD_TESTS)
         Tests/EngineTests.cpp
         Source/Engine/Envelopes/ADSREnvelope.cpp
         Source/Engine/MasterOutputStage.cpp
+        Source/Engine/MPEZone.cpp
         Source/Engine/Oscillators/Osc3D.cpp
         Source/Engine/Oscillators/FMOperator.cpp
         Source/Engine/Oscillators/FMAlgorithm.cpp

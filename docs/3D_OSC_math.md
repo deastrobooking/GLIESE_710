@@ -1522,7 +1522,7 @@ Body       body + warpAmt·edge + chaos·air — timbral axis model
 
 `F` is `osc_3d_field_freq`. The `radius`, `depth`, `morphT`, `warpAmt`, and `chaos` parameters take on field-specific musical meanings (harmonic weight, vowel tension, metallic blend, etc.) in each field — see [oscillator-3d.md](oscillator-3d.md) for per-field descriptions.
 
-For pitched patches, `field_freq` values around `0.5` to `4.0` tend to stay controlled. Higher values produce sharper, more digital tones and should eventually be paired with oversampling.
+For pitched patches, `field_freq` values around `0.5` to `4.0` tend to stay controlled. The implementation now switches adaptively to 2x processing above 4 and 4x above 8; strong folding or drive also requests at least 2x. Each host sample averages the evenly spaced high-rate evaluations before downsampling.
 
 ## Implemented Path Examples
 
@@ -1626,4 +1626,4 @@ macro on ZRatio         = moves between stable and evolving 3D cycles
 
 ## Deferred Ideas
 
-The guide discusses vector-field motion, attractor paths, harmonic locking, and oversampling. The current synth implements the stable core first: scalar fields, repeatable paths, z ratio, field frequency, coordinate warp/fold, morph, and drive. Full attractor-driven motion and quality-mode oversampling remain future improvements because they have a larger impact on pitch stability and CPU cost.
+The guide discusses vector-field motion, attractor paths, harmonic locking, and oversampling. The current synth implements scalar fields, repeatable paths, z ratio, field frequency, coordinate warp/fold, morph, drive, and adaptive 1x/2x/4x oversampling. Full attractor-driven motion remains a future improvement because it has a larger impact on pitch stability and CPU cost.

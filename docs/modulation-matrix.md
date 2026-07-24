@@ -24,14 +24,14 @@ Multiple slots can share the same destination — their contributions accumulate
 | 10 | Env_FilterA | 0 to +1 | Filter A envelope |
 | 11 | Env_FilterB | 0 to +1 | Filter B envelope |
 | 12 | Velocity | 0 to +1 | MIDI note velocity |
-| 13 | Aftertouch | 0 to +1 | MIDI aftertouch (channel pressure) |
+| 13 | Aftertouch | 0 to +1 | Polyphonic key pressure for the exact channel/note voice |
 | 14 | ModWheel | 0 to +1 | MIDI CC1 |
 | 15 | PitchBend | −1 to +1 | MIDI pitch bend (bipolar) |
-| 16 | CC74 | 0 to +1 | MIDI CC74 (expression) |
-| 17 | ChanPressure | 0 to +1 | MIDI channel pressure |
+| 16 | CC74 | 0 to +1 | MIDI CC74; MPE master broadcasts and member channels remain per-note |
+| 17 | ChanPressure | 0 to +1 | Channel pressure with MPE master/member routing |
 | 18–25 | Macro1–Macro8 | 0 to +1 | Panel macro knobs |
 
-## Destinations (163 + None)
+## Destinations (252 + None)
 
 | ID | Destination | Base range | Modulation effect |
 |---|---|---|---|
@@ -43,52 +43,63 @@ Multiple slots can share the same destination — their contributions accumulate
 | 5 | Osc3D_Chaos | 0–1.0 | Added, clamped |
 | 6 | Osc3D_Morph | 0–1.0 | Added, clamped |
 | 7 | Osc3D_Level | 0–1.0 | Added, clamped |
-| 8–17 | FM_Op0–9_Level | 0–1.0 | Added to op level |
-| 18–22 | FM_Op0–4_Ratio | — | Additive ratio offset |
-| 23 | WT_Position | 0–1.0 | Wavetable scan position |
-| 24 | WT_Level | 0–1.0 | Wavetable output level |
-| 25 | VA_PW | 0.05–0.95 | Pulse width |
-| 26 | VA_Detune | 0–1.0 | Unison detune |
-| 27 | VA_Spread | 0–1.0 | Stereo spread |
-| 28 | VA_Level | 0–1.0 | VA output level |
-| 29–31 | FilterA_Cutoff/Res/Drive | — | Added to base values |
-| 32–34 | FilterB_Cutoff/Res/Drive | — | Added to base values |
-| 35–38 | LFO1–4_Rate | Hz | Added to LFO rate |
-| 39–42 | LFO1–4_Amount | 0–1.0 | LFO amount scale |
-| 43 | Master_Volume | 0–1.0 | Master gain |
-| 44 | Master_Pan | −1 to +1 | Stereo pan |
-| 45 | Arp_Gate | 0–1.0 | Gate length |
-| 46 | Arp_Rate | — | Arp step rate |
-| 47 | Osc3D_FieldFreq | 0.25–16.0 | Adds to field-frequency multiplier |
-| 48 | Osc3D_ZRatio | 0.25–4.0 | Adds to z-axis motion ratio |
-| 49 | Osc3D_Fold | 0–1.0 | Adds to coordinate fold amount |
-| 50 | Osc3D_Drive | 0.25–4.0 | Adds to output shaper drive |
-| 51 | VA_Shape | 0–5.0 | Adds to VA 1 shape morph, scaled across the full shape range |
-| 52 | VA_Ring | 0–1.0 | Adds to VA 1 ring modulation amount |
-| 53 | VA_Fold | 0–1.0 | Adds to VA 1 wavefold amount |
-| 54–60 | VA2_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 2 |
-| 61–67 | VA3_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 3 |
-| 68–74 | VA4_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 4 |
-| 75–78 | LFO1–4_SyncRate | 0–10 | Adds to synced LFO rate index, scaled across the sync-rate table |
-| 79–80 | WT_Warp / WT_PD_Break | 0–1.0 | Wavetable warp amount and phase-distortion breakpoint |
-| 81–87 | Gran_Position/Size/Density/Pitch/Spray/Freeze/Level | — | Granular cloud position, timing, pitch, spread, freeze, and output level |
-| 88–91 | Gran_BodyMix/Size/Damping/Inharm | — | Optional granular physical body blend and material controls |
-| 92–96 | EngFilt3D_Cutoff/Res/Drive/Morph/Mix | — | Per-voice 3D oscillator engine filter controls before Filter A/B |
-| 97–101 | EngFiltFM_Cutoff/Res/Drive/Morph/Mix | — | Per-voice FM engine filter controls before Filter A/B |
-| 102–106 | EngFiltWT_Cutoff/Res/Drive/Morph/Mix | — | Per-voice wavetable engine filter controls before Filter A/B |
-| 107–111 | EngFiltVA_Cutoff/Res/Drive/Morph/Mix | — | Per-voice virtual analog engine filter controls before Filter A/B |
-| 112–116 | EngFiltKS_Cutoff/Res/Drive/Morph/Mix | — | Per-voice Karplus-Strong engine filter controls before Filter A/B |
-| 117–121 | EngFiltGran_Cutoff/Res/Drive/Morph/Mix | — | Per-voice granular engine filter controls before Filter A/B |
-| 122–126 | EngFiltTerrain_Cutoff/Res/Drive/Morph/Mix | — | Per-voice terrain engine filter controls before Filter A/B |
-| 127–133 | VA5_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 5 |
-| 134–140 | VA6_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 6 |
-| 141–147 | VA7_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 7 |
-| 148–154 | VA8_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 8 |
-| 155–163 | Terrain_CenterX/CenterY/RadiusX/RadiusY/RatioX/RatioY/Smoothing/Morph/Drive | — | Direct wave-terrain scan-path and shaping offsets |
+| 8–17 | FM_Op0–9_Level | 0–1.0 | Added to FM A operator level |
+| 18–27 | FM_Op0–9_Ratio | — | Additive FM A operator ratio offset |
+| 28 | WT_Position | 0–1.0 | Wavetable scan position |
+| 29 | WT_Level | 0–1.0 | Wavetable output level |
+| 30 | VA_PW | 0.05–0.95 | Pulse width |
+| 31 | VA_Detune | 0–1.0 | Unison detune |
+| 32 | VA_Spread | 0–1.0 | Stereo spread |
+| 33 | VA_Level | 0–1.0 | VA output level |
+| 34–36 | FilterA_Cutoff/Res/Drive | — | Added to base values |
+| 37–39 | FilterB_Cutoff/Res/Drive | — | Added to base values |
+| 40–43 | LFO1–4_Rate | Hz | Added to LFO rate |
+| 44–47 | LFO1–4_Amount | 0–1.0 | LFO amount scale |
+| 48 | Master_Volume | 0–1.0 | Master gain |
+| 49 | Master_Pan | −1 to +1 | Stereo pan |
+| 50 | Arp_Gate | 0–1.0 | Gate length |
+| 51 | Arp_Rate | — | Arp step rate |
+| 52 | Osc3D_FieldFreq | 0.25–16.0 | Adds to field-frequency multiplier |
+| 53 | Osc3D_ZRatio | 0.25–4.0 | Adds to z-axis motion ratio |
+| 54 | Osc3D_Fold | 0–1.0 | Adds to coordinate fold amount |
+| 55 | Osc3D_Drive | 0.25–4.0 | Adds to output shaper drive |
+| 56 | VA_Shape | 0–5.0 | Adds to VA 1 shape morph, scaled across the full shape range |
+| 57 | VA_Ring | 0–1.0 | Adds to VA 1 ring modulation amount |
+| 58 | VA_Fold | 0–1.0 | Adds to VA 1 wavefold amount |
+| 59–65 | VA2_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 2 |
+| 66–72 | VA3_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 3 |
+| 73–79 | VA4_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 4 |
+| 80–83 | LFO1–4_SyncRate | 0–10 | Adds to synced LFO rate index, scaled across the sync-rate table |
+| 84–85 | WT_Warp / WT_PD_Break | 0–1.0 | Wavetable warp amount and phase-distortion breakpoint |
+| 86–92 | Gran_Position/Size/Density/Pitch/Spray/Freeze/Level | — | Granular cloud position, timing, pitch, spread, freeze, and output level |
+| 93–96 | Gran_BodyMix/Size/Damping/Inharm | — | Optional granular physical body blend and material controls |
+| 97–101 | EngFilt3D_Cutoff/Res/Drive/Morph/Mix | — | Per-voice 3D oscillator engine filter controls before Filter A/B |
+| 102–106 | EngFiltFM_Cutoff/Res/Drive/Morph/Mix | — | Per-voice FM engine filter controls before Filter A/B |
+| 107–111 | EngFiltWT_Cutoff/Res/Drive/Morph/Mix | — | Per-voice wavetable engine filter controls before Filter A/B |
+| 112–116 | EngFiltVA_Cutoff/Res/Drive/Morph/Mix | — | Per-voice virtual analog engine filter controls before Filter A/B |
+| 117–121 | EngFiltKS_Cutoff/Res/Drive/Morph/Mix | — | Per-voice Karplus-Strong engine filter controls before Filter A/B |
+| 122–126 | EngFiltGran_Cutoff/Res/Drive/Morph/Mix | — | Per-voice granular engine filter controls before Filter A/B |
+| 127–131 | EngFiltTerrain_Cutoff/Res/Drive/Morph/Mix | — | Per-voice terrain engine filter controls before Filter A/B |
+| 132–138 | VA5_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 5 |
+| 139–145 | VA6_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 6 |
+| 146–152 | VA7_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 7 |
+| 153–159 | VA8_Shape/PW/Detune/Spread/Level/Ring/Fold | — | Same controls for VA layer 8 |
+| 160–168 | Terrain_CenterX/CenterY/RadiusX/RadiusY/RatioX/RatioY/Smoothing/Morph/Drive | — | Direct wave-terrain scan-path and shaping offsets for terrain slot 1 |
+| 169–178 | FM_B_Op0–9_Level | 0–1.0 | Added to FM B operator level (independent from FM A) |
+| 179–188 | FM_B_Op0–9_Ratio | — | Additive FM B operator ratio offset (independent from FM A) |
+| 189–197 | Terrain2_CenterX/CenterY/RadiusX/RadiusY/RatioX/RatioY/Smoothing/Morph/Drive | — | Same controls for terrain slot 2 |
+| 198–206 | Terrain3_* (same 9 suffixes) | — | Same controls for terrain slot 3 |
+| 207–215 | Terrain4_* (same 9 suffixes) | — | Same controls for terrain slot 4 |
+| 216–224 | Terrain5_* (same 9 suffixes) | — | Same controls for terrain slot 5 |
+| 225–233 | Terrain6_* (same 9 suffixes) | — | Same controls for terrain slot 6 |
+| 234–242 | Terrain7_* (same 9 suffixes) | — | Same controls for terrain slot 7 |
+| 243–251 | Terrain8_* (same 9 suffixes) | — | Same controls for terrain slot 8 |
 
-Terrain oscillator slots have independent envelopes and APVTS parameters. The terrain engine filter destinations above modulate the terrain pre-filter. The direct terrain destinations modulate center X/Y, radius X/Y, ratio X/Y, smoothing, morph, and drive across active terrain slots while preserving each slot's own base values.
+Terrain oscillator slots have independent envelopes and APVTS parameters. The terrain engine filter destinations above modulate the terrain pre-filter. Each terrain slot (Terrain_* for slot 1, Terrain2_* through Terrain8_* for slots 2-8) has its own independent center X/Y, radius X/Y, ratio X/Y, smoothing, morph, and drive destinations, matching the VA2-VA8 per-instance convention.
 
-The VA5-VA8 and direct terrain destinations are appended after the existing engine-filter destinations to preserve older preset destination IDs.
+FM A (`FM_Op*_Level`/`FM_Op*_Ratio`) and FM B (`FM_B_Op*_Level`/`FM_B_Op*_Ratio`) have fully independent operator modulation destinations; a matrix slot targeting one engine no longer affects the other.
+
+The VA5-VA8, direct terrain, FM_B, and Terrain2-8 destinations are appended after earlier destinations in enum declaration order to preserve older preset destination IDs.
 
 ## Bipolar vs Unipolar
 

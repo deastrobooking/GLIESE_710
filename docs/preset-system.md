@@ -27,6 +27,19 @@ All APVTS-registered parameters are included. Parameters added in future version
 | Factory presets | Embedded via `juce_add_binary_data` (future) |
 | DAW session state | Opaque blob managed by host (`getStateInformation`) |
 
+Imported terrain heightmaps are encoded into custom properties on the APVTS state, capped to 512 pixels, and therefore travel with both `.g710` presets and DAW session blobs. Terrain DSP data is rebuilt on load and shared across voices.
+
+## Planned Factory Content
+
+The factory bank should be compiled with `juce_add_binary_data`, copied into the user-visible browser without overwriting user patches, and versioned independently from the parameter schema. CI should load every factory patch and render a short finite-audio smoke test.
+
+## Migration Requirements
+
+- Never reuse or reorder existing parameter IDs.
+- New parameters must have musically safe defaults.
+- Preset format changes require an explicit version and compatibility path.
+- Add round-trip tests for APVTS state, embedded terrain data, corrupt files, and older fixture presets.
+
 ## API — PresetManager
 
 ```cpp

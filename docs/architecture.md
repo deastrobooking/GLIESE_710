@@ -83,6 +83,7 @@ Audio-thread rules:
 - `processBlock()` itself only clears the buffer, reads host position/BPM, and calls `SynthEngine::renderNextBlock()`.
 - Methods called from `processBlock()` must not allocate, free, lock, perform file/network I/O, or log.
 - Arpeggiator note state uses fixed-capacity lists so MIDI note-on/off handling does not resize containers.
+- MPE lower/upper zones are configured through RPN 6 using fixed per-channel RPN state. Voices retain channel/note identity; master-channel pitch bend, CC74, pressure, and sustain broadcast only to the active zone.
 - Terrain smoothing and mip levels are rebuilt when terrain data is generated/imported, not when render-path parameters change.
 - Large file/image work stays on the message thread; terrain import briefly suspends processing before copying new terrain data into voices.
 
