@@ -1861,7 +1861,7 @@ TEST_CASE("GranularOsc preserves independent stereo grain reads", "[granular]")
     osc.setFrequency(220.f);
     GranularOsc::Params params;
     params.density = 220.f;
-    params.sizeMs = 100.f;
+    params.sizeMs = 1000.f;
     params.spray = 0.f;
     params.jitter = 0.f;
     params.panSpread = 0.f;
@@ -1877,6 +1877,54 @@ TEST_CASE("GranularOsc preserves independent stereo grain reads", "[granular]")
         REQUIRE(std::isfinite(r));
     }
     REQUIRE(stereoDifference > 1.0);
+}
+
+TEST_CASE("GranularOsc tempo divisions map host BPM to trigger rates", "[granular]")
+{
+    REQUIRE(GranularOsc::densityRateForTempo(120.0, 4) == Approx(2.f));
+    REQUIRE(GranularOsc::densityRateForTempo(120.0, 5) == Approx(4.f));
+    REQUIRE(GranularOsc::densityRateForTempo(120.0, 6) == Approx(6.f));
+    REQUIRE(GranularOsc::densityRateForTempo(120.0, 7) == Approx(8.f));
+    REQUIRE(GranularOsc::densityRateForTempo(90.0, 9) == Approx(12.f));
+
+    GranularOsc osc;
+    osc.prepare(48000.0);
+    GranularOsc::Params params;
+    params.densitySync = true;
+    params.densityDivision = 4;
+    params.hostBPM = 120.0;
+    params.sizeMs = 100.f;
+    osc.setParams(params);
+    osc.noteOn(60, 1.f);
+    for (int i = 0; i < 12000; ++i)
+        (void)osc.processSample();
+    REQUIRE(osc.getActiveGrainCount() == 0);
+    for (int i = 0; i < 14000; ++i)
+        (void)osc.processSample();
+    REQUIRE(osc.getActiveGrainCount() == 1);
+}
+
+TEST_CASE("GranularOsc quantizes pitch clouds to key and scale", "[granular]")
+{
+    REQUIRE(GranularOsc::quantizePitchOffset(60, 1.6f, 0, 1)
+            == Approx(2.f)); // C major -> D
+    REQUIRE(GranularOsc::quantizePitchOffset(60, 4.f, 0, 2)
+            == Approx(3.f)); // C minor -> Eb
+    REQUIRE(GranularOsc::quantizePitchOffset(60, 1.f, 2, 1)
+            == Approx(1.f)); // C# belongs to D major
+    REQUIRE(GranularOsc::quantizePitchOffset(60, 0.f, 9, 5)
+            == Approx(-1.f)); // nearest A pentatonic note is B
+
+    for (int note = 24; note <= 96; note += 12)
+        for (int scale = 0; scale < 6; ++scale)
+            for (float offset : { -24.f, -7.4f, 0.f, 8.8f, 24.f })
+            {
+                const float quantized = GranularOsc::quantizePitchOffset(
+                    note, offset, 5, scale);
+                REQUIRE(std::isfinite(quantized));
+                REQUIRE(quantized == Approx(std::round(quantized)));
+                REQUIRE(std::abs(quantized - offset) <= 2.f);
+            }
 }
 
 TEST_CASE("GranularOsc position updates held cloud without retrigger", "[granular]")

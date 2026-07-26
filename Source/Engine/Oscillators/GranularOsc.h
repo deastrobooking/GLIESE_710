@@ -69,7 +69,14 @@ public:
         float position = 0.5f;      // 0..1
         float sizeMs = 120.f;       // 5..1000
         float density = 35.f;       // grains per second
+        bool densitySync = false;
+        int densityDivision = 4;    // quarter-note default
+        double hostBPM = 120.0;
         float pitchSemis = 0.f;     // -48..48
+        float pitchCloudSemis = 0.f;// random +/- semitone spread
+        bool pitchQuantize = false;
+        int pitchScale = 0;
+        int pitchScaleRoot = 0;
         float spray = 0.18f;        // random position radius
         float jitter = 0.04f;       // trigger timing randomization
         float panSpread = 0.7f;     // stereo randomization
@@ -114,6 +121,9 @@ public:
 
     std::pair<float, float> processSample();
     int getActiveGrainCount() const;
+    static float densityRateForTempo(double bpm, int division) noexcept;
+    static float quantizePitchOffset(int midiNote, float semitoneOffset,
+                                     int scaleRoot, int scale) noexcept;
 
 private:
     static constexpr int kMaxBodyModes = 32;

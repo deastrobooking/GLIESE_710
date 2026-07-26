@@ -63,7 +63,13 @@ The table shows the first slot prefix. Additional granular slots use `osc_grain2
 | `osc_grain_position` | 0-1 | Center read position in the source buffer |
 | `osc_grain_size` | 5-1000 ms | Grain duration |
 | `osc_grain_density` | 0.1-1200 grains/sec | Cloud density or audio-rate trigger intensity |
+| `osc_grain_density_sync` | Off / On | Use host-tempo divisions instead of free density |
+| `osc_grain_density_division` | 4 Bars-1/32 | Straight or triplet interval between grain triggers |
 | `osc_grain_pitch` | -48 to +48 semitones | Grain playback transposition |
+| `osc_grain_pitch_cloud` | Off / ±2 / ±4 / ±7 / ±12 / ±24 | Random per-grain pitch range |
+| `osc_grain_pitch_quantize` | Off / On | Snap randomized grain pitches to a musical scale |
+| `osc_grain_pitch_scale` | Chromatic / Major / Minor / Dorian / Mixolydian / Pentatonic | Pitch-cloud scale |
+| `osc_grain_pitch_scale_root` | C-B | Pitch-cloud musical key |
 | `osc_grain_spray` | 0-1 | Random position radius around the center |
 | `osc_grain_jitter` | 0-1 | Timing and pitch instability |
 | `osc_grain_pan` | 0-1 | Per-grain stereo spread |
@@ -109,6 +115,14 @@ Starts a finite grain burst on note-on. Density controls how fast the burst emit
 
 Ties the grain trigger rate to note frequency and density, pushing the grain stream toward oscillator-like behavior.
 
+## Tempo-Synced Density
+
+Enable **SYNC** beside the sample library to replace the free density clock with a host-tempo interval. Available divisions are 4 bars, 2 bars, 1 bar, 1/2, 1/4, 1/8, 1/8 triplet, 1/16, 1/16 triplet, and 1/32. At 120 BPM, quarter-note sync emits two triggers per second, eighth-note sync emits four, and eighth-note triplet sync emits six. Audio-rate trigger mode continues to follow oscillator frequency.
+
+## Scale-Quantized Pitch Clouds
+
+The compact pitch-cloud row selects random spread, musical key, scale, and **QNT** state. Spread adds a new independent per-grain range of ±2, ±4, ±7, ±12, or ±24 semitones; the original pitch and jitter controls remain active. With QNT enabled, the resulting pitch is snapped to the nearest note in Chromatic, Major, Natural Minor, Dorian, Mixolydian, or Major Pentatonic. Quantization is calculated when each grain is spawned and adds no allocation or lookup work to per-sample grain playback.
+
 ## Physical Body
 
 The physical body section is optional and defaults to bypass:
@@ -145,8 +159,6 @@ These are appended to the modulation destination enum to preserve earlier destin
 ## Next Upgrades
 
 - Optional linked-file dependency mode
-- Tempo-synced density divisions
-- Scale-quantized pitch clouds
 - Grain direction sequencing
 - Live grain-cloud overlay on the completed waveform display
 - Dual granular layer morphing

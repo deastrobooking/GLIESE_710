@@ -189,6 +189,14 @@ private:
     juce::ComboBox sampleBrowserBox;
     juce::TextButton rescanSamplesButton { "SCAN" };
     std::vector<juce::File> sampleBrowserFiles;
+    juce::ToggleButton densitySyncButton { "SYNC" };
+    std::unique_ptr<BAtt> densitySyncAtt;
+    juce::ComboBox densityDivisionBox;
+    std::unique_ptr<CAtt> densityDivisionAtt;
+    juce::ToggleButton pitchQuantizeButton { "QNT" };
+    std::unique_ptr<BAtt> pitchQuantizeAtt;
+    juce::ComboBox pitchCloudBox, pitchScaleBox, pitchScaleRootBox;
+    std::unique_ptr<CAtt> pitchCloudAtt, pitchScaleAtt, pitchScaleRootAtt;
 
     // ADSR sliders
     juce::Slider adsrA, adsrD, adsrS, adsrR;

@@ -200,7 +200,18 @@ static APVTS::ParameterLayout buildLayout()
         addFloat(prefix + "position", label + " Position", 0.0f, 1.0f, 0.5f);
         addFloat(prefix + "size",     label + " Size",     5.0f, 1000.0f, 120.0f, 0.35f);
         addFloat(prefix + "density",  label + " Density",  0.1f, 1200.0f, 35.0f, 0.32f);
+        addBool (prefix + "density_sync", label + " Density Sync", false);
+        addChoice(prefix + "density_division", label + " Density Division",
+                  {"4 Bars","2 Bars","1 Bar","1/2","1/4","1/8","1/8T",
+                   "1/16","1/16T","1/32"}, 4);
         addFloat(prefix + "pitch",    label + " Pitch",   -48.0f, 48.0f, 0.0f);
+        addChoice(prefix + "pitch_cloud", label + " Pitch Cloud",
+                  {"Off","+/-2","+/-4","+/-7","+/-12","+/-24"}, 0);
+        addBool(prefix + "pitch_quantize", label + " Pitch Quantize", false);
+        addChoice(prefix + "pitch_scale", label + " Pitch Scale",
+                  {"Chromatic","Major","Minor","Dorian","Mixolydian","Pentatonic"}, 0);
+        addChoice(prefix + "pitch_scale_root", label + " Pitch Scale Root",
+                  {"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"}, 0);
         addFloat(prefix + "spray",    label + " Spray",    0.0f, 1.0f, 0.18f);
         addFloat(prefix + "jitter",   label + " Jitter",   0.0f, 1.0f, 0.04f);
         addFloat(prefix + "pan",      label + " Pan Spread", 0.0f, 1.0f, 0.7f);

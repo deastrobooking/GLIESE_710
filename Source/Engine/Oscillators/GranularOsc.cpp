@@ -90,7 +90,12 @@ void GranularOsc::setParams(const Params& newParams)
     params.position = juce::jlimit(0.f, 1.f, params.position);
     params.sizeMs = juce::jlimit(5.f, 1000.f, params.sizeMs);
     params.density = juce::jlimit(0.1f, 1200.f, params.density);
+    params.densityDivision = juce::jlimit(0, 9, params.densityDivision);
+    params.hostBPM = juce::jlimit(20.0, 400.0, params.hostBPM);
     params.pitchSemis = juce::jlimit(-48.f, 48.f, params.pitchSemis);
+    params.pitchCloudSemis = juce::jlimit(0.f, 24.f, params.pitchCloudSemis);
+    params.pitchScale = juce::jlimit(0, 5, params.pitchScale);
+    params.pitchScaleRoot = juce::jlimit(0, 11, params.pitchScaleRoot);
     params.spray = juce::jlimit(0.f, 1.f, params.spray);
     params.jitter = juce::jlimit(0.f, 1.f, params.jitter);
     params.panSpread = juce::jlimit(0.f, 1.f, params.panSpread);
@@ -288,7 +293,9 @@ std::pair<float, float> GranularOsc::processSample()
         scanPosition = wrap01(scanPosition + scanPerSample);
     }
 
-    float rate = params.density;
+    float rate = params.densitySync
+        ? densityRateForTempo(params.hostBPM, params.densityDivision)
+        : params.density;
     if (params.triggerMode == TriggerMode::AudioRate)
         rate = juce::jlimit(20.f, 1200.f, frequency * (0.25f + params.density / 1200.f));
 
@@ -296,7 +303,8 @@ std::pair<float, float> GranularOsc::processSample()
     {
         if (burstRemaining > 0)
         {
-            const float burstRate = juce::jlimit(10.f, 900.f, params.density * 2.f);
+            const float burstRate = params.densitySync
+                ? rate : juce::jlimit(10.f, 900.f, params.density * 2.f);
             triggerPhase += burstRate / (float) sr;
             if (triggerPhase >= 1.f)
             {
@@ -350,6 +358,49 @@ std::pair<float, float> GranularOsc::processSample()
 
     const float comp = 1.f / std::sqrt((float) kMaxGrains * 0.12f);
     return processBody(clampFinite(outL * comp), clampFinite(outR * comp));
+}
+
+float GranularOsc::densityRateForTempo(double bpm, int division) noexcept
+{
+    static constexpr std::array<float, 10> beatsPerTrigger {
+        16.f, 8.f, 4.f, 2.f, 1.f, 0.5f, 1.f / 3.f,
+        0.25f, 1.f / 6.f, 0.125f
+    };
+    const float beats = beatsPerTrigger[(size_t)juce::jlimit(0, 9, division)];
+    return (float)juce::jlimit(20.0, 400.0, bpm) / 60.f / beats;
+}
+
+float GranularOsc::quantizePitchOffset(int midiNote, float semitoneOffset,
+                                       int scaleRoot, int scale) noexcept
+{
+    static constexpr std::array<uint16_t, 6> masks {
+        0x0fff, // chromatic
+        0x0ab5, // major: 0 2 4 5 7 9 11
+        0x05ad, // natural minor: 0 2 3 5 7 8 10
+        0x06ad, // dorian: 0 2 3 5 7 9 10
+        0x06b5, // mixolydian: 0 2 4 5 7 9 10
+        0x0295  // major pentatonic: 0 2 4 7 9
+    };
+    const auto mask = masks[(size_t)juce::jlimit(0, 5, scale)];
+    const int root = ((scaleRoot % 12) + 12) % 12;
+    const float target = (float)midiNote + semitoneOffset;
+    const int centre = juce::roundToInt(target);
+
+    int best = centre;
+    float bestDistance = std::numeric_limits<float>::max();
+    for (int candidate = centre - 12; candidate <= centre + 12; ++candidate)
+    {
+        const int pitchClass = ((candidate - root) % 12 + 12) % 12;
+        if ((mask & (uint16_t)(1u << pitchClass)) == 0)
+            continue;
+        const float distance = std::abs((float)candidate - target);
+        if (distance < bestDistance)
+        {
+            best = candidate;
+            bestDistance = distance;
+        }
+    }
+    return (float)(best - midiNote);
 }
 
 int GranularOsc::getActiveGrainCount() const
@@ -465,8 +516,12 @@ void GranularOsc::triggerGrain()
     const int length = juce::jlimit(8, (int) (sr * 1.5),
         juce::roundToInt(params.sizeMs * 0.001f * (float) sr * juce::jlimit(0.2f, 2.f, sizeJitter)));
 
-    const float pitchRand = randomBipolar() * params.jitter * 4.f;
-    const float pitch = params.pitchSemis + pitchRand;
+    const float pitchRand = randomBipolar()
+        * (params.pitchCloudSemis + params.jitter * 4.f);
+    float pitch = params.pitchSemis + pitchRand;
+    if (params.pitchQuantize)
+        pitch = quantizePitchOffset(
+            note, pitch, params.pitchScaleRoot, params.pitchScale);
     const float rootCompensation = gliese::dsp::pitchRatioFromSemitones(
         60.f - (float)params.rootNote);
     const float grainHz = juce::jlimit(1.f, 20000.f,

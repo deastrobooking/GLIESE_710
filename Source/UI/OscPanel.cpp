@@ -732,6 +732,45 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         IndustrialTheme::styleButton(rescanSamplesButton, accent);
         rescanSamplesButton.onClick = [this] { refreshGranularSampleBrowser(); };
         addAndMakeVisible(rescanSamplesButton);
+        densitySyncButton.setTooltip("Sync grain triggers to host tempo");
+        densitySyncButton.setColour(juce::ToggleButton::textColourId, accent);
+        densitySyncButton.setColour(juce::ToggleButton::tickColourId, accent);
+        addAndMakeVisible(densitySyncButton);
+        densitySyncAtt = std::make_unique<BAtt>(
+            apvts, pfx + "density_sync", densitySyncButton);
+        densityDivisionBox.addItemList(
+            { "4 BAR","2 BAR","1 BAR","1/2","1/4","1/8","1/8T",
+              "1/16","1/16T","1/32" }, 1);
+        densityDivisionBox.setTooltip("Tempo-synced grain trigger division");
+        IndustrialTheme::styleCombo(densityDivisionBox, accent);
+        addAndMakeVisible(densityDivisionBox);
+        densityDivisionAtt = std::make_unique<CAtt>(
+            apvts, pfx + "density_division", densityDivisionBox);
+        pitchQuantizeButton.setTooltip("Quantize each grain pitch to the selected key and scale");
+        pitchQuantizeButton.setColour(juce::ToggleButton::textColourId, accent);
+        pitchQuantizeButton.setColour(juce::ToggleButton::tickColourId, accent);
+        addAndMakeVisible(pitchQuantizeButton);
+        pitchQuantizeAtt = std::make_unique<BAtt>(
+            apvts, pfx + "pitch_quantize", pitchQuantizeButton);
+        pitchCloudBox.addItemList({ "CLOUD OFF","±2","±4","±7","±12","±24" }, 1);
+        pitchScaleBox.addItemList(
+            { "CHROM","MAJOR","MINOR","DORIAN","MIXOLYD","PENTA" }, 1);
+        pitchScaleRootBox.addItemList(
+            { "C","C#","D","D#","E","F","F#","G","G#","A","A#","B" }, 1);
+        for (auto* box : { &pitchCloudBox, &pitchScaleBox, &pitchScaleRootBox })
+        {
+            IndustrialTheme::styleCombo(*box, accent);
+            addAndMakeVisible(*box);
+        }
+        pitchCloudBox.setTooltip("Random pitch-cloud spread in semitones");
+        pitchScaleBox.setTooltip("Pitch-cloud quantization scale");
+        pitchScaleRootBox.setTooltip("Pitch-cloud musical key");
+        pitchCloudAtt = std::make_unique<CAtt>(
+            apvts, pfx + "pitch_cloud", pitchCloudBox);
+        pitchScaleAtt = std::make_unique<CAtt>(
+            apvts, pfx + "pitch_scale", pitchScaleBox);
+        pitchScaleRootAtt = std::make_unique<CAtt>(
+            apvts, pfx + "pitch_scale_root", pitchScaleRootBox);
         refreshGranularSampleBrowser();
         hasGranularImportButton = granularImport != nullptr && granularIndex >= 0;
         if (hasGranularImportButton)
@@ -1431,8 +1470,18 @@ void OscPanel::resized()
         area.removeFromTop(2);
 
         auto browser = area.removeFromTop(22);
-        rescanSamplesButton.setBounds(browser.removeFromRight(48).reduced(1, 0));
+        rescanSamplesButton.setBounds(browser.removeFromRight(44).reduced(1, 0));
+        densityDivisionBox.setBounds(browser.removeFromRight(68).reduced(1, 0));
+        densitySyncButton.setBounds(browser.removeFromRight(54).reduced(1, 1));
         sampleBrowserBox.setBounds(browser.reduced(2, 0));
+        area.removeFromTop(2);
+
+        auto pitchCloud = area.removeFromTop(22);
+        pitchQuantizeButton.setBounds(pitchCloud.removeFromLeft(48).reduced(1, 1));
+        pitchScaleRootBox.setBounds(pitchCloud.removeFromLeft(48).reduced(1, 0));
+        pitchScaleBox.setBounds(pitchCloud.removeFromLeft(
+            juce::jmax(64, pitchCloud.getWidth() / 2)).reduced(1, 0));
+        pitchCloudBox.setBounds(pitchCloud.reduced(1, 0));
         area.removeFromTop(2);
     }
 

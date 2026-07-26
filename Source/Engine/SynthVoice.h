@@ -62,6 +62,7 @@ private:
     float midiCCs[(int)ModSource::NumSources] = {};
 
     double sampleRate = 48000.0;
+    double hostBPM = 120.0;
 
     // Active engine counts (derived in syncParams, used in renderBlock)
     int  current3dCount    = 0;
@@ -213,7 +214,13 @@ private:
             std::atomic<float>* position    = nullptr;
             std::atomic<float>* size        = nullptr;
             std::atomic<float>* density     = nullptr;
+            std::atomic<float>* densitySync = nullptr;
+            std::atomic<float>* densityDivision = nullptr;
             std::atomic<float>* pitch       = nullptr;
+            std::atomic<float>* pitchCloud  = nullptr;
+            std::atomic<float>* pitchQuantize = nullptr;
+            std::atomic<float>* pitchScale  = nullptr;
+            std::atomic<float>* pitchScaleRoot = nullptr;
             std::atomic<float>* spray       = nullptr;
             std::atomic<float>* jitter      = nullptr;
             std::atomic<float>* pan         = nullptr;

@@ -290,6 +290,8 @@ GLIESE_710/
 - [x] Granular sample-library browser and four preset-persistent per-slot scenes
 - [x] Optional stereo input bus, non-blocking live circular recorder, and per-slot freeze capture
 - [x] True stereo granular assets, decoder path, grain reads, and preset payloads
+- [x] Host-tempo-synced granular density with straight and triplet divisions
+- [x] Scale-quantized granular pitch clouds with selectable key and spread
 
 ---
 

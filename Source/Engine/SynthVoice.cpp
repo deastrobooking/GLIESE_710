@@ -398,7 +398,11 @@ void SynthVoice::noteOff()
     dualFilter.noteOff();
 }
 
-void SynthVoice::setHostBPM(double bpm)  { lfo.setHostBPM(bpm); }
+void SynthVoice::setHostBPM(double bpm)
+{
+    hostBPM = juce::jlimit(20.0, 400.0, bpm);
+    lfo.setHostBPM(hostBPM);
+}
 
 void SynthVoice::setGranularSampleData(
     int index, std::shared_ptr<const GranularOsc::SampleData> sample)
@@ -567,7 +571,13 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.position    = get(pfx + "position");
         c.size        = get(pfx + "size");
         c.density     = get(pfx + "density");
+        c.densitySync = get(pfx + "density_sync");
+        c.densityDivision = get(pfx + "density_division");
         c.pitch       = get(pfx + "pitch");
+        c.pitchCloud  = get(pfx + "pitch_cloud");
+        c.pitchQuantize = get(pfx + "pitch_quantize");
+        c.pitchScale  = get(pfx + "pitch_scale");
+        c.pitchScaleRoot = get(pfx + "pitch_scale_root");
         c.spray       = get(pfx + "spray");
         c.jitter      = get(pfx + "jitter");
         c.pan         = get(pfx + "pan");
@@ -989,8 +999,19 @@ void SynthVoice::syncParams()
         gp.density     = juce::jlimit(0.1f, 1200.f,
             pF(cg.density, 35.f)
                 * gliese::dsp::pitchRatioFromSemitones(modDests.dests[(int)ModDest::Gran_Density] * 48.f));
+        gp.densitySync = pB(cg.densitySync);
+        gp.densityDivision = pI(cg.densityDivision, 4);
+        gp.hostBPM = hostBPM;
         gp.pitchSemis  = juce::jlimit(-48.f, 48.f,
             pF(cg.pitch) + modDests.dests[(int)ModDest::Gran_Pitch] * 24.f);
+        static constexpr std::array<float, 6> cloudSpreads {
+            0.f, 2.f, 4.f, 7.f, 12.f, 24.f
+        };
+        gp.pitchCloudSemis = cloudSpreads[(size_t)juce::jlimit(
+            0, 5, pI(cg.pitchCloud))];
+        gp.pitchQuantize = pB(cg.pitchQuantize);
+        gp.pitchScale = pI(cg.pitchScale);
+        gp.pitchScaleRoot = pI(cg.pitchScaleRoot);
         gp.spray       = juce::jlimit(0.f, 1.f,
             pF(cg.spray, 0.18f) + modDests.dests[(int)ModDest::Gran_Spray]);
         gp.jitter      = pF(cg.jitter, 0.04f);
