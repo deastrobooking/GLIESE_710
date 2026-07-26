@@ -286,7 +286,10 @@ GLIESE_710/
 - [x] Granular drag-and-drop sample loading, background decode/resample, immutable voice handoff, and waveform display
 - [x] Granular per-slot source regions, equal slices, slice selection, and waveform markers
 - [x] Background granular transient detection and automatic transient-based slicing
-- [ ] Granular sample dependencies, root-note metadata, named scenes, and live capture
+- [x] Embedded granular sample assets in plugin state/presets with per-slot root-note metadata
+- [x] Granular sample-library browser and four preset-persistent per-slot scenes
+- [x] Optional stereo input bus, non-blocking live circular recorder, and per-slot freeze capture
+- [x] True stereo granular assets, decoder path, grain reads, and preset payloads
 
 ---
 

@@ -614,10 +614,12 @@ private:
 MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a,
                      TerrainImportCallback terrainImportCallback,
                      GranularImportCallback granularImportCallback,
+                     GranularCaptureCallback granularCaptureCallback,
                      ModStepSequencerPanel::CurrentStepProvider stepProvider)
     : apvts(a),
       terrainImport(std::move(terrainImportCallback)),
       granularImport(std::move(granularImportCallback)),
+      granularCapture(std::move(granularCaptureCallback)),
       modStepProvider(std::move(stepProvider))
 {
     tabs.setTabBarDepth(28);
@@ -699,7 +701,7 @@ void MainPanel::buildOscillatorsTab()
             apvts, makeId("ks", i), "KARPLUS-STRONG " + juce::String(i + 1));
         granularPanels[(size_t)i] = std::make_unique<OscPanel>(
             apvts, makeId("grain", i), "GRANULAR " + juce::String(i + 1),
-            TerrainImportCallback{}, -1, granularImport, i);
+            TerrainImportCallback{}, -1, granularImport, i, granularCapture);
         terrainPanels[(size_t)i] = std::make_unique<OscPanel>(
             apvts, makeId("terrain", i), "TERRAIN " + juce::String(i + 1),
             terrainImport, i);

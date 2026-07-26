@@ -1813,6 +1813,72 @@ TEST_CASE("GranularOsc detects bounded transient slice markers", "[granular]")
                 > asset->transientMarkers[(size_t)i - 1]);
 }
 
+TEST_CASE("GranularOsc sample assets survive preset serialization", "[granular]")
+{
+    std::array<float, 8192> left {};
+    std::array<float, 8192> right {};
+    for (size_t i = 0; i < left.size(); ++i)
+    {
+        left[i] = 0.8f * std::sin(juce::MathConstants<float>::twoPi
+                                 * 9.f * (float)i / (float)left.size());
+        right[i] = 0.6f * std::sin(juce::MathConstants<float>::twoPi
+                                  * 17.f * (float)i / (float)right.size());
+    }
+
+    const auto original = GranularOsc::createSampleData(
+        left.data(), right.data(), (int)left.size());
+    const auto encoded = GranularOsc::serializeSampleData(*original);
+    const auto restored = GranularOsc::deserializeSampleData(
+        encoded.getData(), encoded.getSize());
+    REQUIRE(restored != nullptr);
+    REQUIRE(restored->transientMarkerCount == original->transientMarkerCount);
+    REQUIRE(restored->samples == original->samples);
+    REQUIRE(restored->samplesR == original->samplesR);
+    REQUIRE(restored->transientMarkers == original->transientMarkers);
+
+    juce::MemoryBlock corrupt(encoded);
+    static_cast<uint8_t*>(corrupt.getData())[0] ^= 0xff;
+    REQUIRE(GranularOsc::deserializeSampleData(
+                corrupt.getData(), corrupt.getSize()) == nullptr);
+}
+
+TEST_CASE("GranularOsc preserves independent stereo grain reads", "[granular]")
+{
+    std::array<float, 4096> left {};
+    std::array<float, 4096> right {};
+    for (size_t i = 0; i < left.size(); ++i)
+    {
+        left[i] = 0.8f * std::sin(juce::MathConstants<float>::twoPi
+                                 * 3.f * (float)i / (float)left.size());
+        right[i] = 0.8f * std::sin(juce::MathConstants<float>::twoPi
+                                  * 11.f * (float)i / (float)right.size());
+    }
+
+    GranularOsc osc;
+    osc.setSampleData(GranularOsc::createSampleData(
+        left.data(), right.data(), (int)left.size()));
+    osc.prepare(48000.0);
+    osc.setFrequency(220.f);
+    GranularOsc::Params params;
+    params.density = 220.f;
+    params.sizeMs = 100.f;
+    params.spray = 0.f;
+    params.jitter = 0.f;
+    params.panSpread = 0.f;
+    osc.setParams(params);
+    osc.noteOn(60, 1.f);
+
+    double stereoDifference = 0.0;
+    for (int i = 0; i < 6000; ++i)
+    {
+        const auto [l, r] = osc.processSample();
+        stereoDifference += std::abs(l - r);
+        REQUIRE(std::isfinite(l));
+        REQUIRE(std::isfinite(r));
+    }
+    REQUIRE(stereoDifference > 1.0);
+}
+
 TEST_CASE("GranularOsc position updates held cloud without retrigger", "[granular]")
 {
     GranularOsc steady;
@@ -1867,7 +1933,7 @@ TEST_CASE("GranularOsc position updates held cloud without retrigger", "[granula
 
 TEST_CASE("GranularOsc default graintable tracks played pitch", "[granular]")
 {
-    auto estimatePitch = [](float targetHz)
+    auto estimatePitch = [](float targetHz, int rootNote = 60)
     {
         GranularOsc osc;
         osc.prepare(48000.0);
@@ -1885,6 +1951,7 @@ TEST_CASE("GranularOsc default graintable tracks played pitch", "[granular]")
         p.panSpread = 0.f;
         p.bodyType = GranularOsc::BodyType::Off;
         p.bodyMix = 0.f;
+        p.rootNote = rootNote;
         osc.setParams(p);
         osc.noteOn(60, 1.f);
 
@@ -1906,8 +1973,10 @@ TEST_CASE("GranularOsc default graintable tracks played pitch", "[granular]")
         for (auto& s : samples)
             s -= mean;
 
-        const int minLag = juce::roundToInt(48000.f / (targetHz * 1.25f));
-        const int maxLag = juce::roundToInt(48000.f / (targetHz * 0.75f));
+        const float expectedHz = targetHz
+            * std::pow(2.f, (60.f - (float)rootNote) / 12.f);
+        const int minLag = juce::roundToInt(48000.f / (expectedHz * 1.25f));
+        const int maxLag = juce::roundToInt(48000.f / (expectedHz * 0.75f));
         int bestLag = minLag;
         float bestCorr = -1.f;
         for (int lag = minLag; lag <= maxLag; ++lag)
@@ -1936,6 +2005,7 @@ TEST_CASE("GranularOsc default graintable tracks played pitch", "[granular]")
 
     REQUIRE(estimatePitch(240.f) == Approx(240.f).margin(6.f));
     REQUIRE(estimatePitch(480.f) == Approx(480.f).margin(12.f));
+    REQUIRE(estimatePitch(240.f, 72) == Approx(120.f).margin(4.f));
 }
 
 TEST_CASE("GranularOsc modes and windows stay finite under heavy density", "[granular]")

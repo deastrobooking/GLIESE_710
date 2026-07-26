@@ -122,13 +122,16 @@ public:
     using TerrainImportCallback = std::function<bool(int terrainIndex, const juce::File& file)>;
     using GranularImportCallback = std::function<void(
         int granularIndex, std::shared_ptr<const GranularOsc::SampleData>)>;
+    using GranularCaptureCallback = std::function<
+        std::shared_ptr<const GranularOsc::SampleData>(int granularIndex)>;
 
     explicit OscPanel(juce::AudioProcessorValueTreeState& apvts, const juce::String& oscId,
                       const juce::String& label,
                       TerrainImportCallback terrainImport = {},
                       int terrainIndex = -1,
                       GranularImportCallback granularImport = {},
-                      int granularIndex = -1);
+                      int granularIndex = -1,
+                      GranularCaptureCallback granularCapture = {});
 
     void paint(juce::Graphics&) override;
     void paintOverChildren(juce::Graphics&) override;
@@ -147,6 +150,7 @@ private:
     int terrainIndex = -1;
     GranularImportCallback granularImport;
     int granularIndex = -1;
+    GranularCaptureCallback granularCapture;
 
     juce::Label titleLabel;
 
@@ -162,6 +166,7 @@ private:
     bool hasRetrigButton = false;
     juce::TextButton importHeightmapButton { "IMPORT MAP" };
     juce::TextButton importSampleButton { "LOAD SAMPLE" };
+    juce::TextButton captureSampleButton { "CAPTURE" };
     bool hasTerrainImportButton = false;
     bool hasGranularImportButton = false;
     bool terrainDropActive = false;
@@ -172,11 +177,18 @@ private:
     // Level + pitch controls shared by all osc types
     juce::Slider levelSlider, tuneSlider, octaveSlider;
     std::unique_ptr<Att> levelAtt, tuneAtt, octaveAtt;
-    std::array<juce::Slider, 4> regionSliders;
-    std::array<std::unique_ptr<Att>, 4> regionAtts;
-    std::array<juce::Label, 4> regionLabels;
+    std::array<juce::Slider, 5> regionSliders;
+    std::array<std::unique_ptr<Att>, 5> regionAtts;
+    std::array<juce::Label, 5> regionLabels;
     juce::ToggleButton transientSlicesButton { "AUTO" };
     std::unique_ptr<BAtt> transientSlicesAtt;
+    juce::ComboBox granularSceneBox;
+    std::unique_ptr<CAtt> granularSceneAtt;
+    juce::TextButton saveGranularSceneButton { "SAVE" };
+    bool recallingGranularScene = false;
+    juce::ComboBox sampleBrowserBox;
+    juce::TextButton rescanSamplesButton { "SCAN" };
+    std::vector<juce::File> sampleBrowserFiles;
 
     // ADSR sliders
     juce::Slider adsrA, adsrD, adsrS, adsrR;
@@ -215,4 +227,7 @@ private:
     void refreshTerrainDisplay();
     void launchGranularImportChooser();
     void importGranularSampleFile(const juce::File& file);
+    void refreshGranularSampleBrowser();
+    void saveGranularScene();
+    void recallGranularScene();
 };

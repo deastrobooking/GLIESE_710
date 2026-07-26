@@ -56,10 +56,12 @@ class MainPanel : public juce::Component
 public:
     using TerrainImportCallback = OscPanel::TerrainImportCallback;
     using GranularImportCallback = OscPanel::GranularImportCallback;
+    using GranularCaptureCallback = OscPanel::GranularCaptureCallback;
 
     explicit MainPanel(juce::AudioProcessorValueTreeState& apvts,
                        TerrainImportCallback terrainImport = {},
                        GranularImportCallback granularImport = {},
+                       GranularCaptureCallback granularCapture = {},
                        ModStepSequencerPanel::CurrentStepProvider modStepProvider = {});
     ~MainPanel() override;
     void paint(juce::Graphics&) override;
@@ -69,6 +71,7 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
     TerrainImportCallback terrainImport;
     GranularImportCallback granularImport;
+    GranularCaptureCallback granularCapture;
     ModStepSequencerPanel::CurrentStepProvider modStepProvider;
 
     // ── Oscillator panels (one independent parameter set per engine slot) ────

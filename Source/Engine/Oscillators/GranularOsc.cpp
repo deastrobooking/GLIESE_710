@@ -101,6 +101,7 @@ void GranularOsc::setParams(const Params& newParams)
     params.regionEnd = juce::jlimit(params.regionStart + 0.001f, 1.f, params.regionEnd);
     params.sliceCount = juce::jlimit(1, 32, params.sliceCount);
     params.sliceIndex = juce::jlimit(0, params.sliceCount - 1, params.sliceIndex);
+    params.rootNote = juce::jlimit(0, 127, params.rootNote);
     params.bodyRootSemis = juce::jlimit(-48.f, 48.f, params.bodyRootSemis);
     params.bodySize = juce::jlimit(0.f, 1.f, params.bodySize);
     params.bodyDecay = juce::jlimit(0.f, 1.f, params.bodyDecay);
@@ -139,8 +140,16 @@ void GranularOsc::setSampleData(std::shared_ptr<const SampleData> newSample)
 std::shared_ptr<const GranularOsc::SampleData>
 GranularOsc::createSampleData(const float* samples, int numSamples)
 {
-    if (samples == nullptr || numSamples <= 0)
+    return createSampleData(samples, samples, numSamples);
+}
+
+std::shared_ptr<const GranularOsc::SampleData>
+GranularOsc::createSampleData(const float* left, const float* right, int numSamples)
+{
+    if (left == nullptr || numSamples <= 0)
         return generateDefaultSource();
+    if (right == nullptr)
+        right = left;
 
     auto result = std::make_shared<SampleData>();
     result->transientMarkers[0] = 0.f;
@@ -154,7 +163,7 @@ GranularOsc::createSampleData(const float* samples, int numSamples)
         const int end = juce::jmin(numSamples, start + hop);
         float energy = 0.f;
         for (int i = start; i < end; ++i)
-            energy += samples[i] * samples[i];
+            energy += 0.5f * (left[i] * left[i] + right[i] * right[i]);
         energy /= (float)juce::jmax(1, end - start);
 
         const bool onset = start > 0 && start - lastMarker >= minimumGap
@@ -171,7 +180,8 @@ GranularOsc::createSampleData(const float* samples, int numSamples)
     result->transientMarkers[(size_t)result->transientMarkerCount - 1] = 1.f;
 
     const int regionSize = juce::jmax(2, numSamples / kTableFrames);
-    std::array<float, kFrameSamples> frame {};
+    std::array<float, kFrameSamples> frameL {};
+    std::array<float, kFrameSamples> frameR {};
 
     for (int f = 0; f < kTableFrames; ++f)
     {
@@ -185,22 +195,86 @@ GranularOsc::createSampleData(const float* samples, int numSamples)
             const int i0 = juce::jlimit(0, numSamples - 1, (int) srcPos);
             const int i1 = juce::jlimit(0, numSamples - 1, i0 + 1);
             const float frac = srcPos - (float) i0;
-            frame[(size_t) i] = samples[i0] + (samples[i1] - samples[i0]) * frac;
+            frameL[(size_t)i] = left[i0] + (left[i1] - left[i0]) * frac;
+            frameR[(size_t)i] = right[i0] + (right[i1] - right[i0]) * frac;
         }
 
-        float dc = 0.f;
-        for (float s : frame)
-            dc += s;
-        dc /= (float) kFrameSamples;
-
-        const float endDelta = frame[(size_t) kFrameSamples - 1] - frame[0];
+        float dcL = 0.f, dcR = 0.f;
+        for (int i = 0; i < kFrameSamples; ++i)
+        {
+            dcL += frameL[(size_t)i];
+            dcR += frameR[(size_t)i];
+        }
+        dcL /= (float)kFrameSamples;
+        dcR /= (float)kFrameSamples;
+        const float endDeltaL = frameL[(size_t)kFrameSamples - 1] - frameL[0];
+        const float endDeltaR = frameR[(size_t)kFrameSamples - 1] - frameR[0];
         for (int i = 0; i < kFrameSamples; ++i)
         {
             const float t = (float) i / (float) (kFrameSamples - 1);
             (*result)[(size_t) frameOffset + (size_t) i] = juce::jlimit(
-                -1.f, 1.f, frame[(size_t) i] - dc - endDelta * t);
+                -1.f, 1.f, frameL[(size_t)i] - dcL - endDeltaL * t);
+            result->samplesR[(size_t)frameOffset + (size_t)i] = juce::jlimit(
+                -1.f, 1.f, frameR[(size_t)i] - dcR - endDeltaR * t);
         }
     }
+    return result;
+}
+
+juce::MemoryBlock GranularOsc::serializeSampleData(const SampleData& sample)
+{
+    juce::MemoryOutputStream output;
+    output.writeInt(0x47375331); // G7S1
+    output.writeInt(2);
+    output.writeInt(juce::jlimit(2, kMaxTransientMarkers + 2,
+                                 sample.transientMarkerCount));
+    for (float marker : sample.transientMarkers)
+        output.writeFloat(marker);
+    for (float value : sample.samples)
+        output.writeFloat(value);
+    for (float value : sample.samplesR)
+        output.writeFloat(value);
+    return output.getMemoryBlock();
+}
+
+std::shared_ptr<const GranularOsc::SampleData>
+GranularOsc::deserializeSampleData(const void* data, size_t size)
+{
+    constexpr size_t monoBytes = 12
+        + sizeof(float) * (kMaxTransientMarkers + 2 + kSourceSamples);
+    if (data == nullptr || size < monoBytes)
+        return {};
+
+    juce::MemoryInputStream input(data, size, false);
+    if (input.readInt() != 0x47375331)
+        return {};
+    const int version = input.readInt();
+    if (version != 1 && version != 2)
+        return {};
+    if (version == 2 && size < monoBytes + sizeof(float) * kSourceSamples)
+        return {};
+
+    auto result = std::make_shared<SampleData>();
+    result->transientMarkerCount = juce::jlimit(
+        2, kMaxTransientMarkers + 2, input.readInt());
+    for (auto& marker : result->transientMarkers)
+        marker = input.readFloat();
+    for (auto& value : result->samples)
+        value = juce::jlimit(-1.f, 1.f, input.readFloat());
+    if (version == 2)
+        for (auto& value : result->samplesR)
+            value = juce::jlimit(-1.f, 1.f, input.readFloat());
+    else
+        result->samplesR = result->samples;
+
+    if (result->transientMarkers[0] != 0.f
+        || result->transientMarkers[(size_t)result->transientMarkerCount - 1] != 1.f)
+        return {};
+    for (int i = 1; i < result->transientMarkerCount; ++i)
+        if (!std::isfinite(result->transientMarkers[(size_t)i])
+            || result->transientMarkers[(size_t)i]
+                <= result->transientMarkers[(size_t)i - 1])
+            return {};
     return result;
 }
 
@@ -253,10 +327,13 @@ std::pair<float, float> GranularOsc::processSample()
 
         const float phase = (float) grain.age / (float) juce::jmax(1, grain.length);
         const float amp = windowValue(grain.window, phase) * grain.gain;
-        const float s = readSource(grain.readPos, grain.loopStart, grain.loopLength) * amp;
+        const float sL = readSource(
+            grain.readPos, grain.loopStart, grain.loopLength, false) * amp;
+        const float sR = readSource(
+            grain.readPos, grain.loopStart, grain.loopLength, true) * amp;
 
-        outL += s * grain.panL;
-        outR += s * grain.panR;
+        outL += sL * grain.panL;
+        outR += sR * grain.panR;
 
         grain.readPos += grain.step;
         const float loopStart = (float) grain.loopStart;
@@ -320,6 +397,8 @@ std::shared_ptr<const GranularOsc::SampleData> GranularOsc::generateDefaultSourc
 
                 (*generated)[(size_t) f * (size_t) kFrameSamples + (size_t) i]
                     = std::tanh((sample / norm) * drive);
+                generated->samplesR[(size_t)f * (size_t)kFrameSamples + (size_t)i]
+                    = (*generated)[(size_t)f * (size_t)kFrameSamples + (size_t)i];
             }
         }
         return generated;
@@ -388,8 +467,10 @@ void GranularOsc::triggerGrain()
 
     const float pitchRand = randomBipolar() * params.jitter * 4.f;
     const float pitch = params.pitchSemis + pitchRand;
+    const float rootCompensation = gliese::dsp::pitchRatioFromSemitones(
+        60.f - (float)params.rootNote);
     const float grainHz = juce::jlimit(1.f, 20000.f,
-                                       frequency * gliese::dsp::pitchRatioFromSemitones(pitch));
+        frequency * rootCompensation * gliese::dsp::pitchRatioFromSemitones(pitch));
     float step = grainHz * (float) kFrameSamples / (float) sr;
 
     bool reverse = random01() < params.reverseProb;
@@ -418,7 +499,8 @@ void GranularOsc::triggerGrain()
     target->window = params.window;
 }
 
-float GranularOsc::readSource(float pos, int loopStart, int loopLength) const
+float GranularOsc::readSource(float pos, int loopStart, int loopLength,
+                              bool rightChannel) const
 {
     if (source == nullptr)
         return 0.f;
@@ -429,7 +511,9 @@ float GranularOsc::readSource(float pos, int loopStart, int loopLength) const
     const int i0 = loopStart + offset0;
     const int i1 = loopStart + offset1;
     const float frac = pos - std::floor(pos);
-    return (*source)[(size_t) i0] + ((*source)[(size_t) i1] - (*source)[(size_t) i0]) * frac;
+    const auto& channel = rightChannel ? source->samplesR : source->samples;
+    return channel[(size_t)i0]
+        + (channel[(size_t)i1] - channel[(size_t)i0]) * frac;
 }
 
 float GranularOsc::windowValue(Window window, float phase) const

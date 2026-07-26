@@ -212,6 +212,22 @@ static APVTS::ParameterLayout buildLayout()
         addInt  (prefix + "slice_count",  label + " Slice Count",  1, 32, 1);
         addInt  (prefix + "slice_index",  label + " Slice Index",  0, 31, 0);
         addBool (prefix + "transient_slices", label + " Transient Slices", false);
+        addInt  (prefix + "root_note", label + " Root Note", 0, 127, 60);
+        addChoice(prefix + "scene", label + " Scene",
+                  {"Scene 1", "Scene 2", "Scene 3", "Scene 4"}, 0);
+        for (int scene = 0; scene < 4; ++scene)
+        {
+            const auto scenePrefix = prefix + "scene" + juce::String(scene + 1) + "_";
+            const auto sceneLabel = label + " Scene " + juce::String(scene + 1) + " ";
+            addFloat(scenePrefix + "region_start", sceneLabel + "Region Start",
+                     0.0f, 0.999f, 0.0f);
+            addFloat(scenePrefix + "region_end", sceneLabel + "Region End",
+                     0.001f, 1.0f, 1.0f);
+            addInt(scenePrefix + "slice_count", sceneLabel + "Slice Count", 1, 32, 1);
+            addInt(scenePrefix + "slice_index", sceneLabel + "Slice Index", 0, 31, 0);
+            addInt(scenePrefix + "root_note", sceneLabel + "Root Note", 0, 127, 60);
+            addBool(scenePrefix + "transient_slices", sceneLabel + "Transient Slices", false);
+        }
         addChoice(prefix + "body_type", label + " Body Type",
                   {"Off","Glass","Metal","Wood","Plate","String","Drum","Pipe","Alien"}, 0);
         addFloat(prefix + "body_root",   label + " Body Root",   -48.0f, 48.0f, 0.0f);
@@ -503,18 +519,23 @@ static APVTS::ParameterLayout buildLayout()
 //==============================================================================
 GLIESE710AudioProcessor::GLIESE710AudioProcessor()
     : AudioProcessor(BusesProperties()
+                         .withInput("Input", juce::AudioChannelSet::stereo(), false)
                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
       apvts(*this, nullptr, "State", buildLayout()),
       presetManager(apvts)
 {
-    presetManager.setStateLoadedCallback([this] { restoreTerrainHeightmapsFromState(); });
+    presetManager.setStateLoadedCallback([this] { restoreExternalAssetsFromState(); });
 }
 
 GLIESE710AudioProcessor::~GLIESE710AudioProcessor() = default;
 
 bool GLIESE710AudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 {
-    return layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+        return false;
+    const auto input = layouts.getMainInputChannelSet();
+    return input.isDisabled() || input == juce::AudioChannelSet::mono()
+        || input == juce::AudioChannelSet::stereo();
 }
 
 //==============================================================================
@@ -528,6 +549,11 @@ void GLIESE710AudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlo
     outputClip.store(false, std::memory_order_relaxed);
     dspLoad.store(0.f, std::memory_order_relaxed);
     activeVoiceCount.store(0, std::memory_order_relaxed);
+    const int captureSamples = juce::jmax(1, juce::roundToInt(sampleRate * 30.0));
+    inputCaptureL.assign((size_t)captureSamples, 0.f);
+    inputCaptureR.assign((size_t)captureSamples, 0.f);
+    inputCaptureWrite = 0;
+    inputCaptureValid = 0;
 }
 
 void GLIESE710AudioProcessor::releaseResources()
@@ -541,6 +567,7 @@ void GLIESE710AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 {
     const auto startTicks = juce::Time::getHighResolutionTicks();
     juce::ScopedNoDenormals noDenormals;
+    recordInput(buffer);
     buffer.clear();
 
     std::optional<double> ppqPosition;
@@ -584,6 +611,27 @@ void GLIESE710AudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
 }
 
+void GLIESE710AudioProcessor::recordInput(const juce::AudioBuffer<float>& buffer)
+{
+    if (getTotalNumInputChannels() <= 0 || inputCaptureL.empty())
+        return;
+
+    const juce::SpinLock::ScopedTryLockType lock(inputCaptureLock);
+    if (!lock.isLocked())
+        return;
+
+    const auto* left = buffer.getReadPointer(0);
+    const auto* right = buffer.getNumChannels() > 1 ? buffer.getReadPointer(1) : left;
+    const int capacity = (int)inputCaptureL.size();
+    for (int i = 0; i < buffer.getNumSamples(); ++i)
+    {
+        inputCaptureL[(size_t)inputCaptureWrite] = left[i];
+        inputCaptureR[(size_t)inputCaptureWrite] = right[i];
+        inputCaptureWrite = (inputCaptureWrite + 1) % capacity;
+    }
+    inputCaptureValid = juce::jmin(capacity, inputCaptureValid + buffer.getNumSamples());
+}
+
 bool GLIESE710AudioProcessor::importTerrainHeightmap(int terrainIndex, const juce::File& file)
 {
     if (!file.existsAsFile())
@@ -622,12 +670,79 @@ bool GLIESE710AudioProcessor::importTerrainHeightmap(int terrainIndex, const juc
 void GLIESE710AudioProcessor::queueGranularSample(
     int granularIndex, std::shared_ptr<const GranularOsc::SampleData> sample)
 {
+    if (granularIndex < 0 || granularIndex >= SynthVoice::kNumGranOscs || sample == nullptr)
+        return;
+
+    const auto encoded = GranularOsc::serializeSampleData(*sample);
+    apvts.state.setProperty(granularStateProperty(granularIndex),
+                            encoded.toBase64Encoding(), nullptr);
     synthEngine.queueGranularSample(granularIndex, std::move(sample));
+}
+
+std::shared_ptr<const GranularOsc::SampleData>
+GLIESE710AudioProcessor::captureGranularInput(int granularIndex, double seconds)
+{
+    if (granularIndex < 0 || granularIndex >= SynthVoice::kNumGranOscs)
+        return {};
+
+    std::vector<float> left;
+    std::vector<float> right;
+    {
+        const juce::SpinLock::ScopedLockType lock(inputCaptureLock);
+        const int requested = juce::roundToInt(
+            juce::jlimit(0.1, 30.0, seconds) * juce::jmax(1.0, getSampleRate()));
+        const int count = juce::jmin(inputCaptureValid, requested);
+        if (count <= 0)
+            return {};
+
+        left.resize((size_t)count);
+        right.resize((size_t)count);
+        const int capacity = (int)inputCaptureL.size();
+        int read = (inputCaptureWrite - count + capacity) % capacity;
+        for (int i = 0; i < count; ++i)
+        {
+            left[(size_t)i] = inputCaptureL[(size_t)read];
+            right[(size_t)i] = inputCaptureR[(size_t)read];
+            read = (read + 1) % capacity;
+        }
+    }
+
+    auto sample = GranularOsc::createSampleData(
+        left.data(), right.data(), (int)left.size());
+    queueGranularSample(granularIndex, sample);
+    return sample;
 }
 
 juce::Identifier GLIESE710AudioProcessor::terrainStateProperty(int terrainIndex)
 {
     return juce::Identifier("terrain_heightmap_" + juce::String(terrainIndex));
+}
+
+juce::Identifier GLIESE710AudioProcessor::granularStateProperty(int granularIndex)
+{
+    return juce::Identifier("granular_sample_" + juce::String(granularIndex));
+}
+
+void GLIESE710AudioProcessor::restoreExternalAssetsFromState()
+{
+    restoreTerrainHeightmapsFromState();
+    restoreGranularSamplesFromState();
+}
+
+void GLIESE710AudioProcessor::restoreGranularSamplesFromState()
+{
+    for (int i = 0; i < SynthVoice::kNumGranOscs; ++i)
+    {
+        const auto encoded = apvts.state[granularStateProperty(i)].toString();
+        if (encoded.isEmpty())
+            continue;
+
+        juce::MemoryBlock data;
+        if (!data.fromBase64Encoding(encoded))
+            continue;
+        if (auto sample = GranularOsc::deserializeSampleData(data.getData(), data.getSize()))
+            synthEngine.queueGranularSample(i, std::move(sample));
+    }
 }
 
 void GLIESE710AudioProcessor::restoreTerrainHeightmapsFromState()
@@ -670,7 +785,7 @@ void GLIESE710AudioProcessor::setStateInformation(const void* data, int sizeInBy
         if (tree.isValid())
         {
             apvts.replaceState(tree);
-            restoreTerrainHeightmapsFromState();
+            restoreExternalAssetsFromState();
         }
     }
 }

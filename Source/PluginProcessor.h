@@ -37,6 +37,8 @@ public:
     bool importTerrainHeightmap(int terrainIndex, const juce::File& file);
     void queueGranularSample(int granularIndex,
                              std::shared_ptr<const GranularOsc::SampleData> sample);
+    std::shared_ptr<const GranularOsc::SampleData> captureGranularInput(
+        int granularIndex, double seconds = 8.0);
     int getModSequencerCurrentStep() const noexcept { return synthEngine.getModSequencerCurrentStep(); }
     float getOutputPeakL() const noexcept { return outputPeakL.load(std::memory_order_relaxed); }
     float getOutputPeakR() const noexcept { return outputPeakR.load(std::memory_order_relaxed); }
@@ -55,8 +57,16 @@ private:
     std::atomic<bool> outputClip { false };
     std::atomic<float> dspLoad { 0.f };
     std::atomic<int> activeVoiceCount { 0 };
+    std::vector<float> inputCaptureL, inputCaptureR;
+    int inputCaptureWrite = 0;
+    int inputCaptureValid = 0;
+    juce::SpinLock inputCaptureLock;
+    void recordInput(const juce::AudioBuffer<float>& buffer);
     void restoreTerrainHeightmapsFromState();
+    void restoreGranularSamplesFromState();
+    void restoreExternalAssetsFromState();
     static juce::Identifier terrainStateProperty(int terrainIndex);
+    static juce::Identifier granularStateProperty(int granularIndex);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GLIESE710AudioProcessor)
 };

@@ -72,6 +72,8 @@ GLIESE710AudioProcessorEditor::GLIESE710AudioProcessorEditor(GLIESE710AudioProce
           return p.importTerrainHeightmap(terrainIndex, file);
       }, [&p](int granularIndex, std::shared_ptr<const GranularOsc::SampleData> sample) {
           p.queueGranularSample(granularIndex, std::move(sample));
+      }, [&p](int granularIndex) {
+          return p.captureGranularInput(granularIndex);
       }, [&p] {
           return p.getModSequencerCurrentStep();
       }),

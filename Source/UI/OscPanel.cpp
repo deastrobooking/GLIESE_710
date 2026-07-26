@@ -536,7 +536,8 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
                    TerrainImportCallback terrainImportCallback,
                    int terrainSlotIndex,
                    GranularImportCallback granularImportCallback,
-                   int granularSlotIndex)
+                   int granularSlotIndex,
+                   GranularCaptureCallback granularCaptureCallback)
     : apvts(a),
       oscId(id),
       label(lbl),
@@ -544,7 +545,8 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
       terrainImport(std::move(terrainImportCallback)),
       terrainIndex(terrainSlotIndex),
       granularImport(std::move(granularImportCallback)),
-      granularIndex(granularSlotIndex)
+      granularIndex(granularSlotIndex),
+      granularCapture(std::move(granularCaptureCallback))
 {
     titleLabel.setText(lbl, juce::dontSendNotification);
     IndustrialTheme::styleTitle(titleLabel, accent, 14.f);
@@ -660,9 +662,10 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
 
         granularWaveform = std::make_unique<GranularWaveformDisplay>(accent);
         addAndMakeVisible(*granularWaveform);
-        const char* regionIds[] = { "region_start", "region_end", "slice_count", "slice_index" };
-        const char* regionNames[] = { "START", "END", "SLICES", "SELECT" };
-        for (int i = 0; i < 4; ++i)
+        const char* regionIds[] = {
+            "region_start", "region_end", "slice_count", "slice_index", "root_note" };
+        const char* regionNames[] = { "START", "END", "SLICES", "SELECT", "ROOT" };
+        for (int i = 0; i < 5; ++i)
         {
             setupSlider(regionSliders[(size_t)i], regionNames[i]);
             regionAtts[(size_t)i] = std::make_unique<Att>(
@@ -697,12 +700,65 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         addAndMakeVisible(transientSlicesButton);
         transientSlicesAtt = std::make_unique<BAtt>(
             apvts, pfx + "transient_slices", transientSlicesButton);
+
+        granularSceneBox.addItemList(
+            { "SCENE 1", "SCENE 2", "SCENE 3", "SCENE 4" }, 1);
+        granularSceneBox.setTooltip("Recall a stored granular region scene");
+        IndustrialTheme::styleCombo(granularSceneBox, accent);
+        granularSceneBox.onChange = [this] { recallGranularScene(); };
+        addAndMakeVisible(granularSceneBox);
+        granularSceneAtt = std::make_unique<CAtt>(
+            apvts, pfx + "scene", granularSceneBox);
+
+        saveGranularSceneButton.setTooltip(
+            "Store the current region, slice, AUTO, and root settings in this scene");
+        IndustrialTheme::styleButton(saveGranularSceneButton, accent);
+        saveGranularSceneButton.onClick = [this] { saveGranularScene(); };
+        addAndMakeVisible(saveGranularSceneButton);
+
+        sampleBrowserBox.setTextWhenNothingSelected("SAMPLE LIBRARY");
+        sampleBrowserBox.setTextWhenNoChoicesAvailable("NO LIBRARY SAMPLES");
+        sampleBrowserBox.setTooltip(
+            "Audio files in Music/GLIESE_710/Samples; choose one to load");
+        IndustrialTheme::styleCombo(sampleBrowserBox, accent);
+        sampleBrowserBox.onChange = [this]
+        {
+            const int index = sampleBrowserBox.getSelectedItemIndex();
+            if (index >= 0 && index < (int)sampleBrowserFiles.size())
+                importGranularSampleFile(sampleBrowserFiles[(size_t)index]);
+        };
+        addAndMakeVisible(sampleBrowserBox);
+        rescanSamplesButton.setTooltip("Rescan Music/GLIESE_710/Samples");
+        IndustrialTheme::styleButton(rescanSamplesButton, accent);
+        rescanSamplesButton.onClick = [this] { refreshGranularSampleBrowser(); };
+        addAndMakeVisible(rescanSamplesButton);
+        refreshGranularSampleBrowser();
         hasGranularImportButton = granularImport != nullptr && granularIndex >= 0;
         if (hasGranularImportButton)
         {
             importSampleButton.setTooltip("Load or drop a WAV, AIFF, FLAC, or OGG sample");
+            IndustrialTheme::styleButton(importSampleButton, accent);
             importSampleButton.onClick = [this] { launchGranularImportChooser(); };
             addAndMakeVisible(importSampleButton);
+            captureSampleButton.setTooltip(
+                "Freeze the most recent eight seconds from the plugin input");
+            IndustrialTheme::styleButton(captureSampleButton, accent);
+            captureSampleButton.onClick = [this]
+            {
+                if (!granularCapture)
+                    return;
+                auto sample = granularCapture(granularIndex);
+                if (sample != nullptr)
+                {
+                    granularWaveform->setSample(sample, "LIVE CAPTURE");
+                    captureSampleButton.setButtonText("CAPTURED");
+                }
+                else
+                {
+                    captureSampleButton.setButtonText("NO INPUT");
+                }
+            };
+            addAndMakeVisible(captureSampleButton);
         }
     }
     else if (oscId.startsWith("terrain"))
@@ -1042,8 +1098,10 @@ void OscPanel::launchGranularImportChooser()
     if (!granularImport || granularIndex < 0)
         return;
 
+    const auto library = juce::File::getSpecialLocation(juce::File::userMusicDirectory)
+        .getChildFile("GLIESE_710").getChildFile("Samples");
     auto chooser = std::make_shared<juce::FileChooser>(
-        "Load Granular Sample", juce::File{}, "*.wav;*.aif;*.aiff;*.flac;*.ogg");
+        "Load Granular Sample", library, "*.wav;*.aif;*.aiff;*.flac;*.ogg");
     granularChooser = chooser;
     auto safeThis = juce::Component::SafePointer<OscPanel>(this);
     chooser->launchAsync(juce::FileBrowserComponent::openMode
@@ -1053,6 +1111,103 @@ void OscPanel::launchGranularImportChooser()
             if (safeThis != nullptr && fc.getResult().existsAsFile())
                 safeThis->importGranularSampleFile(fc.getResult());
         });
+}
+
+void OscPanel::refreshGranularSampleBrowser()
+{
+    if (!oscId.startsWith("grain"))
+        return;
+
+    const auto library = juce::File::getSpecialLocation(juce::File::userMusicDirectory)
+        .getChildFile("GLIESE_710").getChildFile("Samples");
+    if (!library.exists())
+        library.createDirectory();
+
+    juce::Array<juce::File> found;
+    library.findChildFiles(found, juce::File::findFiles, true,
+                           "*.wav;*.aif;*.aiff;*.flac;*.ogg");
+    std::sort(found.begin(), found.end(), [](const auto& a, const auto& b)
+    {
+        return a.getFileName().compareNatural(b.getFileName()) < 0;
+    });
+
+    sampleBrowserFiles.assign(found.begin(), found.end());
+    sampleBrowserBox.clear(juce::dontSendNotification);
+    for (int i = 0; i < (int)sampleBrowserFiles.size(); ++i)
+    {
+        auto relative = sampleBrowserFiles[(size_t)i].getRelativePathFrom(library);
+        sampleBrowserBox.addItem(relative, i + 1);
+    }
+}
+
+void OscPanel::saveGranularScene()
+{
+    const int scene = granularSceneBox.getSelectedItemIndex();
+    if (scene < 0)
+        return;
+
+    const auto pfx = "osc_" + oscId + "_";
+    const auto scenePfx = pfx + "scene" + juce::String(scene + 1) + "_";
+    const juce::String suffixes[] = {
+        "region_start", "region_end", "slice_count", "slice_index", "root_note" };
+
+    for (int i = 0; i < 5; ++i)
+    {
+        auto* destination = apvts.getParameter(scenePfx + suffixes[i]);
+        if (destination == nullptr)
+            continue;
+        destination->beginChangeGesture();
+        destination->setValueNotifyingHost(
+            destination->convertTo0to1((float)regionSliders[(size_t)i].getValue()));
+        destination->endChangeGesture();
+    }
+
+    if (auto* destination = apvts.getParameter(scenePfx + "transient_slices"))
+    {
+        destination->beginChangeGesture();
+        destination->setValueNotifyingHost(
+            destination->convertTo0to1(transientSlicesButton.getToggleState() ? 1.f : 0.f));
+        destination->endChangeGesture();
+    }
+    saveGranularSceneButton.setButtonText("SAVED");
+}
+
+void OscPanel::recallGranularScene()
+{
+    if (recallingGranularScene)
+        return;
+    const int scene = granularSceneBox.getSelectedItemIndex();
+    if (scene < 0)
+        return;
+
+    const juce::ScopedValueSetter<bool> guard(recallingGranularScene, true);
+    const auto pfx = "osc_" + oscId + "_";
+    const auto scenePfx = pfx + "scene" + juce::String(scene + 1) + "_";
+    const juce::String suffixes[] = {
+        "region_start", "region_end", "slice_count", "slice_index", "root_note" };
+
+    for (int i = 0; i < 5; ++i)
+    {
+        auto* source = apvts.getRawParameterValue(scenePfx + suffixes[i]);
+        auto* destination = apvts.getParameter(pfx + suffixes[i]);
+        if (source == nullptr || destination == nullptr)
+            continue;
+        destination->beginChangeGesture();
+        destination->setValueNotifyingHost(
+            destination->convertTo0to1(source->load()));
+        destination->endChangeGesture();
+    }
+
+    auto* source = apvts.getRawParameterValue(scenePfx + "transient_slices");
+    auto* destination = apvts.getParameter(pfx + "transient_slices");
+    if (source != nullptr && destination != nullptr)
+    {
+        destination->beginChangeGesture();
+        destination->setValueNotifyingHost(
+            destination->convertTo0to1(source->load()));
+        destination->endChangeGesture();
+    }
+    saveGranularSceneButton.setButtonText("SAVE");
 }
 
 void OscPanel::importGranularSampleFile(const juce::File& file)
@@ -1078,15 +1233,16 @@ void OscPanel::importGranularSampleFile(const juce::File& file)
             juce::AudioBuffer<float> decoded(channels, samples);
             if (reader->read(&decoded, 0, samples, 0, true, channels > 1))
             {
-                std::vector<float> mono((size_t)samples);
+                std::vector<float> left((size_t)samples);
+                std::vector<float> right((size_t)samples);
                 for (int i = 0; i < samples; ++i)
                 {
-                    float value = decoded.getSample(0, i);
-                    if (channels > 1)
-                        value = 0.5f * (value + decoded.getSample(1, i));
-                    mono[(size_t)i] = value;
+                    left[(size_t)i] = decoded.getSample(0, i);
+                    right[(size_t)i] = channels > 1
+                        ? decoded.getSample(1, i) : left[(size_t)i];
                 }
-                data = GranularOsc::createSampleData(mono.data(), samples);
+                data = GranularOsc::createSampleData(
+                    left.data(), right.data(), samples);
             }
         }
 
@@ -1264,7 +1420,19 @@ void OscPanel::resized()
 
     if (hasGranularImportButton)
     {
-        importSampleButton.setBounds(area.removeFromTop(22).reduced(2, 0));
+        auto actions = area.removeFromTop(22);
+        auto loadActions = portion(actions, 0, 2);
+        importSampleButton.setBounds(portion(loadActions, 0, 2).reduced(1, 0));
+        captureSampleButton.setBounds(portion(loadActions, 1, 2).reduced(1, 0));
+        auto sceneActions = portion(actions, 1, 2);
+        granularSceneBox.setBounds(sceneActions.removeFromLeft(
+            juce::roundToInt((float)sceneActions.getWidth() * 0.64f)).reduced(1, 0));
+        saveGranularSceneButton.setBounds(sceneActions.reduced(1, 0));
+        area.removeFromTop(2);
+
+        auto browser = area.removeFromTop(22);
+        rescanSamplesButton.setBounds(browser.removeFromRight(48).reduced(1, 0));
+        sampleBrowserBox.setBounds(browser.reduced(2, 0));
         area.removeFromTop(2);
     }
 
@@ -1279,12 +1447,12 @@ void OscPanel::resized()
     {
         auto labels = area.removeFromTop(11);
         auto controls = area.removeFromTop(44);
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < 5; ++i)
         {
-            regionLabels[(size_t)i].setBounds(portion(labels, i, 5));
-            regionSliders[(size_t)i].setBounds(portion(controls, i, 5));
+            regionLabels[(size_t)i].setBounds(portion(labels, i, 6));
+            regionSliders[(size_t)i].setBounds(portion(controls, i, 6));
         }
-        transientSlicesButton.setBounds(portion(controls, 4, 5).reduced(2, 7));
+        transientSlicesButton.setBounds(portion(controls, 5, 6).reduced(2, 7));
         area.removeFromTop(3);
     }
 

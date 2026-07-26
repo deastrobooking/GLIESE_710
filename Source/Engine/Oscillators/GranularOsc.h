@@ -15,6 +15,7 @@ public:
     struct SampleData
     {
         std::array<float, kSourceSamples> samples {};
+        std::array<float, kSourceSamples> samplesR {};
         std::array<float, kMaxTransientMarkers + 2> transientMarkers {};
         int transientMarkerCount = 2; // includes 0 and 1 boundaries
 
@@ -80,6 +81,7 @@ public:
         int sliceCount = 1;         // equal divisions of the selected region
         int sliceIndex = 0;
         bool transientSlices = false;
+        int rootNote = 60;
 
         BodyType bodyType = BodyType::Off;
         float bodyRootSemis = 0.f;  // modal root relative to played pitch
@@ -104,6 +106,11 @@ public:
     void setSample(const float* samples, int numSamples);
     void setSampleData(std::shared_ptr<const SampleData> newSample);
     static std::shared_ptr<const SampleData> createSampleData(const float* samples, int numSamples);
+    static std::shared_ptr<const SampleData> createSampleData(
+        const float* left, const float* right, int numSamples);
+    static juce::MemoryBlock serializeSampleData(const SampleData& sample);
+    static std::shared_ptr<const SampleData> deserializeSampleData(
+        const void* data, size_t size);
 
     std::pair<float, float> processSample();
     int getActiveGrainCount() const;
@@ -154,7 +161,7 @@ private:
 
     static std::shared_ptr<const SampleData> generateDefaultSource();
     void triggerGrain();
-    float readSource(float pos, int loopStart, int loopLength) const;
+    float readSource(float pos, int loopStart, int loopLength, bool rightChannel) const;
     float windowValue(Window window, float phase) const;
     void configureBody();
     std::pair<float, float> processBody(float dryL, float dryR);

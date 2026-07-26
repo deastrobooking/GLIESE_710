@@ -579,6 +579,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.sliceCount  = get(pfx + "slice_count");
         c.sliceIndex  = get(pfx + "slice_index");
         c.transientSlices = get(pfx + "transient_slices");
+        c.rootNote     = get(pfx + "root_note");
         c.bodyType    = get(pfx + "body_type");
         c.bodyRoot    = get(pfx + "body_root");
         c.bodySize    = get(pfx + "body_size");
@@ -1003,6 +1004,7 @@ void SynthVoice::syncParams()
         gp.sliceCount  = pI(cg.sliceCount, 1);
         gp.sliceIndex  = pI(cg.sliceIndex);
         gp.transientSlices = pB(cg.transientSlices);
+        gp.rootNote     = pI(cg.rootNote, 60);
         gp.bodyType    = static_cast<GranularOsc::BodyType>(pI(cg.bodyType));
         gp.bodyRootSemis = pF(cg.bodyRoot);
         gp.bodySize    = juce::jlimit(0.f, 1.f,

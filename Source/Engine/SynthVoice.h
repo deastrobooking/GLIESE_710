@@ -225,6 +225,7 @@ private:
             std::atomic<float>* sliceCount  = nullptr;
             std::atomic<float>* sliceIndex  = nullptr;
             std::atomic<float>* transientSlices = nullptr;
+            std::atomic<float>* rootNote     = nullptr;
             std::atomic<float>* bodyType    = nullptr;
             std::atomic<float>* bodyRoot    = nullptr;
             std::atomic<float>* bodySize    = nullptr;
