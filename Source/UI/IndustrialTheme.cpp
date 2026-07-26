@@ -232,6 +232,34 @@ void IndustrialLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, in
     auto centre = bounds.getCentre();
     auto angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
 
+    if (slider.getProperties().getWithDefault("microRotary", false))
+    {
+        bounds = juce::Rectangle<float>((float)x, (float)y, (float)width, (float)height).reduced(2.f);
+        size = juce::jmin(bounds.getWidth(), bounds.getHeight());
+        radius = size * 0.5f;
+        centre = bounds.getCentre();
+
+        g.setColour(juce::Colour(0xff0b0d0e));
+        g.fillEllipse(centre.x - radius, centre.y - radius, radius * 2.f, radius * 2.f);
+        g.setColour(juce::Colour(0xff303638));
+        g.drawEllipse(centre.x - radius, centre.y - radius, radius * 2.f, radius * 2.f, 0.8f);
+
+        juce::Path valueArc;
+        valueArc.addCentredArc(centre.x, centre.y, radius * 0.8f, radius * 0.8f,
+                               0.f, rotaryStartAngle, angle, true);
+        g.setColour(accent.withAlpha(0.78f));
+        g.strokePath(valueArc, juce::PathStrokeType(1.4f, juce::PathStrokeType::curved,
+                                                    juce::PathStrokeType::rounded));
+
+        const auto pointerStart = centre.getPointOnCircumference(radius * 0.22f, angle);
+        const auto pointerEnd = centre.getPointOnCircumference(radius * 0.72f, angle);
+        g.setColour(juce::Colour(0xffd3d7d8));
+        g.drawLine({ pointerStart, pointerEnd }, 1.f);
+        g.setColour(accent.withAlpha(0.7f));
+        g.fillEllipse(centre.x - 1.1f, centre.y - 1.1f, 2.2f, 2.2f);
+        return;
+    }
+
     for (int i = 4; i > 0; --i)
     {
         g.setColour(glow(accent, 0.035f * (float)i));

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GLIESE710Preset name="Glass Lattice" category="Keyboard" author="GLIESE" version="2">
+  <State>
+    <PARAM id="osc_3d_field" value="10"/>
+    <PARAM id="osc_3d_path" value="2"/>
+    <PARAM id="osc_3d_field_freq" value="6"/>
+    <PARAM id="osc_3d_morph" value="0.35"/>
+    <PARAM id="osc_3d_drive" value="1.4"/>
+    <PARAM id="filter_a_cutoff" value="6800"/>
+  </State>
+</GLIESE710Preset>

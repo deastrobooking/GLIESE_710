@@ -64,6 +64,7 @@ public:
 
     float processSample();  // mono output
     int getOversampleFactor() const noexcept { return oversampleFactor; }
+    float evaluatePreview(Vec3 point) const;
 
 private:
     double sr    = 48000.0;

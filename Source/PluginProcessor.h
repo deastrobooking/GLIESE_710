@@ -35,6 +35,8 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     bool importTerrainHeightmap(int terrainIndex, const juce::File& file);
+    void queueGranularSample(int granularIndex,
+                             std::shared_ptr<const GranularOsc::SampleData> sample);
     int getModSequencerCurrentStep() const noexcept { return synthEngine.getModSequencerCurrentStep(); }
     float getOutputPeakL() const noexcept { return outputPeakL.load(std::memory_order_relaxed); }
     float getOutputPeakR() const noexcept { return outputPeakR.load(std::memory_order_relaxed); }

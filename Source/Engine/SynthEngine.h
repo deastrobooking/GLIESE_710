@@ -6,6 +6,7 @@
 #include "MPEZone.h"
 #include <array>
 #include <optional>
+#include <vector>
 
 class SynthEngine
 {
@@ -26,6 +27,7 @@ public:
                          int numSamples);
 
     void addWavetable(juce::String name, const float* samples, int numSamples);
+    void queueGranularSample(int index, std::shared_ptr<const GranularOsc::SampleData> sample);
     bool setTerrainHeightmap(int index, const juce::Image& image);
 
 private:
@@ -71,7 +73,14 @@ private:
     std::array<bool, 16> sustainDown {};
     bool mpeMasterSustainDown = false;
     GlieseMPEZone mpeZone;
+    std::array<std::shared_ptr<const GranularOsc::SampleData>, SynthVoice::kNumGranOscs>
+        pendingGranularSamples;
+    std::array<std::shared_ptr<const GranularOsc::SampleData>, SynthVoice::kNumGranOscs>
+        ownedGranularSamples;
+    std::vector<std::shared_ptr<const GranularOsc::SampleData>> retiredGranularSamples;
+    juce::SpinLock granularSampleLock;
 
+    void applyPendingGranularSamples();
     void handleMidiMessage(const juce::MidiMessage& msg, bool triggerNotes);
     void renderVoices(juce::AudioBuffer<float>& buffer, int startSample, int numSamples);
     void renderTimedMidi(juce::AudioBuffer<float>& buffer, const juce::MidiBuffer& midi,

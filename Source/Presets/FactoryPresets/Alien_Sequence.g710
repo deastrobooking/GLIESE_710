@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GLIESE710Preset name="Alien Sequence" category="Arp" author="GLIESE" version="2">
+  <State>
+    <PARAM id="arp_on" value="1"/>
+    <PARAM id="arp_pattern" value="4"/>
+    <PARAM id="arp_rate" value="2"/>
+    <PARAM id="arp_octaves" value="2"/>
+    <PARAM id="arp_gate" value="0.62"/>
+    <PARAM id="osc_3d_field" value="15"/>
+    <PARAM id="osc_3d_field_freq" value="5"/>
+    <PARAM id="filter_a_cutoff" value="1800"/>
+  </State>
+</GLIESE710Preset>

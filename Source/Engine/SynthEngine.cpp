@@ -355,6 +355,7 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
                                    int numSamples)
 {
     if (!apvts) return;
+    applyPendingGranularSamples();
     if (!arpParams.built)
         buildParamCache();
 
@@ -426,6 +427,43 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
     }
 
     processMasterEffects(buffer, startSample, numSamples);
+}
+
+void SynthEngine::queueGranularSample(
+    int index, std::shared_ptr<const GranularOsc::SampleData> sample)
+{
+    if (index < 0 || index >= SynthVoice::kNumGranOscs || sample == nullptr)
+        return;
+
+    const juce::SpinLock::ScopedLockType lock(granularSampleLock);
+    auto& owned = ownedGranularSamples[(size_t)index];
+    if (owned != nullptr)
+        retiredGranularSamples.push_back(std::move(owned));
+    owned = sample;
+    pendingGranularSamples[(size_t)index] = std::move(sample);
+
+    std::erase_if(retiredGranularSamples, [](const auto& retired)
+    {
+        return retired.use_count() == 1;
+    });
+}
+
+void SynthEngine::applyPendingGranularSamples()
+{
+    const juce::SpinLock::ScopedTryLockType lock(granularSampleLock);
+    if (!lock.isLocked())
+        return;
+
+    for (int index = 0; index < SynthVoice::kNumGranOscs; ++index)
+    {
+        auto& pending = pendingGranularSamples[(size_t)index];
+        if (pending == nullptr)
+            continue;
+
+        for (auto& voice : voices)
+            voice.setGranularSampleData(index, pending);
+        pending.reset();
+    }
 }
 
 void SynthEngine::addWavetable(juce::String name, const float* samples, int numSamples)

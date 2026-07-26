@@ -8,6 +8,13 @@ bool isSupportedTerrainHeightmapFile(const juce::File& file)
     const auto ext = file.getFileExtension().toLowerCase();
     return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp";
 }
+
+bool isSupportedGranularAudioFile(const juce::File& file)
+{
+    const auto ext = file.getFileExtension().toLowerCase();
+    return ext == ".wav" || ext == ".aif" || ext == ".aiff"
+        || ext == ".flac" || ext == ".ogg";
+}
 }
 
 // ── VAWaveDisplay ─────────────────────────────────────────────────────────────
@@ -46,6 +53,274 @@ void VAWaveDisplay::paint(juce::Graphics& g)
 
     g.setColour(accent);
     g.strokePath(wave, juce::PathStrokeType(1.5f));
+}
+
+void GranularWaveformDisplay::setSample(
+    std::shared_ptr<const GranularOsc::SampleData> newSample, juce::String newName)
+{
+    sample = std::move(newSample);
+    sampleName = newName.isNotEmpty() ? std::move(newName) : "SAMPLE";
+    repaint();
+}
+
+void GranularWaveformDisplay::setRegion(float start, float end, int slices,
+                                        int selectedSlice, bool useTransientSlices)
+{
+    regionStart = juce::jlimit(0.f, 1.f, start);
+    regionEnd = juce::jlimit(regionStart, 1.f, end);
+    sliceCount = juce::jlimit(1, 32, slices);
+    sliceIndex = juce::jlimit(0, sliceCount - 1, selectedSlice);
+    transientSlices = useTransientSlices;
+    repaint();
+}
+
+void GranularWaveformDisplay::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    g.setColour(juce::Colour(0xff07090a));
+    g.fillRoundedRectangle(bounds, 4.f);
+    g.setColour(accent.withAlpha(0.3f));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), 4.f, 1.f);
+
+    auto graph = bounds.reduced(5.f, 16.f);
+    g.setColour(accent.withAlpha(0.12f));
+    g.drawHorizontalLine(juce::roundToInt(graph.getCentreY()),
+                         graph.getX(), graph.getRight());
+
+    if (sample != nullptr && graph.getWidth() > 1.f)
+    {
+        juce::Path waveform;
+        const int columns = juce::jmax(1, juce::roundToInt(graph.getWidth()));
+        for (int x = 0; x < columns; ++x)
+        {
+            const int first = x * GranularOsc::kSourceSamples / columns;
+            const int last = juce::jmax(first + 1,
+                (x + 1) * GranularOsc::kSourceSamples / columns);
+            float lo = 1.f;
+            float hi = -1.f;
+            for (int i = first; i < juce::jmin(last, GranularOsc::kSourceSamples); ++i)
+            {
+                lo = juce::jmin(lo, (*sample)[(size_t)i]);
+                hi = juce::jmax(hi, (*sample)[(size_t)i]);
+            }
+            const float px = graph.getX() + (float)x;
+            waveform.startNewSubPath(px, graph.getCentreY() - hi * graph.getHeight() * 0.45f);
+            waveform.lineTo(px, graph.getCentreY() - lo * graph.getHeight() * 0.45f);
+        }
+        g.setColour(accent.withAlpha(0.9f));
+        g.strokePath(waveform, juce::PathStrokeType(1.f));
+    }
+
+    const float regionX = graph.getX() + graph.getWidth() * regionStart;
+    const float regionRight = graph.getX() + graph.getWidth() * regionEnd;
+    g.setColour(juce::Colours::black.withAlpha(0.48f));
+    g.fillRect(graph.withRight(regionX));
+    g.fillRect(graph.withLeft(regionRight));
+    std::array<float, GranularOsc::kMaxTransientMarkers + 2> boundaries {};
+    int boundaryCount = 1;
+    boundaries[0] = regionStart;
+    if (transientSlices && sample != nullptr)
+    {
+        for (int i = 1; i < sample->transientMarkerCount - 1; ++i)
+        {
+            const float marker = sample->transientMarkers[(size_t)i];
+            if (marker > regionStart && marker < regionEnd)
+                boundaries[(size_t)boundaryCount++] = marker;
+        }
+    }
+    else
+    {
+        for (int i = 1; i < sliceCount; ++i)
+            boundaries[(size_t)boundaryCount++]
+                = regionStart + (regionEnd - regionStart) * (float)i / (float)sliceCount;
+    }
+    boundaries[(size_t)boundaryCount++] = regionEnd;
+    const int selected = juce::jlimit(0, boundaryCount - 2, sliceIndex);
+    const float selectedX = graph.getX() + graph.getWidth() * boundaries[(size_t)selected];
+    const float selectedRight = graph.getX()
+        + graph.getWidth() * boundaries[(size_t)selected + 1];
+    g.setColour(accent.withAlpha(0.13f));
+    g.fillRect(juce::Rectangle<float>(selectedX, graph.getY(),
+                                      selectedRight - selectedX, graph.getHeight()));
+    g.setColour(accent.brighter(0.3f).withAlpha(0.85f));
+    g.drawVerticalLine(juce::roundToInt(regionX), graph.getY(), graph.getBottom());
+    g.drawVerticalLine(juce::roundToInt(regionRight), graph.getY(), graph.getBottom());
+    g.setColour(accent.withAlpha(0.35f));
+    for (int i = 1; i < boundaryCount - 1; ++i)
+        g.drawVerticalLine(juce::roundToInt(
+                               graph.getX() + graph.getWidth() * boundaries[(size_t)i]),
+                           graph.getY(), graph.getBottom());
+
+    g.setColour(accent.withAlpha(0.75f));
+    g.setFont(8.f);
+    g.drawFittedText(sampleName.toUpperCase(), getLocalBounds().reduced(5, 2),
+                     juce::Justification::centredTop, 1);
+}
+
+// ── 3D field display ─────────────────────────────────────────────────────────
+Osc3DFieldDisplay::Osc3DFieldDisplay(juce::AudioProcessorValueTreeState& apvts,
+                                     const juce::String& parameterPrefix,
+                                     juce::Colour accentColour)
+    : accent(accentColour)
+{
+    auto get = [&](const char* suffix)
+    {
+        return apvts.getRawParameterValue(parameterPrefix + suffix);
+    };
+
+    field = get("field");
+    path = get("path");
+    radius = get("radius");
+    depth = get("depth");
+    warp = get("warp");
+    rotation = get("rotation");
+    chaos = get("chaos");
+    morph = get("morph");
+    fieldFreq = get("field_freq");
+    zRatio = get("z_ratio");
+    fold = get("fold");
+    drive = get("drive");
+    previewOsc.prepare(48000.0);
+    startTimerHz(20);
+}
+
+float Osc3DFieldDisplay::value(std::atomic<float>* parameter, float fallback) const noexcept
+{
+    return parameter != nullptr ? parameter->load() : fallback;
+}
+
+juce::Point<float> Osc3DFieldDisplay::project(Vec3 p, juce::Rectangle<float> bounds) const noexcept
+{
+    const float scaleX = bounds.getWidth() * 0.24f;
+    const float scaleY = bounds.getHeight() * 0.22f;
+    return {
+        bounds.getCentreX() + (p.x - p.y) * scaleX,
+        bounds.getCentreY() + (p.x + p.y) * scaleY - p.z * bounds.getHeight() * 0.28f
+    };
+}
+
+Vec3 Osc3DFieldDisplay::pathPoint(float phase, const Osc3D::Params& params) const noexcept
+{
+    const float t = phase * juce::MathConstants<float>::twoPi;
+    const float r = juce::jmin(params.radius, 2.f) * 0.55f;
+    const float d = juce::jmin(params.depth, 2.f) * 0.45f;
+    Vec3 p {};
+
+    switch (params.path)
+    {
+        case Osc3D::PathType::Circle:
+            p = { r * std::cos(t), r * std::sin(t), d * std::sin(t * 0.5f * params.zRatio) };
+            break;
+        case Osc3D::PathType::Spiral:
+        {
+            const float ramp = 0.25f + phase * 0.75f;
+            p = { r * ramp * std::cos(t), r * ramp * std::sin(t), d * (phase - 0.5f) };
+            break;
+        }
+        case Osc3D::PathType::Lissajous:
+            p = { r * std::cos(3.f * t), r * std::sin(2.f * t),
+                  d * std::sin(5.f * params.zRatio * t) };
+            break;
+        case Osc3D::PathType::RandomWalk:
+            p = { r * std::sin(1.7f * t + 0.4f * std::sin(5.3f * t)),
+                  r * std::sin(2.3f * t + 0.3f * std::cos(4.1f * t)),
+                  d * std::sin(1.1f * t + 0.5f * std::sin(3.7f * t)) };
+            break;
+        case Osc3D::PathType::PhysicsOrbit:
+        {
+            const float orbit = r * (1.f - 0.3f * params.chaos * std::cos(t));
+            p = { orbit * std::cos(t), orbit * std::sin(t),
+                  d * std::sin(2.f * params.zRatio * t) };
+            break;
+        }
+        case Osc3D::PathType::NumPaths:
+            break;
+    }
+
+    const float angle = params.rotation * juce::MathConstants<float>::twoPi;
+    const float c = std::cos(angle);
+    const float s = std::sin(angle);
+    return { c * p.x - s * p.y, s * p.x + c * p.y, p.z };
+}
+
+void Osc3DFieldDisplay::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    g.setColour(juce::Colour(0xff07090a));
+    g.fillRoundedRectangle(bounds, 4.f);
+    g.setColour(accent.withAlpha(0.28f));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), 4.f, 0.8f);
+
+    Osc3D::Params params;
+    params.field = static_cast<Osc3D::FieldType>(
+        juce::jlimit(0, (int)Osc3D::FieldType::NumFields - 1,
+                     juce::roundToInt(value(field, 0.f))));
+    params.path = static_cast<Osc3D::PathType>(
+        juce::jlimit(0, (int)Osc3D::PathType::NumPaths - 1,
+                     juce::roundToInt(value(path, 0.f))));
+    params.radius = value(radius, 1.f);
+    params.depth = value(depth, 1.f);
+    params.warpAmt = value(warp, 0.25f);
+    params.rotation = value(rotation, 0.f);
+    params.chaos = value(chaos, 0.f);
+    params.morphT = value(morph, 0.f);
+    params.fieldFreq = value(fieldFreq, 1.f);
+    params.zRatio = value(zRatio, 1.f);
+    params.foldAmt = value(fold, 0.f);
+    params.drive = value(drive, 1.f);
+    previewOsc.setParams(params);
+
+    const auto graph = bounds.reduced(7.f, 5.f);
+    constexpr int gridSize = 11;
+    for (int axis = 0; axis < 2; ++axis)
+    {
+        for (int line = 0; line < gridSize; ++line)
+        {
+            juce::Path wire;
+            for (int point = 0; point < gridSize; ++point)
+            {
+                const float a = juce::jmap((float)line, 0.f, (float)(gridSize - 1), -1.1f, 1.1f);
+                const float b = juce::jmap((float)point, 0.f, (float)(gridSize - 1), -1.1f, 1.1f);
+                const float x = axis == 0 ? a : b;
+                const float y = axis == 0 ? b : a;
+                const float z = previewOsc.evaluatePreview({ x, y, 0.f }) * 0.62f;
+                const auto projected = project({ x, y, z }, graph);
+                if (point == 0) wire.startNewSubPath(projected);
+                else            wire.lineTo(projected);
+            }
+            g.setColour(accent.withAlpha(axis == 0 ? 0.28f : 0.16f));
+            g.strokePath(wire, juce::PathStrokeType(0.7f));
+        }
+    }
+
+    juce::Path orbit;
+    constexpr int pathPoints = 72;
+    for (int i = 0; i <= pathPoints; ++i)
+    {
+        auto p = pathPoint((float)i / (float)pathPoints, params);
+        p.z += previewOsc.evaluatePreview(p) * 0.18f;
+        const auto projected = project(p, graph);
+        if (i == 0) orbit.startNewSubPath(projected);
+        else        orbit.lineTo(projected);
+    }
+    g.setColour(juce::Colours::black.withAlpha(0.65f));
+    g.strokePath(orbit, juce::PathStrokeType(2.8f));
+    g.setColour(accent.brighter(0.25f));
+    g.strokePath(orbit, juce::PathStrokeType(1.1f));
+
+    const float animatedPhase = std::fmod(
+        (float)(juce::Time::getMillisecondCounterHiRes() * 0.00012), 1.f);
+    auto active = pathPoint(animatedPhase, params);
+    active.z += previewOsc.evaluatePreview(active) * 0.18f;
+    const auto dot = project(active, graph);
+    g.setColour(accent);
+    g.fillEllipse(dot.x - 2.5f, dot.y - 2.5f, 5.f, 5.f);
+}
+
+void Osc3DFieldDisplay::timerCallback()
+{
+    if (isShowing())
+        repaint();
 }
 
 // ── TerrainHeightmapDisplay ─────────────────────────────────────────────────
@@ -259,13 +534,17 @@ float TerrainHeightmapDisplay::noise(float x, float y) noexcept
 OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id,
                    const juce::String& lbl,
                    TerrainImportCallback terrainImportCallback,
-                   int terrainSlotIndex)
+                   int terrainSlotIndex,
+                   GranularImportCallback granularImportCallback,
+                   int granularSlotIndex)
     : apvts(a),
       oscId(id),
       label(lbl),
       accent(IndustrialTheme::accentForOsc(id)),
       terrainImport(std::move(terrainImportCallback)),
-      terrainIndex(terrainSlotIndex)
+      terrainIndex(terrainSlotIndex),
+      granularImport(std::move(granularImportCallback)),
+      granularIndex(granularSlotIndex)
 {
     titleLabel.setText(lbl, juce::dontSendNotification);
     IndustrialTheme::styleTitle(titleLabel, accent, 14.f);
@@ -325,6 +604,9 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         setupExtraSlider(extra9,  pfx + "fold",      "Coordinate Fold",  extraAtt9);
         setupExtraSlider(extra10, pfx + "drive",     "Field Drive",      extraAtt10);
         numExtraSliders = 10;
+
+        field3dDisplay = std::make_unique<Osc3DFieldDisplay>(apvts, pfx, accent);
+        addAndMakeVisible(*field3dDisplay);
     }
     else if (oscId.startsWith("ks"))
     {
@@ -375,6 +657,53 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         setupExtraSlider(extra19, pfx + "body_spread", "Body Stereo Spread",    extraAtt19);
         setupExtraSlider(extra20, pfx + "body_modes",  "Body Mode Count",       extraAtt20);
         numExtraSliders = 20;
+
+        granularWaveform = std::make_unique<GranularWaveformDisplay>(accent);
+        addAndMakeVisible(*granularWaveform);
+        const char* regionIds[] = { "region_start", "region_end", "slice_count", "slice_index" };
+        const char* regionNames[] = { "START", "END", "SLICES", "SELECT" };
+        for (int i = 0; i < 4; ++i)
+        {
+            setupSlider(regionSliders[(size_t)i], regionNames[i]);
+            regionAtts[(size_t)i] = std::make_unique<Att>(
+                apvts, pfx + regionIds[i], regionSliders[(size_t)i]);
+            regionLabels[(size_t)i].setText(regionNames[i], juce::dontSendNotification);
+            IndustrialTheme::styleLabel(regionLabels[(size_t)i], accent, 8.f);
+            addAndMakeVisible(regionLabels[(size_t)i]);
+            regionSliders[(size_t)i].onValueChange = [this]
+            {
+                if (granularWaveform != nullptr)
+                    granularWaveform->setRegion(
+                        (float)regionSliders[0].getValue(),
+                        (float)regionSliders[1].getValue(),
+                        (int)regionSliders[2].getValue(),
+                        (int)regionSliders[3].getValue(),
+                        transientSlicesButton.getToggleState());
+            };
+        }
+        transientSlicesButton.setTooltip("Use detected transients as slice boundaries");
+        transientSlicesButton.setColour(juce::ToggleButton::textColourId, accent);
+        transientSlicesButton.setColour(juce::ToggleButton::tickColourId, accent);
+        transientSlicesButton.onClick = [this]
+        {
+            if (granularWaveform != nullptr)
+                granularWaveform->setRegion(
+                    (float)regionSliders[0].getValue(),
+                    (float)regionSliders[1].getValue(),
+                    (int)regionSliders[2].getValue(),
+                    (int)regionSliders[3].getValue(),
+                    transientSlicesButton.getToggleState());
+        };
+        addAndMakeVisible(transientSlicesButton);
+        transientSlicesAtt = std::make_unique<BAtt>(
+            apvts, pfx + "transient_slices", transientSlicesButton);
+        hasGranularImportButton = granularImport != nullptr && granularIndex >= 0;
+        if (hasGranularImportButton)
+        {
+            importSampleButton.setTooltip("Load or drop a WAV, AIFF, FLAC, or OGG sample");
+            importSampleButton.onClick = [this] { launchGranularImportChooser(); };
+            addAndMakeVisible(importSampleButton);
+        }
     }
     else if (oscId.startsWith("terrain"))
     {
@@ -708,6 +1037,77 @@ void OscPanel::refreshTerrainDisplay()
     terrainDisplay->setScanState(s);
 }
 
+void OscPanel::launchGranularImportChooser()
+{
+    if (!granularImport || granularIndex < 0)
+        return;
+
+    auto chooser = std::make_shared<juce::FileChooser>(
+        "Load Granular Sample", juce::File{}, "*.wav;*.aif;*.aiff;*.flac;*.ogg");
+    granularChooser = chooser;
+    auto safeThis = juce::Component::SafePointer<OscPanel>(this);
+    chooser->launchAsync(juce::FileBrowserComponent::openMode
+                           | juce::FileBrowserComponent::canSelectFiles,
+        [safeThis, chooser](const juce::FileChooser& fc)
+        {
+            if (safeThis != nullptr && fc.getResult().existsAsFile())
+                safeThis->importGranularSampleFile(fc.getResult());
+        });
+}
+
+void OscPanel::importGranularSampleFile(const juce::File& file)
+{
+    if (!granularImport || granularIndex < 0 || !file.existsAsFile()
+        || !isSupportedGranularAudioFile(file))
+        return;
+
+    importSampleButton.setButtonText("LOADING...");
+    auto safeThis = juce::Component::SafePointer<OscPanel>(this);
+    sampleLoadPool.addJob(std::function<void()>([safeThis, file]
+    {
+        juce::AudioFormatManager formats;
+        formats.registerBasicFormats();
+        std::unique_ptr<juce::AudioFormatReader> reader(formats.createReaderFor(file));
+        std::shared_ptr<const GranularOsc::SampleData> data;
+
+        if (reader != nullptr && reader->lengthInSamples > 0)
+        {
+            const auto maxSamples = (juce::int64) juce::jmax(1.0, reader->sampleRate * 120.0);
+            const int samples = (int) juce::jmin(reader->lengthInSamples, maxSamples);
+            const int channels = juce::jlimit(1, 2, (int)reader->numChannels);
+            juce::AudioBuffer<float> decoded(channels, samples);
+            if (reader->read(&decoded, 0, samples, 0, true, channels > 1))
+            {
+                std::vector<float> mono((size_t)samples);
+                for (int i = 0; i < samples; ++i)
+                {
+                    float value = decoded.getSample(0, i);
+                    if (channels > 1)
+                        value = 0.5f * (value + decoded.getSample(1, i));
+                    mono[(size_t)i] = value;
+                }
+                data = GranularOsc::createSampleData(mono.data(), samples);
+            }
+        }
+
+        juce::MessageManager::callAsync([safeThis, data, name = file.getFileNameWithoutExtension()]
+        {
+            if (safeThis == nullptr)
+                return;
+            if (data != nullptr)
+            {
+                safeThis->granularImport(safeThis->granularIndex, data);
+                safeThis->granularWaveform->setSample(data, name);
+                safeThis->importSampleButton.setButtonText("SAMPLE LOADED");
+            }
+            else
+            {
+                safeThis->importSampleButton.setButtonText("LOAD FAILED");
+            }
+        });
+    }));
+}
+
 void OscPanel::paint(juce::Graphics& g)
 {
     IndustrialTheme::paintPanel(g, getLocalBounds(), accent, oscId.startsWith("3d"));
@@ -715,10 +1115,15 @@ void OscPanel::paint(juce::Graphics& g)
 
 void OscPanel::paintOverChildren(juce::Graphics& g)
 {
-    if (!terrainDropActive || terrainDisplay == nullptr)
+    if (!terrainDropActive)
         return;
 
-    const auto b = terrainDisplay->getBounds().toFloat().expanded(3.f);
+    auto* target = granularWaveform != nullptr
+        ? static_cast<juce::Component*>(granularWaveform.get())
+        : static_cast<juce::Component*>(terrainDisplay.get());
+    if (target == nullptr)
+        return;
+    const auto b = target->getBounds().toFloat().expanded(3.f);
     g.setColour(accent.withAlpha(0.16f));
     g.fillRoundedRectangle(b, 5.f);
     g.setColour(accent.brighter(0.45f).withAlpha(0.92f));
@@ -727,12 +1132,16 @@ void OscPanel::paintOverChildren(juce::Graphics& g)
 
 bool OscPanel::isInterestedInFileDrag(const juce::StringArray& files)
 {
-    if (!hasTerrainImportButton || !terrainImport || terrainIndex < 0)
-        return false;
-
     for (const auto& path : files)
-        if (isSupportedTerrainHeightmapFile(juce::File(path)))
+    {
+        const juce::File file(path);
+        if (hasGranularImportButton && granularImport && granularIndex >= 0
+            && isSupportedGranularAudioFile(file))
             return true;
+        if (hasTerrainImportButton && terrainImport && terrainIndex >= 0
+            && isSupportedTerrainHeightmapFile(file))
+            return true;
+    }
 
     return false;
 }
@@ -767,6 +1176,12 @@ void OscPanel::filesDropped(const juce::StringArray& files, int, int)
     for (const auto& path : files)
     {
         const juce::File file(path);
+        if (hasGranularImportButton && isSupportedGranularAudioFile(file)
+            && file.existsAsFile())
+        {
+            importGranularSampleFile(file);
+            return;
+        }
         if (isSupportedTerrainHeightmapFile(file) && file.existsAsFile())
         {
             importTerrainHeightmapFile(file);
@@ -838,6 +1253,39 @@ void OscPanel::resized()
         retrigLabel.setBounds(rr.removeFromLeft(58));
         retrigButton.setBounds(rr.removeFromLeft(50));
         area.removeFromTop(4);
+    }
+
+    if (field3dDisplay != nullptr)
+    {
+        const int previewH = juce::jlimit(68, 104, area.getHeight() / 3);
+        field3dDisplay->setBounds(area.removeFromTop(previewH).reduced(2));
+        area.removeFromTop(4);
+    }
+
+    if (hasGranularImportButton)
+    {
+        importSampleButton.setBounds(area.removeFromTop(22).reduced(2, 0));
+        area.removeFromTop(2);
+    }
+
+    if (granularWaveform != nullptr)
+    {
+        const int previewH = juce::jlimit(54, 78, area.getHeight() / 5);
+        granularWaveform->setBounds(area.removeFromTop(previewH).reduced(2));
+        area.removeFromTop(4);
+    }
+
+    if (granularWaveform != nullptr)
+    {
+        auto labels = area.removeFromTop(11);
+        auto controls = area.removeFromTop(44);
+        for (int i = 0; i < 4; ++i)
+        {
+            regionLabels[(size_t)i].setBounds(portion(labels, i, 5));
+            regionSliders[(size_t)i].setBounds(portion(controls, i, 5));
+        }
+        transientSlicesButton.setBounds(portion(controls, 4, 5).reduced(2, 7));
+        area.removeFromTop(3);
     }
 
     if (hasTerrainImportButton)

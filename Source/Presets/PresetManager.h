@@ -26,6 +26,8 @@ public:
         Category     category  = Category::Other;
         juce::String author;
         juce::File   file;
+        juce::String resourceName;
+        bool         isFactory = false;
     };
 
     explicit PresetManager(juce::AudioProcessorValueTreeState& apvts);
@@ -47,6 +49,7 @@ public:
 
     // ── Browse ────────────────────────────────────────────────────────────────
     juce::Array<PatchInfo> getAllPatches()                                  const;
+    juce::Array<PatchInfo> getFactoryPatches()                              const;
     juce::Array<PatchInfo> getPatchesByCategory(Category cat)              const;
     juce::Array<PatchInfo> getPatchesInBank(const juce::String& bankName)  const;
     juce::StringArray      getBankNames()                                   const;
@@ -88,6 +91,11 @@ private:
     bool parsePresetFile(const juce::File& file,
                          juce::String& nameOut, Category& catOut, juce::String& authorOut,
                          juce::ValueTree& stateOut) const;
+    bool parsePresetData(const void* data, int size, const juce::String& fallbackName,
+                         juce::String& nameOut, Category& catOut, juce::String& authorOut,
+                         juce::ValueTree& stateOut) const;
+    bool loadFactoryPreset(const PatchInfo& info);
+    juce::ValueTree mergeFactoryState(const juce::ValueTree& overlay) const;
 
     juce::File bankDirectory(const juce::String& bankName) const;
     juce::File presetFile(const juce::String& name,
@@ -95,4 +103,5 @@ private:
 
     juce::Array<PatchInfo> scanDirectory(const juce::File& dir,
                                          const juce::String& bankName) const;
+    juce::ValueTree factoryBaselineState;
 };

@@ -391,3 +391,10 @@ float Osc3D::processSample()
     // Nyquist frequency before returning to the host sample rate.
     return sum / (float)oversampleFactor;
 }
+
+float Osc3D::evaluatePreview(Vec3 point) const
+{
+    point = warpCoordinates(point);
+    point = foldCoordinates(point);
+    return std::tanh(blend(point) * cachedDrive);
+}

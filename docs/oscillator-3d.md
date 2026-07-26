@@ -170,6 +170,10 @@ osc_3d8_  # slot 8
 
 The legacy `engine_3d_detune` parameter can still be used as a broad detune color when several 3D slots are active, but the primary architecture is now independent slots rather than a fixed six-voice 3D ensemble.
 
+## Live Field Visualizer
+
+Every 3D slot includes a live isometric field projection. The wireframe samples the oscillator's actual field evaluator after morphing, domain warp, coordinate folding, and drive, while the bright overlay shows the selected scan path and its current animated position. Field, path, radius, depth, rotation, chaos, frequency, Z ratio, fold, morph, and drive changes update directly from APVTS parameter atomics on the message thread; no visualization work runs in the audio callback.
+
 ## Parameters
 
 The table below shows the first slot prefix. Additional 3D slots use `osc_3d2_` through `osc_3d8_`.

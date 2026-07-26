@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GLIESE710Preset name="Pulse Vector" category="Lead" author="GLIESE" version="2">
+  <State>
+    <PARAM id="osc_3d_field" value="4"/>
+    <PARAM id="osc_3d_path" value="4"/>
+    <PARAM id="osc_3d_field_freq" value="8.5"/>
+    <PARAM id="osc_3d_fold" value="0.38"/>
+    <PARAM id="osc_3d_drive" value="2.2"/>
+    <PARAM id="filter_a_cutoff" value="5200"/>
+    <PARAM id="filter_a_resonance" value="0.18"/>
+  </State>
+</GLIESE710Preset>

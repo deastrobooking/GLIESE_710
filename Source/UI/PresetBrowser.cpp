@@ -12,26 +12,26 @@ PresetBrowser::PresetBrowser(PresetManager& pm) : presetManager(pm)
     IndustrialTheme::styleButton(prevButton, accent);
     addAndMakeVisible(prevButton);
     prevButton.onClick = [this] {
-        if (presetNames.isEmpty()) return;
-        currentPresetIndex = (currentPresetIndex - 1 + presetNames.size()) % presetNames.size();
+        if (presets.isEmpty()) return;
+        currentPresetIndex = (currentPresetIndex - 1 + presets.size()) % presets.size();
         selectPreset(currentPresetIndex);
     };
 
     IndustrialTheme::styleButton(nextButton, accent);
     addAndMakeVisible(nextButton);
     nextButton.onClick = [this] {
-        if (presetNames.isEmpty()) return;
-        currentPresetIndex = (currentPresetIndex + 1) % presetNames.size();
+        if (presets.isEmpty()) return;
+        currentPresetIndex = (currentPresetIndex + 1) % presets.size();
         selectPreset(currentPresetIndex);
     };
 
     IndustrialTheme::styleCombo(presetBox, accent);
     presetBox.onChange = [this] {
         int idx = presetBox.getSelectedItemIndex();
-        if (idx >= 0 && idx < presetNames.size())
+        if (idx >= 0 && idx < presets.size())
         {
             currentPresetIndex = idx;
-            presetManager.loadPresetByName(presetNames[idx]);
+            presetManager.loadPreset(presets.getReference(idx));
         }
     };
     addAndMakeVisible(presetBox);
@@ -49,13 +49,22 @@ PresetBrowser::PresetBrowser(PresetManager& pm) : presetManager(pm)
 
 void PresetBrowser::refreshList()
 {
-    presetNames = presetManager.getUserPresetNames();
+    presets = presetManager.getAllPatches();
     presetBox.clear(juce::dontSendNotification);
-    for (int i = 0; i < presetNames.size(); ++i)
-        presetBox.addItem(presetNames[i], i + 1);
+    for (int i = 0; i < presets.size(); ++i)
+    {
+        const auto& preset = presets.getReference(i);
+        presetBox.addItem(preset.isFactory ? "◆ " + preset.name : preset.name, i + 1);
+    }
 
     auto currentName = presetManager.getCurrentPresetName();
-    int idx = presetNames.indexOf(currentName);
+    int idx = -1;
+    for (int i = 0; i < presets.size(); ++i)
+        if (presets.getReference(i).name == currentName)
+        {
+            idx = i;
+            break;
+        }
     if (idx >= 0)
     {
         currentPresetIndex = idx;
@@ -65,8 +74,8 @@ void PresetBrowser::refreshList()
 
 void PresetBrowser::selectPreset(int index)
 {
-    if (index < 0 || index >= presetNames.size()) return;
-    presetManager.loadPresetByName(presetNames[index]);
+    if (index < 0 || index >= presets.size()) return;
+    presetManager.loadPreset(presets.getReference(index));
     presetBox.setSelectedItemIndex(index, juce::dontSendNotification);
 }
 

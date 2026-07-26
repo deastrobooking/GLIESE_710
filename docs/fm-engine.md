@@ -91,6 +91,8 @@ Algorithm 9:  Op0 <-> Op1 cross-FM pair, both carriers
 
 Algorithms 0-31 preserve DX-style topology intent. Algorithms 32-39 add extended GLIESE topologies such as all-to-all, star, ring, and tree routing.
 
+Each FM editor includes a live topology graph beneath the algorithm selector. Operators are numbered 1-10, arrows point from a modulator toward the operator it modulates, loop arcs indicate self-feedback, and filled magenta nodes identify carriers routed to the final output. FM A and FM B graphs follow their independent algorithm parameters.
+
 ## Algorithm Morph
 
 `algo_morph` blends the current algorithm with the next algorithm in the table. This is intentionally a performance feature rather than strict historical FM behavior.

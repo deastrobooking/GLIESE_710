@@ -207,6 +207,11 @@ static APVTS::ParameterLayout buildLayout()
         addFloat(prefix + "reverse",  label + " Reverse",  0.0f, 1.0f, 0.0f);
         addFloat(prefix + "scan",     label + " Scan",    -1.0f, 1.0f, 0.0f);
         addFloat(prefix + "freeze",   label + " Freeze",   0.0f, 1.0f, 0.0f);
+        addFloat(prefix + "region_start", label + " Region Start", 0.0f, 0.999f, 0.0f);
+        addFloat(prefix + "region_end",   label + " Region End",   0.001f, 1.0f, 1.0f);
+        addInt  (prefix + "slice_count",  label + " Slice Count",  1, 32, 1);
+        addInt  (prefix + "slice_index",  label + " Slice Index",  0, 31, 0);
+        addBool (prefix + "transient_slices", label + " Transient Slices", false);
         addChoice(prefix + "body_type", label + " Body Type",
                   {"Off","Glass","Metal","Wood","Plate","String","Drum","Pipe","Alien"}, 0);
         addFloat(prefix + "body_root",   label + " Body Root",   -48.0f, 48.0f, 0.0f);
@@ -612,6 +617,12 @@ bool GLIESE710AudioProcessor::importTerrainHeightmap(int terrainIndex, const juc
     }
     suspendProcessing(false);
     return ok;
+}
+
+void GLIESE710AudioProcessor::queueGranularSample(
+    int granularIndex, std::shared_ptr<const GranularOsc::SampleData> sample)
+{
+    synthEngine.queueGranularSample(granularIndex, std::move(sample));
 }
 
 juce::Identifier GLIESE710AudioProcessor::terrainStateProperty(int terrainIndex)

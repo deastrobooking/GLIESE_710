@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GLIESE710Preset name="Orbital Bass" category="Bass" author="GLIESE" version="2">
+  <State>
+    <PARAM id="osc_3d_field" value="3"/>
+    <PARAM id="osc_3d_field_freq" value="2.5"/>
+    <PARAM id="osc_3d_drive" value="1.8"/>
+    <PARAM id="filter_a_cutoff" value="420"/>
+    <PARAM id="filter_a_resonance" value="0.28"/>
+  </State>
+</GLIESE710Preset>

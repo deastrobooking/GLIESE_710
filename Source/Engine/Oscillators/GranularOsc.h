@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include <array>
+#include <memory>
 
 class GranularOsc
 {
@@ -10,6 +11,21 @@ public:
     static constexpr int kSourceSamples = 65536;
     static constexpr int kTableFrames = 128;
     static constexpr int kFrameSamples = kSourceSamples / kTableFrames;
+    static constexpr int kMaxTransientMarkers = 32;
+    struct SampleData
+    {
+        std::array<float, kSourceSamples> samples {};
+        std::array<float, kMaxTransientMarkers + 2> transientMarkers {};
+        int transientMarkerCount = 2; // includes 0 and 1 boundaries
+
+        float& operator[](size_t index) noexcept { return samples[index]; }
+        const float& operator[](size_t index) const noexcept { return samples[index]; }
+        constexpr size_t size() const noexcept { return samples.size(); }
+        auto begin() noexcept { return samples.begin(); }
+        auto end() noexcept { return samples.end(); }
+        auto begin() const noexcept { return samples.begin(); }
+        auto end() const noexcept { return samples.end(); }
+    };
 
     enum class TriggerMode
     {
@@ -59,6 +75,11 @@ public:
         float reverseProb = 0.f;    // 0..1
         float scanSpeed = 0.f;      // -1..1 sample scan motion
         float freeze = 0.f;         // 0..1
+        float regionStart = 0.f;    // normalized source region
+        float regionEnd = 1.f;
+        int sliceCount = 1;         // equal divisions of the selected region
+        int sliceIndex = 0;
+        bool transientSlices = false;
 
         BodyType bodyType = BodyType::Off;
         float bodyRootSemis = 0.f;  // modal root relative to played pitch
@@ -81,6 +102,8 @@ public:
     void setFrequency(float hz);
     void setParams(const Params& newParams);
     void setSample(const float* samples, int numSamples);
+    void setSampleData(std::shared_ptr<const SampleData> newSample);
+    static std::shared_ptr<const SampleData> createSampleData(const float* samples, int numSamples);
 
     std::pair<float, float> processSample();
     int getActiveGrainCount() const;
@@ -118,7 +141,7 @@ private:
     float noteVelocity = 1.f;
     Params params;
 
-    std::array<float, kSourceSamples> source {};
+    std::shared_ptr<const SampleData> source;
     std::array<Grain, kMaxGrains> grains {};
     std::array<ModalMode, kMaxBodyModes> bodyModes {};
 
@@ -129,7 +152,7 @@ private:
     bool nextReverse = false;
     bool bodyDirty = true;
 
-    void generateDefaultSource();
+    static std::shared_ptr<const SampleData> generateDefaultSource();
     void triggerGrain();
     float readSource(float pos, int loopStart, int loopLength) const;
     float windowValue(Window window, float phase) const;

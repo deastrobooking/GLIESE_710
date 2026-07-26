@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GLIESE710Preset name="Nebula Pad" category="Pad" author="GLIESE" version="2">
+  <State>
+    <PARAM id="osc_3d_field" value="16"/>
+    <PARAM id="osc_3d_path" value="1"/>
+    <PARAM id="osc_3d_field_freq" value="3"/>
+    <PARAM id="osc_3d_warp" value="0.72"/>
+    <PARAM id="osc_3d_morph" value="0.6"/>
+    <PARAM id="osc_3d_adsr_a" value="1.8"/>
+    <PARAM id="osc_3d_adsr_r" value="3.5"/>
+    <PARAM id="filter_a_cutoff" value="2400"/>
+  </State>
+</GLIESE710Preset>

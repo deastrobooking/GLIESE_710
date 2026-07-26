@@ -15,6 +15,7 @@
 #include "../Source/Engine/Arpeggiator/Arpeggiator.h"
 #include "../Source/Engine/MasterOutputStage.h"
 #include "../Source/Engine/MPEZone.h"
+#include "../Source/Presets/PresetManager.h"
 #include <array>
 #include <chrono>
 #include <limits>
@@ -115,6 +116,21 @@ static juce::AudioProcessorValueTreeState::ParameterLayout makeModSeqTestLayout(
         }
     }
 
+    return { params.begin(), params.end() };
+}
+
+static juce::AudioProcessorValueTreeState::ParameterLayout makeFactoryPresetTestLayout()
+{
+    using RAP = juce::RangedAudioParameter;
+    std::vector<std::unique_ptr<RAP>> params;
+    params.push_back(std::make_unique<juce::AudioParameterInt>(
+        juce::ParameterID { "osc_3d_field", 1 }, "Field", 0, 17, 0));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID { "osc_3d_field_freq", 1 }, "Field Frequency",
+        juce::NormalisableRange<float> { 0.25f, 16.f }, 1.f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID { "filter_a_cutoff", 1 }, "Cutoff",
+        juce::NormalisableRange<float> { 20.f, 20000.f }, 20000.f));
     return { params.begin(), params.end() };
 }
 
@@ -391,6 +407,33 @@ TEST_CASE("Osc3D adapts oversampling to field density and nonlinear shaping", "[
     }
 }
 
+TEST_CASE("Osc3D preview evaluator matches bounded field shaping without advancing phase", "[osc3d]")
+{
+    Osc3D preview;
+    preview.prepare(48000.0);
+
+    for (int field = 0; field < (int)Osc3D::FieldType::NumFields; ++field)
+    {
+        Osc3D::Params params;
+        params.field = static_cast<Osc3D::FieldType>(field);
+        params.fieldFreq = 9.f;
+        params.warpAmt = 0.8f;
+        params.foldAmt = 0.55f;
+        params.morphT = 0.35f;
+        params.drive = 2.5f;
+        preview.setParams(params);
+
+        const Vec3 point { 0.37f, -0.61f, 0.24f };
+        const float first = preview.evaluatePreview(point);
+        const float second = preview.evaluatePreview(point);
+        INFO("3D field " << field);
+        REQUIRE(std::isfinite(first));
+        REQUIRE(first >= -1.f);
+        REQUIRE(first <= 1.f);
+        REQUIRE(second == Approx(first));
+    }
+}
+
 //──────────────────────────────────────────────────────────────────────────────
 TEST_CASE("VAOscillator stereo output bounds", "[vaosc]")
 {
@@ -629,6 +672,42 @@ TEST_CASE("MPE ignores data entry for unrelated RPN", "[mpe][midi]")
     zone.handleController(1, 100, 127);
     REQUIRE_FALSE(zone.handleController(1, 6, 8));
     REQUIRE(zone.getType() == GlieseMPEZone::Type::None);
+}
+
+TEST_CASE("Embedded factory presets are discoverable and restore from defaults", "[preset]")
+{
+    TestAudioProcessor processor;
+    juce::AudioProcessorValueTreeState apvts(
+        processor, nullptr, "State", makeFactoryPresetTestLayout());
+    PresetManager manager(apvts);
+
+    const auto factory = manager.getFactoryPatches();
+    REQUIRE(factory.size() == 6);
+
+    const auto findPreset = [&factory](const juce::String& name)
+        -> const PresetManager::PatchInfo*
+    {
+        for (const auto& patch : factory)
+            if (patch.name == name)
+                return &patch;
+        return nullptr;
+    };
+
+    const auto* pulse = findPreset("Pulse Vector");
+    REQUIRE(pulse != nullptr);
+    REQUIRE(pulse->isFactory);
+    REQUIRE(pulse->bankName == "Factory");
+    REQUIRE(manager.loadPreset(*pulse));
+    REQUIRE(manager.getCurrentPresetName() == "Pulse Vector");
+    REQUIRE(*apvts.getRawParameterValue("osc_3d_field") == Approx(4.f));
+    REQUIRE(*apvts.getRawParameterValue("osc_3d_field_freq") == Approx(8.5f));
+
+    const auto* init = findPreset("Init");
+    REQUIRE(init != nullptr);
+    REQUIRE(manager.loadPreset(*init));
+    REQUIRE(*apvts.getRawParameterValue("osc_3d_field") == Approx(0.f));
+    REQUIRE(*apvts.getRawParameterValue("osc_3d_field_freq") == Approx(1.f));
+    REQUIRE(*apvts.getRawParameterValue("filter_a_cutoff") == Approx(20000.f));
 }
 
 //──────────────────────────────────────────────────────────────────────────────
@@ -1635,6 +1714,105 @@ TEST_CASE("GranularOsc cloud produces finite stereo grains", "[granular]")
     REQUIRE(osc.getActiveGrainCount() > 0);
 }
 
+TEST_CASE("GranularOsc builds immutable bounded sample assets", "[granular]")
+{
+    std::array<float, 4096> input {};
+    for (size_t i = 0; i < input.size(); ++i)
+        input[i] = 1.4f * std::sin(juce::MathConstants<float>::twoPi
+                                  * 13.f * (float)i / (float)input.size()) + 0.2f;
+
+    const auto asset = GranularOsc::createSampleData(input.data(), (int)input.size());
+    REQUIRE(asset != nullptr);
+    REQUIRE(asset->size() == (size_t)GranularOsc::kSourceSamples);
+    for (float sample : *asset)
+    {
+        REQUIRE(std::isfinite(sample));
+        REQUIRE(sample >= -1.f);
+        REQUIRE(sample <= 1.f);
+    }
+
+    GranularOsc first;
+    GranularOsc second;
+    first.setSampleData(asset);
+    second.setSampleData(asset);
+    first.prepare(48000.0);
+    second.prepare(48000.0);
+    first.noteOn(60, 1.f);
+    second.noteOn(67, 1.f);
+    for (int i = 0; i < 2048; ++i)
+    {
+        const auto a = first.processSample();
+        const auto b = second.processSample();
+        REQUIRE(std::isfinite(a.first));
+        REQUIRE(std::isfinite(a.second));
+        REQUIRE(std::isfinite(b.first));
+        REQUIRE(std::isfinite(b.second));
+    }
+}
+
+TEST_CASE("GranularOsc region slices select distinct source ranges", "[granular]")
+{
+    auto source = std::make_shared<GranularOsc::SampleData>();
+    for (int frame = 0; frame < GranularOsc::kTableFrames; ++frame)
+    {
+        const float harmonic = frame < GranularOsc::kTableFrames / 2 ? 1.f : 7.f;
+        for (int i = 0; i < GranularOsc::kFrameSamples; ++i)
+            (*source)[(size_t)frame * GranularOsc::kFrameSamples + (size_t)i]
+                = 0.7f * std::sin(juce::MathConstants<float>::twoPi
+                                  * harmonic * (float)i / GranularOsc::kFrameSamples);
+    }
+
+    GranularOsc lowSlice;
+    GranularOsc highSlice;
+    lowSlice.setSampleData(source);
+    highSlice.setSampleData(source);
+    lowSlice.prepare(48000.0);
+    highSlice.prepare(48000.0);
+
+    GranularOsc::Params params;
+    params.density = 180.f;
+    params.sizeMs = 80.f;
+    params.position = 0.5f;
+    params.spray = 0.f;
+    params.sliceCount = 2;
+    params.sliceIndex = 0;
+    lowSlice.setParams(params);
+    params.sliceIndex = 1;
+    highSlice.setParams(params);
+    lowSlice.noteOn(60, 1.f);
+    highSlice.noteOn(60, 1.f);
+
+    double difference = 0.0;
+    for (int i = 0; i < 4096; ++i)
+    {
+        const auto low = lowSlice.processSample();
+        const auto high = highSlice.processSample();
+        difference += std::abs(low.first - high.first);
+        REQUIRE(std::isfinite(low.first));
+        REQUIRE(std::isfinite(high.first));
+    }
+    REQUIRE(difference > 1.0);
+}
+
+TEST_CASE("GranularOsc detects bounded transient slice markers", "[granular]")
+{
+    std::array<float, 16384> input {};
+    for (int onset : { 2048, 6144, 11264 })
+        for (int i = 0; i < 256; ++i)
+            input[(size_t)(onset + i)] = std::exp(-(float)i / 55.f)
+                * std::sin(juce::MathConstants<float>::twoPi * (float)i / 17.f);
+
+    const auto asset = GranularOsc::createSampleData(input.data(), (int)input.size());
+    REQUIRE(asset != nullptr);
+    REQUIRE(asset->transientMarkerCount >= 4);
+    REQUIRE(asset->transientMarkerCount <= GranularOsc::kMaxTransientMarkers + 2);
+    REQUIRE(asset->transientMarkers[0] == 0.f);
+    REQUIRE(asset->transientMarkers[(size_t)asset->transientMarkerCount - 1] == 1.f);
+    for (int i = 1; i < asset->transientMarkerCount; ++i)
+        REQUIRE(asset->transientMarkers[(size_t)i]
+                > asset->transientMarkers[(size_t)i - 1]);
+}
+
 TEST_CASE("GranularOsc position updates held cloud without retrigger", "[granular]")
 {
     GranularOsc steady;
@@ -2182,6 +2360,22 @@ TEST_CASE("FMAlgorithm algorithm morph remains finite", "[fm]")
     }
 
     REQUIRE(maxAbs <= 2.f);
+}
+
+TEST_CASE("FM algorithm graph topology stays within ten operators", "[fm]")
+{
+    constexpr uint16_t validOperatorBits = (1u << FMAlgorithm::kNumOperators) - 1u;
+
+    for (int algorithmIndex = 0; algorithmIndex < FMAlgorithm::kNumAlgorithms; ++algorithmIndex)
+    {
+        INFO("FM algorithm " << algorithmIndex);
+        const auto& algorithm = FMAlgorithm::getAlgorithmDef(algorithmIndex);
+        REQUIRE((algorithm.carriers & ~validOperatorBits) == 0);
+        REQUIRE((algorithm.carriers & validOperatorBits) != 0);
+
+        for (const auto modulators : algorithm.opModulators)
+            REQUIRE((modulators & ~validOperatorBits) == 0);
+    }
 }
 
 //──────────────────────────────────────────────────────────────────────────────

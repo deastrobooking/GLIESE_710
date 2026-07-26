@@ -400,6 +400,13 @@ void SynthVoice::noteOff()
 
 void SynthVoice::setHostBPM(double bpm)  { lfo.setHostBPM(bpm); }
 
+void SynthVoice::setGranularSampleData(
+    int index, std::shared_ptr<const GranularOsc::SampleData> sample)
+{
+    if (index >= 0 && index < kNumGranOscs)
+        granularOscs[(size_t)index].setSampleData(std::move(sample));
+}
+
 bool SynthVoice::setTerrainHeightmap(int index, const juce::Image& image)
 {
     if (index < 0 || index >= kNumTerrainOscs)
@@ -567,6 +574,11 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.reverse     = get(pfx + "reverse");
         c.scan        = get(pfx + "scan");
         c.freeze      = get(pfx + "freeze");
+        c.regionStart = get(pfx + "region_start");
+        c.regionEnd   = get(pfx + "region_end");
+        c.sliceCount  = get(pfx + "slice_count");
+        c.sliceIndex  = get(pfx + "slice_index");
+        c.transientSlices = get(pfx + "transient_slices");
         c.bodyType    = get(pfx + "body_type");
         c.bodyRoot    = get(pfx + "body_root");
         c.bodySize    = get(pfx + "body_size");
@@ -986,6 +998,11 @@ void SynthVoice::syncParams()
         gp.scanSpeed   = pF(cg.scan);
         gp.freeze      = juce::jlimit(0.f, 1.f,
             pF(cg.freeze) + modDests.dests[(int)ModDest::Gran_Freeze]);
+        gp.regionStart = pF(cg.regionStart);
+        gp.regionEnd   = pF(cg.regionEnd, 1.f);
+        gp.sliceCount  = pI(cg.sliceCount, 1);
+        gp.sliceIndex  = pI(cg.sliceIndex);
+        gp.transientSlices = pB(cg.transientSlices);
         gp.bodyType    = static_cast<GranularOsc::BodyType>(pI(cg.bodyType));
         gp.bodyRootSemis = pF(cg.bodyRoot);
         gp.bodySize    = juce::jlimit(0.f, 1.f,

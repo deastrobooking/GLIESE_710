@@ -277,13 +277,16 @@ GLIESE_710/
 - [x] Imported terrain embedding and shared per-slot terrain assets
 - [x] Per-slot terrain and independent FM A / FM B modulation destinations
 - [x] Master safety limiter, output meter, DSP load, and voice telemetry
-- [ ] FM algorithm graph visualization
-- [ ] 3D field visualizer panel
+- [x] Live FM A / FM B algorithm graph visualization
+- [x] Live per-slot 3D field and scan-path visualizer
 - [x] Formal lower/upper-zone MPE support with RPN 6 and master/member expression routing
 - [x] GitHub Actions CI
-- [ ] Factory preset bank
+- [x] Embedded, read-only factory preset bank
 - [x] Adaptive 3D oscillator oversampling for high field-frequency and nonlinear settings
-- [ ] Granular sample workflow: background loading, regions/slices, waveform display, and live capture
+- [x] Granular drag-and-drop sample loading, background decode/resample, immutable voice handoff, and waveform display
+- [x] Granular per-slot source regions, equal slices, slice selection, and waveform markers
+- [x] Background granular transient detection and automatic transient-based slicing
+- [ ] Granular sample dependencies, root-note metadata, named scenes, and live capture
 
 ---
 

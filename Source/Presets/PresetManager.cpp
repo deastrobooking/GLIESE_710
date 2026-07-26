@@ -1,4 +1,5 @@
 #include "PresetManager.h"
+#include <BinaryData.h>
 
 //──────────────────────────────────────────────────────────────────────────────
 // Category helpers
@@ -45,6 +46,7 @@ juce::StringArray PresetManager::allCategoryNames()
 
 PresetManager::PresetManager(juce::AudioProcessorValueTreeState& a) : apvts(a)
 {
+    factoryBaselineState = apvts.copyState();
     presetsDir = getPresetsDirectory();
     ensureDirectoryExists(presetsDir);
 }
@@ -139,6 +141,40 @@ bool PresetManager::parsePresetFile(const juce::File& file,
     return stateOut.isValid();
 }
 
+bool PresetManager::parsePresetData(const void* data, int size,
+                                    const juce::String& fallbackName,
+                                    juce::String& nameOut, Category& catOut,
+                                    juce::String& authorOut,
+                                    juce::ValueTree& stateOut) const
+{
+    if (data == nullptr || size <= 0)
+        return false;
+
+    auto xml = juce::XmlDocument::parse(
+        juce::String::fromUTF8(static_cast<const char*>(data), size));
+    if (!xml)
+        return false;
+
+    if (xml->getTagName() == "GLIESE710Preset")
+    {
+        nameOut = xml->getStringAttribute("name", fallbackName);
+        catOut = categoryFromString(xml->getStringAttribute("category", "Other"));
+        authorOut = xml->getStringAttribute("author", "");
+        if (auto* stateEl = xml->getFirstChildElement())
+        {
+            stateOut = juce::ValueTree::fromXml(*stateEl);
+            return stateOut.isValid();
+        }
+        return false;
+    }
+
+    nameOut = fallbackName;
+    catOut = Category::Other;
+    authorOut = {};
+    stateOut = juce::ValueTree::fromXml(*xml);
+    return stateOut.isValid();
+}
+
 //──────────────────────────────────────────────────────────────────────────────
 // Save / Load
 //──────────────────────────────────────────────────────────────────────────────
@@ -176,7 +212,45 @@ bool PresetManager::loadPreset(const juce::File& file)
 
 bool PresetManager::loadPreset(const PatchInfo& info)
 {
+    if (info.isFactory)
+        return loadFactoryPreset(info);
     return loadPreset(info.file);
+}
+
+juce::ValueTree PresetManager::mergeFactoryState(const juce::ValueTree& overlay) const
+{
+    auto merged = factoryBaselineState.createCopy();
+    if (!merged.isValid())
+        return overlay.createCopy();
+
+    for (int i = 0; i < overlay.getNumChildren(); ++i)
+    {
+        const auto source = overlay.getChild(i);
+        auto target = merged.getChildWithProperty("id", source.getProperty("id"));
+        if (target.isValid())
+            target.copyPropertiesFrom(source, nullptr);
+    }
+    return merged;
+}
+
+bool PresetManager::loadFactoryPreset(const PatchInfo& info)
+{
+    int size = 0;
+    const auto* data = FactoryPresetData::getNamedResource(
+        info.resourceName.toRawUTF8(), size);
+
+    juce::String name, author;
+    Category cat = Category::Other;
+    juce::ValueTree overlay;
+    if (!parsePresetData(data, size, info.name, name, cat, author, overlay))
+        return false;
+
+    apvts.replaceState(mergeFactoryState(overlay));
+    if (stateLoadedCallback)
+        stateLoadedCallback();
+    currentPresetName = name;
+    currentCategory = cat;
+    return true;
 }
 
 bool PresetManager::loadPresetByName(const juce::String& name)
@@ -221,11 +295,46 @@ PresetManager::scanDirectory(const juce::File& dir, const juce::String& bankName
 
 juce::Array<PresetManager::PatchInfo> PresetManager::getAllPatches() const
 {
-    juce::Array<PatchInfo> all;
+    auto all = getFactoryPatches();
     all.addArray(scanDirectory(presetsDir, {}));
     for (const auto& bankName : getBankNames())
-        all.addArray(scanDirectory(bankDirectory(bankName), bankName));
+        if (bankName != "Factory")
+            all.addArray(scanDirectory(bankDirectory(bankName), bankName));
     return all;
+}
+
+juce::Array<PresetManager::PatchInfo> PresetManager::getFactoryPatches() const
+{
+    juce::Array<PatchInfo> result;
+    for (int i = 0; i < FactoryPresetData::namedResourceListSize; ++i)
+    {
+        const juce::String resourceName = FactoryPresetData::namedResourceList[i];
+        int size = 0;
+        const auto* data = FactoryPresetData::getNamedResource(
+            resourceName.toRawUTF8(), size);
+
+        juce::String name, author;
+        Category cat = Category::Other;
+        juce::ValueTree state;
+        if (!parsePresetData(data, size, resourceName, name, cat, author, state))
+            continue;
+
+        PatchInfo info;
+        info.name = name;
+        info.bankName = "Factory";
+        info.category = cat;
+        info.author = author;
+        info.resourceName = resourceName;
+        info.isFactory = true;
+        result.add(info);
+    }
+
+    struct Cmp {
+        static int compareElements(const PatchInfo& a, const PatchInfo& b)
+        { return a.name.compareIgnoreCase(b.name); }
+    } cmp;
+    result.sort(cmp, false);
+    return result;
 }
 
 juce::Array<PresetManager::PatchInfo>
@@ -243,6 +352,8 @@ PresetManager::getPatchesInBank(const juce::String& bankName) const
 {
     if (bankName.isEmpty() || bankName == "Root")
         return scanDirectory(presetsDir, {});
+    if (bankName == "Factory")
+        return getFactoryPatches();
     if (!isSafeName(bankName))
         return {};
     return scanDirectory(bankDirectory(bankName), bankName);
@@ -250,7 +361,7 @@ PresetManager::getPatchesInBank(const juce::String& bankName) const
 
 juce::StringArray PresetManager::getBankNames() const
 {
-    juce::StringArray banks;
+    juce::StringArray banks { "Factory" };
     for (auto& dir : presetsDir.findChildFiles(juce::File::findDirectories, false))
     {
         if (!dir.getFileName().startsWith("_"))
@@ -274,6 +385,8 @@ juce::StringArray PresetManager::getUserPresetNames() const
 
 void PresetManager::deletePreset(const PatchInfo& info)
 {
+    if (info.isFactory)
+        return;
     if (isInsidePresetsDirectory(info.file) && info.file.existsAsFile())
         info.file.deleteFile();
 }
@@ -332,6 +445,14 @@ bool PresetManager::importPatch(const juce::File& srcFile, const juce::String& b
 
 void PresetManager::exportPatch(const PatchInfo& info, const juce::File& destFile)
 {
+    if (info.isFactory)
+    {
+        int size = 0;
+        if (const auto* data = FactoryPresetData::getNamedResource(
+                info.resourceName.toRawUTF8(), size))
+            destFile.replaceWithData(data, (size_t) size);
+        return;
+    }
     info.file.copyFileTo(destFile);
 }
 

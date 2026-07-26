@@ -24,7 +24,7 @@ private:
     juce::Label      nameLabel;
 
     int currentPresetIndex = -1;
-    juce::StringArray presetNames;
+    juce::Array<PresetManager::PatchInfo> presets;
 
     void saveCurrentPreset();
     void selectPreset(int index);

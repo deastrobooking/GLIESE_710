@@ -354,13 +354,15 @@ void PatchBrowserPanel::updateActionStates()
 {
     bool hasSel  = (selectedRow >= 0 && selectedRow < filteredPatches.size());
     bool hasBank = filterBank.isNotEmpty();
+    bool factorySel = hasSel && filteredPatches.getReference(selectedRow).isFactory;
+    bool factoryBank = filterBank == "Factory";
 
     loadButton       .setEnabled(hasSel);
-    deleteButton     .setEnabled(hasSel);
+    deleteButton     .setEnabled(hasSel && !factorySel);
     exportPatchButton.setEnabled(hasSel);
-    renameBankButton .setEnabled(hasBank);
-    deleteBankButton .setEnabled(hasBank);
-    exportBankButton .setEnabled(true);
+    renameBankButton .setEnabled(hasBank && !factoryBank);
+    deleteBankButton .setEnabled(hasBank && !factoryBank);
+    exportBankButton .setEnabled(!factoryBank);
 }
 
 void PatchBrowserPanel::setCategoryFilter(PresetManager::Category cat)

@@ -1,6 +1,8 @@
 #pragma once
 #include <JuceHeader.h>
 #include "IndustrialTheme.h"
+#include "../Engine/Oscillators/Osc3D.h"
+#include "../Engine/Oscillators/GranularOsc.h"
 
 // Draws the current VA waveform shape — updated via setShape()
 class VAWaveDisplay : public juce::Component
@@ -62,17 +64,71 @@ private:
     static float noise(float x, float y) noexcept;
 };
 
+class Osc3DFieldDisplay : public juce::Component,
+                          private juce::Timer
+{
+public:
+    Osc3DFieldDisplay(juce::AudioProcessorValueTreeState& apvts,
+                      const juce::String& parameterPrefix,
+                      juce::Colour accentColour);
+    void paint(juce::Graphics&) override;
+
+private:
+    juce::Colour accent;
+    Osc3D previewOsc;
+    std::atomic<float>* field = nullptr;
+    std::atomic<float>* path = nullptr;
+    std::atomic<float>* radius = nullptr;
+    std::atomic<float>* depth = nullptr;
+    std::atomic<float>* warp = nullptr;
+    std::atomic<float>* rotation = nullptr;
+    std::atomic<float>* chaos = nullptr;
+    std::atomic<float>* morph = nullptr;
+    std::atomic<float>* fieldFreq = nullptr;
+    std::atomic<float>* zRatio = nullptr;
+    std::atomic<float>* fold = nullptr;
+    std::atomic<float>* drive = nullptr;
+
+    void timerCallback() override;
+    float value(std::atomic<float>* parameter, float fallback) const noexcept;
+    juce::Point<float> project(Vec3 point, juce::Rectangle<float> bounds) const noexcept;
+    Vec3 pathPoint(float phase, const Osc3D::Params& params) const noexcept;
+};
+
+class GranularWaveformDisplay : public juce::Component
+{
+public:
+    explicit GranularWaveformDisplay(juce::Colour accentColour) : accent(accentColour) {}
+    void setSample(std::shared_ptr<const GranularOsc::SampleData> newSample,
+                   juce::String newName);
+    void setRegion(float start, float end, int slices, int selectedSlice,
+                   bool useTransientSlices);
+    void paint(juce::Graphics&) override;
+
+private:
+    juce::Colour accent;
+    std::shared_ptr<const GranularOsc::SampleData> sample;
+    juce::String sampleName { "DROP AUDIO" };
+    float regionStart = 0.f, regionEnd = 1.f;
+    int sliceCount = 1, sliceIndex = 0;
+    bool transientSlices = false;
+};
+
 // Panel for one oscillator section (3D, WT, VA, KS, granular, or terrain)
 class OscPanel : public juce::Component,
                  public juce::FileDragAndDropTarget
 {
 public:
     using TerrainImportCallback = std::function<bool(int terrainIndex, const juce::File& file)>;
+    using GranularImportCallback = std::function<void(
+        int granularIndex, std::shared_ptr<const GranularOsc::SampleData>)>;
 
     explicit OscPanel(juce::AudioProcessorValueTreeState& apvts, const juce::String& oscId,
                       const juce::String& label,
                       TerrainImportCallback terrainImport = {},
-                      int terrainIndex = -1);
+                      int terrainIndex = -1,
+                      GranularImportCallback granularImport = {},
+                      int granularIndex = -1);
 
     void paint(juce::Graphics&) override;
     void paintOverChildren(juce::Graphics&) override;
@@ -89,6 +145,8 @@ private:
     juce::Colour accent;
     TerrainImportCallback terrainImport;
     int terrainIndex = -1;
+    GranularImportCallback granularImport;
+    int granularIndex = -1;
 
     juce::Label titleLabel;
 
@@ -103,13 +161,22 @@ private:
     std::unique_ptr<BAtt> retrigAtt;
     bool hasRetrigButton = false;
     juce::TextButton importHeightmapButton { "IMPORT MAP" };
+    juce::TextButton importSampleButton { "LOAD SAMPLE" };
     bool hasTerrainImportButton = false;
+    bool hasGranularImportButton = false;
     bool terrainDropActive = false;
     std::shared_ptr<juce::FileChooser> terrainChooser;
+    std::shared_ptr<juce::FileChooser> granularChooser;
+    juce::ThreadPool sampleLoadPool { 1 };
 
     // Level + pitch controls shared by all osc types
     juce::Slider levelSlider, tuneSlider, octaveSlider;
     std::unique_ptr<Att> levelAtt, tuneAtt, octaveAtt;
+    std::array<juce::Slider, 4> regionSliders;
+    std::array<std::unique_ptr<Att>, 4> regionAtts;
+    std::array<juce::Label, 4> regionLabels;
+    juce::ToggleButton transientSlicesButton { "AUTO" };
+    std::unique_ptr<BAtt> transientSlicesAtt;
 
     // ADSR sliders
     juce::Slider adsrA, adsrD, adsrS, adsrR;
@@ -120,6 +187,8 @@ private:
 
     // Waveform preview — only created for VA panels
     std::unique_ptr<VAWaveDisplay> waveDisplay;
+    std::unique_ptr<Osc3DFieldDisplay> field3dDisplay;
+    std::unique_ptr<GranularWaveformDisplay> granularWaveform;
     std::unique_ptr<TerrainHeightmapDisplay> terrainDisplay;
 
     juce::Slider extra1, extra2, extra3, extra4, extra5, extra6, extra7, extra8, extra9, extra10;
@@ -144,4 +213,6 @@ private:
     void launchTerrainImportChooser();
     void importTerrainHeightmapFile(const juce::File& file);
     void refreshTerrainDisplay();
+    void launchGranularImportChooser();
+    void importGranularSampleFile(const juce::File& file);
 };

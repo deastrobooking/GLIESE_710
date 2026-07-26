@@ -83,6 +83,18 @@ juce_add_plugin(GLIESE_710
 
 juce_generate_juce_header(GLIESE_710)
 
+# ── Embedded factory content ──────────────────────────────────────────────────
+juce_add_binary_data(GLIESE_710_FactoryPresets
+    NAMESPACE FactoryPresetData
+    SOURCES
+        Source/Presets/FactoryPresets/Init.g710
+        Source/Presets/FactoryPresets/Orbital_Bass.g710
+        Source/Presets/FactoryPresets/Glass_Lattice.g710
+        Source/Presets/FactoryPresets/Nebula_Pad.g710
+        Source/Presets/FactoryPresets/Pulse_Vector.g710
+        Source/Presets/FactoryPresets/Alien_Sequence.g710
+)
+
 # ── Sources ───────────────────────────────────────────────────────────────────
 target_sources(GLIESE_710
 PRIVATE
@@ -135,6 +147,7 @@ target_include_directories(GLIESE_710 PRIVATE Source)
 # ── Link libraries ────────────────────────────────────────────────────────────
 target_link_libraries(GLIESE_710
 PRIVATE
+    GLIESE_710_FactoryPresets
     juce::juce_audio_utils
     juce::juce_dsp
     juce::juce_audio_plugin_client
@@ -178,6 +191,7 @@ if(GLIESE_BUILD_TESTS)
 
     target_sources(GLIESE_Tests PRIVATE
         Tests/EngineTests.cpp
+        Source/Presets/PresetManager.cpp
         Source/Engine/Envelopes/ADSREnvelope.cpp
         Source/Engine/MasterOutputStage.cpp
         Source/Engine/MPEZone.cpp
@@ -205,6 +219,7 @@ if(GLIESE_BUILD_TESTS)
 
     target_link_libraries(GLIESE_Tests
         PRIVATE
+            GLIESE_710_FactoryPresets
             Catch2::Catch2WithMain
             juce::juce_dsp
             juce::juce_audio_utils

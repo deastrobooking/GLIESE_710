@@ -24,14 +24,16 @@ All APVTS-registered parameters are included. Parameters added in future version
 | Type | Location |
 |---|---|
 | User presets | `~/Music/GLIESE_710/Presets/*.g710` |
-| Factory presets | Embedded via `juce_add_binary_data` (future) |
+| Factory presets | Embedded in the plugin binary via `juce_add_binary_data` |
 | DAW session state | Opaque blob managed by host (`getStateInformation`) |
 
 Imported terrain heightmaps are encoded into custom properties on the APVTS state, capped to 512 pixels, and therefore travel with both `.g710` presets and DAW session blobs. Terrain DSP data is rebuilt on load and shared across voices.
 
-## Planned Factory Content
+## Factory Content
 
-The factory bank should be compiled with `juce_add_binary_data`, copied into the user-visible browser without overwriting user patches, and versioned independently from the parameter schema. CI should load every factory patch and render a short finite-audio smoke test.
+Six starter patches ship in the read-only **Factory** bank: Init, Alien Sequence, Glass Lattice, Nebula Pad, Orbital Bass, and Pulse Vector. The compact embedded files contain parameter overrides which are merged onto the synth's captured default state when loaded. This guarantees that loading one factory patch after another cannot inherit unspecified values from the previous patch.
+
+Factory patches appear in both preset browsers, are marked with a diamond in the header selector, and can be exported as normal `.g710` files. Delete and factory-bank mutation actions are disabled.
 
 ## Migration Requirements
 
@@ -100,9 +102,9 @@ juce::ParameterID{"master_volume", 1}
 
 If a parameter is renamed or type-changed in a future version, increment the version. JUCE preserves unknown parameters in the ValueTree, so old presets loaded into a new build will retain any parameters that still exist and ignore removed ones.
 
-## Factory Presets (Phase 4)
+## Factory Presets
 
-Factory presets will be embedded at build time via `juce_add_binary_data`:
+Factory presets are embedded at build time via `juce_add_binary_data`:
 
 ```cmake
 juce_add_binary_data(GLIESE_710_Assets
@@ -112,7 +114,7 @@ juce_add_binary_data(GLIESE_710_Assets
 )
 ```
 
-They are accessed at runtime via `BinaryData::Init_g710` and `BinaryData::Init_g710Size`. The `PresetManager` will expose them through a separate `getFactoryPresets()` method and display them in a distinct section of the preset browser.
+`PresetManager::getFactoryPatches()` discovers the generated resources, parses their metadata, and exposes them as read-only `PatchInfo` entries in the Factory bank. Loading merges the resource's parameter overrides into a pristine default APVTS state before replacing the active state.
 
 ## Creating Presets for Distribution
 

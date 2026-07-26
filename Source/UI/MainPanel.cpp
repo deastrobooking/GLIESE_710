@@ -1,10 +1,119 @@
 #include "MainPanel.h"
+#include "../Engine/Oscillators/FMAlgorithm.h"
 #include <vector>
 
 static juce::Colour kBg { 0xff050607 };
 
 namespace
 {
+class FMAlgorithmGraph : public juce::Component,
+                         public juce::SettableTooltipClient,
+                         private juce::Timer
+{
+public:
+    FMAlgorithmGraph(juce::AudioProcessorValueTreeState& state,
+                     const juce::String& parameterId)
+        : algorithmParam(state.getRawParameterValue(parameterId))
+    {
+        setTooltip("Live FM routing: arrows run from modulator to destination; filled nodes are carriers");
+        setInterceptsMouseClicks(false, false);
+        startTimerHz(15);
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        auto bounds = getLocalBounds().toFloat();
+        g.setColour(juce::Colour(0xff07090a));
+        g.fillRoundedRectangle(bounds, 3.f);
+        g.setColour(IndustrialTheme::accentFM().withAlpha(0.25f));
+        g.drawRoundedRectangle(bounds.reduced(0.5f), 3.f, 0.8f);
+
+        const auto& algorithm = FMAlgorithm::getAlgorithmDef(currentAlgorithm);
+        std::array<juce::Point<float>, FMAlgorithm::kNumOperators> nodes;
+        const auto graph = bounds.reduced(10.f, 7.f);
+        const auto centre = graph.getCentre();
+        const float radiusX = graph.getWidth() * 0.42f;
+        const float radiusY = graph.getHeight() * 0.39f;
+
+        for (int op = 0; op < FMAlgorithm::kNumOperators; ++op)
+        {
+            const float angle = -juce::MathConstants<float>::halfPi
+                              + juce::MathConstants<float>::twoPi * (float)op
+                                / (float)FMAlgorithm::kNumOperators;
+            nodes[(size_t)op] = { centre.x + std::cos(angle) * radiusX,
+                                  centre.y + std::sin(angle) * radiusY };
+        }
+
+        const auto accent = IndustrialTheme::accentFM();
+        for (int destination = 0; destination < FMAlgorithm::kNumOperators; ++destination)
+        {
+            const uint16_t mask = algorithm.opModulators[destination];
+            for (int modulator = 0; modulator < FMAlgorithm::kNumOperators; ++modulator)
+            {
+                if ((mask & (uint16_t)(1u << modulator)) == 0)
+                    continue;
+
+                const auto from = nodes[(size_t)modulator];
+                const auto to = nodes[(size_t)destination];
+                g.setColour(accent.withAlpha(0.34f));
+
+                if (modulator == destination)
+                {
+                    g.drawEllipse(from.x - 7.f, from.y - 9.f, 14.f, 11.f, 0.8f);
+                    continue;
+                }
+
+                auto delta = to - from;
+                const float length = juce::jmax(0.001f, delta.getDistanceFromOrigin());
+                const auto unit = delta / length;
+                const auto edgeStart = from + unit * 5.f;
+                const auto edgeEnd = to - unit * 5.f;
+                g.drawLine({ edgeStart, edgeEnd }, 0.8f);
+
+                const auto normal = juce::Point<float> { -unit.y, unit.x };
+                juce::Path arrow;
+                arrow.startNewSubPath(edgeEnd);
+                arrow.lineTo(edgeEnd - unit * 4.f + normal * 2.f);
+                arrow.lineTo(edgeEnd - unit * 4.f - normal * 2.f);
+                arrow.closeSubPath();
+                g.fillPath(arrow);
+            }
+        }
+
+        for (int op = 0; op < FMAlgorithm::kNumOperators; ++op)
+        {
+            const bool carrier = (algorithm.carriers & (uint16_t)(1u << op)) != 0;
+            const auto point = nodes[(size_t)op];
+            g.setColour(carrier ? accent.withAlpha(0.88f) : juce::Colour(0xff171b1d));
+            g.fillEllipse(point.x - 5.f, point.y - 5.f, 10.f, 10.f);
+            g.setColour(carrier ? juce::Colours::white.withAlpha(0.75f)
+                                : accent.withAlpha(0.72f));
+            g.drawEllipse(point.x - 5.f, point.y - 5.f, 10.f, 10.f, 0.8f);
+            g.setFont(juce::Font(juce::FontOptions { 6.5f }));
+            g.drawText(juce::String(op + 1),
+                       juce::Rectangle<float>(point.x - 5.f, point.y - 5.f, 10.f, 10.f),
+                       juce::Justification::centred);
+        }
+    }
+
+private:
+    void timerCallback() override
+    {
+        const int next = algorithmParam != nullptr
+            ? juce::jlimit(0, FMAlgorithm::kNumAlgorithms - 1,
+                           juce::roundToInt(algorithmParam->load()))
+            : 0;
+        if (next != currentAlgorithm)
+        {
+            currentAlgorithm = next;
+            repaint();
+        }
+    }
+
+    std::atomic<float>* algorithmParam = nullptr;
+    int currentAlgorithm = 0;
+};
+
 class FMEngineEditor : public juce::Component
 {
 public:
@@ -17,7 +126,8 @@ public:
         : apvts(state),
           engineIndex(index),
           fmPrefix(index == 0 ? "osc_fm_" : "osc_fm2_"),
-          opBase(index == 0 ? "op" : "op2_")
+          opBase(index == 0 ? "op" : "op2_"),
+          algorithmGraph(state, index == 0 ? "osc_fm_algorithm" : "osc_fm2_algorithm")
     {
         const auto accent = IndustrialTheme::accentFM();
         title.setText("FM ENGINE " + juce::String(engineIndex == 0 ? "A" : "B"), juce::dontSendNotification);
@@ -42,6 +152,7 @@ public:
         algorithmBox.setTooltip("FM Algorithm");
         IndustrialTheme::styleCombo(algorithmBox, accent);
         addAndMakeVisible(algorithmBox);
+        addAndMakeVisible(algorithmGraph);
         algorithmAtt = std::make_unique<CAtt>(apvts, fmPrefix + "algorithm", algorithmBox);
 
         setupRotary(levelSlider,  fmPrefix + "level",      "FM Level", levelAtt, 52);
@@ -70,15 +181,15 @@ public:
         for (int i = 0; i < 10; ++i)
         {
             const juce::String pfx = opBase + juce::String(i) + "_";
-            setupOpSlider(opCoarse[(size_t)i],  pfx + "coarse",   "Op " + juce::String(i) + " Coarse", coarseAtts[(size_t)i]);
-            setupOpSlider(opFine[(size_t)i],    pfx + "fine",     "Op " + juce::String(i) + " Fine", fineAtts[(size_t)i]);
-            setupOpSlider(opDetune[(size_t)i],  pfx + "detune",   "Op " + juce::String(i) + " Detune", detuneAtts[(size_t)i]);
-            setupOpSlider(opLevel[(size_t)i],   pfx + "level",    "Op " + juce::String(i) + " Level", levelAtts[(size_t)i]);
-            setupOpSlider(opFeedback[(size_t)i],pfx + "feedback", "Op " + juce::String(i) + " Feedback", feedbackAtts[(size_t)i]);
-            setupOpSlider(opSkirt[(size_t)i],   pfx + "skirt",    "Op " + juce::String(i) + " Spectral Skirt", skirtAtts[(size_t)i]);
-            setupOpSlider(opRes[(size_t)i],     pfx + "resonance","Op " + juce::String(i) + " Spectral Resonance", resAtts[(size_t)i]);
-            setupOpSlider(opVel[(size_t)i],     pfx + "vel",      "Op " + juce::String(i) + " Velocity Depth", velAtts[(size_t)i]);
-            setupOpSlider(opKey[(size_t)i],     pfx + "key",      "Op " + juce::String(i) + " Key Scale", keyAtts[(size_t)i]);
+            setupOpRotary(opCoarse[(size_t)i], pfx + "coarse", "Op " + juce::String(i) + " Coarse", coarseAtts[(size_t)i]);
+            setupOpRotary(opFine[(size_t)i],   pfx + "fine",   "Op " + juce::String(i) + " Fine", fineAtts[(size_t)i]);
+            setupOpRotary(opLevel[(size_t)i],  pfx + "level",  "Op " + juce::String(i) + " Level", levelAtts[(size_t)i]);
+            setupOpFader(opDetune[(size_t)i],   pfx + "detune",   "Op " + juce::String(i) + " Detune", detuneAtts[(size_t)i]);
+            setupOpFader(opFeedback[(size_t)i], pfx + "feedback", "Op " + juce::String(i) + " Feedback", feedbackAtts[(size_t)i]);
+            setupOpFader(opSkirt[(size_t)i],    pfx + "skirt",    "Op " + juce::String(i) + " Spectral Skirt", skirtAtts[(size_t)i]);
+            setupOpFader(opRes[(size_t)i],      pfx + "resonance","Op " + juce::String(i) + " Spectral Resonance", resAtts[(size_t)i]);
+            setupOpFader(opVel[(size_t)i],      pfx + "vel",      "Op " + juce::String(i) + " Velocity Depth", velAtts[(size_t)i]);
+            setupOpFader(opKey[(size_t)i],      pfx + "key",      "Op " + juce::String(i) + " Key Scale", keyAtts[(size_t)i]);
 
             opWave[(size_t)i].addItemList(kOpWaves, 1);
             opWave[(size_t)i].setTooltip("Op " + juce::String(i) + " Waveform");
@@ -87,10 +198,11 @@ public:
             waveAtts[(size_t)i] = std::make_unique<CAtt>(apvts, pfx + "wave", opWave[(size_t)i]);
         }
 
-        auto addLabel = [&](juce::Label& label, const juce::String& text, float size = 10.f)
+        auto addLabel = [&](juce::Label& label, const juce::String& text, float size = 8.5f)
         {
             label.setText(text, juce::dontSendNotification);
-            IndustrialTheme::styleLabel(label, accent, size);
+            IndustrialTheme::styleLabel(label, IndustrialTheme::mutedText(), size);
+            label.setFont(juce::Font(juce::FontOptions { size }));
             addAndMakeVisible(label);
         };
 
@@ -105,30 +217,71 @@ public:
         for (int i = 0; i < 4; ++i)
             addLabel(perfLabels[(size_t)i], perfNames[i]);
 
-        addLabel(coarseHdr, "COARSE RATIO");
-        addLabel(fineHdr, "FINE");
-        addLabel(detuneHdr, "DETUNE");
-        addLabel(levelHdr, "OP LEVEL");
-        addLabel(feedbackHdr, "FEEDBACK");
-        addLabel(waveHdr, "WAVEFORM");
-        addLabel(skirtHdr, "SPECTRAL SKIRT");
-        addLabel(resHdr, "SPECTRAL RES");
-        addLabel(velHdr, "VEL DEPTH");
-        addLabel(keyHdr, "KEY SCALE");
+        addLabel(coarseHdr, "C");
+        addLabel(fineHdr, "F");
+        addLabel(levelHdr, "L");
+        addLabel(detuneHdr, "DT");
+        addLabel(feedbackHdr, "FB");
+        addLabel(skirtHdr, "SK");
+        addLabel(resHdr, "RS");
+        addLabel(velHdr, "VL");
+        addLabel(keyHdr, "KY");
+        addLabel(waveHdr, "WAVE");
         for (int i = 0; i < 10; ++i)
-            addLabel(opLabels[(size_t)i], juce::String(i));
+            addLabel(opLabels[(size_t)i], "OP " + juce::String(i + 1), 9.f);
     }
 
     void paint(juce::Graphics& g) override
     {
         IndustrialTheme::paintPanel(g, getLocalBounds(), IndustrialTheme::accentFM(), true);
+
+        if (!operatorGridBounds.isEmpty())
+        {
+            const auto accent = IndustrialTheme::accentFM();
+            for (int i = 0; i < 10; ++i)
+            {
+                auto strip = operatorGridBounds.withX(operatorGridBounds.getX() + i * operatorColumnWidth)
+                                               .withWidth(operatorColumnWidth);
+                if ((i / 5) % 2 == 1)
+                {
+                    g.setColour(juce::Colours::white.withAlpha(0.018f));
+                    g.fillRect(strip);
+                }
+                g.setColour(juce::Colours::white.withAlpha(0.035f));
+                g.drawVerticalLine(strip.getX(), (float)strip.getY(), (float)strip.getBottom());
+
+                auto inner = strip.reduced(3, 0);
+                const int headerH = 14;
+                const int legendH = 10;
+                auto knobLegend = inner.withY(inner.getY() + headerH).withHeight(legendH);
+                auto faderLegend = inner.withY(inner.getBottom() - legendH).withHeight(legendH);
+
+                g.setColour(IndustrialTheme::mutedText().withAlpha(0.82f));
+                g.setFont(juce::Font(juce::FontOptions { 8.f }));
+                const juce::String knobNames[] { "C", "F", "L" };
+                const juce::String faderNames[] { "DT", "FB", "SK", "RS", "VL", "KY" };
+                for (int control = 0; control < 3; ++control)
+                    g.drawText(knobNames[control],
+                               knobLegend.withX(knobLegend.getX() + control * knobLegend.getWidth() / 3)
+                                         .withWidth(knobLegend.getWidth() / 3),
+                               juce::Justification::centred);
+                for (int control = 0; control < 6; ++control)
+                    g.drawText(faderNames[control],
+                               faderLegend.withX(faderLegend.getX() + control * faderLegend.getWidth() / 6)
+                                          .withWidth(faderLegend.getWidth() / 6),
+                               juce::Justification::centred);
+            }
+
+            const int dividerX = operatorGridBounds.getX() + 5 * operatorColumnWidth;
+            g.setColour(accent.withAlpha(0.22f));
+            g.drawVerticalLine(dividerX, (float)operatorGridBounds.getY(),
+                               (float)operatorGridBounds.getBottom());
+        }
     }
 
     void resized() override
     {
         auto area = getLocalBounds().reduced(8);
-        const int opW = juce::jmax(54, area.getWidth() / 10);
-
         auto titleRow = area.removeFromTop(22);
         enableButton.setBounds(titleRow.removeFromRight(48));
         title.setBounds(titleRow.removeFromLeft(190));
@@ -159,7 +312,10 @@ public:
             label.setBounds(topLabelRow.removeFromLeft(44));
 
         auto topRow = topBand;
-        algorithmBox.setBounds(topRow.removeFromLeft(172).withHeight(24));
+        auto algorithmArea = topRow.removeFromLeft(172);
+        algorithmBox.setBounds(algorithmArea.removeFromTop(24));
+        algorithmArea.removeFromTop(3);
+        algorithmGraph.setBounds(algorithmArea);
         levelSlider .setBounds(topRow.removeFromLeft(64));
         tuneSlider  .setBounds(topRow.removeFromLeft(64));
         octaveSlider.setBounds(topRow.removeFromLeft(64));
@@ -170,43 +326,48 @@ public:
         envR.setBounds(topRow.removeFromLeft(44).reduced(2, 0));
 
         area.removeFromTop(4);
-        const int labelH = 10;
-        const int gap = 1;
-        const int waveH = 22;
-        const int sliderRows = 9;
-        const int sliderH = juce::jlimit(10, 22,
-            (area.getHeight() - 13 - labelH - waveH - sliderRows * labelH - (sliderRows + 1) * gap)
-                / sliderRows);
+        operatorColumnWidth = juce::jmax(1, area.getWidth() / 10);
+        operatorGridBounds = area.withWidth(operatorColumnWidth * 10);
+        for (auto* label : { &coarseHdr, &fineHdr, &levelHdr, &detuneHdr, &feedbackHdr,
+                             &skirtHdr, &resHdr, &velHdr, &keyHdr, &waveHdr })
+            label->setVisible(false);
 
-        auto opIndexRow = area.removeFromTop(13);
+        const int headerH = 14;
+        const int legendH = 10;
+        const int knobH = juce::jlimit(22, 34, operatorColumnWidth - 8);
+        const int waveH = 20;
+        const int faderTop = operatorGridBounds.getY() + headerH + legendH + knobH + waveH + 8;
+        const int faderH = juce::jmax(34, operatorGridBounds.getBottom() - faderTop - legendH);
+
         for (int i = 0; i < 10; ++i)
-            opLabels[(size_t)i].setBounds(opIndexRow.removeFromLeft(opW));
-
-        auto layoutSliderRow = [&](juce::Label& header, auto& sliders)
         {
-            header.setBounds(area.removeFromTop(labelH));
-            auto row = area.removeFromTop(sliderH);
-            for (int i = 0; i < 10; ++i)
-                sliders[(size_t)i].setBounds(row.removeFromLeft(opW).reduced(2, 1));
-            area.removeFromTop(gap);
-        };
+            auto strip = operatorGridBounds.withX(operatorGridBounds.getX() + i * operatorColumnWidth)
+                                           .withWidth(operatorColumnWidth)
+                                           .reduced(3, 0);
+            opLabels[(size_t)i].setBounds(strip.removeFromTop(headerH));
 
-        layoutSliderRow(coarseHdr,   opCoarse);
-        layoutSliderRow(fineHdr,     opFine);
-        layoutSliderRow(detuneHdr,   opDetune);
-        layoutSliderRow(levelHdr,    opLevel);
-        layoutSliderRow(feedbackHdr, opFeedback);
+            strip.removeFromTop(legendH);
+            const int knobW = juce::jmax(1, strip.getWidth() / 3);
 
-        waveHdr.setBounds(area.removeFromTop(labelH));
-        auto waveRow = area.removeFromTop(waveH);
-        for (int i = 0; i < 10; ++i)
-            opWave[(size_t)i].setBounds(waveRow.removeFromLeft(opW).reduced(2, 0));
-        area.removeFromTop(gap);
+            auto knobs = strip.removeFromTop(knobH);
+            opCoarse[(size_t)i].setBounds(knobs.removeFromLeft(knobW));
+            opFine[(size_t)i].setBounds(knobs.removeFromLeft(knobW));
+            opLevel[(size_t)i].setBounds(knobs);
+            strip.removeFromTop(2);
 
-        layoutSliderRow(skirtHdr, opSkirt);
-        layoutSliderRow(resHdr,   opRes);
-        layoutSliderRow(velHdr,   opVel);
-        layoutSliderRow(keyHdr,   opKey);
+            opWave[(size_t)i].setBounds(strip.removeFromTop(waveH));
+            strip.removeFromTop(4);
+
+            auto faders = strip.removeFromTop(faderH);
+            const int faderW = juce::jmax(1, faders.getWidth() / 6);
+            opDetune[(size_t)i].setBounds(faders.removeFromLeft(faderW));
+            opFeedback[(size_t)i].setBounds(faders.removeFromLeft(faderW));
+            opSkirt[(size_t)i].setBounds(faders.removeFromLeft(faderW));
+            opRes[(size_t)i].setBounds(faders.removeFromLeft(faderW));
+            opVel[(size_t)i].setBounds(faders.removeFromLeft(faderW));
+            opKey[(size_t)i].setBounds(faders);
+        }
+
     }
 
 private:
@@ -222,13 +383,24 @@ private:
         attachment = std::make_unique<Att>(apvts, paramId, slider);
     }
 
-    void setupOpSlider(juce::Slider& slider, const juce::String& paramId,
+    void setupOpRotary(juce::Slider& slider, const juce::String& paramId,
                        const juce::String& tooltip, std::unique_ptr<Att>& attachment)
     {
-        // Ableton-device style: thin fader track, tiny read-only value box, and
-        // a drag popup so exact values are still visible without eating row space.
-        slider.setSliderStyle(juce::Slider::LinearHorizontal);
-        slider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 22, 11);
+        slider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+        slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        slider.setPopupDisplayEnabled(true, true, this);
+        slider.setTooltip(tooltip);
+        IndustrialTheme::styleSlider(slider, IndustrialTheme::accentFM());
+        slider.getProperties().set("microRotary", true);
+        addAndMakeVisible(slider);
+        attachment = std::make_unique<Att>(apvts, paramId, slider);
+    }
+
+    void setupOpFader(juce::Slider& slider, const juce::String& paramId,
+                      const juce::String& tooltip, std::unique_ptr<Att>& attachment)
+    {
+        slider.setSliderStyle(juce::Slider::LinearVertical);
+        slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
         slider.setPopupDisplayEnabled(true, true, this);
         slider.setTooltip(tooltip);
         IndustrialTheme::styleMiniFader(slider, IndustrialTheme::accentFM());
@@ -239,6 +411,7 @@ private:
     APVTS& apvts;
     int engineIndex = 0;
     juce::String fmPrefix, opBase;
+    FMAlgorithmGraph algorithmGraph;
 
     juce::Label title;
     juce::ToggleButton enableButton;
@@ -262,6 +435,8 @@ private:
     std::array<std::unique_ptr<Att>, 10> coarseAtts, fineAtts, detuneAtts, levelAtts, feedbackAtts;
     std::array<std::unique_ptr<CAtt>, 10> waveAtts;
     std::array<std::unique_ptr<Att>, 10> skirtAtts, resAtts, velAtts, keyAtts;
+    juce::Rectangle<int> operatorGridBounds;
+    int operatorColumnWidth = 1;
 };
 
 class EngineFilterPage : public juce::Component
@@ -438,9 +613,11 @@ private:
 //──────────────────────────────────────────────────────────────────────────────
 MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a,
                      TerrainImportCallback terrainImportCallback,
+                     GranularImportCallback granularImportCallback,
                      ModStepSequencerPanel::CurrentStepProvider stepProvider)
     : apvts(a),
       terrainImport(std::move(terrainImportCallback)),
+      granularImport(std::move(granularImportCallback)),
       modStepProvider(std::move(stepProvider))
 {
     tabs.setTabBarDepth(28);
@@ -521,7 +698,8 @@ void MainPanel::buildOscillatorsTab()
         ksPanels[(size_t)i] = std::make_unique<OscPanel>(
             apvts, makeId("ks", i), "KARPLUS-STRONG " + juce::String(i + 1));
         granularPanels[(size_t)i] = std::make_unique<OscPanel>(
-            apvts, makeId("grain", i), "GRANULAR " + juce::String(i + 1));
+            apvts, makeId("grain", i), "GRANULAR " + juce::String(i + 1),
+            TerrainImportCallback{}, -1, granularImport, i);
         terrainPanels[(size_t)i] = std::make_unique<OscPanel>(
             apvts, makeId("terrain", i), "TERRAIN " + juce::String(i + 1),
             terrainImport, i);
