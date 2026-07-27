@@ -1,4 +1,13 @@
 cmake_minimum_required(VERSION 3.22)
+
+# Keep distributable macOS bundles compatible with supported host systems.
+# Without an explicit value, Xcode may inherit the active SDK version and stamp
+# plug-ins as requiring that unreleased/newest macOS version.
+if("${CMAKE_OSX_DEPLOYMENT_TARGET}" STREQUAL "")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING
+        "Minimum supported macOS version" FORCE)
+endif()
+
 project(GLIESE_710 VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 20)

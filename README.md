@@ -18,6 +18,10 @@ The design goal is direct: every oscillator page should feel playable and modula
 | AUv2 / AUv3 | macOS |
 | VST3 | macOS / Windows |
 | CLAP | macOS / Windows / Linux |
+
+macOS release bundles target macOS 11.0 or newer. AUv3 is shipped as an
+extension embedded in the standalone application; install the containing app
+in `/Applications` so macOS can discover and register the Audio Unit.
 | LV2 | Linux |
 | Standalone | All platforms |
 
