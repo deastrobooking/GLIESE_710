@@ -615,11 +615,13 @@ MainPanel::MainPanel(juce::AudioProcessorValueTreeState& a,
                      TerrainImportCallback terrainImportCallback,
                      GranularImportCallback granularImportCallback,
                      GranularCaptureCallback granularCaptureCallback,
+                     GranularVisualCallback granularVisualCallback,
                      ModStepSequencerPanel::CurrentStepProvider stepProvider)
     : apvts(a),
       terrainImport(std::move(terrainImportCallback)),
       granularImport(std::move(granularImportCallback)),
       granularCapture(std::move(granularCaptureCallback)),
+      granularVisual(std::move(granularVisualCallback)),
       modStepProvider(std::move(stepProvider))
 {
     tabs.setTabBarDepth(28);
@@ -701,7 +703,8 @@ void MainPanel::buildOscillatorsTab()
             apvts, makeId("ks", i), "KARPLUS-STRONG " + juce::String(i + 1));
         granularPanels[(size_t)i] = std::make_unique<OscPanel>(
             apvts, makeId("grain", i), "GRANULAR " + juce::String(i + 1),
-            TerrainImportCallback{}, -1, granularImport, i, granularCapture);
+            TerrainImportCallback{}, -1, granularImport, i, granularCapture,
+            granularVisual);
         terrainPanels[(size_t)i] = std::make_unique<OscPanel>(
             apvts, makeId("terrain", i), "TERRAIN " + juce::String(i + 1),
             terrainImport, i);
@@ -989,7 +992,10 @@ void MainPanel::layoutOscillatorsTab()
             }
         };
 
-        const bool compact = tabArea.getWidth() < 980 && panels.size() > 2
+        // Preserve vertical editing room at the editor's 900 px minimum width.
+        // Four narrow full-height strips are more useful for the paged granular
+        // editor (and the other knob-heavy engines) than four half-height cells.
+        const bool compact = tabArea.getWidth() < 760 && panels.size() > 2
                              && pageSlotBar->getBlockMode(page) == 0;
         compact ? layoutCompact() : layoutWide();
     };

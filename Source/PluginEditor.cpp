@@ -70,10 +70,13 @@ GLIESE710AudioProcessorEditor::GLIESE710AudioProcessorEditor(GLIESE710AudioProce
     : AudioProcessorEditor(&p),
       mainPanel(p.apvts, [&p](int terrainIndex, const juce::File& file) {
           return p.importTerrainHeightmap(terrainIndex, file);
-      }, [&p](int granularIndex, std::shared_ptr<const GranularOsc::SampleData> sample) {
-          p.queueGranularSample(granularIndex, std::move(sample));
+      }, [&p](int granularIndex, int layer,
+              std::shared_ptr<const GranularOsc::SampleData> sample) {
+          p.queueGranularSample(granularIndex, layer, std::move(sample));
       }, [&p](int granularIndex) {
           return p.captureGranularInput(granularIndex);
+      }, [&p](int granularIndex) {
+          return p.getGranularVisualSnapshot(granularIndex);
       }, [&p] {
           return p.getModSequencerCurrentStep();
       }),

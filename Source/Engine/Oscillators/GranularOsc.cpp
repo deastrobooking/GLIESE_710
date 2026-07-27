@@ -31,6 +31,8 @@ void GranularOsc::prepare(double sampleRate)
     sr = sampleRate > 0.0 ? sampleRate : 48000.0;
     if (source == nullptr)
         source = generateDefaultSource();
+    if (sourceB == nullptr)
+        sourceB = source;
     reset();
 }
 
@@ -47,7 +49,9 @@ void GranularOsc::reset()
     triggerPhase = 0.f;
     scanPosition = juce::jlimit(0.f, 1.f, params.position);
     burstRemaining = 0;
-    nextReverse = false;
+    directionCounter = 0;
+    visualPublishCounter = 0;
+    visualCount.store(0, std::memory_order_relaxed);
     rngState = 0x6d2b79f5u ^ (uint32_t) note * 747796405u;
     bodyDirty = true;
 }
@@ -59,6 +63,7 @@ void GranularOsc::noteOn(int midiNote, float velocity)
     rngState = 0x6d2b79f5u ^ (uint32_t) (midiNote + 1) * 747796405u;
     scanPosition = juce::jlimit(0.f, 1.f, params.position);
     triggerPhase = 0.f;
+    directionCounter = 0;
     burstRemaining = juce::jlimit(1, 48, juce::roundToInt(4.f + params.density * 0.06f));
 
     if (params.triggerMode == TriggerMode::Burst)
@@ -100,6 +105,8 @@ void GranularOsc::setParams(const Params& newParams)
     params.jitter = juce::jlimit(0.f, 1.f, params.jitter);
     params.panSpread = juce::jlimit(0.f, 1.f, params.panSpread);
     params.reverseProb = juce::jlimit(0.f, 1.f, params.reverseProb);
+    params.directionMode = juce::jlimit(0, 4, params.directionMode);
+    params.directionLength = juce::jlimit(1, 8, params.directionLength);
     params.scanSpeed = juce::jlimit(-1.f, 1.f, params.scanSpeed);
     params.freeze = juce::jlimit(0.f, 1.f, params.freeze);
     params.regionStart = juce::jlimit(0.f, 0.999f, params.regionStart);
@@ -107,6 +114,7 @@ void GranularOsc::setParams(const Params& newParams)
     params.sliceCount = juce::jlimit(1, 32, params.sliceCount);
     params.sliceIndex = juce::jlimit(0, params.sliceCount - 1, params.sliceIndex);
     params.rootNote = juce::jlimit(0, 127, params.rootNote);
+    params.layerMorph = juce::jlimit(0.f, 1.f, params.layerMorph);
     params.bodyRootSemis = juce::jlimit(-48.f, 48.f, params.bodyRootSemis);
     params.bodySize = juce::jlimit(0.f, 1.f, params.bodySize);
     params.bodyDecay = juce::jlimit(0.f, 1.f, params.bodyDecay);
@@ -139,7 +147,22 @@ void GranularOsc::setSample(const float* samples, int numSamples)
 
 void GranularOsc::setSampleData(std::shared_ptr<const SampleData> newSample)
 {
-    source = newSample != nullptr ? std::move(newSample) : generateDefaultSource();
+    setLayerSampleData(0, std::move(newSample));
+}
+
+void GranularOsc::setLayerSampleData(
+    int layer, std::shared_ptr<const SampleData> newSample)
+{
+    auto replacement = newSample != nullptr ? std::move(newSample) : generateDefaultSource();
+    if (layer == 1)
+        sourceB = std::move(replacement);
+    else
+    {
+        const bool bFollowedA = sourceB == nullptr || sourceB == source;
+        source = std::move(replacement);
+        if (bFollowedA)
+            sourceB = source;
+    }
 }
 
 std::shared_ptr<const GranularOsc::SampleData>
@@ -335,10 +358,16 @@ std::pair<float, float> GranularOsc::processSample()
 
         const float phase = (float) grain.age / (float) juce::jmax(1, grain.length);
         const float amp = windowValue(grain.window, phase) * grain.gain;
-        const float sL = readSource(
-            grain.readPos, grain.loopStart, grain.loopLength, false) * amp;
-        const float sR = readSource(
-            grain.readPos, grain.loopStart, grain.loopLength, true) * amp;
+        const float aL = readSource(
+            source, grain.readPos, grain.loopStart, grain.loopLength, false);
+        const float aR = readSource(
+            source, grain.readPos, grain.loopStart, grain.loopLength, true);
+        const float bL = readSource(
+            sourceB, grain.readPos, grain.loopStart, grain.loopLength, false);
+        const float bR = readSource(
+            sourceB, grain.readPos, grain.loopStart, grain.loopLength, true);
+        const float sL = (aL + (bL - aL) * params.layerMorph) * amp;
+        const float sR = (aR + (bR - aR) * params.layerMorph) * amp;
 
         outL += sL * grain.panL;
         outR += sR * grain.panR;
@@ -357,6 +386,11 @@ std::pair<float, float> GranularOsc::processSample()
     }
 
     const float comp = 1.f / std::sqrt((float) kMaxGrains * 0.12f);
+    if (++visualPublishCounter >= 128)
+    {
+        visualPublishCounter = 0;
+        publishVisualSnapshot();
+    }
     return processBody(clampFinite(outL * comp), clampFinite(outR * comp));
 }
 
@@ -403,6 +437,25 @@ float GranularOsc::quantizePitchOffset(int midiNote, float semitoneOffset,
     return (float)(best - midiNote);
 }
 
+bool GranularOsc::directionForGrain(int mode, uint8_t pattern, int length,
+                                    int sequenceIndex, float randomValue,
+                                    float reverseProbability) noexcept
+{
+    switch (juce::jlimit(0, 4, mode))
+    {
+        case 1: return false;
+        case 2: return true;
+        case 3: return (sequenceIndex & 1) != 0;
+        case 4:
+        {
+            const int step = sequenceIndex % juce::jlimit(1, 8, length);
+            return (pattern & (uint8_t)(1u << step)) != 0;
+        }
+        default:
+            return randomValue < juce::jlimit(0.f, 1.f, reverseProbability);
+    }
+}
+
 int GranularOsc::getActiveGrainCount() const
 {
     int count = 0;
@@ -410,6 +463,46 @@ int GranularOsc::getActiveGrainCount() const
         if (grain.active)
             ++count;
     return count;
+}
+
+void GranularOsc::publishVisualSnapshot() noexcept
+{
+    int count = 0;
+    for (const auto& grain : grains)
+    {
+        if (!grain.active || count >= kMaxVisualGrains)
+            continue;
+        const auto index = (size_t)count;
+        visualPosition[index].store(
+            juce::jlimit(0.f, 1.f, grain.readPos / (float)kSourceSamples),
+            std::memory_order_relaxed);
+        visualProgress[index].store(
+            juce::jlimit(0.f, 1.f, (float)grain.age
+                / (float)juce::jmax(1, grain.length)),
+            std::memory_order_relaxed);
+        visualPan[index].store(
+            juce::jlimit(-1.f, 1.f, grain.panR * grain.panR - grain.panL * grain.panL),
+            std::memory_order_relaxed);
+        visualReverse[index].store(grain.step < 0.f, std::memory_order_relaxed);
+        ++count;
+    }
+    visualCount.store(count, std::memory_order_release);
+}
+
+GranularOsc::VisualSnapshot GranularOsc::getVisualSnapshot() const noexcept
+{
+    VisualSnapshot snapshot;
+    snapshot.count = juce::jlimit(
+        0, kMaxVisualGrains, visualCount.load(std::memory_order_acquire));
+    for (int i = 0; i < snapshot.count; ++i)
+    {
+        const auto index = (size_t)i;
+        snapshot.position[index] = visualPosition[index].load(std::memory_order_relaxed);
+        snapshot.progress[index] = visualProgress[index].load(std::memory_order_relaxed);
+        snapshot.pan[index] = visualPan[index].load(std::memory_order_relaxed);
+        snapshot.reverse[index] = visualReverse[index].load(std::memory_order_relaxed);
+    }
+    return snapshot;
 }
 
 std::shared_ptr<const GranularOsc::SampleData> GranularOsc::generateDefaultSource()
@@ -528,12 +621,9 @@ void GranularOsc::triggerGrain()
         frequency * rootCompensation * gliese::dsp::pitchRatioFromSemitones(pitch));
     float step = grainHz * (float) kFrameSamples / (float) sr;
 
-    bool reverse = random01() < params.reverseProb;
-    if (params.reverseProb > 0.49f && params.reverseProb < 0.51f)
-    {
-        reverse = nextReverse;
-        nextReverse = !nextReverse;
-    }
+    const bool reverse = directionForGrain(
+        params.directionMode, params.directionPattern, params.directionLength,
+        directionCounter++, random01(), params.reverseProb);
     if (reverse)
         step = -step;
 
@@ -554,10 +644,11 @@ void GranularOsc::triggerGrain()
     target->window = params.window;
 }
 
-float GranularOsc::readSource(float pos, int loopStart, int loopLength,
-                              bool rightChannel) const
+float GranularOsc::readSource(const std::shared_ptr<const SampleData>& sample,
+                              float pos, int loopStart, int loopLength,
+                              bool rightChannel)
 {
-    if (source == nullptr)
+    if (sample == nullptr)
         return 0.f;
     loopStart = juce::jlimit(0, kSourceSamples - 1, loopStart);
     loopLength = juce::jlimit(1, kSourceSamples - loopStart, loopLength);
@@ -566,7 +657,7 @@ float GranularOsc::readSource(float pos, int loopStart, int loopLength,
     const int i0 = loopStart + offset0;
     const int i1 = loopStart + offset1;
     const float frac = pos - std::floor(pos);
-    const auto& channel = rightChannel ? source->samplesR : source->samples;
+    const auto& channel = rightChannel ? sample->samplesR : sample->samples;
     return channel[(size_t)i0]
         + (channel[(size_t)i1] - channel[(size_t)i0]) * frac;
 }

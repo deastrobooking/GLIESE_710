@@ -12,6 +12,7 @@ public:
     static constexpr int kTableFrames = 128;
     static constexpr int kFrameSamples = kSourceSamples / kTableFrames;
     static constexpr int kMaxTransientMarkers = 32;
+    static constexpr int kMaxVisualGrains = 24;
     struct SampleData
     {
         std::array<float, kSourceSamples> samples {};
@@ -81,6 +82,9 @@ public:
         float jitter = 0.04f;       // trigger timing randomization
         float panSpread = 0.7f;     // stereo randomization
         float reverseProb = 0.f;    // 0..1
+        int directionMode = 0;      // probability/forward/reverse/alternate/pattern
+        int directionLength = 8;
+        uint8_t directionPattern = 0;
         float scanSpeed = 0.f;      // -1..1 sample scan motion
         float freeze = 0.f;         // 0..1
         float regionStart = 0.f;    // normalized source region
@@ -89,6 +93,7 @@ public:
         int sliceIndex = 0;
         bool transientSlices = false;
         int rootNote = 60;
+        float layerMorph = 0.f;
 
         BodyType bodyType = BodyType::Off;
         float bodyRootSemis = 0.f;  // modal root relative to played pitch
@@ -103,6 +108,15 @@ public:
         int bodyModes = 16;         // 4..32
     };
 
+    struct VisualSnapshot
+    {
+        int count = 0;
+        std::array<float, kMaxVisualGrains> position {};
+        std::array<float, kMaxVisualGrains> progress {};
+        std::array<float, kMaxVisualGrains> pan {};
+        std::array<bool, kMaxVisualGrains> reverse {};
+    };
+
     void prepare(double sampleRate);
     void reset();
     void noteOn(int midiNote, float velocity);
@@ -112,6 +126,7 @@ public:
     void setParams(const Params& newParams);
     void setSample(const float* samples, int numSamples);
     void setSampleData(std::shared_ptr<const SampleData> newSample);
+    void setLayerSampleData(int layer, std::shared_ptr<const SampleData> newSample);
     static std::shared_ptr<const SampleData> createSampleData(const float* samples, int numSamples);
     static std::shared_ptr<const SampleData> createSampleData(
         const float* left, const float* right, int numSamples);
@@ -121,9 +136,13 @@ public:
 
     std::pair<float, float> processSample();
     int getActiveGrainCount() const;
+    VisualSnapshot getVisualSnapshot() const noexcept;
     static float densityRateForTempo(double bpm, int division) noexcept;
     static float quantizePitchOffset(int midiNote, float semitoneOffset,
                                      int scaleRoot, int scale) noexcept;
+    static bool directionForGrain(int mode, uint8_t pattern, int length,
+                                  int sequenceIndex, float randomValue,
+                                  float reverseProbability) noexcept;
 
 private:
     static constexpr int kMaxBodyModes = 32;
@@ -159,6 +178,7 @@ private:
     Params params;
 
     std::shared_ptr<const SampleData> source;
+    std::shared_ptr<const SampleData> sourceB;
     std::array<Grain, kMaxGrains> grains {};
     std::array<ModalMode, kMaxBodyModes> bodyModes {};
 
@@ -166,12 +186,21 @@ private:
     float triggerPhase = 0.f;
     float scanPosition = 0.5f;
     int burstRemaining = 0;
-    bool nextReverse = false;
+    int directionCounter = 0;
+    int visualPublishCounter = 0;
+    std::atomic<int> visualCount { 0 };
+    std::array<std::atomic<float>, kMaxVisualGrains> visualPosition {};
+    std::array<std::atomic<float>, kMaxVisualGrains> visualProgress {};
+    std::array<std::atomic<float>, kMaxVisualGrains> visualPan {};
+    std::array<std::atomic<bool>, kMaxVisualGrains> visualReverse {};
     bool bodyDirty = true;
 
     static std::shared_ptr<const SampleData> generateDefaultSource();
     void triggerGrain();
-    float readSource(float pos, int loopStart, int loopLength, bool rightChannel) const;
+    void publishVisualSnapshot() noexcept;
+    static float readSource(const std::shared_ptr<const SampleData>& sample,
+                            float pos, int loopStart, int loopLength,
+                            bool rightChannel);
     float windowValue(Window window, float phase) const;
     void configureBody();
     std::pair<float, float> processBody(float dryL, float dryR);

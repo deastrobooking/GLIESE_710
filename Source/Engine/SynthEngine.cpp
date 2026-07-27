@@ -430,22 +430,43 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
 }
 
 void SynthEngine::queueGranularSample(
-    int index, std::shared_ptr<const GranularOsc::SampleData> sample)
+    int index, int layer, std::shared_ptr<const GranularOsc::SampleData> sample)
 {
-    if (index < 0 || index >= SynthVoice::kNumGranOscs || sample == nullptr)
+    if (index < 0 || index >= SynthVoice::kNumGranOscs
+        || layer < 0 || layer > 1 || sample == nullptr)
         return;
 
     const juce::SpinLock::ScopedLockType lock(granularSampleLock);
-    auto& owned = ownedGranularSamples[(size_t)index];
+    auto& owned = ownedGranularSamples[(size_t)index][(size_t)layer];
     if (owned != nullptr)
         retiredGranularSamples.push_back(std::move(owned));
     owned = sample;
-    pendingGranularSamples[(size_t)index] = std::move(sample);
+    pendingGranularSamples[(size_t)index][(size_t)layer] = std::move(sample);
 
     std::erase_if(retiredGranularSamples, [](const auto& retired)
     {
         return retired.use_count() == 1;
     });
+}
+
+GranularOsc::VisualSnapshot SynthEngine::getGranularVisualSnapshot(int index) const noexcept
+{
+    GranularOsc::VisualSnapshot combined;
+    for (const auto& voice : voices)
+    {
+        const auto voiceSnapshot = voice.getGranularVisualSnapshot(index);
+        for (int i = 0; i < voiceSnapshot.count
+                        && combined.count < GranularOsc::kMaxVisualGrains; ++i)
+        {
+            const auto source = (size_t)i;
+            const auto target = (size_t)combined.count++;
+            combined.position[target] = voiceSnapshot.position[source];
+            combined.progress[target] = voiceSnapshot.progress[source];
+            combined.pan[target] = voiceSnapshot.pan[source];
+            combined.reverse[target] = voiceSnapshot.reverse[source];
+        }
+    }
+    return combined;
 }
 
 void SynthEngine::applyPendingGranularSamples()
@@ -456,13 +477,16 @@ void SynthEngine::applyPendingGranularSamples()
 
     for (int index = 0; index < SynthVoice::kNumGranOscs; ++index)
     {
-        auto& pending = pendingGranularSamples[(size_t)index];
-        if (pending == nullptr)
-            continue;
+        for (int layer = 0; layer < 2; ++layer)
+        {
+            auto& pending = pendingGranularSamples[(size_t)index][(size_t)layer];
+            if (pending == nullptr)
+                continue;
 
-        for (auto& voice : voices)
-            voice.setGranularSampleData(index, pending);
-        pending.reset();
+            for (auto& voice : voices)
+                voice.setGranularSampleData(index, layer, pending);
+            pending.reset();
+        }
     }
 }
 

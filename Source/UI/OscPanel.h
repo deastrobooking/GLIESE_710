@@ -95,23 +95,33 @@ private:
     Vec3 pathPoint(float phase, const Osc3D::Params& params) const noexcept;
 };
 
-class GranularWaveformDisplay : public juce::Component
+class GranularWaveformDisplay : public juce::Component,
+                                private juce::Timer
 {
 public:
-    explicit GranularWaveformDisplay(juce::Colour accentColour) : accent(accentColour) {}
+    using SnapshotProvider = std::function<GranularOsc::VisualSnapshot()>;
+    explicit GranularWaveformDisplay(juce::Colour accentColour);
     void setSample(std::shared_ptr<const GranularOsc::SampleData> newSample,
                    juce::String newName);
+    void setSecondarySample(std::shared_ptr<const GranularOsc::SampleData> newSample,
+                            juce::String newName);
     void setRegion(float start, float end, int slices, int selectedSlice,
                    bool useTransientSlices);
     void paint(juce::Graphics&) override;
+    void setSnapshotProvider(SnapshotProvider provider);
 
 private:
     juce::Colour accent;
     std::shared_ptr<const GranularOsc::SampleData> sample;
+    std::shared_ptr<const GranularOsc::SampleData> secondarySample;
     juce::String sampleName { "DROP AUDIO" };
+    juce::String secondarySampleName;
     float regionStart = 0.f, regionEnd = 1.f;
     int sliceCount = 1, sliceIndex = 0;
     bool transientSlices = false;
+    SnapshotProvider snapshotProvider;
+    GranularOsc::VisualSnapshot visualSnapshot;
+    void timerCallback() override;
 };
 
 // Panel for one oscillator section (3D, WT, VA, KS, granular, or terrain)
@@ -121,9 +131,12 @@ class OscPanel : public juce::Component,
 public:
     using TerrainImportCallback = std::function<bool(int terrainIndex, const juce::File& file)>;
     using GranularImportCallback = std::function<void(
-        int granularIndex, std::shared_ptr<const GranularOsc::SampleData>)>;
+        int granularIndex, int layer,
+        std::shared_ptr<const GranularOsc::SampleData>)>;
     using GranularCaptureCallback = std::function<
         std::shared_ptr<const GranularOsc::SampleData>(int granularIndex)>;
+    using GranularVisualCallback = std::function<
+        GranularOsc::VisualSnapshot(int granularIndex)>;
 
     explicit OscPanel(juce::AudioProcessorValueTreeState& apvts, const juce::String& oscId,
                       const juce::String& label,
@@ -131,7 +144,8 @@ public:
                       int terrainIndex = -1,
                       GranularImportCallback granularImport = {},
                       int granularIndex = -1,
-                      GranularCaptureCallback granularCapture = {});
+                      GranularCaptureCallback granularCapture = {},
+                      GranularVisualCallback granularVisual = {});
 
     void paint(juce::Graphics&) override;
     void paintOverChildren(juce::Graphics&) override;
@@ -151,6 +165,7 @@ private:
     GranularImportCallback granularImport;
     int granularIndex = -1;
     GranularCaptureCallback granularCapture;
+    GranularVisualCallback granularVisual;
 
     juce::Label titleLabel;
 
@@ -166,6 +181,7 @@ private:
     bool hasRetrigButton = false;
     juce::TextButton importHeightmapButton { "IMPORT MAP" };
     juce::TextButton importSampleButton { "LOAD SAMPLE" };
+    juce::TextButton importSampleBButton { "LOAD B" };
     juce::TextButton captureSampleButton { "CAPTURE" };
     bool hasTerrainImportButton = false;
     bool hasGranularImportButton = false;
@@ -197,6 +213,15 @@ private:
     std::unique_ptr<BAtt> pitchQuantizeAtt;
     juce::ComboBox pitchCloudBox, pitchScaleBox, pitchScaleRootBox;
     std::unique_ptr<CAtt> pitchCloudAtt, pitchScaleAtt, pitchScaleRootAtt;
+    juce::ComboBox directionModeBox, directionLengthBox;
+    std::unique_ptr<CAtt> directionModeAtt, directionLengthAtt;
+    std::array<juce::ToggleButton, 8> directionStepButtons;
+    std::array<std::unique_ptr<BAtt>, 8> directionStepAtts;
+    juce::Slider layerMorphSlider;
+    std::unique_ptr<Att> layerMorphAtt;
+    juce::Label layerMorphLabel;
+    juce::ComboBox granularPageBox;
+    int granularPage = 0;
 
     // ADSR sliders
     juce::Slider adsrA, adsrD, adsrS, adsrR;
@@ -233,9 +258,11 @@ private:
     void launchTerrainImportChooser();
     void importTerrainHeightmapFile(const juce::File& file);
     void refreshTerrainDisplay();
-    void launchGranularImportChooser();
-    void importGranularSampleFile(const juce::File& file);
+    void launchGranularImportChooser(int layer);
+    void importGranularSampleFile(const juce::File& file, int layer = 0);
     void refreshGranularSampleBrowser();
     void saveGranularScene();
     void recallGranularScene();
+    void updateGranularPageVisibility();
+    void layoutGranularPage(juce::Rectangle<int> area);
 };

@@ -45,7 +45,9 @@ public:
 
     WavetableOsc& getWavetableOsc() { return wtOscs[0]; }
     void addWavetable(juce::String name, const float* samples, int numSamples);
-    void setGranularSampleData(int index, std::shared_ptr<const GranularOsc::SampleData> sample);
+    void setGranularSampleData(int index, int layer,
+                               std::shared_ptr<const GranularOsc::SampleData> sample);
+    GranularOsc::VisualSnapshot getGranularVisualSnapshot(int index) const noexcept;
     bool setTerrainHeightmap(int index, const juce::Image& image);
     void shareTerrainHeightmap(int index, const SynthVoice& source);
     void buildParamCache(juce::AudioProcessorValueTreeState& apvts);
@@ -225,6 +227,9 @@ private:
             std::atomic<float>* jitter      = nullptr;
             std::atomic<float>* pan         = nullptr;
             std::atomic<float>* reverse     = nullptr;
+            std::atomic<float>* directionMode = nullptr;
+            std::atomic<float>* directionLength = nullptr;
+            std::array<std::atomic<float>*, 8> directionSteps {};
             std::atomic<float>* scan        = nullptr;
             std::atomic<float>* freeze      = nullptr;
             std::atomic<float>* regionStart = nullptr;
@@ -233,6 +238,7 @@ private:
             std::atomic<float>* sliceIndex  = nullptr;
             std::atomic<float>* transientSlices = nullptr;
             std::atomic<float>* rootNote     = nullptr;
+            std::atomic<float>* layerMorph   = nullptr;
             std::atomic<float>* bodyType    = nullptr;
             std::atomic<float>* bodyRoot    = nullptr;
             std::atomic<float>* bodySize    = nullptr;

@@ -2,7 +2,7 @@
 
 ## MVP Scope
 
-`GranularOsc` is a real-time safe oscillator core with immutable fixed-size sample assets and a preallocated grain pool. Each granular panel accepts WAV, AIFF, FLAC, and OGG files from its chooser or by drag-and-drop, decodes and resamples them on a background worker, previews the resulting waveform, and hands the completed asset to all voices at a render-block boundary. It does not yet include live input capture, region markers, scenes, preset sample dependencies, or sample-browser infrastructure.
+`GranularOsc` is a real-time safe oscillator core with immutable fixed-size sample assets and a preallocated grain pool. Each granular panel accepts WAV, AIFF, FLAC, and OGG files from its chooser, browser, live capture, or drag-and-drop; decodes and resamples files on a background worker; previews the stereo waveform and active grains; and hands completed assets to all voices at a render-block boundary. Region/slice editing, transient markers, four scenes, dual layers, and portable preset-embedded sample data are implemented.
 
 The identity of this first pass is:
 
@@ -26,7 +26,21 @@ The fixed source representation keeps grain reads allocation-free. Loading creat
 
 ## Sample Loading
 
-Use **LOAD SAMPLE** in a granular panel or drop a supported audio file directly onto its waveform. Decode, stereo-to-mono conversion, and conversion into the 65,536-sample granular table happen on a single background worker owned by that panel. Files are capped at the first 120 seconds during decode to bound temporary memory use. A successful load updates the panel waveform and affects that granular slot on all voices.
+Use **LOAD A** or **LOAD B** in a granular panel, choose a library entry, or drop a supported audio file directly onto its waveform. Decode, stereo resampling, and conversion into the 65,536-frame granular table happen on a single background worker owned by that panel. Files are capped at the first 120 seconds during decode to bound temporary memory use. A successful load updates the panel waveform and affects that granular slot on all voices.
+
+## Panel Pages
+
+The granular editor is divided into five focused pages so all controls remain usable at the editor's minimum size:
+
+| Page | Controls |
+|---|---|
+| **SOURCE** | A/B loading, live capture, sample browser, waveform, regions, slices, root note, transient AUTO, and layer morph |
+| **CLOUD** | Position, size, density, pitch, spray, jitter, pan, reverse probability, scan, and freeze |
+| **SEQUENCE** | Tempo-synced density, scale-quantized pitch clouds, and grain-direction sequencing |
+| **BODY** | Physical-body type and its modal root, size, decay, damping, brightness, inharmonicity, excitation, mix, spread, and mode count |
+| **SCENES** | Scene selection/save plus visual region and slice editing |
+
+Level, fine tune, octave, trigger/window/body modes, and ADSR remain available around the active page. At compact heights the source waveform and envelope footer reduce in height, while oscillator slots retain a full-height column instead of switching to a cramped two-row grid.
 
 Each slot also exposes **START**, **END**, **SLICES**, **SELECT**, **ROOT**, and **AUTO** controls. Start/end constrain grain spawning to a normalized source region. With AUTO off, slices divide that region evenly. With AUTO on, the background loader's energy-onset analysis supplies up to 32 transient boundaries instead. Selection chooses the active equal or transient division. ROOT identifies the imported sample's MIDI reference pitch and compensates playback accordingly. The waveform shades excluded audio, draws the active boundaries, and highlights the selected slice.
 
@@ -74,6 +88,9 @@ The table shows the first slot prefix. Additional granular slots use `osc_grain2
 | `osc_grain_jitter` | 0-1 | Timing and pitch instability |
 | `osc_grain_pan` | 0-1 | Per-grain stereo spread |
 | `osc_grain_reverse` | 0-1 | Reverse probability |
+| `osc_grain_direction_mode` | Probability / Forward / Reverse / Alternate / Pattern | Per-grain playback-direction behavior |
+| `osc_grain_direction_length` | 1-8 | Active direction-pattern step count |
+| `osc_grain_direction_step{1-8}` | Forward / Reverse | Direction stored at each pattern step |
 | `osc_grain_scan` | -1 to +1 | Automatic source-position movement |
 | `osc_grain_freeze` | 0-1 | Locks grains to the main position when above 0.5 |
 | `osc_grain_region_start` | 0-0.999 | Beginning of the playable source region |
@@ -123,6 +140,36 @@ Enable **SYNC** beside the sample library to replace the free density clock with
 
 The compact pitch-cloud row selects random spread, musical key, scale, and **QNT** state. Spread adds a new independent per-grain range of ±2, ±4, ±7, ±12, or ±24 semitones; the original pitch and jitter controls remain active. With QNT enabled, the resulting pitch is snapped to the nearest note in Chromatic, Major, Natural Minor, Dorian, Mixolydian, or Major Pentatonic. Quantization is calculated when each grain is spawned and adds no allocation or lookup work to per-sample grain playback.
 
+## Grain Direction Sequencing
+
+The direction row offers five modes:
+
+- **PROB** uses the existing reverse-probability control.
+- **FWD** forces every grain forward.
+- **REV** forces every grain backward.
+- **ALT** alternates forward and reverse deterministically.
+- **PATTERN** follows eight on/off direction steps, where off is forward and on is reverse.
+
+The adjacent length control shortens the pattern to 1-8 steps. Direction counters reset with each note, making alternating and patterned bursts repeatable. Direction is resolved once when a grain spawns; reverse playback uses the same bounded source-region and slice logic as forward playback.
+
+## Live Grain-Cloud Overlay
+
+The waveform now overlays up to 24 live grains aggregated across active voices for that granular slot. Horizontal position follows the grain's current source read location, vertical displacement shows stereo pan, dot size and opacity decay with grain lifetime, and the short centre stroke points forward or backward.
+
+Each oscillator publishes a bounded atomic snapshot once every 128 rendered samples. The editor reads only those atomics at 30 Hz and never touches mutable grain objects or locks the audio callback. The visual cap keeps polyphonic high-density clouds legible and prevents UI work from scaling with the full 96-grain pool across every voice.
+
+## Dual Granular Layers
+
+Every granular slot now owns two immutable stereo sample assets:
+
+- **LOAD A**, drag-and-drop, the sample library, and live CAPTURE target layer A.
+- **LOAD B** opens an independent background loader for layer B.
+- **A/B MORPH** continuously crossfades both stereo source reads inside every active grain.
+
+The waveform draws layer A in the slot accent and layer B as a faint magenta overlay, making their source structures comparable before morphing. Both assets have independent versioned payloads in plugin and preset state. Older presets with the original single granular payload restore it as layer A; layer B follows A until a separate B asset is loaded.
+
+Morphing is a linear source crossfade performed after the two bounded interpolated reads and before grain pan/window gain. At 0 only A is heard, at 1 only B is heard, and 0.5 is the exact midpoint. Grain timing, position, slicing, direction, pitch, transient selection, and body processing remain shared so the morph changes source identity without destabilizing the cloud.
+
 ## Physical Body
 
 The physical body section is optional and defaults to bypass:
@@ -159,8 +206,5 @@ These are appended to the modulation destination enum to preserve earlier destin
 ## Next Upgrades
 
 - Optional linked-file dependency mode
-- Grain direction sequencing
-- Live grain-cloud overlay on the completed waveform display
-- Dual granular layer morphing
 
 Further file decoding, analysis, and resampling must remain off the audio thread. Completed sample assets continue to use the immutable block-boundary handoff.

@@ -55,11 +55,39 @@ void VAWaveDisplay::paint(juce::Graphics& g)
     g.strokePath(wave, juce::PathStrokeType(1.5f));
 }
 
+GranularWaveformDisplay::GranularWaveformDisplay(juce::Colour accentColour)
+    : accent(accentColour)
+{
+    startTimerHz(30);
+}
+
+void GranularWaveformDisplay::setSnapshotProvider(SnapshotProvider provider)
+{
+    snapshotProvider = std::move(provider);
+}
+
+void GranularWaveformDisplay::timerCallback()
+{
+    if (snapshotProvider && isShowing())
+    {
+        visualSnapshot = snapshotProvider();
+        repaint();
+    }
+}
+
 void GranularWaveformDisplay::setSample(
     std::shared_ptr<const GranularOsc::SampleData> newSample, juce::String newName)
 {
     sample = std::move(newSample);
     sampleName = newName.isNotEmpty() ? std::move(newName) : "SAMPLE";
+    repaint();
+}
+
+void GranularWaveformDisplay::setSecondarySample(
+    std::shared_ptr<const GranularOsc::SampleData> newSample, juce::String newName)
+{
+    secondarySample = std::move(newSample);
+    secondarySampleName = std::move(newName);
     repaint();
 }
 
@@ -111,6 +139,31 @@ void GranularWaveformDisplay::paint(juce::Graphics& g)
         g.strokePath(waveform, juce::PathStrokeType(1.f));
     }
 
+    if (secondarySample != nullptr && graph.getWidth() > 1.f)
+    {
+        juce::Path waveform;
+        const int columns = juce::jmax(1, juce::roundToInt(graph.getWidth()));
+        for (int x = 0; x < columns; ++x)
+        {
+            const int first = x * GranularOsc::kSourceSamples / columns;
+            const int last = juce::jmax(first + 1,
+                (x + 1) * GranularOsc::kSourceSamples / columns);
+            float lo = 1.f, hi = -1.f;
+            for (int i = first; i < juce::jmin(last, GranularOsc::kSourceSamples); ++i)
+            {
+                lo = juce::jmin(lo, (*secondarySample)[(size_t)i]);
+                hi = juce::jmax(hi, (*secondarySample)[(size_t)i]);
+            }
+            const float px = graph.getX() + (float)x;
+            waveform.startNewSubPath(
+                px, graph.getCentreY() - hi * graph.getHeight() * 0.45f);
+            waveform.lineTo(
+                px, graph.getCentreY() - lo * graph.getHeight() * 0.45f);
+        }
+        g.setColour(juce::Colours::magenta.withAlpha(0.42f));
+        g.strokePath(waveform, juce::PathStrokeType(0.8f));
+    }
+
     const float regionX = graph.getX() + graph.getWidth() * regionStart;
     const float regionRight = graph.getX() + graph.getWidth() * regionEnd;
     g.setColour(juce::Colours::black.withAlpha(0.48f));
@@ -150,6 +203,23 @@ void GranularWaveformDisplay::paint(juce::Graphics& g)
         g.drawVerticalLine(juce::roundToInt(
                                graph.getX() + graph.getWidth() * boundaries[(size_t)i]),
                            graph.getY(), graph.getBottom());
+
+    for (int i = 0; i < visualSnapshot.count; ++i)
+    {
+        const auto index = (size_t)i;
+        const float x = graph.getX()
+            + graph.getWidth() * visualSnapshot.position[index];
+        const float y = graph.getCentreY()
+            + visualSnapshot.pan[index] * graph.getHeight() * 0.32f;
+        const float life = 1.f - visualSnapshot.progress[index];
+        const float radius = 1.5f + 2.5f * life;
+        g.setColour(accent.brighter(0.35f).withAlpha(0.25f + 0.7f * life));
+        g.fillEllipse(x - radius, y - radius, radius * 2.f, radius * 2.f);
+        g.setColour(juce::Colours::white.withAlpha(0.3f + 0.5f * life));
+        const float direction = visualSnapshot.reverse[index] ? -1.f : 1.f;
+        g.drawLine(x - direction * radius, y,
+                   x + direction * radius, y, 0.7f);
+    }
 
     g.setColour(accent.withAlpha(0.75f));
     g.setFont(8.f);
@@ -537,7 +607,8 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
                    int terrainSlotIndex,
                    GranularImportCallback granularImportCallback,
                    int granularSlotIndex,
-                   GranularCaptureCallback granularCaptureCallback)
+                   GranularCaptureCallback granularCaptureCallback,
+                   GranularVisualCallback granularVisualCallback)
     : apvts(a),
       oscId(id),
       label(lbl),
@@ -546,7 +617,8 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
       terrainIndex(terrainSlotIndex),
       granularImport(std::move(granularImportCallback)),
       granularIndex(granularSlotIndex),
-      granularCapture(std::move(granularCaptureCallback))
+      granularCapture(std::move(granularCaptureCallback)),
+      granularVisual(std::move(granularVisualCallback))
 {
     titleLabel.setText(lbl, juce::dontSendNotification);
     IndustrialTheme::styleTitle(titleLabel, accent, 14.f);
@@ -661,6 +733,11 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         numExtraSliders = 20;
 
         granularWaveform = std::make_unique<GranularWaveformDisplay>(accent);
+        if (granularVisual && granularIndex >= 0)
+            granularWaveform->setSnapshotProvider([this]
+            {
+                return granularVisual(granularIndex);
+            });
         addAndMakeVisible(*granularWaveform);
         const char* regionIds[] = {
             "region_start", "region_end", "slice_count", "slice_index", "root_note" };
@@ -725,7 +802,7 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
         {
             const int index = sampleBrowserBox.getSelectedItemIndex();
             if (index >= 0 && index < (int)sampleBrowserFiles.size())
-                importGranularSampleFile(sampleBrowserFiles[(size_t)index]);
+                importGranularSampleFile(sampleBrowserFiles[(size_t)index], 0);
         };
         addAndMakeVisible(sampleBrowserBox);
         rescanSamplesButton.setTooltip("Rescan Music/GLIESE_710/Samples");
@@ -771,14 +848,46 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
             apvts, pfx + "pitch_scale", pitchScaleBox);
         pitchScaleRootAtt = std::make_unique<CAtt>(
             apvts, pfx + "pitch_scale_root", pitchScaleRootBox);
+        directionModeBox.addItemList(
+            { "PROB","FWD","REV","ALT","PATTERN" }, 1);
+        directionLengthBox.addItemList(
+            { "1","2","3","4","5","6","7","8" }, 1);
+        for (auto* box : { &directionModeBox, &directionLengthBox })
+        {
+            IndustrialTheme::styleCombo(*box, accent);
+            addAndMakeVisible(*box);
+        }
+        directionModeBox.setTooltip("Grain playback direction behavior");
+        directionLengthBox.setTooltip("Active direction-pattern length");
+        directionModeAtt = std::make_unique<CAtt>(
+            apvts, pfx + "direction_mode", directionModeBox);
+        directionLengthAtt = std::make_unique<CAtt>(
+            apvts, pfx + "direction_length", directionLengthBox);
+        for (int step = 0; step < 8; ++step)
+        {
+            auto& button = directionStepButtons[(size_t)step];
+            button.setButtonText(juce::String(step + 1));
+            button.setTooltip("Direction step " + juce::String(step + 1)
+                              + ": off=forward, on=reverse");
+            button.setColour(juce::ToggleButton::textColourId, accent);
+            button.setColour(juce::ToggleButton::tickColourId, accent);
+            addAndMakeVisible(button);
+            directionStepAtts[(size_t)step] = std::make_unique<BAtt>(
+                apvts, pfx + "direction_step" + juce::String(step + 1), button);
+        }
         refreshGranularSampleBrowser();
         hasGranularImportButton = granularImport != nullptr && granularIndex >= 0;
         if (hasGranularImportButton)
         {
             importSampleButton.setTooltip("Load or drop a WAV, AIFF, FLAC, or OGG sample");
             IndustrialTheme::styleButton(importSampleButton, accent);
-            importSampleButton.onClick = [this] { launchGranularImportChooser(); };
+            importSampleButton.setButtonText("LOAD A");
+            importSampleButton.onClick = [this] { launchGranularImportChooser(0); };
             addAndMakeVisible(importSampleButton);
+            importSampleBButton.setTooltip("Load the granular B-layer sample");
+            IndustrialTheme::styleButton(importSampleBButton, accent);
+            importSampleBButton.onClick = [this] { launchGranularImportChooser(1); };
+            addAndMakeVisible(importSampleBButton);
             captureSampleButton.setTooltip(
                 "Freeze the most recent eight seconds from the plugin input");
             IndustrialTheme::styleButton(captureSampleButton, accent);
@@ -799,6 +908,30 @@ OscPanel::OscPanel(juce::AudioProcessorValueTreeState& a, const juce::String& id
             };
             addAndMakeVisible(captureSampleButton);
         }
+
+        setupSlider(layerMorphSlider, "Granular A/B Layer Morph");
+        layerMorphSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+        layerMorphSlider.setTextBoxStyle(
+            juce::Slider::TextBoxRight, false, 42, 16);
+        layerMorphAtt = std::make_unique<Att>(
+            apvts, pfx + "layer_morph", layerMorphSlider);
+        layerMorphLabel.setText("A/B MORPH", juce::dontSendNotification);
+        IndustrialTheme::styleLabel(layerMorphLabel, accent, 8.f);
+        addAndMakeVisible(layerMorphLabel);
+
+        granularPageBox.addItemList(
+            { "SOURCE", "CLOUD", "SEQUENCE", "BODY", "SCENES" }, 1);
+        granularPageBox.setSelectedItemIndex(0, juce::dontSendNotification);
+        granularPageBox.setTooltip("Granular control section");
+        IndustrialTheme::styleCombo(granularPageBox, accent);
+        granularPageBox.onChange = [this]
+        {
+            granularPage = juce::jmax(0, granularPageBox.getSelectedItemIndex());
+            updateGranularPageVisibility();
+            resized();
+        };
+        addAndMakeVisible(granularPageBox);
+        updateGranularPageVisibility();
     }
     else if (oscId.startsWith("terrain"))
     {
@@ -1132,7 +1265,7 @@ void OscPanel::refreshTerrainDisplay()
     terrainDisplay->setScanState(s);
 }
 
-void OscPanel::launchGranularImportChooser()
+void OscPanel::launchGranularImportChooser(int layer)
 {
     if (!granularImport || granularIndex < 0)
         return;
@@ -1145,10 +1278,10 @@ void OscPanel::launchGranularImportChooser()
     auto safeThis = juce::Component::SafePointer<OscPanel>(this);
     chooser->launchAsync(juce::FileBrowserComponent::openMode
                            | juce::FileBrowserComponent::canSelectFiles,
-        [safeThis, chooser](const juce::FileChooser& fc)
+        [safeThis, chooser, layer](const juce::FileChooser& fc)
         {
             if (safeThis != nullptr && fc.getResult().existsAsFile())
-                safeThis->importGranularSampleFile(fc.getResult());
+                safeThis->importGranularSampleFile(fc.getResult(), layer);
         });
 }
 
@@ -1249,15 +1382,15 @@ void OscPanel::recallGranularScene()
     saveGranularSceneButton.setButtonText("SAVE");
 }
 
-void OscPanel::importGranularSampleFile(const juce::File& file)
+void OscPanel::importGranularSampleFile(const juce::File& file, int layer)
 {
     if (!granularImport || granularIndex < 0 || !file.existsAsFile()
         || !isSupportedGranularAudioFile(file))
         return;
 
-    importSampleButton.setButtonText("LOADING...");
+    (layer == 1 ? importSampleBButton : importSampleButton).setButtonText("LOADING...");
     auto safeThis = juce::Component::SafePointer<OscPanel>(this);
-    sampleLoadPool.addJob(std::function<void()>([safeThis, file]
+    sampleLoadPool.addJob(std::function<void()>([safeThis, file, layer]
     {
         juce::AudioFormatManager formats;
         formats.registerBasicFormats();
@@ -1285,19 +1418,29 @@ void OscPanel::importGranularSampleFile(const juce::File& file)
             }
         }
 
-        juce::MessageManager::callAsync([safeThis, data, name = file.getFileNameWithoutExtension()]
+        juce::MessageManager::callAsync(
+            [safeThis, data, name = file.getFileNameWithoutExtension(), layer]
         {
             if (safeThis == nullptr)
                 return;
             if (data != nullptr)
             {
-                safeThis->granularImport(safeThis->granularIndex, data);
-                safeThis->granularWaveform->setSample(data, name);
-                safeThis->importSampleButton.setButtonText("SAMPLE LOADED");
+                safeThis->granularImport(safeThis->granularIndex, layer, data);
+                if (layer == 1)
+                {
+                    safeThis->granularWaveform->setSecondarySample(data, name);
+                    safeThis->importSampleBButton.setButtonText("B LOADED");
+                }
+                else
+                {
+                    safeThis->granularWaveform->setSample(data, name);
+                    safeThis->importSampleButton.setButtonText("A LOADED");
+                }
             }
             else
             {
-                safeThis->importSampleButton.setButtonText("LOAD FAILED");
+                (layer == 1 ? safeThis->importSampleBButton
+                            : safeThis->importSampleButton).setButtonText("LOAD FAILED");
             }
         });
     }));
@@ -1374,7 +1517,7 @@ void OscPanel::filesDropped(const juce::StringArray& files, int, int)
         if (hasGranularImportButton && isSupportedGranularAudioFile(file)
             && file.existsAsFile())
         {
-            importGranularSampleFile(file);
+            importGranularSampleFile(file, 0);
             return;
         }
         if (isSupportedTerrainHeightmapFile(file) && file.existsAsFile())
@@ -1382,6 +1525,206 @@ void OscPanel::filesDropped(const juce::StringArray& files, int, int)
             importTerrainHeightmapFile(file);
             return;
         }
+    }
+}
+
+void OscPanel::updateGranularPageVisibility()
+{
+    if (!oscId.startsWith("grain"))
+        return;
+
+    const bool sourcePage = granularPage == 0;
+    const bool cloudPage = granularPage == 1;
+    const bool sequencePage = granularPage == 2;
+    const bool bodyPage = granularPage == 3;
+    const bool scenesPage = granularPage == 4;
+
+    auto set = [](juce::Component& component, bool visible)
+    {
+        component.setVisible(visible);
+    };
+
+    set(*granularWaveform, sourcePage || scenesPage);
+    set(importSampleButton, sourcePage && hasGranularImportButton);
+    set(importSampleBButton, sourcePage && hasGranularImportButton);
+    set(captureSampleButton, sourcePage && hasGranularImportButton);
+    set(sampleBrowserBox, sourcePage);
+    set(rescanSamplesButton, sourcePage);
+    set(layerMorphSlider, sourcePage);
+    set(layerMorphLabel, sourcePage);
+
+    for (int i = 0; i < 5; ++i)
+    {
+        set(regionSliders[(size_t)i], sourcePage || scenesPage);
+        set(regionLabels[(size_t)i], sourcePage || scenesPage);
+    }
+    set(transientSlicesButton, sourcePage || scenesPage);
+    set(granularSceneBox, scenesPage);
+    set(saveGranularSceneButton, scenesPage);
+
+    set(densitySyncButton, sequencePage);
+    set(densityDivisionBox, sequencePage);
+    set(pitchQuantizeButton, sequencePage);
+    set(pitchCloudBox, sequencePage);
+    set(pitchScaleBox, sequencePage);
+    set(pitchScaleRootBox, sequencePage);
+    set(directionModeBox, sequencePage);
+    set(directionLengthBox, sequencePage);
+    for (auto& button : directionStepButtons)
+        set(button, sequencePage);
+
+    std::array<juce::Slider*, 20> sliders {
+        &extra1, &extra2, &extra3, &extra4, &extra5,
+        &extra6, &extra7, &extra8, &extra9, &extra10,
+        &extra11, &extra12, &extra13, &extra14, &extra15,
+        &extra16, &extra17, &extra18, &extra19, &extra20
+    };
+    for (int i = 0; i < 20; ++i)
+    {
+        const bool visible = (cloudPage && i < 10) || (bodyPage && i >= 10);
+        set(*sliders[(size_t)i], visible);
+        set(extraLabels[(size_t)i], visible);
+    }
+}
+
+void OscPanel::layoutGranularPage(juce::Rectangle<int> area)
+{
+    const bool compactHeight = getHeight() < 420;
+    auto portion = [](juce::Rectangle<int> r, int i, int n)
+    {
+        const int x = r.getX() + r.getWidth() * i / n;
+        const int x2 = r.getX() + r.getWidth() * (i + 1) / n;
+        return r.withX(x).withWidth(x2 - x);
+    };
+    auto layoutKnobGrid = [&](int first, int count)
+    {
+        std::array<juce::Slider*, 20> sliders {
+            &extra1, &extra2, &extra3, &extra4, &extra5,
+            &extra6, &extra7, &extra8, &extra9, &extra10,
+            &extra11, &extra12, &extra13, &extra14, &extra15,
+            &extra16, &extra17, &extra18, &extra19, &extra20
+        };
+        constexpr int columns = 5;
+        const int rows = (count + columns - 1) / columns;
+        const int sliderHeight = juce::jlimit(
+            38, 70, (area.getHeight() - rows * 12) / juce::jmax(1, rows));
+        for (int row = 0; row < rows; ++row)
+        {
+            auto labels = area.removeFromTop(12);
+            auto knobs = area.removeFromTop(sliderHeight);
+            const int rowCount = juce::jmin(columns, count - row * columns);
+            for (int column = 0; column < rowCount; ++column)
+            {
+                const int index = first + row * columns + column;
+                extraLabels[(size_t)index].setBounds(
+                    portion(labels, column, rowCount));
+                sliders[(size_t)index]->setBounds(
+                    portion(knobs, column, rowCount).reduced(1));
+            }
+            area.removeFromTop(2);
+        }
+    };
+
+    const int adsrHeight = compactHeight
+        ? 48
+        : juce::jlimit(70, 104, getHeight() / 5);
+    auto adsrArea = area.removeFromBottom(adsrHeight);
+    area.removeFromBottom(compactHeight ? 1 : 4);
+
+    if (granularPage == 0)
+    {
+        auto actions = area.removeFromTop(compactHeight ? 20 : 23);
+        importSampleButton.setBounds(portion(actions, 0, 3).reduced(1));
+        importSampleBButton.setBounds(portion(actions, 1, 3).reduced(1));
+        captureSampleButton.setBounds(portion(actions, 2, 3).reduced(1));
+        area.removeFromTop(compactHeight ? 1 : 3);
+
+        auto browser = area.removeFromTop(compactHeight ? 20 : 23);
+        rescanSamplesButton.setBounds(browser.removeFromRight(46).reduced(1));
+        sampleBrowserBox.setBounds(browser.reduced(1));
+        area.removeFromTop(compactHeight ? 1 : 3);
+
+        const int waveformHeight = compactHeight
+            ? juce::jlimit(32, 46, area.getHeight() / 3)
+            : juce::jlimit(58, 104, area.getHeight() / 3);
+        granularWaveform->setBounds(area.removeFromTop(waveformHeight).reduced(1));
+        area.removeFromTop(compactHeight ? 1 : 3);
+
+        auto labels = area.removeFromTop(compactHeight ? 9 : 11);
+        auto controls = area.removeFromTop(compactHeight ? 36 : 48);
+        for (int i = 0; i < 5; ++i)
+        {
+            regionLabels[(size_t)i].setBounds(portion(labels, i, 6));
+            regionSliders[(size_t)i].setBounds(portion(controls, i, 6).reduced(1));
+        }
+        transientSlicesButton.setBounds(
+            portion(controls, 5, 6).reduced(2, compactHeight ? 5 : 9));
+        area.removeFromTop(compactHeight ? 1 : 2);
+
+        auto morph = area.removeFromTop(compactHeight ? 20 : 24);
+        layerMorphLabel.setBounds(morph.removeFromLeft(60));
+        layerMorphSlider.setBounds(morph.reduced(1));
+    }
+    else if (granularPage == 1)
+    {
+        layoutKnobGrid(0, 10);
+    }
+    else if (granularPage == 2)
+    {
+        auto tempo = area.removeFromTop(24);
+        densitySyncButton.setBounds(tempo.removeFromLeft(58).reduced(1));
+        densityDivisionBox.setBounds(tempo.removeFromLeft(84).reduced(1));
+        area.removeFromTop(5);
+
+        auto pitch = area.removeFromTop(24);
+        pitchQuantizeButton.setBounds(pitch.removeFromLeft(52).reduced(1));
+        pitchScaleRootBox.setBounds(pitch.removeFromLeft(52).reduced(1));
+        pitchScaleBox.setBounds(pitch.removeFromLeft(
+            juce::jmax(70, pitch.getWidth() / 2)).reduced(1));
+        pitchCloudBox.setBounds(pitch.reduced(1));
+        area.removeFromTop(5);
+
+        auto direction = area.removeFromTop(25);
+        directionModeBox.setBounds(direction.removeFromLeft(82).reduced(1));
+        directionLengthBox.setBounds(direction.removeFromLeft(44).reduced(1));
+        for (int step = 0; step < 8; ++step)
+            directionStepButtons[(size_t)step].setBounds(
+                portion(direction, step, 8).reduced(1));
+    }
+    else if (granularPage == 3)
+    {
+        layoutKnobGrid(10, 10);
+    }
+    else
+    {
+        auto scene = area.removeFromTop(compactHeight ? 21 : 26);
+        granularSceneBox.setBounds(scene.removeFromLeft(
+            juce::jmax(90, scene.getWidth() * 2 / 3)).reduced(1));
+        saveGranularSceneButton.setBounds(scene.reduced(1));
+        area.removeFromTop(compactHeight ? 1 : 4);
+        const int waveformHeight = compactHeight
+            ? juce::jlimit(34, 46, area.getHeight() / 3)
+            : juce::jlimit(52, 84, area.getHeight() / 3);
+        granularWaveform->setBounds(area.removeFromTop(waveformHeight).reduced(1));
+        area.removeFromTop(compactHeight ? 1 : 3);
+        auto labels = area.removeFromTop(compactHeight ? 9 : 11);
+        auto controls = area.removeFromTop(compactHeight ? 36 : 50);
+        for (int i = 0; i < 5; ++i)
+        {
+            regionLabels[(size_t)i].setBounds(portion(labels, i, 6));
+            regionSliders[(size_t)i].setBounds(portion(controls, i, 6).reduced(1));
+        }
+        transientSlicesButton.setBounds(
+            portion(controls, 5, 6).reduced(2, compactHeight ? 5 : 9));
+    }
+
+    juce::Slider* adsrSliders[] = { &adsrA, &adsrD, &adsrS, &adsrR };
+    for (int i = 0; i < 4; ++i)
+    {
+        auto column = portion(adsrArea, i, 4).reduced(2, 0);
+        adsrLabels[(size_t)i].setBounds(
+            column.removeFromTop(compactHeight ? 9 : 13));
+        adsrSliders[i]->setBounds(column);
     }
 }
 
@@ -1442,6 +1785,15 @@ void OscPanel::resized()
         area.removeFromTop(4);
     }
 
+    if (oscId.startsWith("grain"))
+    {
+        granularPageBox.setBounds(area.removeFromTop(24).reduced(1, 0));
+        area.removeFromTop(4);
+        updateGranularPageVisibility();
+        layoutGranularPage(area);
+        return;
+    }
+
     if (hasRetrigButton)
     {
         auto rr = area.removeFromTop(22);
@@ -1461,8 +1813,9 @@ void OscPanel::resized()
     {
         auto actions = area.removeFromTop(22);
         auto loadActions = portion(actions, 0, 2);
-        importSampleButton.setBounds(portion(loadActions, 0, 2).reduced(1, 0));
-        captureSampleButton.setBounds(portion(loadActions, 1, 2).reduced(1, 0));
+        importSampleButton.setBounds(portion(loadActions, 0, 3).reduced(1, 0));
+        importSampleBButton.setBounds(portion(loadActions, 1, 3).reduced(1, 0));
+        captureSampleButton.setBounds(portion(loadActions, 2, 3).reduced(1, 0));
         auto sceneActions = portion(actions, 1, 2);
         granularSceneBox.setBounds(sceneActions.removeFromLeft(
             juce::roundToInt((float)sceneActions.getWidth() * 0.64f)).reduced(1, 0));
@@ -1482,6 +1835,20 @@ void OscPanel::resized()
         pitchScaleBox.setBounds(pitchCloud.removeFromLeft(
             juce::jmax(64, pitchCloud.getWidth() / 2)).reduced(1, 0));
         pitchCloudBox.setBounds(pitchCloud.reduced(1, 0));
+        area.removeFromTop(2);
+
+        auto direction = area.removeFromTop(22);
+        directionModeBox.setBounds(direction.removeFromLeft(76).reduced(1, 0));
+        directionLengthBox.setBounds(direction.removeFromLeft(42).reduced(1, 0));
+        for (int step = 0; step < 8; ++step)
+            directionStepButtons[(size_t)step].setBounds(
+                portion(direction, step, 8).reduced(1, 1));
+        area.removeFromTop(2);
+
+        auto morph = area.removeFromTop(42);
+        layerMorphLabel.setBounds(morph.removeFromLeft(54));
+        layerMorphSlider.setBounds(morph.removeFromLeft(
+            juce::jmin(74, morph.getWidth())).reduced(1));
         area.removeFromTop(2);
     }
 

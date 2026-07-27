@@ -292,6 +292,9 @@ GLIESE_710/
 - [x] True stereo granular assets, decoder path, grain reads, and preset payloads
 - [x] Host-tempo-synced granular density with straight and triplet divisions
 - [x] Scale-quantized granular pitch clouds with selectable key and spread
+- [x] Deterministic granular direction modes and eight-step direction patterns
+- [x] Lock-free live grain-cloud telemetry and animated waveform overlay
+- [x] Dual-layer granular sample loading, preset persistence, and continuous A/B morphing
 
 ---
 

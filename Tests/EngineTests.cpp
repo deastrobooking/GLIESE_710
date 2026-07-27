@@ -1927,6 +1927,115 @@ TEST_CASE("GranularOsc quantizes pitch clouds to key and scale", "[granular]")
             }
 }
 
+TEST_CASE("GranularOsc direction modes sequence deterministically", "[granular]")
+{
+    for (int step = 0; step < 16; ++step)
+    {
+        REQUIRE_FALSE(GranularOsc::directionForGrain(
+            1, 0xff, 8, step, 0.f, 1.f));
+        REQUIRE(GranularOsc::directionForGrain(
+            2, 0x00, 8, step, 1.f, 0.f));
+        REQUIRE(GranularOsc::directionForGrain(
+            3, 0x00, 8, step, 0.f, 0.f) == ((step & 1) != 0));
+    }
+
+    constexpr uint8_t pattern = 0b00101101;
+    for (int step = 0; step < 24; ++step)
+        REQUIRE(GranularOsc::directionForGrain(
+            4, pattern, 6, step, 0.f, 0.f)
+            == ((pattern & (uint8_t)(1u << (step % 6))) != 0));
+
+    REQUIRE(GranularOsc::directionForGrain(
+        0, 0, 8, 0, 0.2f, 0.25f));
+    REQUIRE_FALSE(GranularOsc::directionForGrain(
+        0, 0, 8, 0, 0.3f, 0.25f));
+}
+
+TEST_CASE("GranularOsc publishes bounded lock-free visual telemetry", "[granular]")
+{
+    GranularOsc osc;
+    osc.prepare(48000.0);
+    osc.setFrequency(220.f);
+    GranularOsc::Params params;
+    params.density = 1200.f;
+    params.sizeMs = 250.f;
+    params.panSpread = 1.f;
+    params.directionMode = 2;
+    osc.setParams(params);
+    osc.noteOn(60, 1.f);
+
+    for (int i = 0; i < 512; ++i)
+        (void)osc.processSample();
+
+    const auto snapshot = osc.getVisualSnapshot();
+    REQUIRE(snapshot.count > 0);
+    REQUIRE(snapshot.count <= GranularOsc::kMaxVisualGrains);
+    for (int i = 0; i < snapshot.count; ++i)
+    {
+        REQUIRE(snapshot.position[(size_t)i] >= 0.f);
+        REQUIRE(snapshot.position[(size_t)i] <= 1.f);
+        REQUIRE(snapshot.progress[(size_t)i] >= 0.f);
+        REQUIRE(snapshot.progress[(size_t)i] <= 1.f);
+        REQUIRE(snapshot.pan[(size_t)i] >= -1.f);
+        REQUIRE(snapshot.pan[(size_t)i] <= 1.f);
+        REQUIRE(snapshot.reverse[(size_t)i]);
+    }
+}
+
+TEST_CASE("GranularOsc dual layers morph continuously between sample assets", "[granular]")
+{
+    auto layerA = std::make_shared<GranularOsc::SampleData>();
+    auto layerB = std::make_shared<GranularOsc::SampleData>();
+    for (int frame = 0; frame < GranularOsc::kTableFrames; ++frame)
+        for (int i = 0; i < GranularOsc::kFrameSamples; ++i)
+        {
+            const auto index = (size_t)frame * GranularOsc::kFrameSamples + (size_t)i;
+            const float phase = juce::MathConstants<float>::twoPi
+                * (float)i / GranularOsc::kFrameSamples;
+            layerA->samples[index] = layerA->samplesR[index] = 0.7f * std::sin(phase * 3.f);
+            layerB->samples[index] = layerB->samplesR[index] = 0.7f * std::sin(phase * 11.f);
+        }
+
+    GranularOsc a;
+    GranularOsc b;
+    GranularOsc midpoint;
+    for (auto* osc : { &a, &b, &midpoint })
+    {
+        osc->setLayerSampleData(0, layerA);
+        osc->setLayerSampleData(1, layerB);
+        osc->prepare(48000.0);
+        osc->setFrequency(220.f);
+    }
+
+    GranularOsc::Params params;
+    params.density = 300.f;
+    params.sizeMs = 120.f;
+    params.spray = 0.f;
+    params.jitter = 0.f;
+    params.panSpread = 0.f;
+    params.layerMorph = 0.f;
+    a.setParams(params);
+    params.layerMorph = 1.f;
+    b.setParams(params);
+    params.layerMorph = 0.5f;
+    midpoint.setParams(params);
+    a.noteOn(60, 1.f);
+    b.noteOn(60, 1.f);
+    midpoint.noteOn(60, 1.f);
+
+    double endpointDifference = 0.0;
+    for (int i = 0; i < 4096; ++i)
+    {
+        const auto av = a.processSample();
+        const auto bv = b.processSample();
+        const auto mv = midpoint.processSample();
+        endpointDifference += std::abs(av.first - bv.first);
+        REQUIRE(mv.first == Approx(0.5f * (av.first + bv.first)).margin(1.0e-5f));
+        REQUIRE(mv.second == Approx(0.5f * (av.second + bv.second)).margin(1.0e-5f));
+    }
+    REQUIRE(endpointDifference > 1.0);
+}
+
 TEST_CASE("GranularOsc position updates held cloud without retrigger", "[granular]")
 {
     GranularOsc steady;

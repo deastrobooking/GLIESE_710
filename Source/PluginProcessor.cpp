@@ -216,6 +216,12 @@ static APVTS::ParameterLayout buildLayout()
         addFloat(prefix + "jitter",   label + " Jitter",   0.0f, 1.0f, 0.04f);
         addFloat(prefix + "pan",      label + " Pan Spread", 0.0f, 1.0f, 0.7f);
         addFloat(prefix + "reverse",  label + " Reverse",  0.0f, 1.0f, 0.0f);
+        addChoice(prefix + "direction_mode", label + " Direction Mode",
+                  {"Probability","Forward","Reverse","Alternate","Pattern"}, 0);
+        addInt(prefix + "direction_length", label + " Direction Length", 1, 8, 8);
+        for (int step = 0; step < 8; ++step)
+            addBool(prefix + "direction_step" + juce::String(step + 1),
+                    label + " Direction Step " + juce::String(step + 1), false);
         addFloat(prefix + "scan",     label + " Scan",    -1.0f, 1.0f, 0.0f);
         addFloat(prefix + "freeze",   label + " Freeze",   0.0f, 1.0f, 0.0f);
         addFloat(prefix + "region_start", label + " Region Start", 0.0f, 0.999f, 0.0f);
@@ -224,6 +230,7 @@ static APVTS::ParameterLayout buildLayout()
         addInt  (prefix + "slice_index",  label + " Slice Index",  0, 31, 0);
         addBool (prefix + "transient_slices", label + " Transient Slices", false);
         addInt  (prefix + "root_note", label + " Root Note", 0, 127, 60);
+        addFloat(prefix + "layer_morph", label + " Layer Morph", 0.0f, 1.0f, 0.0f);
         addChoice(prefix + "scene", label + " Scene",
                   {"Scene 1", "Scene 2", "Scene 3", "Scene 4"}, 0);
         for (int scene = 0; scene < 4; ++scene)
@@ -679,15 +686,17 @@ bool GLIESE710AudioProcessor::importTerrainHeightmap(int terrainIndex, const juc
 }
 
 void GLIESE710AudioProcessor::queueGranularSample(
-    int granularIndex, std::shared_ptr<const GranularOsc::SampleData> sample)
+    int granularIndex, int layer,
+    std::shared_ptr<const GranularOsc::SampleData> sample)
 {
-    if (granularIndex < 0 || granularIndex >= SynthVoice::kNumGranOscs || sample == nullptr)
+    if (granularIndex < 0 || granularIndex >= SynthVoice::kNumGranOscs
+        || layer < 0 || layer > 1 || sample == nullptr)
         return;
 
     const auto encoded = GranularOsc::serializeSampleData(*sample);
-    apvts.state.setProperty(granularStateProperty(granularIndex),
+    apvts.state.setProperty(granularStateProperty(granularIndex, layer),
                             encoded.toBase64Encoding(), nullptr);
-    synthEngine.queueGranularSample(granularIndex, std::move(sample));
+    synthEngine.queueGranularSample(granularIndex, layer, std::move(sample));
 }
 
 std::shared_ptr<const GranularOsc::SampleData>
@@ -720,7 +729,7 @@ GLIESE710AudioProcessor::captureGranularInput(int granularIndex, double seconds)
 
     auto sample = GranularOsc::createSampleData(
         left.data(), right.data(), (int)left.size());
-    queueGranularSample(granularIndex, sample);
+    queueGranularSample(granularIndex, 0, sample);
     return sample;
 }
 
@@ -729,9 +738,11 @@ juce::Identifier GLIESE710AudioProcessor::terrainStateProperty(int terrainIndex)
     return juce::Identifier("terrain_heightmap_" + juce::String(terrainIndex));
 }
 
-juce::Identifier GLIESE710AudioProcessor::granularStateProperty(int granularIndex)
+juce::Identifier GLIESE710AudioProcessor::granularStateProperty(
+    int granularIndex, int layer)
 {
-    return juce::Identifier("granular_sample_" + juce::String(granularIndex));
+    return juce::Identifier("granular_sample_" + juce::String(granularIndex)
+                            + (layer == 1 ? "_b" : "_a"));
 }
 
 void GLIESE710AudioProcessor::restoreExternalAssetsFromState()
@@ -744,15 +755,22 @@ void GLIESE710AudioProcessor::restoreGranularSamplesFromState()
 {
     for (int i = 0; i < SynthVoice::kNumGranOscs; ++i)
     {
-        const auto encoded = apvts.state[granularStateProperty(i)].toString();
-        if (encoded.isEmpty())
-            continue;
+        for (int layer = 0; layer < 2; ++layer)
+        {
+            auto encoded = apvts.state[granularStateProperty(i, layer)].toString();
+            if (encoded.isEmpty() && layer == 0)
+                encoded = apvts.state[
+                    juce::Identifier("granular_sample_" + juce::String(i))].toString();
+            if (encoded.isEmpty())
+                continue;
 
-        juce::MemoryBlock data;
-        if (!data.fromBase64Encoding(encoded))
-            continue;
-        if (auto sample = GranularOsc::deserializeSampleData(data.getData(), data.getSize()))
-            synthEngine.queueGranularSample(i, std::move(sample));
+            juce::MemoryBlock data;
+            if (!data.fromBase64Encoding(encoded))
+                continue;
+            if (auto sample = GranularOsc::deserializeSampleData(
+                    data.getData(), data.getSize()))
+                synthEngine.queueGranularSample(i, layer, std::move(sample));
+        }
     }
 }
 

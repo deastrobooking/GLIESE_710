@@ -405,10 +405,17 @@ void SynthVoice::setHostBPM(double bpm)
 }
 
 void SynthVoice::setGranularSampleData(
-    int index, std::shared_ptr<const GranularOsc::SampleData> sample)
+    int index, int layer, std::shared_ptr<const GranularOsc::SampleData> sample)
 {
     if (index >= 0 && index < kNumGranOscs)
-        granularOscs[(size_t)index].setSampleData(std::move(sample));
+        granularOscs[(size_t)index].setLayerSampleData(layer, std::move(sample));
+}
+
+GranularOsc::VisualSnapshot SynthVoice::getGranularVisualSnapshot(int index) const noexcept
+{
+    if (index < 0 || index >= kNumGranOscs)
+        return {};
+    return granularOscs[(size_t)index].getVisualSnapshot();
 }
 
 bool SynthVoice::setTerrainHeightmap(int index, const juce::Image& image)
@@ -582,6 +589,11 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.jitter      = get(pfx + "jitter");
         c.pan         = get(pfx + "pan");
         c.reverse     = get(pfx + "reverse");
+        c.directionMode = get(pfx + "direction_mode");
+        c.directionLength = get(pfx + "direction_length");
+        for (int step = 0; step < 8; ++step)
+            c.directionSteps[(size_t)step] = get(
+                pfx + "direction_step" + juce::String(step + 1));
         c.scan        = get(pfx + "scan");
         c.freeze      = get(pfx + "freeze");
         c.regionStart = get(pfx + "region_start");
@@ -590,6 +602,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
         c.sliceIndex  = get(pfx + "slice_index");
         c.transientSlices = get(pfx + "transient_slices");
         c.rootNote     = get(pfx + "root_note");
+        c.layerMorph   = get(pfx + "layer_morph");
         c.bodyType    = get(pfx + "body_type");
         c.bodyRoot    = get(pfx + "body_root");
         c.bodySize    = get(pfx + "body_size");
@@ -1017,6 +1030,12 @@ void SynthVoice::syncParams()
         gp.jitter      = pF(cg.jitter, 0.04f);
         gp.panSpread   = pF(cg.pan, 0.7f);
         gp.reverseProb = pF(cg.reverse);
+        gp.directionMode = pI(cg.directionMode);
+        gp.directionLength = pI(cg.directionLength, 8);
+        gp.directionPattern = 0;
+        for (int step = 0; step < 8; ++step)
+            if (pB(cg.directionSteps[(size_t)step]))
+                gp.directionPattern |= (uint8_t)(1u << step);
         gp.scanSpeed   = pF(cg.scan);
         gp.freeze      = juce::jlimit(0.f, 1.f,
             pF(cg.freeze) + modDests.dests[(int)ModDest::Gran_Freeze]);
@@ -1026,6 +1045,7 @@ void SynthVoice::syncParams()
         gp.sliceIndex  = pI(cg.sliceIndex);
         gp.transientSlices = pB(cg.transientSlices);
         gp.rootNote     = pI(cg.rootNote, 60);
+        gp.layerMorph   = pF(cg.layerMorph);
         gp.bodyType    = static_cast<GranularOsc::BodyType>(pI(cg.bodyType));
         gp.bodyRootSemis = pF(cg.bodyRoot);
         gp.bodySize    = juce::jlimit(0.f, 1.f,
