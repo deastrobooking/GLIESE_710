@@ -8,7 +8,7 @@ if("${CMAKE_OSX_DEPLOYMENT_TARGET}" STREQUAL "")
         "Minimum supported macOS version" FORCE)
 endif()
 
-project(GLIESE_710 VERSION 0.1.0)
+project(GLIESE_710 VERSION 0.1.2)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
