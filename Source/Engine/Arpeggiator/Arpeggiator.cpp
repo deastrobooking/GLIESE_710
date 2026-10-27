@@ -161,7 +161,9 @@ Arpeggiator::Note Arpeggiator::nextNote()
     if (notes.empty()) return {};
 
     int totalSteps = (int)notes.size() * params.octaves;
-    arpIndex = juce::jlimit(0, totalSteps - 1, arpIndex);
+    const bool bounce = params.pattern == Pattern::UpDown || params.pattern == Pattern::DownUp;
+    const int cycleLength = bounce && totalSteps > 1 ? 2 * totalSteps - 2 : totalSteps;
+    arpIndex %= cycleLength;
 
     int noteIdx   = -1;
     int oct       = 0;

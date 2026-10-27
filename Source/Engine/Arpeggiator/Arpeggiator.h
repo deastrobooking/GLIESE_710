@@ -9,15 +9,15 @@ public:
 
     // arp_rate index values, in beats
     static constexpr float kRateBeats[] = {
-        1.f/32.f, 1.f/16.f, 1.f/8.f, 3.f/16.f,
-        0.25f, 3.f/8.f, 0.5f, 0.75f, 1.0f
+        1.f/8.f, 1.f/4.f, 1.f/2.f, 3.f/4.f,
+        1.0f, 1.5f, 2.0f, 3.0f, 4.0f
     };
     static constexpr int kNumRates = 9;
 
     struct Params
     {
         Pattern pattern = Pattern::Up;
-        int     rateIdx = 3;      // index into kRateBeats (default = 3/16 = dotted 8th)
+        int     rateIdx = 3;      // index into kRateBeats (default = dotted 8th)
         bool    sync    = true;
         int     octaves = 1;      // 1..4
         float   gate    = 0.8f;   // 0..1

@@ -34,6 +34,7 @@ void SynthEngine::reset()
     for (auto& v : voices) v.reset();
     modSequencer.reset();
     arp.reset();
+    previousArpOn = false;
     feedbackL = feedbackR = 0.f;
     ageSampleL = ageSampleR = 0.f;
     ageCounter = 0;
@@ -362,6 +363,12 @@ void SynthEngine::renderNextBlock(juce::AudioBuffer<float>& buffer,
     modSequencer.processBlock(numSamples);
 
     bool arpOn = pB(arpParams.on);
+    if (arpOn != previousArpOn)
+    {
+        allNotesOff();
+        arp.reset();
+        previousArpOn = arpOn;
+    }
 
     if (arpOn)
     {
@@ -504,4 +511,11 @@ bool SynthEngine::setTerrainHeightmap(int index, const juce::Image& image)
     for (size_t i = 1; i < voices.size(); ++i)
         voices[i].shareTerrainHeightmap(index, voices.front());
     return true;
+}
+
+void SynthEngine::resetTerrainHeightmap(int index)
+{
+    voices.front().resetTerrainHeightmap(index);
+    for (size_t i = 1; i < voices.size(); ++i)
+        voices[i].shareTerrainHeightmap(index, voices.front());
 }

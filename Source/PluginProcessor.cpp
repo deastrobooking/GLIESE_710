@@ -753,23 +753,25 @@ void GLIESE710AudioProcessor::restoreExternalAssetsFromState()
 
 void GLIESE710AudioProcessor::restoreGranularSamplesFromState()
 {
+    const auto defaultSample = GranularOsc::createSampleData(nullptr, 0);
     for (int i = 0; i < SynthVoice::kNumGranOscs; ++i)
     {
+        auto layerA = defaultSample;
         for (int layer = 0; layer < 2; ++layer)
         {
             auto encoded = apvts.state[granularStateProperty(i, layer)].toString();
             if (encoded.isEmpty() && layer == 0)
                 encoded = apvts.state[
                     juce::Identifier("granular_sample_" + juce::String(i))].toString();
-            if (encoded.isEmpty())
-                continue;
 
+            auto sample = layer == 0 ? defaultSample : layerA;
             juce::MemoryBlock data;
-            if (!data.fromBase64Encoding(encoded))
-                continue;
-            if (auto sample = GranularOsc::deserializeSampleData(
-                    data.getData(), data.getSize()))
-                synthEngine.queueGranularSample(i, layer, std::move(sample));
+            if (encoded.isNotEmpty() && data.fromBase64Encoding(encoded))
+                if (auto decoded = GranularOsc::deserializeSampleData(data.getData(), data.getSize()))
+                    sample = std::move(decoded);
+            if (layer == 0)
+                layerA = sample;
+            synthEngine.queueGranularSample(i, layer, std::move(sample));
         }
     }
 }
@@ -780,16 +782,16 @@ void GLIESE710AudioProcessor::restoreTerrainHeightmapsFromState()
     for (int i = 0; i < SynthVoice::kNumTerrainOscs; ++i)
     {
         const auto encoded = apvts.state[terrainStateProperty(i)].toString();
-        if (encoded.isEmpty())
-            continue;
-
         juce::MemoryBlock data;
-        if (!data.fromBase64Encoding(encoded))
-            continue;
-
-        auto image = juce::ImageFileFormat::loadFrom(data.getData(), data.getSize());
-        if (image.isValid())
-            synthEngine.setTerrainHeightmap(i, image);
+        bool restored = false;
+        if (encoded.isNotEmpty() && data.fromBase64Encoding(encoded))
+        {
+            const auto image = juce::ImageFileFormat::loadFrom(data.getData(), data.getSize());
+            if (image.isValid())
+                restored = synthEngine.setTerrainHeightmap(i, image);
+        }
+        if (!restored)
+            synthEngine.resetTerrainHeightmap(i);
     }
 }
 
@@ -811,7 +813,7 @@ void GLIESE710AudioProcessor::setStateInformation(const void* data, int sizeInBy
     if (auto xml = getXmlFromBinary(data, sizeInBytes))
     {
         auto tree = juce::ValueTree::fromXml(*xml);
-        if (tree.isValid())
+        if (tree.hasType(apvts.state.getType()))
         {
             apvts.replaceState(tree);
             restoreExternalAssetsFromState();

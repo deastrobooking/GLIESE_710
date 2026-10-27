@@ -39,17 +39,17 @@ Incoming MIDI
 
 Step length is controlled by `arp_rate` (index into a fixed rate table) and `arp_sync`.
 
-| Index | Beat fraction | Musical value |
+| Index | Quarter-note beats | Musical value |
 |---|---|---|
-| 0 | 1/32 | Thirty-second note |
-| 1 | 1/16 | Sixteenth note |
-| 2 | 1/8 | Eighth note |
-| 3 | 3/16 | Dotted eighth (default) |
-| 4 | 1/4 | Quarter note |
-| 5 | 3/8 | Dotted quarter |
-| 6 | 1/2 | Half note |
-| 7 | 3/4 | Dotted half |
-| 8 | 1 bar | Whole note |
+| 0 | 1/8 | Thirty-second note |
+| 1 | 1/4 | Sixteenth note |
+| 2 | 1/2 | Eighth note |
+| 3 | 3/4 | Dotted eighth (default) |
+| 4 | 1 | Quarter note |
+| 5 | 1.5 | Dotted quarter |
+| 6 | 2 | Half note |
+| 7 | 3 | Dotted half |
+| 8 | 4 | Whole note |
 
 When `arp_sync = true`, tempo is taken from the DAW's play-head BPM (forwarded by `GLIESE710AudioProcessor::processBlock`). When false, the arpeggiator uses an internal 120 BPM clock.
 
@@ -115,3 +115,9 @@ Use `LFO → Arp_Gate` for rhythmic accents, or `Macro → Arp_Gate` for a perfo
 - Timing is tracked in fractional samples (`stepPhase`) to avoid drift across blocks.
 - When host sync is off, the arpeggiator runs at 120 BPM. When sync is on and the host has not supplied a new BPM, it continues at the last known BPM.
 - `RandomLatch` fixes a shuffled order until the active note list changes, giving a consistent but non-sequential pattern.
+
+## Compatibility notes
+
+The rate table uses quarter-note beats, matching host BPM. Earlier builds interpreted whole-note fractions as beats and played four times too fast. Parameter IDs and choice ordering are unchanged; existing patches now follow the displayed musical rate.
+
+Changing `arp_on` releases sounding voices and clears held/latched arpeggiator notes. Press new keys after switching modes. This prevents stuck notes and stale latch playback.

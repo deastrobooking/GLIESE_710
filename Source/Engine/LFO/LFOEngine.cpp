@@ -27,7 +27,7 @@ void LFOEngine::noteOn()
 {
     for (size_t i = 0; i < params.size(); ++i)
         if (params[i].retrig)
-            phases[i] = params[i].phase;
+            phases[i] = 0.f;
 }
 
 void LFOEngine::reset()

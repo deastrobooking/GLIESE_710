@@ -101,29 +101,33 @@ LFOPanel::LFOPanel(juce::AudioProcessorValueTreeState& a) : apvts(a)
         bool synced = apvts.getRawParameterValue(p + "sync")->load() > 0.5f;
         updateModeVisibility(i, synced);
 
-        // Listen for mode changes so we can swap visible controls
-        apvts.addParameterListener(p + "sync", this);
+        // Poll atomics on the message thread, including changes from host automation.
+        syncParams[(size_t)i] = apvts.getRawParameterValue(p + "sync");
+        syncModes[(size_t)i] = synced;
     }
+    startTimerHz(30);
 }
 
 LFOPanel::~LFOPanel()
 {
-    for (int i = 0; i < 4; ++i)
-        apvts.removeParameterListener("lfo" + juce::String(i + 1) + "_sync", this);
+    stopTimer();
 }
 
-void LFOPanel::parameterChanged(const juce::String& paramID, float newValue)
+void LFOPanel::timerCallback()
 {
-    // Called on message thread — safe to update UI
-    for (int i = 0; i < 4; ++i)
+    bool changed = false;
+    for (size_t i = 0; i < syncParams.size(); ++i)
     {
-        if (paramID == "lfo" + juce::String(i + 1) + "_sync")
+        const bool synced = syncParams[i]->load(std::memory_order_relaxed) > 0.5f;
+        if (synced != syncModes[i])
         {
-            updateModeVisibility(i, newValue > 0.5f);
-            resized();
-            return;
+            syncModes[i] = synced;
+            updateModeVisibility((int)i, synced);
+            changed = true;
         }
     }
+    if (changed)
+        resized();
 }
 
 void LFOPanel::updateModeVisibility(int lfoIndex, bool synced)

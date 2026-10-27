@@ -200,6 +200,7 @@ if(GLIESE_BUILD_TESTS)
 
     target_sources(GLIESE_Tests PRIVATE
         Tests/EngineTests.cpp
+        Tests/ProcessorTests.cpp
         Source/Presets/PresetManager.cpp
         Source/Engine/Envelopes/ADSREnvelope.cpp
         Source/Engine/MasterOutputStage.cpp
@@ -230,6 +231,7 @@ if(GLIESE_BUILD_TESTS)
         PRIVATE
             GLIESE_710_FactoryPresets
             Catch2::Catch2WithMain
+            GLIESE_710
             juce::juce_dsp
             juce::juce_audio_utils
         PUBLIC

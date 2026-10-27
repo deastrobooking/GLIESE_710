@@ -41,7 +41,7 @@ public:
     Category            getCurrentCategory()   const { return currentCategory; }
 
     // ── Save / Load ───────────────────────────────────────────────────────────
-    void savePreset(const juce::String& name,
+    bool savePreset(const juce::String& name,
                     Category cat         = Category::Other,
                     const juce::String&  bankName = {});
     bool loadPreset(const juce::File& file);

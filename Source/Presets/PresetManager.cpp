@@ -128,7 +128,7 @@ bool PresetManager::parsePresetFile(const juce::File& file,
         if (auto* stateEl = xml->getFirstChildElement())
         {
             stateOut = juce::ValueTree::fromXml(*stateEl);
-            return stateOut.isValid();
+            return stateOut.hasType(factoryBaselineState.getType());
         }
         return false;
     }
@@ -138,7 +138,7 @@ bool PresetManager::parsePresetFile(const juce::File& file,
     catOut    = Category::Other;
     authorOut = "";
     stateOut  = juce::ValueTree::fromXml(*xml);
-    return stateOut.isValid();
+    return stateOut.hasType(factoryBaselineState.getType());
 }
 
 bool PresetManager::parsePresetData(const void* data, int size,
@@ -163,7 +163,7 @@ bool PresetManager::parsePresetData(const void* data, int size,
         if (auto* stateEl = xml->getFirstChildElement())
         {
             stateOut = juce::ValueTree::fromXml(*stateEl);
-            return stateOut.isValid();
+            return stateOut.hasType(factoryBaselineState.getType());
         }
         return false;
     }
@@ -172,28 +172,30 @@ bool PresetManager::parsePresetData(const void* data, int size,
     catOut = Category::Other;
     authorOut = {};
     stateOut = juce::ValueTree::fromXml(*xml);
-    return stateOut.isValid();
+    return stateOut.hasType(factoryBaselineState.getType());
 }
 
 //──────────────────────────────────────────────────────────────────────────────
 // Save / Load
 //──────────────────────────────────────────────────────────────────────────────
 
-void PresetManager::savePreset(const juce::String& name, Category cat,
+bool PresetManager::savePreset(const juce::String& name, Category cat,
                                 const juce::String& bankName)
 {
     if (!isSafeName(name) || (bankName.isNotEmpty() && !isSafeName(bankName)))
-        return;
+        return false;
 
     if (bankName.isNotEmpty())
         ensureDirectoryExists(bankDirectory(bankName));
 
     auto file = presetFile(name, bankName);
     std::unique_ptr<juce::XmlElement> xml(buildPresetXml(name, cat));
-    xml->writeTo(file, juce::XmlElement::TextFormat{});
+    if (!xml->writeTo(file, juce::XmlElement::TextFormat{}))
+        return false;
 
     currentPresetName = name;
     currentCategory   = cat;
+    return true;
 }
 
 bool PresetManager::loadPreset(const juce::File& file)
@@ -461,33 +463,36 @@ bool PresetManager::importBank(const juce::File& bankFile)
     auto xml = juce::XmlDocument::parse(bankFile);
     if (!xml || xml->getTagName() != "GLIESE710Bank") return false;
 
-    juce::String bankName = xml->getStringAttribute("name",
-                                bankFile.getFileNameWithoutExtension());
+    const auto bankName = xml->getStringAttribute("name", bankFile.getFileNameWithoutExtension());
     if (!isSafeName(bankName))
         return false;
-    auto dir = bankDirectory(bankName);
-    ensureDirectoryExists(dir);
 
+    for (auto* patchEl : xml->getChildIterator())
+    {
+        if (patchEl->getTagName() != "Patch") continue;
+        auto* stateEl = patchEl->getFirstChildElement();
+        if (!isSafeName(patchEl->getStringAttribute("name", "Unnamed"))
+            || stateEl == nullptr
+            || !juce::ValueTree::fromXml(*stateEl).hasType(factoryBaselineState.getType()))
+            return false;
+    }
+
+    const auto dir = bankDirectory(bankName);
+    if (!dir.createDirectory())
+        return false;
     bool anyOk = false;
     for (auto* patchEl : xml->getChildIterator())
     {
         if (patchEl->getTagName() != "Patch") continue;
-        juce::String pName = patchEl->getStringAttribute("name", "Unnamed");
-        juce::String pCat  = patchEl->getStringAttribute("category", "Other");
-        if (!isSafeName(pName))
-            continue;
-
-        auto* root = new juce::XmlElement("GLIESE710Preset");
-        root->setAttribute("name",    pName);
-        root->setAttribute("category", pCat);
-        root->setAttribute("version",  2);
-
-        if (auto* stateEl = patchEl->getFirstChildElement())
-            root->addChildElement(new juce::XmlElement(*stateEl));
-
-        auto dest = dir.getChildFile(pName + kPresetExtension);
-        std::unique_ptr<juce::XmlElement> owned(root);
-        owned->writeTo(dest, juce::XmlElement::TextFormat{});
+        const auto name = patchEl->getStringAttribute("name", "Unnamed");
+        juce::XmlElement root("GLIESE710Preset");
+        root.setAttribute("name", name);
+        root.setAttribute("category", patchEl->getStringAttribute("category", "Other"));
+        root.setAttribute("version", 2);
+        root.addChildElement(new juce::XmlElement(*patchEl->getFirstChildElement()));
+        const auto dest = dir.getNonexistentChildFile(name, kPresetExtension, false);
+        if (!root.writeTo(dest, juce::XmlElement::TextFormat{}))
+            return false;
         anyOk = true;
     }
     return anyOk;
