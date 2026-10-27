@@ -134,7 +134,8 @@ void SingleFilter::configureIIR(float cutHz, float res, float drive)
     if (!needsReconfigure(cutHz, res, drive))
         return;
 
-    juce::dsp::IIR::Coefficients<float>::Ptr coeffs;
+    std::array<float, 6> coeffs {};
+    using Coefficients = juce::dsp::IIR::ArrayCoefficients<float>;
 
     const float resonance = juce::jlimit(0.f, 1.f, res);
     const float resCurve = std::pow(resonance, 1.15f);
@@ -146,15 +147,15 @@ void SingleFilter::configureIIR(float cutHz, float res, float drive)
     switch (params.mode)
     {
         case FilterMode::Peak:
-            coeffs = juce::dsp::IIR::Coefficients<float>::makePeakFilter(
+            coeffs = Coefficients::makePeakFilter(
                          sr, cutHz, peakQ, peakGain);
             break;
         case FilterMode::LowShelf:
-            coeffs = juce::dsp::IIR::Coefficients<float>::makeLowShelf(
+            coeffs = Coefficients::makeLowShelf(
                          sr, cutHz, shelfQ, shelfGain);
             break;
         case FilterMode::HighShelf:
-            coeffs = juce::dsp::IIR::Coefficients<float>::makeHighShelf(
+            coeffs = Coefficients::makeHighShelf(
                          sr, cutHz, shelfQ, shelfGain);
             break;
         case FilterMode::LP12:
@@ -189,8 +190,9 @@ void SingleFilter::configureIIR(float cutHz, float res, float drive)
             break;
     }
 
-    if (coeffs != nullptr)
-        *iirFilter.coefficients = *coeffs;
+    if (params.mode == FilterMode::Peak || params.mode == FilterMode::LowShelf
+        || params.mode == FilterMode::HighShelf)
+        *iirFilter.coefficients = coeffs;
 
     markConfigured(cutHz, res, drive);
 }

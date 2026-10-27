@@ -433,6 +433,12 @@ void SynthVoice::shareTerrainHeightmap(int index, const SynthVoice& source)
     terrainOscs[(size_t) index].shareTerrainFrom(source.terrainOscs[(size_t) index]);
 }
 
+void SynthVoice::resetTerrainHeightmap(int index)
+{
+    if (index >= 0 && index < kNumTerrainOscs)
+        terrainOscs[(size_t)index].resetHeightmap();
+}
+
 void SynthVoice::setMidiCC(ModSource src, float value)
 {
     int idx = (int)src;
@@ -764,7 +770,7 @@ void SynthVoice::buildParamCache(juce::AudioProcessorValueTreeState& apvts)
 }
 
 //──────────────────────────────────────────────────────────────────────────────
-void SynthVoice::syncParams()
+void SynthVoice::syncParams(int numSamples)
 {
     auto envParams = [](const ParamCache::EnvPtrs& e, float a, float d, float s, float r) {
         ADSREnvelope::Params ep;
@@ -814,7 +820,7 @@ void SynthVoice::syncParams()
     float portaTime = pF(pc.master.portamento, 0.f);
     if (portaTime > 0.f)
     {
-        float coef = std::exp(-1.f / (portaTime * (float)sampleRate));
+        float coef = std::exp(-(float)numSamples / (portaTime * (float)sampleRate));
         portaHz = portaTargetHz + coef * (portaHz - portaTargetHz);
     }
     else portaHz = portaTargetHz;
@@ -1265,7 +1271,7 @@ void SynthVoice::renderBlock(juce::AudioBuffer<float>& buffer, int startSample, 
     modMatrix.process(modSources, modDests);
     for (int i = 0; i < (int) ModDest::NumDests; ++i)
         modDests.dests[i] = juce::jlimit(-4.0f, 4.0f, modDests.dests[i] + globalModDests.dests[i]);
-    syncParams();
+    syncParams(numSamples);
 
     // ── Level / enable flags ──────────────────────────────────────────────────
     float fmLevelA   = juce::jlimit(0.f, 1.f, pF(pc.fm.level));

@@ -3,7 +3,7 @@
 #include <array>
 
 class LFOPanel : public juce::Component,
-                 private juce::AudioProcessorValueTreeState::Listener
+                 private juce::Timer
 {
 public:
     explicit LFOPanel(juce::AudioProcessorValueTreeState& apvts);
@@ -12,7 +12,9 @@ public:
     void resized() override;
 
 private:
-    void parameterChanged(const juce::String& paramID, float newValue) override;
+    void timerCallback() override;
+    std::array<std::atomic<float>*, 4> syncParams {};
+    std::array<bool, 4> syncModes {};
     void updateModeVisibility(int lfoIndex, bool synced);
 
     juce::AudioProcessorValueTreeState& apvts;

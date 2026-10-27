@@ -32,6 +32,7 @@ private:
     float    frequency  = 440.0f;
     double   sr         = 48000.0;
     bool     active     = false;
+    int      quietSamples = 0;
     uint32_t noiseSeed  = 12345u;
 
     float nextNoise();

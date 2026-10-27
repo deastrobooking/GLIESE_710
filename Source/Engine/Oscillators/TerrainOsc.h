@@ -57,6 +57,7 @@ public:
     float processSample();
 
     bool setHeightmapFromImage(const juce::Image& image);
+    void resetHeightmap();
     bool importHeightmapFile(const juce::File& file);
     void shareTerrainFrom(const TerrainOsc& other) noexcept { sharedTerrain = other.sharedTerrain; }
 
@@ -103,6 +104,7 @@ private:
 
     void updateDerived();
     void generateDefaultTerrain();
+    void publishTerrain();
     void rebuildBlurredTerrain();
     void rebuildMipLevels();
     int chooseMipLevel() const noexcept;

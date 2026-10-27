@@ -425,8 +425,13 @@ void PatchBrowserPanel::doSave()
     window->addButton("CANCEL", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
     window->enterModalState(true,
-        juce::ModalCallbackFunction::create([this, window](int result)
+        juce::ModalCallbackFunction::create([safeThis = juce::Component::SafePointer<PatchBrowserPanel>(this), window](int result)
         {
+            if (safeThis == nullptr)
+            {
+                delete window;
+                return;
+            }
             if (result == 1)
             {
                 auto name = window->getTextEditorContents("name").trim();
@@ -442,13 +447,20 @@ void PatchBrowserPanel::doSave()
                     if (auto* c = window->getComboBoxComponent("bank"))
                     {
                         int bankIdx = c->getSelectedItemIndex();
-                        if (bankIdx > 0 && bankIdx - 1 < bankNames.size())
-                            bank = bankNames[bankIdx - 1];
+                        if (bankIdx > 0 && bankIdx - 1 < safeThis->bankNames.size())
+                            bank = safeThis->bankNames[bankIdx - 1];
                     }
 
-                    pm.savePreset(name, cat, bank);
-                    if (onPresetLoaded) onPresetLoaded();
-                    refreshAll();
+                    if (safeThis->pm.savePreset(name, cat, bank))
+                    {
+                        if (safeThis->onPresetLoaded) safeThis->onPresetLoaded();
+                        safeThis->refreshAll();
+                    }
+                    else
+                    {
+                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                            "Save Failed", "The preset could not be written. Check the name and destination permissions.");
+                    }
                 }
             }
             delete window;
@@ -467,15 +479,20 @@ void PatchBrowserPanel::doDelete()
     window->addButton("CANCEL", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
     window->enterModalState(true,
-        juce::ModalCallbackFunction::create([this, window, patchName](int result)
+        juce::ModalCallbackFunction::create([safeThis = juce::Component::SafePointer<PatchBrowserPanel>(this), window, patchName](int result)
         {
-            if (result == 1 && selectedRow >= 0 && selectedRow < filteredPatches.size())
+            if (safeThis == nullptr)
             {
-                if (filteredPatches.getReference(selectedRow).name == patchName)
-                    pm.deletePreset(filteredPatches.getReference(selectedRow));
+                delete window;
+                return;
+            }
+            if (result == 1 && safeThis->selectedRow >= 0 && safeThis->selectedRow < safeThis->filteredPatches.size())
+            {
+                if (safeThis->filteredPatches.getReference(safeThis->selectedRow).name == patchName)
+                    safeThis->pm.deletePreset(safeThis->filteredPatches.getReference(safeThis->selectedRow));
             }
             delete window;
-            refreshAll();
+            safeThis->refreshAll();
         }), false);
 }
 
@@ -487,12 +504,16 @@ void PatchBrowserPanel::doImportPatch()
 
     chooser->launchAsync(
         juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-        [this, chooser](const juce::FileChooser& fc)
+        [safeThis = juce::Component::SafePointer<PatchBrowserPanel>(this), chooser](const juce::FileChooser& fc)
         {
+            if (safeThis == nullptr)
+            {
+                return;
+            }
             auto files = fc.getResults();
             if (files.isEmpty()) return;
-            pm.importPatch(files[0], filterBank);
-            refreshAll();
+            safeThis->pm.importPatch(files[0], safeThis->filterBank);
+            safeThis->refreshAll();
         });
 }
 
@@ -509,11 +530,15 @@ void PatchBrowserPanel::doExportPatch()
 
     chooser->launchAsync(
         juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
-        [this, chooser, info](const juce::FileChooser& fc)
+        [safeThis = juce::Component::SafePointer<PatchBrowserPanel>(this), chooser, info](const juce::FileChooser& fc)
         {
+            if (safeThis == nullptr)
+            {
+                return;
+            }
             auto dest = fc.getResult();
             if (dest.getFullPathName().isNotEmpty())
-                pm.exportPatch(info, dest);
+                safeThis->pm.exportPatch(info, dest);
         });
 }
 
@@ -525,12 +550,16 @@ void PatchBrowserPanel::doImportBank()
 
     chooser->launchAsync(
         juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-        [this, chooser](const juce::FileChooser& fc)
+        [safeThis = juce::Component::SafePointer<PatchBrowserPanel>(this), chooser](const juce::FileChooser& fc)
         {
+            if (safeThis == nullptr)
+            {
+                return;
+            }
             auto files = fc.getResults();
             if (files.isEmpty()) return;
-            pm.importBank(files[0]);
-            refreshAll();
+            safeThis->pm.importBank(files[0]);
+            safeThis->refreshAll();
         });
 }
 
@@ -547,11 +576,15 @@ void PatchBrowserPanel::doExportBank()
 
     chooser->launchAsync(
         juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
-        [this, chooser, bankToExport](const juce::FileChooser& fc)
+        [safeThis = juce::Component::SafePointer<PatchBrowserPanel>(this), chooser, bankToExport](const juce::FileChooser& fc)
         {
+            if (safeThis == nullptr)
+            {
+                return;
+            }
             auto dest = fc.getResult();
             if (dest.getFullPathName().isNotEmpty())
-                pm.exportBank(bankToExport, dest);
+                safeThis->pm.exportBank(bankToExport, dest);
         });
 }
 
@@ -564,16 +597,21 @@ void PatchBrowserPanel::doNewBank()
     window->addButton("CANCEL", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
     window->enterModalState(true,
-        juce::ModalCallbackFunction::create([this, window](int result)
+        juce::ModalCallbackFunction::create([safeThis = juce::Component::SafePointer<PatchBrowserPanel>(this), window](int result)
         {
+            if (safeThis == nullptr)
+            {
+                delete window;
+                return;
+            }
             if (result == 1)
             {
                 auto name = window->getTextEditorContents("name").trim();
                 if (name.isNotEmpty())
-                    pm.createBank(name);
+                    safeThis->pm.createBank(name);
             }
             delete window;
-            refreshAll();
+            safeThis->refreshAll();
         }), false);
 }
 
@@ -589,20 +627,25 @@ void PatchBrowserPanel::doRenameBank()
     window->addButton("CANCEL", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
     window->enterModalState(true,
-        juce::ModalCallbackFunction::create([this, window, oldName](int result)
+        juce::ModalCallbackFunction::create([safeThis = juce::Component::SafePointer<PatchBrowserPanel>(this), window, oldName](int result)
         {
+            if (safeThis == nullptr)
+            {
+                delete window;
+                return;
+            }
             if (result == 1)
             {
                 auto newName = window->getTextEditorContents("name").trim();
                 if (newName.isNotEmpty() && newName != oldName)
                 {
-                    pm.renameBank(oldName, newName);
-                    if (filterBank == oldName)
-                        filterBank = newName;
+                    safeThis->pm.renameBank(oldName, newName);
+                    if (safeThis->filterBank == oldName)
+                        safeThis->filterBank = newName;
                 }
             }
             delete window;
-            refreshAll();
+            safeThis->refreshAll();
         }), false);
 }
 
@@ -618,15 +661,20 @@ void PatchBrowserPanel::doDeleteBank()
     window->addButton("CANCEL", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
     window->enterModalState(true,
-        juce::ModalCallbackFunction::create([this, window, bankName](int result)
+        juce::ModalCallbackFunction::create([safeThis = juce::Component::SafePointer<PatchBrowserPanel>(this), window, bankName](int result)
         {
+            if (safeThis == nullptr)
+            {
+                delete window;
+                return;
+            }
             if (result == 1)
             {
-                pm.deleteBank(bankName);
-                if (filterBank == bankName)
-                    filterBank = {};
+                safeThis->pm.deleteBank(bankName);
+                if (safeThis->filterBank == bankName)
+                    safeThis->filterBank = {};
             }
             delete window;
-            refreshAll();
+            safeThis->refreshAll();
         }), false);
 }

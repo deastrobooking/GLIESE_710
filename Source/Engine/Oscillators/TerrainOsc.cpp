@@ -4,7 +4,8 @@
 void TerrainOsc::prepare(double sampleRate)
 {
     sr = sampleRate > 0.0 ? sampleRate : 48000.0;
-    generateDefaultTerrain();
+    if (sharedTerrain == nullptr)
+        resetHeightmap();
     updateDerived();
     reset();
 }
@@ -190,6 +191,12 @@ bool TerrainOsc::setHeightmapFromImage(const juce::Image& image)
     lastSmoothing = -1.f;
     rebuildBlurredTerrain();
 
+    publishTerrain();
+    return true;
+}
+
+void TerrainOsc::publishTerrain()
+{
     auto data = std::make_shared<TerrainData>();
     data->width = width;
     data->height = height;
@@ -197,7 +204,13 @@ bool TerrainOsc::setHeightmapFromImage(const juce::Image& image)
     data->blurredTerrain = std::move(blurredTerrain);
     data->mipLevels = std::move(mipLevels);
     sharedTerrain = std::move(data);
-    return true;
+}
+
+void TerrainOsc::resetHeightmap()
+{
+    sharedTerrain.reset();
+    generateDefaultTerrain();
+    publishTerrain();
 }
 
 bool TerrainOsc::importHeightmapFile(const juce::File& file)

@@ -16,6 +16,7 @@ void KarplusStrong::reset()
     lastAPFIn   = 0.0f;
     lastAPFOut  = 0.0f;
     active      = false;
+    quietSamples = 0;
 }
 
 void KarplusStrong::setFrequency(float hz)
@@ -62,6 +63,7 @@ void KarplusStrong::pluck(float velocity, const Params& params)
     lastAPFIn  = 0.0f;
     lastAPFOut = 0.0f;
     active     = true;
+    quietSamples = 0;
 }
 
 float KarplusStrong::processSample(const Params& params)
@@ -77,7 +79,7 @@ float KarplusStrong::processSample(const Params& params)
 
     // Stiffness all-pass (first-order APF)
     float g      = params.stiffness;
-    float apfOut = -g * s + lastAPFIn + g * lastAPFOut;
+    float apfOut = g == 0.f ? s : -g * s + lastAPFIn + g * lastAPFOut;
     lastAPFIn    = s;
     lastAPFOut   = apfOut;
     s            = apfOut;
@@ -95,7 +97,8 @@ float KarplusStrong::processSample(const Params& params)
         writeIdx = 0;
 
     // Silence check
-    if (std::abs(out) < 1e-6f)
+    quietSamples = std::abs(out) < 1e-6f ? quietSamples + 1 : 0;
+    if (quietSamples > (int)std::ceil(periodSamples) + 2)
         active = false;
 
     return out;

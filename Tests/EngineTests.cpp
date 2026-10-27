@@ -2,6 +2,7 @@
 #include "../Source/Engine/Envelopes/ADSREnvelope.h"
 #include "../Source/Engine/Oscillators/Osc3D.h"
 #include "../Source/Engine/Oscillators/VAOscillator.h"
+#include "../Source/Engine/Oscillators/KarplusStrong.h"
 #include "../Source/Engine/Oscillators/WavetableOsc.h"
 #include "../Source/Engine/Oscillators/GranularOsc.h"
 #include "../Source/Engine/Oscillators/TerrainOsc.h"
@@ -2622,7 +2623,7 @@ TEST_CASE("Arpeggiator honours played order separately from sorted patterns", "[
     arp.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
     arp.handleMidi(juce::MidiMessage::noteOn(1, 67, (juce::uint8)100));
 
-    auto asPlayed = collectArpNoteOns(arp, 160);
+    auto asPlayed = collectArpNoteOns(arp, 640);
     REQUIRE(asPlayed.size() >= 3);
     REQUIRE(asPlayed[0] == 64);
     REQUIRE(asPlayed[1] == 60);
@@ -2635,7 +2636,7 @@ TEST_CASE("Arpeggiator honours played order separately from sorted patterns", "[
     arp.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
     arp.handleMidi(juce::MidiMessage::noteOn(1, 64, (juce::uint8)100));
 
-    auto sorted = collectArpNoteOns(arp, 160);
+    auto sorted = collectArpNoteOns(arp, 640);
     REQUIRE(sorted.size() >= 3);
     REQUIRE(sorted[0] == 60);
     REQUIRE(sorted[1] == 64);
@@ -2655,7 +2656,7 @@ TEST_CASE("Arpeggiator sync toggle chooses host tempo or internal tempo", "[arp]
     p.sync = true;
     hostSynced.setParams(p);
     hostSynced.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
-    REQUIRE(!collectArpNoteOns(hostSynced, 30).empty());
+    REQUIRE(!collectArpNoteOns(hostSynced, 120).empty());
 
     Arpeggiator freeRunning;
     freeRunning.prepare(3200.0);
@@ -2663,7 +2664,7 @@ TEST_CASE("Arpeggiator sync toggle chooses host tempo or internal tempo", "[arp]
     p.sync = false;
     freeRunning.setParams(p);
     freeRunning.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
-    REQUIRE(collectArpNoteOns(freeRunning, 30).empty());
+    REQUIRE(collectArpNoteOns(freeRunning, 120).empty());
 }
 
 TEST_CASE("Arpeggiator preserves source channel and velocity", "[arp][midi]")
@@ -2680,7 +2681,7 @@ TEST_CASE("Arpeggiator preserves source channel and velocity", "[arp][midi]")
     arp.handleMidi(juce::MidiMessage::noteOn(7, 62, (juce::uint8) 73));
 
     juce::MidiBuffer output;
-    arp.processBlock(output, 0, 80);
+    arp.processBlock(output, 0, 320);
 
     bool foundNoteOn = false;
     for (const auto meta : output)
@@ -2711,7 +2712,7 @@ TEST_CASE("Arpeggiator random latch repeats its shuffled order", "[arp]")
     arp.handleMidi(juce::MidiMessage::noteOn(1, 64, (juce::uint8)100));
     arp.handleMidi(juce::MidiMessage::noteOn(1, 67, (juce::uint8)100));
 
-    auto notes = collectArpNoteOns(arp, 320);
+    auto notes = collectArpNoteOns(arp, 1280);
     REQUIRE(notes.size() >= 6);
     REQUIRE(notes[0] == notes[3]);
     REQUIRE(notes[1] == notes[4]);
@@ -2818,4 +2819,138 @@ TEST_CASE("Realtime DSP hot paths survive a dense stress render", "[performance]
     REQUIRE(maxAbs <= 8.f);
     REQUIRE(energy > 1.0e-5);
     REQUIRE(elapsed < 2000.0);
+}
+
+
+TEST_CASE("Karplus-Strong plucks survive startup and zero crossings", "[ks][regression]")
+{
+    for (float stiffness : { 0.f, 0.25f })
+    {
+        KarplusStrong osc;
+        osc.prepare(48000.0);
+        osc.setFrequency(440.f);
+        KarplusStrong::Params params;
+        params.stiffness = stiffness;
+        osc.pluck(1.f, params);
+        float energy = 0.f;
+        for (int sample = 0; sample < 4800; ++sample)
+        {
+            const float value = osc.processSample(params);
+            REQUIRE(std::isfinite(value));
+            energy += value * value;
+        }
+        REQUIRE(energy > 0.01f);
+    }
+}
+
+TEST_CASE("Arpeggiator rate labels use quarter-note host beats", "[arp][regression]")
+{
+    Arpeggiator arp;
+    arp.prepare(48000.0);
+    arp.setHostBPM(120.0);
+    Arpeggiator::Params params;
+    params.rateIdx = 4; // 1/4
+    arp.setParams(params);
+    arp.handleMidi(juce::MidiMessage::noteOn(1, 60, (juce::uint8)100));
+    juce::MidiBuffer output;
+    arp.processBlock(output, 0, 72001);
+    std::vector<int> positions;
+    for (const auto event : output)
+        if (event.getMessage().isNoteOn())
+            positions.push_back(event.samplePosition);
+    REQUIRE(positions.size() >= 2);
+    REQUIRE(std::abs(positions[1] - positions[0] - 24000) <= 1);
+}
+
+TEST_CASE("Arpeggiator bounce patterns complete both directions", "[arp][regression]")
+{
+    for (auto pattern : { Arpeggiator::Pattern::UpDown, Arpeggiator::Pattern::DownUp })
+    {
+        Arpeggiator arp;
+        arp.prepare(3200.0);
+        Arpeggiator::Params params;
+        params.pattern = pattern;
+        params.rateIdx = 0;
+        arp.setParams(params);
+        for (int note : { 60, 64, 67 })
+            arp.handleMidi(juce::MidiMessage::noteOn(1, note, (juce::uint8)100));
+        const auto notes = collectArpNoteOns(arp, 1800);
+        const std::vector<int> expected = pattern == Arpeggiator::Pattern::UpDown
+            ? std::vector<int> { 60, 64, 67, 64, 60, 64, 67, 64 }
+            : std::vector<int> { 67, 64, 60, 64, 67, 64, 60, 64 };
+        REQUIRE(notes.size() >= expected.size());
+        REQUIRE(std::equal(expected.begin(), expected.end(), notes.begin()));
+    }
+}
+
+TEST_CASE("LFO retrigger applies its phase offset once", "[lfo][regression]")
+{
+    LFOEngine lfo;
+    lfo.prepare(48000.0);
+    LFOEngine::LFOParams params;
+    params.phase = 0.25f;
+    params.amount = 1.f;
+    params.retrig = true;
+    lfo.setParams(0, params);
+    lfo.noteOn();
+    lfo.processSample();
+    REQUIRE(lfo.getValue(0) == Approx(1.f).margin(0.001f));
+}
+
+TEST_CASE("Legacy and exported factory presets restore missing defaults", "[preset][regression]")
+{
+    TestAudioProcessor processor;
+    juce::AudioProcessorValueTreeState state(processor, nullptr, "State", makeFactoryPresetTestLayout());
+    PresetManager manager(state);
+    juce::TemporaryFile file(".g710");
+    REQUIRE(file.getFile().replaceWithText("<State><PARAM id=\"osc_3d_field\" value=\"2\"/></State>"));
+    auto* cutoff = state.getParameter("filter_a_cutoff");
+    cutoff->setValueNotifyingHost(cutoff->convertTo0to1(777.f));
+    REQUIRE(manager.loadPreset(file.getFile()));
+    REQUIRE(*state.getRawParameterValue("filter_a_cutoff") == Approx(20000.f));
+    REQUIRE(*state.getRawParameterValue("osc_3d_field") == Approx(2.f));
+    for (const auto& patch : manager.getFactoryPatches())
+        if (patch.name == "Init")
+        {
+            manager.exportPatch(patch, file.getFile());
+            cutoff->setValueNotifyingHost(cutoff->convertTo0to1(555.f));
+            REQUIRE(manager.loadPreset(file.getFile()));
+            REQUIRE(*state.getRawParameterValue("filter_a_cutoff") == Approx(20000.f));
+        }
+    REQUIRE(file.getFile().replaceWithText("<Unrelated/>"));
+    REQUIRE_FALSE(manager.loadPreset(file.getFile()));
+}
+
+TEST_CASE("Failed preset saves preserve the current preset", "[preset][regression]")
+{
+    TestAudioProcessor processor;
+    juce::AudioProcessorValueTreeState state(processor, nullptr, "State", makeFactoryPresetTestLayout());
+    PresetManager manager(state);
+    const auto bank = juce::Uuid().toString();
+    const auto blocker = manager.getPresetsDirectory().getChildFile(bank);
+    REQUIRE(blocker.replaceWithText("a file prevents creating this bank directory"));
+    struct Cleanup { juce::File file; ~Cleanup() { file.deleteFile(); } } cleanup { blocker };
+    const auto previous = manager.getCurrentPresetName();
+    REQUIRE_FALSE(manager.savePreset("ShouldFail", PresetManager::Category::Other, bank));
+    REQUIRE(manager.getCurrentPresetName() == previous);
+}
+
+TEST_CASE("Bank imports reject corrupt patches and preserve colliding files", "[preset][regression]")
+{
+    TestAudioProcessor processor;
+    juce::AudioProcessorValueTreeState state(processor, nullptr, "State", makeFactoryPresetTestLayout());
+    PresetManager manager(state);
+    const auto bank = juce::Uuid().toString();
+    struct Cleanup { PresetManager& manager; juce::String bank; ~Cleanup() { manager.deleteBank(bank); } } cleanup { manager, bank };
+    REQUIRE(manager.savePreset("Existing", PresetManager::Category::Other, bank));
+    const auto original = manager.getPresetsDirectory().getChildFile(bank).getChildFile("Existing.g710");
+    const auto contents = original.loadFileAsString();
+    juce::TemporaryFile file(".g710bank");
+    REQUIRE(file.getFile().replaceWithText("<GLIESE710Bank name=\"" + bank + "\"><Patch name=\"Existing\"/></GLIESE710Bank>"));
+    REQUIRE_FALSE(manager.importBank(file.getFile()));
+    REQUIRE(original.loadFileAsString() == contents);
+    REQUIRE(file.getFile().replaceWithText("<GLIESE710Bank name=\"" + bank + "\"><Patch name=\"Existing\"><State/></Patch></GLIESE710Bank>"));
+    REQUIRE(manager.importBank(file.getFile()));
+    REQUIRE(original.loadFileAsString() == contents);
+    REQUIRE(manager.getPatchesInBank(bank).size() == 2);
 }

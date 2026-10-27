@@ -49,6 +49,7 @@ public:
                                std::shared_ptr<const GranularOsc::SampleData> sample);
     GranularOsc::VisualSnapshot getGranularVisualSnapshot(int index) const noexcept;
     bool setTerrainHeightmap(int index, const juce::Image& image);
+    void resetTerrainHeightmap(int index);
     void shareTerrainHeightmap(int index, const SynthVoice& source);
     void buildParamCache(juce::AudioProcessorValueTreeState& apvts);
 
@@ -375,7 +376,7 @@ private:
     };
     ParamCache pc;
 
-    void syncParams();
+    void syncParams(int numSamples);
     void buildModSources();
 
     static float midiToHz(int note, float pitchBendSemitones = 0.f);

@@ -89,14 +89,26 @@ void PresetBrowser::saveCurrentPreset()
 
     window->enterModalState(
         true,
-        juce::ModalCallbackFunction::create([this, window](int result) {
+        juce::ModalCallbackFunction::create([safeThis = juce::Component::SafePointer<PresetBrowser>(this), window](int result) {
+            if (safeThis == nullptr)
+            {
+                delete window;
+                return;
+            }
             if (result == 1)
             {
                 auto name = window->getTextEditorContents("presetName").trim();
                 if (name.isNotEmpty())
                 {
-                    presetManager.savePreset(name);
-                    refreshList();
+                    if (safeThis->presetManager.savePreset(name))
+                    {
+                        safeThis->refreshList();
+                    }
+                    else
+                    {
+                        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                            "Save Failed", "The preset could not be written. Check the name and destination permissions.");
+                    }
                 }
             }
             delete window;

@@ -46,7 +46,7 @@ Factory patches appear in both preset browsers, are marked with a diamond in the
 
 ```cpp
 // Save current state to ~/Music/GLIESE_710/Presets/MyPreset.g710
-presetManager.savePreset("MyPreset");
+bool saved = presetManager.savePreset("MyPreset");
 
 // Load from file
 bool ok = presetManager.loadPreset(file);
@@ -124,3 +124,11 @@ juce_add_binary_data(GLIESE_710_Assets
 4. Copy the `.g710` file to `Source/Presets/FactoryPresets/`
 5. Add it to `juce_add_binary_data` in `CMakeLists.txt`
 6. Rebuild — it ships embedded in the plugin binary
+
+## Import and save integrity
+
+`savePreset` returns false when the name is invalid or writing fails, and updates the current preset only after a successful write. Both save dialogs display failures.
+
+Bank imports validate patch state roots before writing. Existing files are preserved by choosing a numbered filename for collisions. A corrupt bank is rejected before any patch is written; an I/O failure during import returns false, and patches already written during that import may remain.
+
+Loading state without embedded granular layers resets layer A to the built-in source and layer B to layer A. Missing or invalid terrain maps restore the procedural terrain. This prevents imported assets from the previously loaded patch leaking into a new patch.

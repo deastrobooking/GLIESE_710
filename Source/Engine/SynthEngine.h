@@ -31,6 +31,7 @@ public:
                              std::shared_ptr<const GranularOsc::SampleData> sample);
     GranularOsc::VisualSnapshot getGranularVisualSnapshot(int index) const noexcept;
     bool setTerrainHeightmap(int index, const juce::Image& image);
+    void resetTerrainHeightmap(int index);
 
 private:
     juce::AudioProcessorValueTreeState* apvts = nullptr;
@@ -69,6 +70,7 @@ private:
     std::array<SynthVoice, kNumVoices> voices;
     StepSequencerMod modSequencer;
     Arpeggiator arp;
+    bool previousArpOn = false;
     juce::MidiBuffer arpMidi;
     juce::MidiBuffer renderMidi;
     std::array<std::array<uint8_t, 128>, 16> heldNoteCounts {};
